@@ -139,11 +139,11 @@ incrementally when these commands need it.
 
 ### Acceptance criteria
 
-- [ ] `init` is idempotent unless `--force` is supplied.
-- [ ] `python-lib` template application is policy-mediated.
-- [ ] `task validate` returns concrete validation errors for invalid specs.
-- [ ] Public docs separate implemented V0 behavior from roadmap items.
-- [ ] Project metadata supports local install and test execution.
+- [x] `init` is idempotent unless `--force` is supplied.
+- [x] `python-lib` template application is policy-mediated.
+- [x] `task validate` returns concrete validation errors for invalid specs.
+- [x] Public docs separate implemented V0 behavior from roadmap items.
+- [x] Project metadata supports local install and test execution.
 
 ### Out of scope
 

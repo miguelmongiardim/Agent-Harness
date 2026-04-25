@@ -18,7 +18,25 @@ from agent_harness.runtime import HarnessRuntime, approve_action
 from agent_harness.schemas import TaskSpec
 from agent_harness.storage import RunStore
 from agent_harness.templates import apply_template, list_templates, load_template
-from agent_harness.utils import write_json
+from agent_harness.utils import load_json, write_json
+
+
+STARTER_DOC = """# Agent Harness Project
+
+## Implemented Locally
+
+- Local configuration lives in `agent-harness.yaml`.
+- Policy profiles live in `policies/`.
+- Run and retrieval artifacts live under `.agent-harness/`.
+- The bundled `python-lib` template can scaffold a small Python library.
+
+## Roadmap / Not Enabled By Init
+
+- Network model providers, hosted services, web APIs, web UIs, and production
+  assurance features are outside this initialized project scaffold.
+- Future capabilities must be added through tested Agent Harness behavior before
+  this project documentation describes them as available.
+"""
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -120,6 +138,11 @@ def cmd_init(args: argparse.Namespace) -> int:
     policy_path = root / "policies" / "default.json"
     if args.force or not policy_path.exists():
         write_json(policy_path, DEFAULT_POLICY)
+    docs_dir = root / "docs"
+    docs_dir.mkdir(exist_ok=True)
+    starter_doc = docs_dir / "agent-harness.md"
+    if args.force or not starter_doc.exists():
+        starter_doc.write_text(STARTER_DOC, encoding="utf-8")
     print(f"initialized {config_path}")
     return 0
 
@@ -139,7 +162,7 @@ def cmd_template_show(args: argparse.Namespace) -> int:
 def cmd_template_apply(args: argparse.Namespace) -> int:
     destination = Path(args.destination).resolve()
     profile = load_policy(Path.cwd(), args.profile)
-    policy = PolicyEngine(destination, profile)
+    policy = PolicyEngine(Path.cwd(), profile)
     written = apply_template(load_template(args.name), destination, policy, force=args.force)
     print(json.dumps({"written": [str(path) for path in written]}, indent=2))
     return 0
@@ -219,15 +242,21 @@ def cmd_eval(args: argparse.Namespace) -> int:
     results = run_builtin_evals(root)
     report = write_eval_report(root, results)
     scanner = scanner_report(root)
+    scanner_data = load_json(scanner)
     print(json.dumps({"report": str(report), "scanner_report": str(scanner)}, indent=2))
-    return 0 if all(result.passed for result in results) else 1
+    scanner_ok = scanner_data.get("status") != "failed"
+    return 0 if scanner_ok and all(result.passed for result in results) else 1
 
 
 def cmd_export_sarif(args: argparse.Namespace) -> int:
     root = Path.cwd()
     config = load_config(root)
     store = RunStore.open_existing(root / config.artifact_root, args.run_id)
-    output = Path(args.output) if args.output else root / config.artifact_root / "exports" / f"{args.run_id}.sarif"
+    output = (
+        Path(args.output)
+        if args.output
+        else root / config.artifact_root / "exports" / f"{args.run_id}.sarif"
+    )
     print(export_sarif(store, output))
     return 0
 

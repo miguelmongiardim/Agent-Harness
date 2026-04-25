@@ -28,19 +28,26 @@ def apply_template(
     policy: PolicyEngine,
     force: bool = False,
 ) -> list[Path]:
-    destination.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
     for file in spec.files:
+        target = destination / file.path
+        try:
+            policy_path = target.resolve().relative_to(policy.project_root).as_posix()
+        except ValueError as exc:
+            raise PermissionError("template destination outside project root") from exc
         call = ToolCall(
-            action_id=stable_id("action", "template", spec.name, file.path),
+            action_id=stable_id("action", "template", spec.name, policy_path),
             tool_name="patch_file",
-            arguments={"path": file.path, "before_hash": "", "proposed_content": file.content},
+            arguments={
+                "path": policy_path,
+                "before_hash": "",
+                "proposed_content": file.content,
+            },
             reason=f"apply template {spec.name}",
         )
         decision = policy.evaluate_tool_call(call, task=None, checkpoint_hash="template")
         if not decision.allowed:
             raise PermissionError(decision.reason)
-        target = destination / file.path
         if target.exists() and not force:
             continue
         target.parent.mkdir(parents=True, exist_ok=True)
