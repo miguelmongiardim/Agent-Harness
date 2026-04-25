@@ -9,6 +9,11 @@ from pathlib import Path
 from tests.conftest import seed_project
 
 
+def _artifact_path(root: Path, reference: str) -> Path:
+    path = Path(reference)
+    return path if path.is_absolute() else root / path
+
+
 def test_cli_dry_run_creates_inspectable_run_artifacts(tmp_path: Path) -> None:
     seed_project(tmp_path)
     target = tmp_path / "sample.py"
@@ -121,11 +126,15 @@ def test_cli_dry_run_writes_artifact_index(tmp_path: Path) -> None:
     run_dir = tmp_path / ".agent-harness" / "runs" / "run-artifact-index"
     artifact_index_path = run_dir / "artifact-index.json"
 
-    assert Path(summary["artifacts"]["artifact_index"]).samefile(artifact_index_path)
+    assert _artifact_path(tmp_path, summary["artifacts"]["artifact_index"]).samefile(
+        artifact_index_path
+    )
     artifact_index = json.loads(artifact_index_path.read_text(encoding="utf-8"))
     assert artifact_index["run_id"] == "run-artifact-index"
-    assert Path(artifact_index["artifacts"]["summary"]).samefile(run_dir / "summary.json")
-    assert Path(artifact_index["artifacts"]["context_manifest"]).samefile(
+    assert _artifact_path(tmp_path, artifact_index["artifacts"]["summary"]).samefile(
+        run_dir / "summary.json"
+    )
+    assert _artifact_path(tmp_path, artifact_index["artifacts"]["context_manifest"]).samefile(
         run_dir / "context_manifest.json"
     )
 

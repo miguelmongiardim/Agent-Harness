@@ -16,7 +16,7 @@ from agent_harness.schemas import (
 )
 from agent_harness.storage import RunStore, make_event
 from agent_harness.tools import ToolExecutor
-from agent_harness.utils import new_run_id, now_utc, sha256_json, stable_id
+from agent_harness.utils import hash_file, new_run_id, now_utc, sha256_json, stable_id
 
 
 class HarnessRuntime:
@@ -46,17 +46,15 @@ class HarnessRuntime:
         retriever = LexicalRetriever(self.artifact_root / "indexes" / "documents.jsonl")
         manifest = build_context_manifest(self.project_root, run_id, task, policy, retriever)
         store.write_model("context_manifest.json", manifest)
-        for source in manifest.sources:
-            if source.path is None:
-                continue
-            decision = policy.evaluate_context_source(source.path)
+        for source_path in task.target_paths:
+            decision = policy.evaluate_context_source(source_path)
             store.append_event(
                 make_event(
                     run_id,
                     "policy_decision",
                     {
                         "operation": "context_source",
-                        "source_id": source.source_id,
+                        "path": source_path,
                         "decision": decision.model_dump(mode="json"),
                     },
                 )
@@ -75,6 +73,7 @@ class HarnessRuntime:
             task_hash=sha256_json(task.model_dump(mode="json")),
             manifest_hash=sha256_json(manifest.model_dump(mode="json")),
             policy_hash=policy.profile_hash(),
+            previous_event_hash=store.event_log_hash(),
         )
         checkpoint_hash = checkpoint.checkpoint_hash()
         store.write_model(f"checkpoints/{checkpoint.checkpoint_id}.json", checkpoint)
@@ -181,19 +180,22 @@ class HarnessRuntime:
                 status = "failed"
                 break
 
-        artifacts = {
-            "run_dir": str(store.run_dir),
-            "task": str(store.run_dir / "task.json"),
-            "policy": str(store.run_dir / "policy.json"),
-            "events": str(store.events_path),
-            "context_manifest": str(store.run_dir / "context_manifest.json"),
-            "checkpoint": str(store.run_dir / "checkpoints" / f"{checkpoint.checkpoint_id}.json"),
-            "checkpoint_index": str(store.run_dir / "checkpoint-index.json"),
-            "summary": str(store.run_dir / "summary.json"),
-            "artifact_index": str(store.run_dir / "artifact-index.json"),
+        artifact_paths = {
+            "run_dir": store.run_dir,
+            "state": store.db_path,
+            "task": store.run_dir / "task.json",
+            "policy": store.run_dir / "policy.json",
+            "events": store.events_path,
+            "context_manifest": store.run_dir / "context_manifest.json",
+            "checkpoint": store.run_dir / "checkpoints" / f"{checkpoint.checkpoint_id}.json",
+            "checkpoint_index": store.run_dir / "checkpoint-index.json",
+            "summary": store.run_dir / "summary.json",
+            "artifact_index": store.run_dir / "artifact-index.json",
         }
-        store.write_data("artifact-index.json", {"run_id": run_id, "artifacts": artifacts})
-
+        artifacts = {
+            name: self._project_relative(path) for name, path in artifact_paths.items()
+        }
+        store.append_event(make_event(run_id, "run_finished", {"status": status}))
         summary = RunSummary(
             run_id=run_id,
             task_id=task.task_id,
@@ -211,10 +213,23 @@ class HarnessRuntime:
             ),
         )
         store.write_summary(summary)
-        store.append_event(make_event(run_id, "run_finished", {"status": summary.status}))
-        summary = summary.model_copy(update={"events_count": store.event_count()})
-        store.write_summary(summary)
+        artifact_hashes = {
+            name: hash_file(path)
+            for name, path in artifact_paths.items()
+            if path.is_file() and name not in {"artifact_index", "state"}
+        }
+        store.write_data(
+            "artifact-index.json",
+            {
+                "run_id": run_id,
+                "artifacts": artifacts,
+                "artifact_hashes": artifact_hashes,
+            },
+        )
         return summary
+
+    def _project_relative(self, path: Path) -> str:
+        return path.relative_to(self.project_root).as_posix()
 
 
 def approve_action(

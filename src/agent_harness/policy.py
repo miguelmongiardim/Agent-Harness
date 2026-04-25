@@ -152,9 +152,15 @@ class PolicyEngine:
 
     def _denied_globs(self, relative: str) -> str | None:
         for pattern in self.profile.deny_globs:
-            if fnmatch.fnmatch(relative, pattern):
+            if self._matches_glob(relative, pattern):
                 return pattern
         return None
+
+    def _matches_glob(self, relative: str, pattern: str) -> bool:
+        normalized = pattern.replace("\\", "/")
+        if fnmatch.fnmatch(relative, normalized):
+            return True
+        return normalized.startswith("**/") and fnmatch.fnmatch(relative, normalized[3:])
 
     def _is_within_roots(self, relative: str, roots: list[str]) -> bool:
         target = (self.project_root / relative).resolve()

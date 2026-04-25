@@ -8,7 +8,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from agent_harness.schemas import ApprovalRecord, RunEvent, RunSummary
-from agent_harness.utils import load_json, stable_id, write_json
+from agent_harness.utils import load_json, sha256_text, stable_id, write_json
 
 
 class RunStore:
@@ -19,11 +19,13 @@ class RunStore:
         self.events_path = self.run_dir / "events.jsonl"
         self.db_path = artifact_root / "state.sqlite3"
         if create:
+            if self.run_dir.exists():
+                raise FileExistsError(f"run already exists: {run_id}")
             self.run_dir.mkdir(parents=True, exist_ok=True)
             (self.run_dir / "actions").mkdir(exist_ok=True)
             (self.run_dir / "approvals").mkdir(exist_ok=True)
             (self.run_dir / "checkpoints").mkdir(exist_ok=True)
-            self._init_db()
+        self._init_db()
 
     @classmethod
     def open_existing(cls, artifact_root: Path, run_id: str) -> RunStore:
@@ -49,12 +51,28 @@ class RunStore:
         return loaded
 
     def append_event(self, event: RunEvent) -> None:
+        line = event.model_dump_json()
         with self.events_path.open("a", encoding="utf-8") as handle:
-            handle.write(event.model_dump_json() + "\n")
+            handle.write(line + "\n")
         with sqlite3.connect(self.db_path) as conn:
+            sequence = conn.execute(
+                "select coalesce(max(sequence), 0) + 1 from events where run_id = ?",
+                (event.run_id,),
+            ).fetchone()[0]
             conn.execute(
-                "insert into events(event_id, run_id, type, created_at) values (?, ?, ?, ?)",
-                (event.event_id, event.run_id, event.type, event.created_at.isoformat()),
+                """
+                insert into events(
+                    event_id, run_id, sequence, type, created_at, event_hash
+                ) values (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    event.event_id,
+                    event.run_id,
+                    sequence,
+                    event.type,
+                    event.created_at.isoformat(),
+                    sha256_text(line),
+                ),
             )
 
     def events(self) -> list[dict[str, Any]]:
@@ -66,6 +84,11 @@ class RunStore:
 
     def event_count(self) -> int:
         return len(self.events())
+
+    def event_log_hash(self) -> str:
+        if not self.events_path.exists():
+            return sha256_text("")
+        return sha256_text(self.events_path.read_text(encoding="utf-8"))
 
     def write_action(self, action_id: str, payload: dict[str, Any]) -> Path:
         return self.write_data(f"actions/{action_id}.json", payload)
@@ -98,12 +121,13 @@ class RunStore:
 
     def write_summary(self, summary: RunSummary) -> Path:
         path = self.write_model("summary.json", summary)
+        summary_path = path.relative_to(self.artifact_root).as_posix()
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
                 insert or replace into runs(
-                    run_id, task_id, status, created_at, updated_at, summary_path
-                ) values (?, ?, ?, ?, ?, ?)
+                    run_id, task_id, status, created_at, updated_at, summary_path, events_count
+                ) values (?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     summary.run_id,
@@ -111,7 +135,8 @@ class RunStore:
                     summary.status,
                     summary.started_at.isoformat(),
                     summary.ended_at.isoformat(),
-                    str(path),
+                    summary_path,
+                    summary.events_count,
                 ),
             )
         return path
@@ -127,7 +152,8 @@ class RunStore:
                     status text not null,
                     created_at text not null,
                     updated_at text not null,
-                    summary_path text not null
+                    summary_path text not null,
+                    events_count integer not null default 0
                 )
                 """
             )
@@ -136,8 +162,10 @@ class RunStore:
                 create table if not exists events(
                     event_id text primary key,
                     run_id text not null,
+                    sequence integer not null default 0,
                     type text not null,
-                    created_at text not null
+                    created_at text not null,
+                    event_hash text not null default ''
                 )
                 """
             )
@@ -152,6 +180,27 @@ class RunStore:
                 )
                 """
             )
+            self._ensure_column(conn, "runs", "events_count", "integer not null default 0")
+            self._ensure_column(conn, "events", "sequence", "integer not null default 0")
+            self._ensure_column(conn, "events", "event_hash", "text not null default ''")
+            conn.execute(
+                """
+                create unique index if not exists idx_events_run_sequence
+                on events(run_id, sequence)
+                where sequence > 0
+                """
+            )
+
+    def _ensure_column(
+        self,
+        conn: sqlite3.Connection,
+        table: str,
+        column: str,
+        definition: str,
+    ) -> None:
+        columns = {row[1] for row in conn.execute(f"pragma table_info({table})")}
+        if column not in columns:
+            conn.execute(f"alter table {table} add column {column} {definition}")
 
 
 def make_event(run_id: str, event_type: str, payload: dict[str, Any]) -> RunEvent:

@@ -163,7 +163,15 @@ class ToolExecutor:
                 continue
             for line_no, line in enumerate(lines, start=1):
                 if args.query.lower() in line.lower():
-                    results.append({"path": rel, "line": line_no, "preview": line.strip()[:200]})
+                    preview, redactions = self.policy.redact_text(line.strip())
+                    results.append(
+                        {
+                            "path": rel,
+                            "line": line_no,
+                            "preview": preview[:200],
+                            "redactions": redactions,
+                        }
+                    )
                     if len(results) >= args.max_results:
                         return self._search_observation(call, args.query, results)
         return self._search_observation(call, args.query, results)

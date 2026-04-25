@@ -180,12 +180,12 @@ hashes.
 
 ### Acceptance criteria
 
-- [ ] JSONL event count matches summary metadata.
-- [ ] SQLite run and event rows match artifact files.
-- [ ] Checkpoint hash includes task, manifest, policy, and prior-event
+- [x] JSONL event count matches summary metadata.
+- [x] SQLite run and event rows match artifact files.
+- [x] Checkpoint hash includes task, manifest, policy, and prior-event
       evidence.
-- [ ] Re-running with fixed run id is rejected or handled explicitly.
-- [ ] Summary artifacts are inspectable without executing the runtime.
+- [x] Re-running with fixed run id is rejected or handled explicitly.
+- [x] Summary artifacts are inspectable without executing the runtime.
 
 ### Out of scope
 
@@ -223,11 +223,11 @@ labels, deny globs, and redaction.
 
 ### Acceptance criteria
 
-- [ ] Path traversal is rejected.
-- [ ] Deny globs override read and write roots.
-- [ ] Task-level allowed tools cannot widen profile tools.
-- [ ] Secret-like content is redacted in model-facing artifacts.
-- [ ] Policy decisions are logged for allowed and denied cases.
+- [x] Path traversal is rejected.
+- [x] Deny globs override read and write roots.
+- [x] Task-level allowed tools cannot widen profile tools.
+- [x] Secret-like content is redacted in model-facing artifacts.
+- [x] Policy decisions are logged for allowed and denied cases.
 
 ### Out of scope
 
