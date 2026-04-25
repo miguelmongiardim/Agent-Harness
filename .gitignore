@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+.venv*/
+
+# Agent Harness live state
+.agent-harness/runs/
+.agent-harness/indexes/
+.agent-harness/*.sqlite3
+.agent-harness/*.sqlite3-*
+.agent-harness/cache/
+.agent-harness/approvals/
+.agent-harness/artifacts/
+.agent-harness/evals/
+.agent-harness/exports/
+.agent-harness/local/
+
+# Local planning artifacts
+deep-research-report.md

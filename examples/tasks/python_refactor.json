@@ -1,0 +1,12 @@
+{
+  "schema_version": "task.v1",
+  "task_id": "python-refactor-add",
+  "title": "Refactor legacy math helper",
+  "intent": "Refactor the legacy add_numbers helper to a typed add function while preserving behavior.",
+  "policy_profile": "default",
+  "target_paths": ["fixtures/python_refactor/legacy_math.py"],
+  "allowed_tools": ["read_file", "search_code", "run_tests", "patch_file", "git_status"],
+  "context_queries": ["add_numbers legacy math helper"],
+  "test_commands": [["python", "-m", "compileall", "src"]],
+  "max_steps": 8
+}

@@ -1,0 +1,23 @@
+{
+  "schema_version": "template.v1",
+  "name": "python-lib",
+  "description": "Minimal Python library scaffold with src layout, tests, and pyproject metadata.",
+  "files": [
+    {
+      "path": "pyproject.toml",
+      "content": "[build-system]\nrequires = [\"setuptools>=69\", \"wheel\"]\nbuild-backend = \"setuptools.build_meta\"\n\n[project]\nname = \"example-python-lib\"\nversion = \"0.1.0\"\nrequires-python = \">=3.11\"\ndependencies = []\n\n[tool.pytest.ini_options]\npythonpath = [\"src\"]\n"
+    },
+    {
+      "path": "src/example_python_lib/__init__.py",
+      "content": "from __future__ import annotations\n\nfrom example_python_lib.core import add\n\n__all__ = [\"add\"]\n"
+    },
+    {
+      "path": "src/example_python_lib/core.py",
+      "content": "from __future__ import annotations\n\n\ndef add(a: int, b: int) -> int:\n    return a + b\n"
+    },
+    {
+      "path": "tests/test_core.py",
+      "content": "from __future__ import annotations\n\nfrom example_python_lib import add\n\n\ndef test_add() -> None:\n    assert add(2, 3) == 5\n"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+from __future__ import annotations
+
+DEFAULT_POLICY = {
+    "schema_version": "policy.v1",
+    "name": "default",
+    "description": "Default V0 local policy ceiling for deterministic refactor runs.",
+    "allowed_tools": ["read_file", "search_code", "run_tests", "patch_file", "git_status"],
+    "read_roots": ["."],
+    "write_roots": ["."],
+    "deny_globs": [
+        ".git/**",
+        ".venv/**",
+        "**/.env",
+        "**/*.key",
+        "**/*secret*",
+        ".agent-harness/approvals/**",
+        ".agent-harness/indexes/**",
+    ],
+    "approval_required_tools": ["patch_file"],
+    "allowed_test_commands": [
+        ["python", "-m", "pytest"],
+        ["python", "-m", "pytest", "tests"],
+        ["python", "-m", "compileall", "src"],
+        ["python", "-m", "compileall", "tests"],
+    ],
+    "allow_network": False,
+    "max_context_bytes": 20000,
+    "sensitivity_rules": [
+        {"pattern": "**/.env", "classification": "secret"},
+        {"pattern": "**/*secret*", "classification": "secret"},
+        {"pattern": "**/*.key", "classification": "secret"},
+        {"pattern": ".git/**", "classification": "internal"},
+    ],
+    "redaction_patterns": ["(?i)(api[_-]?key|token|secret|password)\\s*[:=]\\s*[^\\s]+"],
+}
