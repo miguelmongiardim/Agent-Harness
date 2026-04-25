@@ -110,6 +110,9 @@ class HarnessRuntime:
         approvals: list[str] = []
 
         for call in model.initial_actions(task, manifest):
+            store.append_event(
+                make_event(run_id, "model_action", {"call": call.model_dump(mode="json")})
+            )
             observation, decision = executor.execute(
                 call, task, checkpoint_hash, run_id=run_id, dry_run=False
             )
@@ -130,6 +133,9 @@ class HarnessRuntime:
             )
 
         for call in model.next_actions(task, manifest, observations):
+            store.append_event(
+                make_event(run_id, "model_action", {"call": call.model_dump(mode="json")})
+            )
             approval = None
             if call.tool_name == "patch_file":
                 proposed_hash = executor.proposed_effect_hash(call)
@@ -275,6 +281,7 @@ def approve_action(
         make_event(run_id, "approval_decided", {"approval": updated.model_dump(mode="json")})
     )
     if decision != "approve":
+        _finalize_resumed_run(store, "failed")
         return updated
 
     task = load_model(store.run_dir / "task.json", TaskSpec)
@@ -305,4 +312,21 @@ def approve_action(
             {"observation": observation.model_dump(mode="json")},
         )
     )
+    action_record["observation"] = observation.model_dump(mode="json")
+    store.write_action(action_id, action_record)
+    _finalize_resumed_run(store, "completed" if observation.success else "failed")
     return updated
+
+
+def _finalize_resumed_run(store: RunStore, final_status: str) -> None:
+    store.append_event(make_event(store.run_id, "run_finished", {"status": final_status}))
+    previous = load_model(store.run_dir / "summary.json", RunSummary)
+    summary = previous.model_copy(
+        update={
+            "status": final_status,
+            "events_count": store.event_count(),
+            "ended_at": now_utc(),
+            "message": "run complete" if final_status == "completed" else "run failed",
+        }
+    )
+    store.write_summary(summary)

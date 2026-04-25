@@ -347,11 +347,11 @@ provider-neutral.
 
 ### Acceptance criteria
 
-- [ ] Task id alone is insufficient to drive mock-model behavior.
-- [ ] Runtime records model actions and observations as evidence.
-- [ ] Paused runs can be inspected before approval.
-- [ ] Approved runs update summary and audit evidence after resume.
-- [ ] Denied approvals leave files unchanged and remain inspectable.
+- [x] Task id alone is insufficient to drive mock-model behavior.
+- [x] Runtime records model actions and observations as evidence.
+- [x] Paused runs can be inspected before approval.
+- [x] Approved runs update summary and audit evidence after resume.
+- [x] Denied approvals leave files unchanged and remain inspectable.
 
 ### Out of scope
 
