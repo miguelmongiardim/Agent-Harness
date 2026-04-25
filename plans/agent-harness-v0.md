@@ -305,11 +305,11 @@ optional Qdrant/FastEmbed smoke validation behind the retriever boundary.
 
 ### Acceptance criteria
 
-- [ ] Ingest output is deterministic for the same inputs.
-- [ ] Context chunks include provenance and content hashes.
-- [ ] Sensitivity labels appear in manifests.
-- [ ] Redaction happens before retrieved text enters the manifest.
-- [ ] Optional retrieval dependencies are not required for normal local runs.
+- [x] Ingest output is deterministic for the same inputs.
+- [x] Context chunks include provenance and content hashes.
+- [x] Sensitivity labels appear in manifests.
+- [x] Redaction happens before retrieved text enters the manifest.
+- [x] Optional retrieval dependencies are not required for normal local runs.
 
 ### Out of scope
 

@@ -6,7 +6,13 @@ from pathlib import Path
 from typing import Protocol
 
 from agent_harness.policy import PolicyEngine
-from agent_harness.schemas import ContextChunk, ContextManifest, ContextSource, TaskSpec
+from agent_harness.schemas import (
+    ContextChunk,
+    ContextManifest,
+    ContextSource,
+    PolicyDecision,
+    TaskSpec,
+)
 from agent_harness.utils import sha256_text, stable_id
 
 
@@ -18,6 +24,12 @@ class RetrievedChunk:
     score: float
     start_line: int = 1
     end_line: int = 1
+
+
+@dataclass(frozen=True)
+class ContextBuildResult:
+    manifest: ContextManifest
+    retrieval_decisions: list[tuple[str, PolicyDecision]]
 
 
 class Retriever(Protocol):
@@ -144,9 +156,10 @@ def build_context_manifest(
     task: TaskSpec,
     policy: PolicyEngine,
     retriever: Retriever,
-) -> ContextManifest:
+) -> ContextBuildResult:
     sources: dict[str, ContextSource] = {}
     chunks: list[ContextChunk] = []
+    retrieval_decisions: list[tuple[str, PolicyDecision]] = []
     budget = policy.profile.max_context_bytes
     used = 0
 
@@ -176,6 +189,7 @@ def build_context_manifest(
 
     for retrieved in retriever.retrieve(task.context_queries, limit=5):
         decision = policy.evaluate_context_source(retrieved.path)
+        retrieval_decisions.append((retrieved.path, decision))
         if not decision.allowed:
             continue
         if used + len(retrieved.text) > budget:
@@ -208,14 +222,17 @@ def build_context_manifest(
         )
         used += len(redacted)
 
-    return ContextManifest(
-        manifest_id=stable_id(
-            "manifest", run_id, task.task_id, [chunk.chunk_id for chunk in chunks]
+    return ContextBuildResult(
+        manifest=ContextManifest(
+            manifest_id=stable_id(
+                "manifest", run_id, task.task_id, [chunk.chunk_id for chunk in chunks]
+            ),
+            run_id=run_id,
+            task_id=task.task_id,
+            sources=list(sources.values()),
+            chunks=chunks,
         ),
-        run_id=run_id,
-        task_id=task.task_id,
-        sources=list(sources.values()),
-        chunks=chunks,
+        retrieval_decisions=retrieval_decisions,
     )
 
 

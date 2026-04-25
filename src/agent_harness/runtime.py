@@ -45,7 +45,8 @@ class HarnessRuntime:
         dump_model(store.run_dir / "policy.json", profile)
 
         retriever = LexicalRetriever(self.artifact_root / "indexes" / "documents.jsonl")
-        manifest = build_context_manifest(self.project_root, run_id, task, policy, retriever)
+        context = build_context_manifest(self.project_root, run_id, task, policy, retriever)
+        manifest = context.manifest
         store.write_model("context_manifest.json", manifest)
         for source_path in task.target_paths:
             decision = policy.evaluate_context_source(source_path)
@@ -55,6 +56,18 @@ class HarnessRuntime:
                     "policy_decision",
                     {
                         "operation": "context_source",
+                        "path": source_path,
+                        "decision": decision.model_dump(mode="json"),
+                    },
+                )
+            )
+        for source_path, decision in context.retrieval_decisions:
+            store.append_event(
+                make_event(
+                    run_id,
+                    "policy_decision",
+                    {
+                        "operation": "retrieval_source",
                         "path": source_path,
                         "decision": decision.model_dump(mode="json"),
                     },
