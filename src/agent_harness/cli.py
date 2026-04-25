@@ -11,7 +11,7 @@ from agent_harness.config import load_config, load_model, write_default_config
 from agent_harness.defaults import DEFAULT_POLICY
 from agent_harness.doctor import doctor
 from agent_harness.evals import run_builtin_evals, scanner_report, write_eval_report
-from agent_harness.exporters import export_sarif
+from agent_harness.exporters import export_json, export_markdown, export_sarif
 from agent_harness.policy import PolicyEngine, load_policy
 from agent_harness.retrieval import ingest_documents
 from agent_harness.runtime import HarnessRuntime, approve_action
@@ -118,6 +118,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     export = sub.add_parser("export")
     export_sub = export.add_subparsers(required=True)
+    export_json_cmd = export_sub.add_parser("json")
+    export_json_cmd.add_argument("run_id")
+    export_json_cmd.add_argument("--output")
+    export_json_cmd.set_defaults(func=cmd_export_json)
+    export_markdown_cmd = export_sub.add_parser("markdown")
+    export_markdown_cmd.add_argument("run_id")
+    export_markdown_cmd.add_argument("--output")
+    export_markdown_cmd.set_defaults(func=cmd_export_markdown)
     sarif = export_sub.add_parser("sarif")
     sarif.add_argument("run_id")
     sarif.add_argument("--output")
@@ -251,12 +259,26 @@ def cmd_export_sarif(args: argparse.Namespace) -> int:
     root = Path.cwd()
     config = load_config(root)
     store = RunStore.open_existing(root / config.artifact_root, args.run_id)
-    output = (
-        Path(args.output)
-        if args.output
-        else root / config.artifact_root / "exports" / f"{args.run_id}.sarif"
-    )
+    output = _export_output(root, config.artifact_root, args.run_id, args.output, ".sarif")
     print(export_sarif(store, output))
+    return 0
+
+
+def cmd_export_json(args: argparse.Namespace) -> int:
+    root = Path.cwd()
+    config = load_config(root)
+    store = RunStore.open_existing(root / config.artifact_root, args.run_id)
+    output = _export_output(root, config.artifact_root, args.run_id, args.output, ".json")
+    print(export_json(store, output))
+    return 0
+
+
+def cmd_export_markdown(args: argparse.Namespace) -> int:
+    root = Path.cwd()
+    config = load_config(root)
+    store = RunStore.open_existing(root / config.artifact_root, args.run_id)
+    output = _export_output(root, config.artifact_root, args.run_id, args.output, ".md")
+    print(export_markdown(store, output))
     return 0
 
 
@@ -266,3 +288,11 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     for message in messages:
         print(message)
     return 0 if ok else 1
+
+
+def _export_output(
+    root: Path, artifact_root: str, run_id: str, output: str | None, suffix: str
+) -> Path:
+    if output:
+        return Path(output)
+    return root / artifact_root / "exports" / f"{run_id}{suffix}"

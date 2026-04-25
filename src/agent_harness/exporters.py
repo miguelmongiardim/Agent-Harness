@@ -7,6 +7,52 @@ from agent_harness.storage import RunStore
 from agent_harness.utils import write_json
 
 
+def export_json(store: RunStore, output: Path) -> Path:
+    write_json(
+        output,
+        {
+            "schema_version": "run_export.v1",
+            "run_id": store.run_id,
+            "summary": store.read_data("summary.json"),
+            "artifact_index": store.read_data("artifact-index.json"),
+            "events": store.events(),
+        },
+    )
+    return output
+
+
+def export_markdown(store: RunStore, output: Path) -> Path:
+    summary = store.read_data("summary.json")
+    artifact_index = store.read_data("artifact-index.json")
+    events = store.events()
+    lines = [
+        "# Agent Harness Run Export",
+        "",
+        f"- Run ID: {summary['run_id']}",
+        f"- Task ID: {summary['task_id']}",
+        f"- Status: {summary['status']}",
+        f"- Events: {len(events)}",
+        "",
+        "## Artifacts",
+    ]
+    for name, path in sorted(artifact_index.get("artifacts", {}).items()):
+        lines.append(f"- `{name}`: `{path}`")
+    lines.extend(["", "## Policy Decisions"])
+    for event in events:
+        if event.get("type") != "policy_decision":
+            continue
+        payload = event.get("payload", {})
+        decision = payload.get("decision", {})
+        status = "ALLOW" if decision.get("allowed") else "DENY"
+        if decision.get("approval_required"):
+            status = "WARN"
+        subject = payload.get("path") or payload.get("action_id") or "policy event"
+        lines.append(f"- {status}: `{subject}` - {decision.get('reason', 'policy decision')}")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return output
+
+
 def export_sarif(store: RunStore, output: Path) -> Path:
     results: list[dict[str, Any]] = []
     for event in store.events():

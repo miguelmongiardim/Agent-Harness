@@ -51,14 +51,25 @@ class RunStore:
         return loaded
 
     def append_event(self, event: RunEvent) -> None:
-        line = event.model_dump_json()
-        with self.events_path.open("a", encoding="utf-8") as handle:
-            handle.write(line + "\n")
         with sqlite3.connect(self.db_path) as conn:
             sequence = conn.execute(
                 "select coalesce(max(sequence), 0) + 1 from events where run_id = ?",
                 (event.run_id,),
             ).fetchone()[0]
+            stored = event.model_copy(
+                update={
+                    "event_id": stable_id(
+                        "event",
+                        event.run_id,
+                        sequence,
+                        event.type,
+                        event.payload,
+                    )
+                }
+            )
+            line = stored.model_dump_json()
+            with self.events_path.open("a", encoding="utf-8") as handle:
+                handle.write(line + "\n")
             conn.execute(
                 """
                 insert into events(
@@ -66,11 +77,11 @@ class RunStore:
                 ) values (?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    event.event_id,
-                    event.run_id,
+                    stored.event_id,
+                    stored.run_id,
                     sequence,
-                    event.type,
-                    event.created_at.isoformat(),
+                    stored.type,
+                    stored.created_at.isoformat(),
                     sha256_text(line),
                 ),
             )

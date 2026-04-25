@@ -99,7 +99,8 @@ class DeterministicMockModel:
 
     def _context_query(self, manifest: ContextManifest) -> str | None:
         for chunk in manifest.chunks:
-            for token in re.findall(r"[A-Za-z_][A-Za-z0-9_]*", chunk.text):
+            for match in re.finditer(r"[A-Za-z_][A-Za-z0-9_]*", chunk.text):
+                token = match.group(0)
                 if "_" in token:
                     return token
         return None

@@ -5,12 +5,15 @@ quality.
 
 The bundled eval suite focuses on:
 
-- schema strictness
-- policy precedence and path sandboxing
-- deterministic retrieval fallback
-- mock model integrity
-- approval-bound patch application
-- stable run artifacts under fixed seeds
+- success scenarios over the bundled Python refactor task
+- denied-context and policy-bypass adversarial checks
+- prompt-injection resistance over retrieved local docs
+- approval pause/resume lifecycle completion
+- fixed-seed replay stability for run artifacts
+
+Each `agent-harness eval` run writes a JSON and Markdown scorecard under
+`.agent-harness/evals/`. Scorecards record pass/fail status per scenario plus
+artifact links so failures can be inspected from stored run evidence.
 
 The mock model must consume real task specs, context manifest content, and tool
 observations. Tests intentionally verify that changing observations changes

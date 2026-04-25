@@ -387,11 +387,11 @@ formats and CI after they have real evidence to consume.
 
 ### Acceptance criteria
 
-- [ ] Eval scorecards include pass/fail status and artifact links.
-- [ ] Policy bypass attempts are hard failures.
-- [ ] SARIF output reflects policy decisions from run events.
-- [ ] Markdown and JSON exports match the run summary and event log.
-- [ ] CI runs unit, integration, e2e, adversarial, lint, and type checks as
+- [x] Eval scorecards include pass/fail status and artifact links.
+- [x] Policy bypass attempts are hard failures.
+- [x] SARIF output reflects policy decisions from run events.
+- [x] Markdown and JSON exports match the run summary and event log.
+- [x] CI runs unit, integration, e2e, adversarial, lint, and type checks as
       those checks become available.
 
 ### Out of scope

@@ -32,10 +32,10 @@ class PolicyEngine:
         return sha256_json(self.profile.model_dump(mode="json"))
 
     def allowed_tools_for(self, task: TaskSpec | None) -> set[str]:
-        ceiling = set(self.profile.allowed_tools)
+        ceiling: set[str] = {tool for tool in self.profile.allowed_tools}
         if task is None or task.allowed_tools is None:
             return ceiling
-        return ceiling.intersection(task.allowed_tools)
+        return ceiling.intersection({tool for tool in task.allowed_tools})
 
     def evaluate_path(self, path: str, mode: str, operation: str) -> PolicyDecision:
         try:

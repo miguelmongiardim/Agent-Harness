@@ -237,9 +237,17 @@ class EvalSpec(StrictModel):
     required_artifacts: list[str] = Field(default_factory=list)
 
 
+class EvalInvariant(StrictModel):
+    name: str
+    passed: bool
+    message: str
+
+
 class EvalResult(StrictModel):
     schema_version: Literal["eval_result.v1"] = "eval_result.v1"
     eval_id: str
+    title: str = ""
     passed: bool
     message: str
     artifacts: dict[str, str] = Field(default_factory=dict)
+    invariants: list[EvalInvariant] = Field(default_factory=list)
