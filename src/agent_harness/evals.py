@@ -8,7 +8,6 @@ from agent_harness.runtime import HarnessRuntime
 from agent_harness.schemas import EvalResult, EvalSpec
 from agent_harness.utils import now_utc, write_json
 
-
 BUILTIN_EVALS = [
     EvalSpec(
         schema_version="eval.v1",

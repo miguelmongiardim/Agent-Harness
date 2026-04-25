@@ -3,8 +3,8 @@ from __future__ import annotations
 import fnmatch
 import os
 import re
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 from agent_harness.config import load_model
 from agent_harness.schemas import PolicyDecision, PolicyProfile, TaskSpec, ToolCall
@@ -45,7 +45,9 @@ class PolicyEngine:
 
         denied = self._denied_globs(relative)
         if denied:
-            return self._decision(False, False, f"path denied by glob: {denied}", [operation, denied])
+            return self._decision(
+                False, False, f"path denied by glob: {denied}", [operation, denied]
+            )
 
         roots = self.profile.read_roots if mode == "read" else self.profile.write_roots
         if not self._is_within_roots(relative, roots):
@@ -88,7 +90,9 @@ class PolicyEngine:
         if call.tool_name == "run_tests":
             command = call.arguments.get("command")
             if not isinstance(command, list) or not all(isinstance(part, str) for part in command):
-                return self._decision(False, False, "run_tests command must be an argv array", matched)
+                return self._decision(
+                    False, False, "run_tests command must be an argv array", matched
+                )
             if command not in self.profile.allowed_test_commands:
                 return self._decision(False, False, "test command not allowed by policy", matched)
             if task is not None and task.test_commands and command not in task.test_commands:

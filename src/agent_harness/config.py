@@ -61,10 +61,7 @@ def parse_simple_yaml(text: str) -> dict[str, Any]:
 
 def load_mapping(path: Path) -> dict[str, Any]:
     text = path.read_text(encoding="utf-8")
-    if text.lstrip().startswith("{"):
-        loaded = json.loads(text)
-    else:
-        loaded = parse_simple_yaml(text)
+    loaded = json.loads(text) if text.lstrip().startswith("{") else parse_simple_yaml(text)
     if not isinstance(loaded, dict):
         raise ValueError(f"{path} must contain an object")
     return loaded

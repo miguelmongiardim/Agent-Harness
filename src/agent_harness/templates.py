@@ -11,7 +11,11 @@ from agent_harness.utils import stable_id
 
 def list_templates() -> list[str]:
     root = resources.files("agent_harness").joinpath("bundled_templates")
-    return sorted(path.name.removesuffix(".json") for path in root.iterdir() if path.name.endswith(".json"))
+    return sorted(
+        path.name.removesuffix(".json")
+        for path in root.iterdir()
+        if path.name.endswith(".json")
+    )
 
 
 def load_template(name: str) -> TemplateSpec:

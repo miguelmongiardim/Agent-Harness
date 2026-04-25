@@ -59,7 +59,9 @@ class LexicalRetriever:
                         end_line=int(record.get("end_line", 1)),
                     )
                 )
-        return sorted(scored, key=lambda chunk: (-chunk.score, chunk.path, chunk.start_line))[:limit]
+        return sorted(scored, key=lambda chunk: (-chunk.score, chunk.path, chunk.start_line))[
+            :limit
+        ]
 
 
 class QdrantFastEmbedRetriever:
@@ -93,17 +95,25 @@ def chunk_text(text: str, source_id: str, path: str, max_chars: int = 1200) -> l
         current_len += len(line) + 1
     if current:
         body = "\n".join(current)
-        chunks.append(RetrievedChunk(source_id, path, body, 1.0, start_line, start_line + len(current) - 1))
+        chunks.append(
+            RetrievedChunk(source_id, path, body, 1.0, start_line, start_line + len(current) - 1)
+        )
     return chunks
 
 
-def ingest_documents(project_root: Path, artifact_root: Path, paths: list[str], policy: PolicyEngine) -> Path:
+def ingest_documents(
+    project_root: Path, artifact_root: Path, paths: list[str], policy: PolicyEngine
+) -> Path:
     index_path = artifact_root / "indexes" / "documents.jsonl"
     index_path.parent.mkdir(parents=True, exist_ok=True)
     records: list[dict[str, object]] = []
     for raw_path in paths:
         root = (project_root / raw_path).resolve()
-        candidates = [root] if root.is_file() else sorted(path for path in root.rglob("*") if path.is_file())
+        candidates = (
+            [root]
+            if root.is_file()
+            else sorted(path for path in root.rglob("*") if path.is_file())
+        )
         for candidate in candidates:
             rel = candidate.relative_to(project_root).as_posix()
             decision = policy.evaluate_context_source(rel)
@@ -199,7 +209,9 @@ def build_context_manifest(
         used += len(redacted)
 
     return ContextManifest(
-        manifest_id=stable_id("manifest", run_id, task.task_id, [chunk.chunk_id for chunk in chunks]),
+        manifest_id=stable_id(
+            "manifest", run_id, task.task_id, [chunk.chunk_id for chunk in chunks]
+        ),
         run_id=run_id,
         task_id=task.task_id,
         sources=list(sources.values()),
@@ -209,7 +221,9 @@ def build_context_manifest(
 
 def _manifest_chunk(retrieved: RetrievedChunk, sensitivity: str) -> ContextChunk:
     return ContextChunk(
-        chunk_id=stable_id("chunk", retrieved.source_id, retrieved.start_line, sha256_text(retrieved.text)),
+        chunk_id=stable_id(
+            "chunk", retrieved.source_id, retrieved.start_line, sha256_text(retrieved.text)
+        ),
         source_id=retrieved.source_id,
         text=retrieved.text,
         content_hash=sha256_text(retrieved.text),

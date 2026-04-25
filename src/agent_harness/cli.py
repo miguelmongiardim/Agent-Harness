@@ -20,7 +20,6 @@ from agent_harness.storage import RunStore
 from agent_harness.templates import apply_template, list_templates, load_template
 from agent_harness.utils import load_json, write_json
 
-
 STARTER_DOC = """# Agent Harness Project
 
 ## Implemented Locally

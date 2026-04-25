@@ -239,7 +239,9 @@ def approve_action(
         }
     )
     store.write_approval(updated)
-    store.append_event(make_event(run_id, "approval_decided", {"approval": updated.model_dump(mode="json")}))
+    store.append_event(
+        make_event(run_id, "approval_decided", {"approval": updated.model_dump(mode="json")})
+    )
     if decision != "approve":
         return updated
 

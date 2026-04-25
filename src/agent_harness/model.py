@@ -28,7 +28,9 @@ class DeterministicMockModel:
         for path in task.target_paths:
             actions.append(_call("read_file", {"path": path}, "inspect target file"))
         for query in task.context_queries:
-            actions.append(_call("search_code", {"query": query, "include_globs": ["*.py"]}, "search code"))
+            actions.append(
+                _call("search_code", {"query": query, "include_globs": ["*.py"]}, "search code")
+            )
         return actions[: task.max_steps]
 
     def next_actions(

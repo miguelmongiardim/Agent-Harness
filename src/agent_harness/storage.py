@@ -26,7 +26,7 @@ class RunStore:
             self._init_db()
 
     @classmethod
-    def open_existing(cls, artifact_root: Path, run_id: str) -> "RunStore":
+    def open_existing(cls, artifact_root: Path, run_id: str) -> RunStore:
         run_dir = artifact_root / "runs" / run_id
         if not run_dir.exists():
             raise FileNotFoundError(f"run not found: {run_id}")
@@ -60,7 +60,9 @@ class RunStore:
     def events(self) -> list[dict[str, Any]]:
         if not self.events_path.exists():
             return []
-        return [json.loads(line) for line in self.events_path.read_text(encoding="utf-8").splitlines()]
+        return [
+            json.loads(line) for line in self.events_path.read_text(encoding="utf-8").splitlines()
+        ]
 
     def event_count(self) -> int:
         return len(self.events())

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import platform
 import shutil
-import sys
 from pathlib import Path
 
 from agent_harness.config import load_config
@@ -11,11 +11,7 @@ from agent_harness.config import load_config
 def doctor(project_root: Path) -> tuple[bool, list[str]]:
     messages: list[str] = []
     ok = True
-    if sys.version_info < (3, 11):
-        ok = False
-        messages.append("FAIL python: requires 3.11+")
-    else:
-        messages.append(f"OK python: {sys.version.split()[0]}")
+    messages.append(f"OK python: {platform.python_version()}")
 
     if importlib.util.find_spec("pydantic") is None:
         ok = False
@@ -46,5 +42,7 @@ def doctor(project_root: Path) -> tuple[bool, list[str]]:
     if importlib.util.find_spec("qdrant_client") and importlib.util.find_spec("fastembed"):
         messages.append("OK optional retrieval: qdrant-client + fastembed")
     else:
-        messages.append("WARN optional retrieval: qdrant-client/fastembed unavailable; lexical fallback active")
+        messages.append(
+            "WARN optional retrieval: qdrant-client/fastembed unavailable; lexical fallback active"
+        )
     return ok, messages

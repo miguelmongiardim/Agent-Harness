@@ -8,7 +8,13 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from agent_harness.policy import PolicyEngine
-from agent_harness.schemas import ApprovalRecord, PolicyDecision, TaskSpec, ToolCall, ToolObservation
+from agent_harness.schemas import (
+    ApprovalRecord,
+    PolicyDecision,
+    TaskSpec,
+    ToolCall,
+    ToolObservation,
+)
 from agent_harness.utils import sha256_text, truncate
 
 
@@ -143,7 +149,10 @@ class ToolExecutor:
             if not path.is_file() or any(part in ignored for part in path.parts):
                 continue
             rel = path.relative_to(self.project_root).as_posix()
-            if not any(path.match(pattern) or rel.endswith(pattern.removeprefix("*")) for pattern in args.include_globs):
+            if not any(
+                path.match(pattern) or rel.endswith(pattern.removeprefix("*"))
+                for pattern in args.include_globs
+            ):
                 continue
             path_decision = self.policy.evaluate_path(rel, "read", "search_code")
             if not path_decision.allowed:

@@ -35,7 +35,9 @@ def test_mock_model_does_not_depend_on_task_id_only() -> None:
     add_content = "def add_numbers(a, b):\n    return a + b\n"
     multiply_content = "def multiply_numbers(a, b):\n    return a * b\n"
 
-    add_actions = model.next_actions(_task("same"), _manifest("same"), [_read_observation(add_content)])
+    add_actions = model.next_actions(
+        _task("same"), _manifest("same"), [_read_observation(add_content)]
+    )
     multiply_actions = model.next_actions(
         _task("same"), _manifest("same"), [_read_observation(multiply_content)]
     )
@@ -43,5 +45,11 @@ def test_mock_model_does_not_depend_on_task_id_only() -> None:
         _task("different"), _manifest("different"), [_read_observation(add_content)]
     )
 
-    assert add_actions[0].arguments["proposed_content"] != multiply_actions[0].arguments["proposed_content"]
-    assert add_actions[0].arguments["proposed_content"] == renamed_task_actions[0].arguments["proposed_content"]
+    assert (
+        add_actions[0].arguments["proposed_content"]
+        != multiply_actions[0].arguments["proposed_content"]
+    )
+    assert (
+        add_actions[0].arguments["proposed_content"]
+        == renamed_task_actions[0].arguments["proposed_content"]
+    )
