@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from agent_harness.config import dump_model, load_config, load_model
@@ -96,7 +97,9 @@ class HarnessRuntime:
         approvals: list[str] = []
 
         for call in model.initial_actions(task, manifest):
-            observation, decision = executor.execute(call, task, checkpoint_hash, dry_run=False)
+            observation, decision = executor.execute(
+                call, task, checkpoint_hash, run_id=run_id, dry_run=False
+            )
             observations.append(observation)
             store.append_event(
                 make_event(
@@ -134,6 +137,7 @@ class HarnessRuntime:
                 call,
                 task,
                 checkpoint_hash,
+                run_id=run_id,
                 approval=approval if approval and approval.status == "approved" else None,
                 dry_run=False,
             )
@@ -265,11 +269,12 @@ def approve_action(
     policy = PolicyEngine(project_root, profile)
     executor = ToolExecutor(project_root, policy)
     action_record = store.read_action(action_id)
-    call = ToolCall.model_validate(action_record["call"])
+    call = ToolCall.model_validate_json(json.dumps(action_record["call"]))
     observation, policy_decision = executor.execute(
         call,
         task,
         updated.checkpoint_hash,
+        run_id=run_id,
         approval=updated,
         dry_run=False,
     )

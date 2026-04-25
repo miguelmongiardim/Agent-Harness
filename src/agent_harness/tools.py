@@ -52,6 +52,7 @@ class ToolExecutor:
         call: ToolCall,
         task: TaskSpec | None,
         checkpoint_hash: str,
+        run_id: str | None = None,
         approval: ApprovalRecord | None = None,
         dry_run: bool = False,
     ) -> tuple[ToolObservation, PolicyDecision]:
@@ -83,7 +84,7 @@ class ToolExecutor:
                     decision,
                 )
             if approval is not None:
-                self._validate_approval(call, approval, checkpoint_hash)
+                self._validate_approval(call, approval, checkpoint_hash, run_id)
             if dry_run:
                 return (
                     ToolObservation(
@@ -263,9 +264,14 @@ class ToolExecutor:
         )
 
     def _validate_approval(
-        self, call: ToolCall, approval: ApprovalRecord, checkpoint_hash: str
+        self,
+        call: ToolCall,
+        approval: ApprovalRecord,
+        checkpoint_hash: str,
+        run_id: str | None,
     ) -> None:
         expected = {
+            "run_id": run_id,
             "action_id": call.action_id,
             "tool_name": call.tool_name,
             "arguments_hash": call.arguments_hash(),
@@ -274,6 +280,7 @@ class ToolExecutor:
             "proposed_effect_hash": self.proposed_effect_hash(call),
         }
         actual = {
+            "run_id": approval.run_id,
             "action_id": approval.action_id,
             "tool_name": approval.tool_name,
             "arguments_hash": approval.arguments_hash,

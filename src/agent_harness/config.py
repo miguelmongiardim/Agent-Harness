@@ -7,7 +7,7 @@ from typing import Any, TypeVar
 from pydantic import BaseModel
 
 from agent_harness.schemas import HarnessConfig
-from agent_harness.utils import load_json, write_json
+from agent_harness.utils import write_json
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -94,7 +94,7 @@ def write_default_config(root: Path, force: bool = False) -> Path:
 
 
 def load_model(path: Path, model_type: type[T]) -> T:
-    return model_type.model_validate(load_json(path))
+    return model_type.model_validate_json(path.read_text(encoding="utf-8"))
 
 
 def dump_model(path: Path, model: BaseModel) -> None:

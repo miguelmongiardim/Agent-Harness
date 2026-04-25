@@ -116,8 +116,9 @@ class RunStore:
         return path
 
     def read_approval(self, action_id: str) -> ApprovalRecord:
-        data = self.read_data(f"approvals/{action_id}.json")
-        return ApprovalRecord.model_validate(data)
+        return ApprovalRecord.model_validate_json(
+            (self.run_dir / "approvals" / f"{action_id}.json").read_text(encoding="utf-8")
+        )
 
     def write_summary(self, summary: RunSummary) -> Path:
         path = self.write_model("summary.json", summary)

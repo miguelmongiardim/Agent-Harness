@@ -264,12 +264,12 @@ mutation only after the pending-approval behavior is green.
 
 ### Acceptance criteria
 
-- [ ] `patch_file` uses hash-checked full replacement.
-- [ ] Approval binding includes run id, action id, tool name, arguments hash,
+- [x] `patch_file` uses hash-checked full replacement.
+- [x] Approval binding includes run id, action id, tool name, arguments hash,
       policy profile, checkpoint hash, and proposed effect hash.
-- [ ] Stale, tampered, or mismatched approvals fail before mutation.
-- [ ] `run_tests` accepts only allow-listed argv arrays.
-- [ ] Tool observations are recorded as run evidence.
+- [x] Stale, tampered, or mismatched approvals fail before mutation.
+- [x] `run_tests` accepts only allow-listed argv arrays.
+- [x] Tool observations are recorded as run evidence.
 
 ### Out of scope
 
