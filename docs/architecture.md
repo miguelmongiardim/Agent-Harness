@@ -74,3 +74,11 @@ The LangGraph adapter is deliberately narrow. It lazy-loads the optional
 runtime, and records `runtime_adapter.json` plus a `runtime_adapter_selected`
 event. It proves the framework boundary can share policy and audit artifacts
 without making LangGraph the primary runtime.
+
+## Compatibility And Roadmap Boundaries
+
+The v1.0.0 compatibility and deprecation policy is defined in
+[the V3 PRD](prd-agent-harness-v3.md). Until later phases implement and test
+them, enterprise readiness, compliance readiness, MCP support, multi-agent
+orchestration, production Qdrant server mode, external catalogs, and hosted
+web/API platform behavior remain roadmap scope.

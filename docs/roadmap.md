@@ -12,24 +12,22 @@ boundary proof; and reproducible artifacts.
 
 ## V3 Direction
 
-V3 is planned as operational integration hardening. The scope is based on the
-remaining gaps between V2 and the original deep-research direction: real
-provider smoke evidence, executable scanner and SBOM adapters, retention and
-logging profiles, trace correlation, local Qdrant server mode, a `docs-rag`
-template, and a read-only MCP adapter boundary.
+V3 is planned as the v1.0.0 release-maturity track. The scope is stable core
+CLI behavior, public schema compatibility policy, package and clean-install
+evidence, reproducible demos, Docker demo packaging, pre-commit and CI hygiene,
+bundled template validation, and release-readiness evidence.
 
 The detailed V3 plan lives in [plans/agent-harness-v3.md](../plans/agent-harness-v3.md).
 
 ## V3 Priorities
 
-- Live provider smoke evidence beyond recorded fixtures.
-- Policy-mediated Gitleaks, Semgrep, Trivy, and CycloneDX adapter evidence.
-- Configurable audit retention and redacted/non-redacted logging modes.
-- Trace correlation and operational metrics across runs, approvals, tools,
-  retrieval, providers, exports, and benchmarks.
-- Local Qdrant server mode without remote embeddings.
-- Template catalog expansion starting with `docs-rag`.
-- Read-only MCP resources and prompts behind an explicit capability flag.
+- Document and enforce the v1.0.0 compatibility and deprecation contract.
+- Make release readiness the control surface for package, docs, demos,
+  templates, changelog, CI, and release artifacts.
+- Prove local and Docker provider-audit golden paths.
+- Validate every bundled template and allow clean empty-destination scaffolding
+  without weakening overwrite protections.
+- Add pre-commit and CI gates that keep routine changes reviewable.
 
 ## Later Possibilities
 
@@ -41,5 +39,7 @@ The detailed V3 plan lives in [plans/agent-harness-v3.md](../plans/agent-harness
 - Add pluggable DLP and redaction backends.
 - Add OpenTelemetry dashboards.
 - Add production Qdrant server mode and deployment-scale retrieval tuning.
+- Add MCP resources, prompts, or tool execution behind explicit policy
+  boundaries.
 - Add enterprise/compliance readiness work, including production identity,
   centralized secrets management, hardened sandboxing, and attestation.

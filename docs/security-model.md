@@ -37,4 +37,5 @@ The security model is built around explicit policy mediation:
 
 The current implementation intentionally excludes production identity, remote
 provider controls, centralized secrets management, hardened sandbox isolation,
-enterprise DLP, and multi-tenant guarantees. Those belong in future roadmap work.
+enterprise DLP, MCP support, multi-agent execution, compliance readiness, and
+multi-tenant guarantees. Those belong in future roadmap work.

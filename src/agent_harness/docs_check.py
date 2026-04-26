@@ -53,6 +53,26 @@ PUBLIC_SCHEMA_REFERENCES = {
     "template.v1",
     "template.v2",
 }
+V1_CONTRACT_MARKERS = (
+    "v1.0.0 maturity release",
+    "Compatibility And Deprecation Policy",
+    "Implemented vs Roadmap",
+)
+STALE_V3_SCOPE_PATTERNS = (
+    "operational integration hardening",
+    "live provider smoke evidence beyond recorded fixtures",
+    "read-only MCP resources and prompts",
+    "template catalog expansion starting with `docs-rag`",
+    "local Qdrant server mode without remote embeddings",
+)
+V1_SCOPE_DOCS = (
+    "README.md",
+    "docs/roadmap.md",
+    "docs/architecture.md",
+    "docs/security-model.md",
+    "docs/release-readiness.md",
+    "plans/agent-harness-v3.md",
+)
 
 
 def run_docs_check(project_root: Path) -> dict[str, Any]:
@@ -67,6 +87,7 @@ def run_docs_check(project_root: Path) -> dict[str, Any]:
         findings.extend(_citation_placeholder_findings(relative, lines))
         findings.extend(_schema_reference_findings(relative, lines))
         findings.extend(_markdown_hygiene_findings(relative, lines))
+    findings.extend(_agent_harness_v1_release_scope_findings(project_root))
 
     return {
         "schema_version": "docs_check.v1",
@@ -93,6 +114,71 @@ def _candidate_docs(project_root: Path) -> list[Path]:
     if docs.exists():
         candidates.extend(sorted(docs.rglob("*.md")))
     return candidates
+
+
+def _agent_harness_v1_release_scope_findings(project_root: Path) -> list[dict[str, object]]:
+    if not _is_agent_harness_repo(project_root):
+        return []
+
+    findings: list[dict[str, object]] = []
+    prd = project_root / "docs" / "prd-agent-harness-v3.md"
+    if not prd.exists():
+        findings.append(
+            _finding(
+                "missing_v1_compatibility_contract",
+                "docs/prd-agent-harness-v3.md",
+                1,
+                "V3 requires a v1.0.0 compatibility and deprecation contract",
+                "",
+            )
+        )
+    else:
+        text = prd.read_text(encoding="utf-8")
+        missing = [marker for marker in V1_CONTRACT_MARKERS if marker not in text]
+        if missing:
+            findings.append(
+                _finding(
+                    "missing_v1_compatibility_contract",
+                    "docs/prd-agent-harness-v3.md",
+                    1,
+                    "V3 PRD is missing required v1.0.0 scope markers: "
+                    + ", ".join(missing),
+                    "",
+                )
+            )
+
+    for relative in V1_SCOPE_DOCS:
+        path = project_root / relative
+        if not path.exists():
+            continue
+        lines = path.read_text(encoding="utf-8").splitlines()
+        for line_number, line in enumerate(lines, start=1):
+            lowered = line.lower()
+            for stale in STALE_V3_SCOPE_PATTERNS:
+                if stale.lower() in lowered:
+                    findings.append(
+                        _finding(
+                            "stale_v3_scope",
+                            relative,
+                            line_number,
+                            "V3 docs must describe v1.0.0 release maturity, "
+                            "not deferred platform scope",
+                            line,
+                        )
+                    )
+    return findings
+
+
+def _is_agent_harness_repo(project_root: Path) -> bool:
+    pyproject = project_root / "pyproject.toml"
+    if not pyproject.exists():
+        return False
+    return bool(
+        re.search(
+            r"(?m)^name\s*=\s*[\"']agent-harness[\"']\s*$",
+            pyproject.read_text(encoding="utf-8"),
+        )
+    )
 
 
 def _unsupported_claim_findings(

@@ -108,8 +108,10 @@ agent-harness doctor
 Agent Harness does not claim enterprise readiness, live provider execution,
 production Qdrant server operation, a web API/UI, MCP workflows, multi-agent
 orchestration, external template catalogs, deployment hardening, or compliance
-assurance. The V3 plan starts with operational integration hardening rather than
-web/UI or autonomous multi-agent scope.
+assurance. The V3 PRD and plan reset the next work toward v1.0.0 release
+maturity: stable CLI expectations, schema compatibility policy, packaging
+checks, reproducible demos, Docker demo packaging, pre-commit discipline, and
+clear Implemented vs Roadmap boundaries.
 
 ## Documentation
 

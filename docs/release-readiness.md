@@ -31,5 +31,7 @@ passing for the tag target commit.
 
 ## Roadmap
 
-Automated release publishing, deployment artifacts, and compliance attestation
-are outside the current release workflow.
+The V3/v1.0.0 plan expands release readiness toward package, clean-install,
+console script, demo, template, changelog, CI, and release-artifact evidence.
+Automated release publishing, production deployment artifacts, and compliance
+attestation are outside the current release workflow.

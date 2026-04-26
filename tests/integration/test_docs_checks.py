@@ -90,6 +90,64 @@ def test_ci_runs_docs_check() -> None:
     assert "python -m agent_harness docs check" in workflow
 
 
+def test_docs_check_rejects_stale_v3_scope_for_agent_harness_repo(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "agent-harness"\n', encoding="utf-8"
+    )
+    (tmp_path / "README.md").write_text(
+        "\n".join(
+            [
+                "# Agent Harness",
+                "",
+                "## What This Repo Proves",
+                "",
+                "Agent Harness provides controlled local workflows.",
+                "",
+                "## Roadmap / Not Enabled By Init",
+                "",
+                "The V3 plan starts with operational integration hardening.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "roadmap.md").write_text(
+        "\n".join(
+            [
+                "# Roadmap",
+                "",
+                "## Current Capabilities",
+                "",
+                "Agent Harness provides controlled local workflows.",
+                "",
+                "## V3 Direction",
+                "",
+                "V3 is planned as operational integration hardening.",
+                "",
+                "## Later Possibilities",
+                "",
+                "- Read-only MCP resources and prompts behind a capability flag.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["docs", "check"]) == 1
+    report = json.loads(capsys.readouterr().out)
+    rule_ids = {finding["rule_id"] for finding in report["findings"]}
+
+    assert "stale_v3_scope" in rule_ids
+    assert "missing_v1_compatibility_contract" in rule_ids
+
+
 def _write_eval_inputs(root: Path) -> None:
     allowed = root / "fixtures" / "allowed.py"
     allowed.parent.mkdir(parents=True)
