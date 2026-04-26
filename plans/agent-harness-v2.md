@@ -9,7 +9,7 @@ Status initialized from the V2 PRD on 2026-04-26.
 - Phase 0: completed
 - Phase 1: pending
 - Phase 2: completed
-- Phase 3: pending
+- Phase 3: completed
 - Phase 4: pending
 - Phase 5: pending
 - Phase 6: pending
@@ -18,7 +18,7 @@ Status initialized from the V2 PRD on 2026-04-26.
 - Phase 9: pending
 - Phase 10: pending
 - Next target: Phase 1 Schema Migration Report And Safe Write remains pending;
-  Phase 2 was completed out of order by request.
+  Phases 2 and 3 were completed out of order by request.
 
 ## Architectural Decisions
 
@@ -298,16 +298,27 @@ public evaluation methods.
 
 ### Acceptance criteria
 
-- [ ] `policy.v2` validates independently and is not an alias for `policy.v1`.
-- [ ] Default provider-input matrix matches the PRD exactly.
-- [ ] `public` is allowed by default.
-- [ ] `generated` is allowed only as untrusted evidence.
-- [ ] `internal` requires provider-input approval.
-- [ ] `confidential`, `restricted`, and `unknown` are denied by default.
-- [ ] `secret`, `credential`, `pii`, and `customer` are hard-denied by default.
-- [ ] Task specs and CLI flags cannot widen the matrix.
-- [ ] Looser-than-default profiles must be named, explicit, documented, and
+- [x] `policy.v2` validates independently and is not an alias for `policy.v1`.
+- [x] Default provider-input matrix matches the PRD exactly.
+- [x] `public` is allowed by default.
+- [x] `generated` is allowed only as untrusted evidence.
+- [x] `internal` requires provider-input approval.
+- [x] `confidential`, `restricted`, and `unknown` are denied by default.
+- [x] `secret`, `credential`, `pii`, and `customer` are hard-denied by default.
+- [x] Task specs and CLI flags cannot widen the matrix.
+- [x] Looser-than-default profiles must be named, explicit, documented, and
       deliberately selected.
+
+### Phase 3 implementation notes
+
+- `policy.v2` defaults now include explicit public contract sections:
+  `trust_zones`, `provider_input`, `approvals`, `scanner`,
+  `template_capabilities`, and `migration`.
+- The runtime keeps using the existing policy engine through compatibility
+  mirror fields populated from the V2 sections, so v1 flat policies remain
+  readable while default V2 is structurally distinct.
+- Looser-than-default profiles require a non-default name, documentation, and
+  deliberate-selection metadata.
 
 ### Out of scope
 

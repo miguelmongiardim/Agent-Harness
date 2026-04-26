@@ -4,6 +4,50 @@ DEFAULT_POLICY = {
     "schema_version": "policy.v2",
     "name": "default",
     "description": "Default local policy ceiling for deterministic refactor runs.",
+    "profile_kind": "default",
+    "documented": True,
+    "deliberate_selection_required": True,
+    "trust_zones": {
+        "rules": {
+            "mock": "allow",
+            "local_process": "allow",
+            "local_endpoint": "approval_required",
+            "private_network": "approval_required",
+            "hosted_provider": "approval_required",
+        }
+    },
+    "provider_input": {
+        "rules": {
+            "public": "allow",
+            "generated": "allow_untrusted",
+            "internal": "approval_required",
+            "confidential": "deny",
+            "restricted": "deny",
+            "secret": "deny",
+            "credential": "deny",
+            "pii": "deny",
+            "customer": "deny",
+            "unknown": "deny",
+        },
+        "hard_deny_sensitivities": ["secret", "credential", "pii", "customer"],
+        "redact_reclassify": {},
+    },
+    "approvals": {
+        "required_tools": ["patch_file", "git_commit"],
+    },
+    "scanner": {
+        "fail_threshold": "high",
+        "external_reports": "advisory",
+    },
+    "template_capabilities": {
+        "allowed_capabilities": [],
+        "default_action": "deny",
+    },
+    "migration": {
+        "safe_writes": True,
+        "preserve_or_tighten": True,
+        "allow_loose_rewrites": False,
+    },
     "allowed_tools": [
         "read_file",
         "search_code",
