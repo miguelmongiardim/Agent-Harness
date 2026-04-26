@@ -1,0 +1,769 @@
+# Plan: Agent Harness V2
+
+> Source PRD: [docs/prd-agent-harness-v2.md](/C:/Users/mmarque9/agent_harness/docs/prd-agent-harness-v2.md)
+
+## Delivery Status
+
+Status initialized from the V2 PRD on 2026-04-26.
+
+- Phase 0: pending
+- Phase 1: pending
+- Phase 2: pending
+- Phase 3: pending
+- Phase 4: pending
+- Phase 5: pending
+- Phase 6: pending
+- Phase 7: pending
+- Phase 8: pending
+- Phase 9: pending
+- Phase 10: pending
+- Next target: Phase 0 V2 public baseline walking skeleton
+
+## Architectural Decisions
+
+Durable decisions that apply across all phases:
+
+- **Public interface**: V2 extends the existing CLI. New public commands are
+  `migrate schemas` and either `docs check` or `doctor --docs`. Existing
+  commands keep their shape unless a V2 behavior requires additional evidence.
+- **Key models**: `HarnessConfig`, `TaskSpec`, `PolicyProfile`,
+  `TemplateSpec`, `ProviderCallAudit`, `ProviderInputManifest`,
+  `SecurityFinding`, `ContextManifest`, `BenchmarkPackRecord`, and run summary
+  evidence remain the public model families. V2 adds version-aware wrappers or
+  fields where original/effective schema evidence is required.
+- **Schema**: new public inputs default to `config.v2`, `task.v2`,
+  `policy.v2`, and `template.v2`. V1 inputs remain readable through explicit
+  compatibility loaders. Compatibility loading must never widen policy or
+  template capabilities.
+- **Storage**: run artifacts stay under `.agent-harness/runs/<run-id>` with
+  JSON artifacts, append-only events, approvals, checkpoints, and an artifact
+  index. Migration and docs-check reports write deterministic JSON and optional
+  Markdown artifacts under `.agent-harness/` when useful.
+- **Runtime boundary**: the native runtime remains primary. V2 hardens schema,
+  policy, provider, security, retrieval, template, benchmark, docs, demo, and
+  release evidence around the existing runtime.
+- **Policy boundary**: `policy.v2` is the permission ceiling for provider use,
+  provider input, trust zones, scanner thresholds, template capabilities,
+  migration behavior, retrieval inclusion, tool execution, exports, and
+  approvals.
+- **Approval model**: provider-use, provider-input, template apply, patch, and
+  `git_commit` approvals remain distinct. V2 strengthens provider-use approval
+  binding; patch and commit approval semantics must not regress.
+- **Audit model**: every public workflow added by V2 emits inspectable evidence:
+  migration reports, original/effective schema versions, docs-check reports,
+  policy decisions, provider-call hashes, redacted artifacts or summaries,
+  security findings, retrieval manifests, template compatibility decisions,
+  benchmark exports, and release evidence.
+- **Provider boundary**: provider profiles remain configured, named, and
+  policy-mediated. Provider-call artifacts do not store raw provider request or
+  response payloads by default.
+- **External service boundary**: live provider tests, Qdrant/FastEmbed, Gitleaks,
+  CycloneDX, and Python 3.13 compatibility are opt-in or advisory. Missing
+  optional tools must produce clear diagnostics and not break the default local
+  path.
+- **Docs boundary**: public docs distinguish implemented behavior from roadmap
+  scope. Docs checks are release gates outside `agent-harness eval`.
+- **TDD execution**: each phase starts with one public behavior test, then
+  repeats red-green-refactor for the remaining acceptance criteria. Do not build
+  horizontal infrastructure unless the current or next phase exercises it.
+
+---
+
+## Phase 0: V2 Public Baseline Walking Skeleton
+
+**User stories covered**
+
+- Story 1: new users start on V2 schemas.
+- Story 4: reviewers can see original and effective schema evidence.
+- Story 23: release work has evidence from the start.
+
+**Observable behaviors**
+
+- `agent-harness init` creates `config.v2` and `policy.v2`.
+- A bundled V2 task validates, runs through the existing runtime, and can be
+  inspected.
+- `inspect run` shows original and effective schema versions for config, task,
+  and policy inputs.
+- Existing v1 examples still validate through compatibility loading.
+
+**First RED test**
+
+- `tests/integration/test_v2_public_baseline.py::test_init_run_and_inspect_emit_v2_defaults_and_schema_evidence`
+  should initialize a project, run a minimal V2 task, inspect the run, and fail
+  until the run artifacts record original/effective schema versions.
+
+### GREEN implementation scope
+
+Thread the smallest V2 default path through `init`, task validation, run, run
+artifacts, and inspect output. Keep v1 compatibility narrow: a readable v1 input
+normalizes to an effective V2 contract only when policy and capabilities are not
+widened.
+
+### Refactor candidates
+
+- Extract a schema-version evidence helper once both run artifacts and
+  migration reports need the same representation.
+- Split compatibility-loader code from raw Pydantic models if validation
+  branching starts to obscure model contracts.
+
+### Acceptance criteria
+
+- [ ] `agent-harness init` emits `config.v2`.
+- [ ] `agent-harness init` emits default `policy.v2`.
+- [ ] V2 examples use `task.v2`.
+- [ ] A minimal V2 run completes or pauses exactly as policy requires.
+- [ ] `inspect run` exposes original and effective schema versions.
+- [ ] v1 config/task/policy files remain readable where V1 behavior maps safely
+      to V2.
+- [ ] Compatibility loading cannot widen provider input, trust-zone, scanner, or
+      template capability behavior.
+
+### Out of scope
+
+- Schema rewrite command
+- Docs gate implementation
+- Provider-call artifact hardening beyond schema evidence
+
+---
+
+## Phase 1: Schema Migration Report And Safe Write
+
+**User stories covered**
+
+- Story 2: existing users can keep using v1 workspaces.
+- Story 3: maintainers can review schema changes before mutation.
+- Story 4: compatibility changes are auditable.
+
+**Observable behaviors**
+
+- `agent-harness migrate schemas` reports proposed upgrades without writing.
+- `agent-harness migrate schemas --write` applies safe deterministic upgrades.
+- Reports explain unsupported upgrades and files left unchanged.
+- Migration preserves or tightens policy behavior; it never loosens it.
+
+**First RED test**
+
+- `tests/integration/test_schema_migration.py::test_migrate_schemas_reports_without_mutating_v1_workspace`
+  should create v1 config, task, policy, and template inputs, run report mode,
+  assert no files changed, and inspect JSON output for original/effective
+  versions and warnings.
+
+### GREEN implementation scope
+
+Add a migration command that discovers known Agent Harness inputs in the current
+workspace, normalizes each through compatibility rules, and emits a structured
+report. Add `--write` only after report mode is green and safe rewrites are
+defined by behavior tests.
+
+### Refactor candidates
+
+- Promote migration report records into schemas once report and `--write`
+  coverage share fields.
+- Reuse the Phase 0 schema evidence helper rather than duplicating version
+  normalization logic.
+
+### Acceptance criteria
+
+- [ ] Report mode is the default and does not mutate files.
+- [ ] Report output includes original schema version, effective schema version,
+      changed fields, unchanged fields, warnings, and unsupported upgrade
+      reasons.
+- [ ] `--write` updates only safe config, task, policy, and template schema
+      changes.
+- [ ] `--write` reports skipped files with actionable reasons.
+- [ ] Migration tests prove v1 policy defaults are not widened.
+- [ ] Migration output can be stored as an artifact under `.agent-harness/`.
+
+### Out of scope
+
+- Arbitrary user-defined schema transformations
+- Lossy rewrites
+- Looser-than-default policy generation
+
+---
+
+## Phase 2: Blocking Docs Check Command
+
+**User stories covered**
+
+- Story 21: docs maintainers can block unsupported public claims.
+- Story 23: release managers can treat docs checks as release evidence.
+
+**Observable behaviors**
+
+- `agent-harness docs check` or `agent-harness doctor --docs` scans public docs.
+- The check reports unsupported claims, missing implemented-vs-roadmap sections,
+  Markdown hygiene failures, broken internal links, citation marker placeholders,
+  and schema reference drift.
+- Docs checks are not part of `agent-harness eval`.
+
+**First RED test**
+
+- `tests/integration/test_docs_checks.py::test_docs_check_fails_on_unsupported_claim_and_is_not_eval`
+  should add a temporary doc with a guarded phrase, assert docs check fails with
+  the file path and phrase, and assert `agent-harness eval` does not run docs
+  checks.
+
+### GREEN implementation scope
+
+Implement one docs-check CLI path with structured findings and a concise human
+summary. Start with guarded claims and required sections, then add link,
+Markdown hygiene, citation marker, and schema consistency checks one behavior at
+a time.
+
+### Refactor candidates
+
+- Extract individual docs rules behind a shared `DocsFinding` record after at
+  least two rules exist.
+- Add a schema-reference collector only after guarded-phrase checks are green.
+
+### Acceptance criteria
+
+- [ ] Docs checks are available through `agent-harness docs check` or
+      `agent-harness doctor --docs`.
+- [ ] Docs checks are not exposed through `agent-harness eval`.
+- [ ] Guarded unsupported claims fail with file and line evidence.
+- [ ] Major docs are required to contain implemented-vs-roadmap sections where
+      capability claims are made.
+- [ ] Internal links are checked.
+- [ ] Citation marker placeholders are banned.
+- [ ] Schema references are checked against public schema constants.
+- [ ] Markdown hygiene failures are reported.
+- [ ] CI can run docs checks as a blocking job.
+
+### Out of scope
+
+- External link crawling
+- Natural-language proof of every claim
+- Documentation generation
+
+---
+
+## Phase 3: `policy.v2` Provider-Input Contract
+
+**User stories covered**
+
+- Story 5: `policy.v2` is a real public schema.
+- Story 6: the default provider-input matrix is explicit and strict.
+- Story 7: tasks and CLI flags cannot widen provider-input behavior.
+
+**Observable behaviors**
+
+- Default policy validates as `policy.v2`.
+- Provider-input decisions follow the V2 matrix exactly.
+- Task specs and CLI flags can deny additional sensitivities but cannot turn a
+  deny or approval requirement into allow.
+- Looser profiles must be explicit, named, documented, and deliberately
+  selected.
+
+**First RED test**
+
+- `tests/unit/test_policy_v2.py::test_policy_v2_default_provider_input_matrix_and_non_widening_overrides`
+  should validate default `policy.v2`, evaluate each sensitivity class, and fail
+  if task or CLI overrides widen any decision.
+
+### GREEN implementation scope
+
+Promote `policy.v2` from V1-era fields to a direct public schema with explicit
+provider-input, trust-zone, approval, scanner, template-capability, and
+migration-policy sections. Keep the runtime using the policy engine through its
+public evaluation methods.
+
+### Refactor candidates
+
+- Split policy parsing from policy evaluation if `PolicyProfile` becomes too
+  broad.
+- Add named policy profile metadata only after strict/default behavior is green.
+
+### Acceptance criteria
+
+- [ ] `policy.v2` validates independently and is not an alias for `policy.v1`.
+- [ ] Default provider-input matrix matches the PRD exactly.
+- [ ] `public` is allowed by default.
+- [ ] `generated` is allowed only as untrusted evidence.
+- [ ] `internal` requires provider-input approval.
+- [ ] `confidential`, `restricted`, and `unknown` are denied by default.
+- [ ] `secret`, `credential`, `pii`, and `customer` are hard-denied by default.
+- [ ] Task specs and CLI flags cannot widen the matrix.
+- [ ] Looser-than-default profiles must be named, explicit, documented, and
+      deliberately selected.
+
+### Out of scope
+
+- Provider-call prompt/response artifact changes
+- External DLP backends
+- Enterprise policy distribution
+
+---
+
+## Phase 4: Provider Approval Binding And Call Evidence
+
+**User stories covered**
+
+- Story 8: provider-use approvals cannot be reused after operation drift.
+- Story 9: provider-call artifacts are auditable without raw payloads.
+- Story 10: live provider smoke tests remain opt-in.
+- Story 22: provider audit walkthrough has the core evidence path.
+
+**Observable behaviors**
+
+- A provider-use approval binds provider profile, trust zone, model id, provider
+  input hash, policy decision id, and checkpoint hash.
+- Resume rejects provider execution when any bound field drifts.
+- Provider-call artifacts include approval ids, prompt hashes, response hashes,
+  redacted prompt/response summaries or artifacts, latency, token metrics where
+  available, and policy decision references.
+- Raw provider payloads are absent by default.
+- Live smoke tests run only with the explicit environment variable and marker.
+
+**First RED test**
+
+- `tests/adversarial/test_provider_audit_binding.py::test_provider_use_approval_denies_provider_input_hash_drift`
+  should pause for provider approval, alter provider-bound input evidence, then
+  assert resume is denied before any provider call is recorded.
+
+### GREEN implementation scope
+
+Strengthen provider approval payloads and validation before changing provider
+transport behavior. Then add redacted provider-call artifact fields and opt-in
+live smoke marker coverage.
+
+### Refactor candidates
+
+- Move provider approval binding creation/validation into a dedicated binder
+  once both provider-use and provider-input approvals share drift checks.
+- Introduce a redacted artifact writer if prompt and response evidence share
+  policy-sensitive storage behavior.
+
+### Acceptance criteria
+
+- [ ] Provider-use approval binds provider profile, trust zone, model id,
+      provider input hash, policy decision id, and checkpoint hash.
+- [ ] Approval execution rejects provider profile drift.
+- [ ] Approval execution rejects trust-zone drift.
+- [ ] Approval execution rejects model-id drift.
+- [ ] Approval execution rejects provider-input hash drift.
+- [ ] Approval execution rejects policy-decision-id drift.
+- [ ] Approval execution rejects checkpoint-hash drift.
+- [ ] Provider-call artifacts include approval ids.
+- [ ] Provider-call artifacts include prompt and response hashes.
+- [ ] Provider-call artifacts include redacted prompt/response artifacts or
+      summaries according to policy.
+- [ ] Provider-call artifacts include latency and token metrics where available.
+- [ ] Raw provider request/response payloads are not stored by default.
+- [ ] Live provider tests require
+      `AGENT_HARNESS_RUN_LIVE_PROVIDER_TESTS=1 uv run pytest -m live_provider`.
+
+### Out of scope
+
+- Mandatory live provider tests
+- Raw provider payload capture by default
+- New provider transports beyond existing V1 transports
+
+---
+
+## Phase 5: Security Gates And Advisory Reports
+
+**User stories covered**
+
+- Story 11: first-party findings block risky runs early.
+- Story 12: Gitleaks and CycloneDX evidence is advisory by default.
+- Story 23: release managers can see advisory reports.
+
+**Observable behaviors**
+
+- Critical first-party secret or security findings block before context,
+  provider, or tool execution.
+- `SecurityFinding` records include stable policy and evidence fields.
+- SARIF exports include policy and security evidence.
+- Gitleaks and CycloneDX reports are recorded when available and missing-tool
+  warnings are non-blocking by default.
+
+**First RED test**
+
+- `tests/integration/test_security_v2_gates.py::test_critical_secret_blocks_before_context_and_exports_policy_evidence`
+  should create a critical first-party finding, run a task, assert no context or
+  provider artifact exists, and assert SARIF contains the finding plus policy
+  evidence.
+
+### GREEN implementation scope
+
+Harden the existing first-party scanner and SARIF export first. Then add
+advisory external scanner/SBOM report detection and artifact upload/recording
+without changing default blocking behavior.
+
+### Refactor candidates
+
+- Extract scanner adapters after both advisory integrations share a result
+  shape.
+- Move SARIF policy evidence formatting into the exporter only after the
+  security model has stabilized.
+
+### Acceptance criteria
+
+- [ ] Critical first-party findings block before context assembly.
+- [ ] Critical first-party findings block before provider selection.
+- [ ] Critical first-party findings block before tool execution.
+- [ ] `SecurityFinding` records include severity, source, location, evidence,
+      policy action, and blocking status.
+- [ ] SARIF exports include policy and security evidence.
+- [ ] Gitleaks report availability is detected.
+- [ ] Gitleaks reports are advisory and non-blocking by default.
+- [ ] CycloneDX SBOM availability is detected.
+- [ ] CycloneDX SBOM reports are advisory and non-blocking by default.
+- [ ] Missing optional scanners produce doctor warnings, not local-run failures.
+
+### Out of scope
+
+- Making advisory scanners blocking by default
+- Enterprise DLP integrations
+- Dependency vulnerability policy beyond advisory SBOM evidence
+
+---
+
+## Phase 6: Retrieval Hardening And Local Dense Fixtures
+
+**User stories covered**
+
+- Story 13: lexical retrieval remains deterministic default.
+- Story 14: hybrid retrieval manifests are auditable.
+- Story 15: missing optional dependencies fall back cleanly.
+- Story 19: dense retrieval can appear in benchmark evidence later.
+
+**Observable behaviors**
+
+- Default retrieval remains lexical and deterministic.
+- Hybrid manifests record backend, embedding model, index id, chunk ids,
+  per-source scores, sensitivity, policy evidence, and provenance.
+- Qdrant/FastEmbed is opt-in and exercised only with deterministic local
+  fixtures.
+- Missing optional dependencies produce doctor warnings and lexical fallback.
+- No remote embeddings are used.
+
+**First RED test**
+
+- `tests/integration/test_retrieval_v2.py::test_missing_dense_dependencies_warn_and_fall_back_to_lexical_manifest`
+  should configure dense retrieval without installed extras, run a task, assert
+  doctor warns, and assert the manifest records lexical fallback without remote
+  embedding behavior.
+
+### GREEN implementation scope
+
+Start with dependency-missing fallback, then extend manifest metadata for local
+dense fixtures. Keep dense retrieval behind the existing retrieval interface so
+provider input and context policy filtering remain unchanged.
+
+### Refactor candidates
+
+- Extract a retrieval backend manifest record after lexical fallback and dense
+  fixture paths both need it.
+- Separate Qdrant fixture setup from production server configuration to keep V2
+  scope explicit.
+
+### Acceptance criteria
+
+- [ ] Lexical retrieval remains default.
+- [ ] Lexical fallback is deterministic.
+- [ ] Hybrid manifests include backend.
+- [ ] Hybrid manifests include embedding model.
+- [ ] Hybrid manifests include index id.
+- [ ] Hybrid manifests include chunk ids and per-source scores.
+- [ ] Hybrid manifests include sensitivity and policy evidence.
+- [ ] Qdrant/FastEmbed tests use deterministic local fixtures.
+- [ ] Missing optional retrieval dependencies produce doctor warnings.
+- [ ] Missing optional retrieval dependencies fall back gracefully.
+- [ ] Remote embeddings are not used.
+- [ ] Production Qdrant server mode is not exposed as V2 behavior.
+
+### Out of scope
+
+- Remote embeddings
+- Production Qdrant server mode
+- Retrieval tuning for deployment scale
+
+---
+
+## Phase 7: `template.v2` Catalog And Python Trio
+
+**User stories covered**
+
+- Story 16: template compatibility metadata is explicit.
+- Story 17: incompatible templates fail before writes.
+- Story 18: the Python trio templates cover common OSS starts.
+
+**Observable behaviors**
+
+- `template.v2` bundles validate with minimum version, required capabilities,
+  generated schema versions, provider/profile requirements, policy
+  requirements, retrieval assumptions, and eval/demo metadata.
+- `template.v1` bundles remain readable through compatibility loading.
+- Applying an incompatible template rejects before write planning.
+- Applying a compatible V2 template records template id and version in
+  workspace metadata.
+
+**First RED test**
+
+- `tests/integration/test_template_v2_catalog.py::test_incompatible_template_v2_rejects_before_write_planning`
+  should load a V2 template requiring an unsupported capability, run
+  `template apply`, and assert no pending write approval or destination files
+  are created.
+
+### GREEN implementation scope
+
+Extend template schemas and registry records just enough for capability
+validation, then migrate `python-lib` and add `cli-tool` and `fastapi-service`
+with V2 metadata. Preserve approval-bound apply from V1.
+
+### Refactor candidates
+
+- Split template compatibility decisions from registry loading if apply and
+  show both expose compatibility evidence.
+- Add reusable template schema-version generation helpers once two templates
+  need the same V2 generated schema set.
+
+### Acceptance criteria
+
+- [ ] `template.v2` validates as a public manifest.
+- [ ] `template.v2` includes minimum Agent Harness version.
+- [ ] `template.v2` includes required capabilities.
+- [ ] `template.v2` includes generated schema versions.
+- [ ] `template.v2` includes provider/profile requirements.
+- [ ] `template.v2` includes policy requirements.
+- [ ] `template.v2` includes retrieval assumptions.
+- [ ] `template.v2` includes eval or demo metadata.
+- [ ] `template.v1` bundles remain readable.
+- [ ] `python-lib` is migrated to V2 metadata.
+- [ ] `cli-tool` exists as a V2 template.
+- [ ] `fastapi-service` exists as a V2 template.
+- [ ] Incompatible templates fail before write planning.
+- [ ] Workspace metadata records template id and version after successful apply.
+
+### Out of scope
+
+- External template catalogs
+- Remote template discovery
+- Non-Python template expansion in V2
+
+---
+
+## Phase 8: Benchmark Adapter Interfaces
+
+**User stories covered**
+
+- Story 19: benchmark adapters prove real import/run/export behavior.
+- Story 20: benchmark artifacts point to real run evidence.
+- Story 14: dense retrieval evidence is exercised in at least one benchmark.
+
+**Observable behaviors**
+
+- SWE-bench-style and Terminal-Bench-style miniature sample packs import into
+  workspaces.
+- Each adapter prepares workspace files, selects policy, runs through Agent
+  Harness, maps eval results, and exports benchmark-style results.
+- At least one benchmark scenario exercises local dense retrieval fixtures.
+- Benchmark exports point to real run evidence.
+
+**First RED test**
+
+- `tests/integration/test_benchmark_v2_adapters.py::test_swebench_style_adapter_import_run_export_points_to_real_run_evidence`
+  should import a miniature sample, execute it, and assert the benchmark result
+  references an actual run export and artifacts.
+
+### GREEN implementation scope
+
+Formalize adapter interfaces around the existing local sample-pack execution.
+Add the smallest dense-retrieval benchmark case after Phase 6 exposes stable
+local fixture behavior.
+
+### Refactor candidates
+
+- Separate benchmark pack parsing from adapter execution once both
+  SWE-bench-style and terminal-task adapters share import/run/export flow.
+- Add a benchmark result evidence validator if export assertions repeat across
+  adapters.
+
+### Acceptance criteria
+
+- [ ] SWE-bench-style adapter proves task import.
+- [ ] SWE-bench-style adapter proves workspace preparation.
+- [ ] SWE-bench-style adapter proves policy selection.
+- [ ] SWE-bench-style adapter proves run execution.
+- [ ] SWE-bench-style adapter proves eval result mapping.
+- [ ] SWE-bench-style adapter proves benchmark-style export.
+- [ ] Terminal-Bench-style adapter proves the same import/run/export path.
+- [ ] At least one benchmark scenario exercises local dense retrieval.
+- [ ] Benchmark artifacts point to real run evidence.
+- [ ] Full public dataset downloads are not required.
+
+### Out of scope
+
+- Full SWE-bench execution
+- Full Terminal-Bench execution
+- Large dataset downloads
+- Benchmark comparability claims
+
+---
+
+## Phase 9: Provider Audit Demo And V2 Example Migration
+
+**User stories covered**
+
+- Story 22: `provider_audit` becomes the main README walkthrough.
+- Story 23: release evidence includes demoable behavior.
+- Stories 8 and 9: provider approvals and call artifacts are inspectable.
+
+**Observable behaviors**
+
+- `examples/provider_audit/` runs offline with deterministic mock transport,
+  non-mock trust zone, `network: false`, and required provider-use approval.
+- The demo proves pause/resume, provider-use approval linkage, provider-input
+  policy evidence, redacted provider-call artifacts, inspect output, and JSON,
+  Markdown, and SARIF exports.
+- `python_refactor` is migrated to V2 and remains a secondary demo.
+
+**First RED test**
+
+- `tests/e2e/test_provider_audit_demo.py::test_provider_audit_demo_pauses_resumes_and_exports_all_evidence`
+  should run the demo task, approve provider use, resume, inspect artifacts, and
+  export JSON, Markdown, and SARIF.
+
+### GREEN implementation scope
+
+Build `examples/provider_audit/` as a thin real walkthrough over existing CLI
+behavior, not a parallel demo harness. Migrate `python_refactor` after the V2
+schema and policy defaults are stable.
+
+### Refactor candidates
+
+- Extract shared example fixture helpers only if provider audit and
+  python_refactor migration duplicate setup substantially.
+- Move README command snippets into tested example scripts only if docs drift
+  becomes a recurring failure.
+
+### Acceptance criteria
+
+- [ ] `examples/provider_audit/` exists.
+- [ ] The demo uses deterministic mock transport.
+- [ ] The demo uses a non-mock trust zone.
+- [ ] The demo sets `network: false`.
+- [ ] The demo requires provider-use approval.
+- [ ] The demo proves offline pause/resume.
+- [ ] The demo records provider approval linkage.
+- [ ] The demo records provider-input policy evidence.
+- [ ] The demo records redacted provider-call artifacts.
+- [ ] The demo is inspectable through `inspect run`.
+- [ ] The demo exports JSON.
+- [ ] The demo exports Markdown.
+- [ ] The demo exports SARIF.
+- [ ] `python_refactor` is migrated to V2 as a secondary demo.
+
+### Out of scope
+
+- Live provider walkthroughs
+- UI walkthroughs
+- MCP or multi-agent demos
+
+---
+
+## Phase 10: Docs, CI, And v0.3.0 Release Evidence
+
+**User stories covered**
+
+- Story 21: docs stay aligned with implemented behavior.
+- Story 23: release managers can verify v0.3.0 readiness.
+
+**Observable behaviors**
+
+- README, architecture, security, retrieval, template, benchmark, migration,
+  roadmap, and changelog docs describe implemented V2 behavior and isolate
+  roadmap items.
+- Docs gates pass.
+- Local checks pass.
+- Remote blocking CI is green for Python 3.11 and 3.12.
+- Python 3.13 compatibility is allowed failure if present.
+- Advisory scanner/SBOM reports are visible.
+- `v0.3.0` is tagged only after release evidence is complete.
+
+**First RED test**
+
+- `tests/integration/test_release_evidence.py::test_release_readiness_report_requires_docs_checks_ci_advisories_and_changelog`
+  should build or inspect a release-readiness report and fail until docs gate
+  status, local checks, CI status fields, advisory report references, changelog
+  entry, and tag target evidence are represented.
+
+### GREEN implementation scope
+
+Update public docs only after their corresponding behavior is implemented.
+Add release evidence in the smallest form that can be verified locally, then
+wire CI and advisory artifacts into the release checklist.
+
+### Refactor candidates
+
+- Extract release evidence collection if docs checks, local checks, CI status,
+  and advisory artifacts need to be consumed by more than one command.
+- Keep release automation separate from runtime code unless a public command
+  requires it.
+
+### Acceptance criteria
+
+- [ ] README uses `provider_audit` as the main walkthrough.
+- [ ] README documents V2 defaults without unsupported claims.
+- [ ] Architecture docs reflect V2 boundaries.
+- [ ] Security docs reflect `policy.v2`, provider approvals, and advisory
+      scanner scope.
+- [ ] Retrieval docs reflect lexical default, local dense fixtures, fallback,
+      and Qdrant/FastEmbed limits.
+- [ ] Template docs reflect `template.v2` and Python trio templates.
+- [ ] Benchmark docs reflect adapter interfaces, miniature samples, dense
+      scenario, and no benchmark-comparability claim.
+- [ ] Migration docs explain report mode and `--write`.
+- [ ] Roadmap separates V3/future items: MCP, web API/UI, multi-agent workflows,
+      external catalogs, production Qdrant server mode, deployment tuning, and
+      enterprise/compliance readiness.
+- [ ] CHANGELOG includes `v0.3.0`.
+- [ ] Docs gates pass cleanly.
+- [ ] Local tests and checks pass.
+- [ ] Remote blocking CI passes on Python 3.11 and Python 3.12.
+- [ ] Python 3.13 job is allowed failure if present.
+- [ ] Non-blocking Gitleaks and CycloneDX advisory reports are visible when
+      available.
+- [ ] Annotated tag `v0.3.0` is pushed after evidence is complete.
+
+### Out of scope
+
+- Enterprise/compliance release claims
+- Deployment hardening
+- Web/API/UI release artifacts
+- MCP or multi-agent release artifacts
+
+## Cross-Phase Invariants
+
+- No subsystem bypasses the policy engine.
+- Public input defaults are V2 after Phase 0.
+- V1/v0.2.0 remains the compatibility baseline.
+- Compatibility loading and migration never widen policy or template
+  capabilities.
+- Task specs and CLI flags can narrow permissions but cannot widen policy
+  ceilings.
+- `secret`, `credential`, `pii`, and `customer` are hard-denied in the default
+  provider-input policy.
+- `unknown` is denied in the default provider-input policy.
+- Provider trust zone is explicit metadata and is never inferred from endpoint
+  URL or `localhost`.
+- Provider-use approvals are bound to the exact provider operation and are
+  revalidated before execution.
+- Raw provider request/response payloads are not stored by default.
+- Lexical retrieval remains the deterministic default.
+- Dense retrieval is local-only in V2.
+- Missing optional dependencies produce clear diagnostics and graceful fallback.
+- External scanner and SBOM integrations are advisory and non-blocking by
+  default.
+- Benchmark artifacts point to real run evidence.
+- Docs checks are release gates and are not part of `agent-harness eval`.
+- Public docs distinguish implemented behavior from roadmap items.
+- Every phase starts with a public behavior RED test and proceeds
+  red-green-refactor one behavior at a time.
+- Every new subsystem is exercised by a behavior in the same phase or the
+  immediately following phase.
+- No V3/future roadmap feature is implemented without a new PRD or explicit
+  scope decision.
