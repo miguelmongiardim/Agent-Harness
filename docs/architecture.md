@@ -10,8 +10,8 @@ runtime around explicit ownership boundaries.
   classification, redaction, and provider-use decisions.
 - `agent_harness.context` owns document ingestion, retrieval, context manifest
   assembly, and retrieval provenance.
-- `agent_harness.tools` owns typed tool arguments and policy-mediated tool
-  execution.
+- `agent_harness.tools` owns typed tool arguments, policy-mediated tool
+  execution, and the exact-state `git_commit` planning/execution boundary.
 - `agent_harness.model`, `agent_harness.runtimes`, `agent_harness.templates`,
   `agent_harness.storage`, `agent_harness.telemetry`, `agent_harness.evals`,
   and `agent_harness.exporters` provide the report's package-level structural
@@ -43,7 +43,8 @@ implemented.
 The CLI depends on the runtime, policy, context, tool, storage, template, eval,
 and export boundaries. Core runtime orchestration coordinates these boundaries
 but should not absorb their detailed implementation. Policy remains the common
-gate for context inclusion, provider input, template writes, and tool execution.
+gate for context inclusion, provider input, template writes, tool execution, and
+separate git commit approval.
 
 Provider transports live under `agent_harness.model.adapters` behind
 `ProviderGateway`; they call the deterministic model contract or recorded

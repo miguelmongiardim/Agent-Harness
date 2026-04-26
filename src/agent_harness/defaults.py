@@ -4,7 +4,14 @@ DEFAULT_POLICY = {
     "schema_version": "policy.v1",
     "name": "default",
     "description": "Default local policy ceiling for deterministic refactor runs.",
-    "allowed_tools": ["read_file", "search_code", "run_tests", "patch_file", "git_status"],
+    "allowed_tools": [
+        "read_file",
+        "search_code",
+        "run_tests",
+        "patch_file",
+        "git_status",
+        "git_commit",
+    ],
     "read_roots": ["."],
     "write_roots": ["."],
     "deny_globs": [
@@ -16,7 +23,7 @@ DEFAULT_POLICY = {
         ".agent-harness/approvals/**",
         ".agent-harness/indexes/**",
     ],
-    "approval_required_tools": ["patch_file"],
+    "approval_required_tools": ["patch_file", "git_commit"],
     "allowed_test_commands": [
         ["python", "-m", "pytest"],
         ["python", "-m", "pytest", "tests"],

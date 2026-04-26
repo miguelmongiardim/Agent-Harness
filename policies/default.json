@@ -7,7 +7,8 @@
     "search_code",
     "run_tests",
     "patch_file",
-    "git_status"
+    "git_status",
+    "git_commit"
   ],
   "read_roots": ["."],
   "write_roots": ["."],
@@ -20,7 +21,7 @@
     ".agent-harness/approvals/**",
     ".agent-harness/indexes/**"
   ],
-  "approval_required_tools": ["patch_file"],
+  "approval_required_tools": ["patch_file", "git_commit"],
   "allowed_test_commands": [
     ["python", "-m", "pytest"],
     ["python", "-m", "pytest", "tests"],

@@ -119,6 +119,13 @@ def build_parser() -> argparse.ArgumentParser:
     approve.add_argument("--reason")
     approve.set_defaults(func=cmd_approve)
 
+    commit = sub.add_parser("commit")
+    commit_sub = commit.add_subparsers(required=True)
+    commit_propose = commit_sub.add_parser("propose")
+    commit_propose.add_argument("run_id")
+    commit_propose.add_argument("--message", required=True)
+    commit_propose.set_defaults(func=cmd_commit_propose)
+
     inspect = sub.add_parser("inspect")
     inspect_sub = inspect.add_subparsers(required=True)
     inspect_run = inspect_sub.add_parser("run")
@@ -237,6 +244,12 @@ def cmd_approve(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_commit_propose(args: argparse.Namespace) -> int:
+    summary = HarnessRuntime(Path.cwd()).propose_git_commit(args.run_id, args.message)
+    print(summary.model_dump_json(indent=2))
+    return 0
+
+
 def cmd_inspect_run(args: argparse.Namespace) -> int:
     config = load_config(Path.cwd())
     store = RunStore.open_existing(Path.cwd() / config.artifact_root, args.run_id)
@@ -254,6 +267,8 @@ def cmd_inspect_run(args: argparse.Namespace) -> int:
         payload["provider_input"] = store.read_data("provider_input.json")
     if (store.run_dir / "template_apply.json").exists():
         payload["template_apply"] = store.read_data("template_apply.json")
+    if (store.run_dir / "git_commit.json").exists():
+        payload["git_commit"] = store.read_data("git_commit.json")
     artifacts = summary.get("artifacts")
     workspace_relative = (
         artifacts.get("workspace_metadata") if isinstance(artifacts, dict) else None

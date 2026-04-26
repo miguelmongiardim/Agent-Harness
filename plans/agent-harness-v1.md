@@ -13,7 +13,8 @@ Status synced to the repository implementation on 2026-04-26.
 - Phase 4: implemented
 - Phase 5: implemented
 - Structure reconciliation: implemented
-- Next target: Phase 6
+- Phase 6: implemented
+- Next target: Phase 7
 
 ## Architectural Decisions
 
@@ -408,6 +409,15 @@ storage, template, and export work.
 
 ## Phase 6: Separate Git Commit Approval
 
+**Implementation status**
+
+- Implemented on 2026-04-26 in the current working tree.
+- Coverage: `tests/adversarial/test_git_commit_approval.py` and commit CLI
+  coverage in `tests/integration/test_cli.py`
+- Main surfaces: `commit propose`, `git_commit.v1` plan artifacts, separate
+  `git_commit` approval records, exact-file staging, parent-HEAD drift checks,
+  final-message hash binding, and inspectable commit evidence.
+
 **User stories covered**
 
 - Story 7: commit creation is reviewed separately from patch approval.
@@ -421,6 +431,8 @@ storage, template, and export work.
 - The reviewer may edit the message before approval.
 - The final approved message is immutable for that approval record.
 - Commit is denied when approval bindings drift.
+- `git_commit` stages only the exact approved file set and does not push,
+  switch branches, rebase, or broadly stage the worktree.
 
 **First RED test**
 
@@ -436,14 +448,14 @@ before commit creation.
 
 ### Acceptance criteria
 
-- [ ] No model-generated commit message can be committed without human
+- [x] No model-generated commit message can be committed without human
       approval.
-- [ ] Approval binds `run_id`, `action_id`, `tool_name`, `parent_HEAD`, exact
+- [x] Approval binds `run_id`, `action_id`, `tool_name`, `parent_HEAD`, exact
       file set, content hashes, diff hash, final commit message hash, policy
       profile, and checkpoint hash.
-- [ ] Drift in message, HEAD, file set, hashes, diff, policy profile, or
+- [x] Drift in message, HEAD, file set, hashes, diff, policy profile, or
       checkpoint denies the commit.
-- [ ] No push, branch switch, rebase, broad staging, or unapproved file
+- [x] No push, branch switch, rebase, broad staging, or unapproved file
       inclusion is possible through `git_commit`.
 
 ### Out of scope

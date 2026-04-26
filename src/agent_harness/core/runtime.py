@@ -18,6 +18,8 @@ from agent_harness.schemas import (
     ApprovalRecord,
     Checkpoint,
     ContextManifest,
+    GitCommitPlan,
+    PolicyProfile,
     ProviderCallAudit,
     ProviderCallAuditManifest,
     ProviderInputManifest,
@@ -34,6 +36,12 @@ from agent_harness.schemas import (
 from agent_harness.storage import RunStore, make_event
 from agent_harness.templates import load_template, plan_template_apply
 from agent_harness.tools.executor import ToolExecutor
+from agent_harness.tools.git_commit import (
+    bind_committed_hash,
+    execute_git_commit,
+    plan_git_commit,
+    validate_git_commit_approval,
+)
 from agent_harness.utils import (
     hash_file,
     new_run_id,
@@ -527,6 +535,107 @@ class HarnessRuntime:
         )
         return summary
 
+    def propose_git_commit(self, run_id: str, final_message: str) -> RunSummary:
+        message = final_message.strip()
+        if not message:
+            raise ValueError("git_commit requires a non-empty final message")
+        store = RunStore.open_existing(self.artifact_root, run_id)
+        summary = load_model(store.run_dir / "summary.json", RunSummary)
+        if summary.status != "completed":
+            raise ValueError("git_commit requires a completed run")
+        if _has_pending_approvals(store):
+            raise ValueError("git_commit requires all prior approvals to be decided")
+        task = load_model(store.run_dir / "task.json", TaskSpec)
+        profile = load_model(store.run_dir / "policy.json", PolicyProfile)
+        policy = PolicyEngine(self.project_root, profile)
+        checkpoint_hash = _latest_checkpoint_hash(store)
+        policy_call = ToolCall(
+            action_id=stable_id(
+                "action",
+                run_id,
+                "git_commit_policy",
+                sha256_text(message),
+                checkpoint_hash,
+            ),
+            tool_name="git_commit",
+            arguments={"run_id": run_id, "final_message_hash": sha256_text(message)},
+            reason="request git commit approval",
+        )
+        policy_decision = policy.evaluate_tool_call(policy_call, task, checkpoint_hash)
+        store.append_event(
+            make_event(
+                run_id,
+                "policy_decision",
+                {
+                    "operation": "git_commit",
+                    "decision": policy_decision.model_dump(mode="json"),
+                },
+            )
+        )
+        if not policy_decision.allowed:
+            raise PermissionError(policy_decision.reason)
+
+        plan, approval = plan_git_commit(
+            self.project_root,
+            store,
+            task,
+            policy,
+            checkpoint_hash,
+            message,
+        )
+        plan_path = store.write_model("git_commit.json", plan)
+        store.write_action(
+            plan.action_id,
+            {
+                "kind": "git_commit",
+                "git_commit": plan.model_dump(mode="json"),
+                "checkpoint_hash": checkpoint_hash,
+                "policy_profile": policy.profile.name,
+            },
+        )
+        store.append_event(
+            make_event(
+                run_id,
+                "git_commit_planned",
+                {
+                    "action_id": plan.action_id,
+                    "parent_head": plan.parent_head,
+                    "file_set": plan.file_set,
+                    "diff_hash": plan.diff_hash,
+                    "final_message_hash": plan.final_message_hash,
+                },
+            )
+        )
+        store.write_approval(approval)
+        store.append_event(
+            make_event(
+                run_id,
+                "approval_recorded",
+                {
+                    "approval": approval.model_dump(mode="json"),
+                    "operation": "git_commit",
+                },
+            )
+        )
+        artifacts = {
+            **summary.artifacts,
+            "git_commit": self._project_relative(plan_path),
+        }
+        approvals = [*summary.approvals, approval.action_id]
+        updated = summary.model_copy(
+            update={
+                "status": "paused",
+                "approvals": approvals,
+                "artifacts": artifacts,
+                "events_count": store.event_count(),
+                "ended_at": now_utc(),
+                "message": "run paused for approval",
+            }
+        )
+        store.write_summary(updated)
+        _update_artifact_index(project_root=self.project_root, store=store, artifacts=artifacts)
+        return updated
+
     def _project_relative(self, path: Path) -> str:
         return path.relative_to(self.project_root).as_posix()
 
@@ -604,6 +713,39 @@ def approve_action(
             template_apply,
             updated.action_id,
             workspace_metadata_path=str(action_record["workspace_metadata_path"]),
+        )
+        _finalize_resumed_run(store, "completed")
+        _refresh_artifact_index(project_root, store)
+        return updated
+
+    if action_record.get("kind") == "git_commit":
+        plan = load_model(store.run_dir / "git_commit.json", GitCommitPlan)
+        action_plan = GitCommitPlan.model_validate_json(json.dumps(action_record["git_commit"]))
+        if action_plan.model_dump(mode="json") != plan.model_dump(mode="json"):
+            raise ValueError("git commit approval binding does not match repository state")
+        validate_git_commit_approval(
+            updated,
+            plan,
+            run_id=run_id,
+            policy_profile=policy.profile.name,
+        )
+        commit_hash = execute_git_commit(project_root, plan)
+        committed = bind_committed_hash(plan, commit_hash)
+        store.write_model("git_commit.json", committed)
+        action_record["git_commit"] = committed.model_dump(mode="json")
+        action_record["commit_hash"] = commit_hash
+        store.write_action(action_id, action_record)
+        store.append_event(
+            make_event(
+                run_id,
+                "git_commit_created",
+                {
+                    "action_id": action_id,
+                    "commit_hash": commit_hash,
+                    "parent_head": plan.parent_head,
+                    "file_set": plan.file_set,
+                },
+            )
         )
         _finalize_resumed_run(store, "completed")
         _refresh_artifact_index(project_root, store)
@@ -1208,6 +1350,36 @@ def _approved_provider_execution_approval_ids(store: RunStore) -> list[str]:
         }:
             action_ids.append(approval.action_id)
     return action_ids
+
+
+def _latest_checkpoint_hash(store: RunStore) -> str:
+    checkpoint_index = store.read_data("checkpoint-index.json")
+    checkpoint_id = checkpoint_index.get("latest")
+    if not isinstance(checkpoint_id, str):
+        raise ValueError("checkpoint index does not record a latest checkpoint")
+    checkpoint = load_model(store.run_dir / "checkpoints" / f"{checkpoint_id}.json", Checkpoint)
+    return checkpoint.checkpoint_hash()
+
+
+def _update_artifact_index(
+    project_root: Path,
+    store: RunStore,
+    artifacts: dict[str, str],
+) -> None:
+    existing = (
+        store.read_data("artifact-index.json")
+        if (store.run_dir / "artifact-index.json").exists()
+        else {}
+    )
+    store.write_data(
+        "artifact-index.json",
+        {
+            "run_id": store.run_id,
+            "artifacts": {**existing.get("artifacts", {}), **artifacts},
+            "artifact_hashes": existing.get("artifact_hashes", {}),
+        },
+    )
+    _refresh_artifact_index(project_root, store)
 
 
 def _refresh_artifact_index(project_root: Path, store: RunStore) -> None:

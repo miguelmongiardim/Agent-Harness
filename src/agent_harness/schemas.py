@@ -8,13 +8,21 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from agent_harness.utils import normalize_relative_path, now_utc, sha256_json
 
-ToolName = Literal["read_file", "search_code", "run_tests", "patch_file", "git_status"]
+ToolName = Literal[
+    "read_file",
+    "search_code",
+    "run_tests",
+    "patch_file",
+    "git_status",
+    "git_commit",
+]
 ApprovalSubjectName = Literal[
     "read_file",
     "search_code",
     "run_tests",
     "patch_file",
     "git_status",
+    "git_commit",
     "provider_use",
     "provider_input",
     "template_apply",
@@ -499,6 +507,35 @@ class AppliedTemplateRecord(StrictModel):
 class WorkspaceMetadata(StrictModel):
     schema_version: Literal["workspace_metadata.v1"] = "workspace_metadata.v1"
     applied_templates: list[AppliedTemplateRecord] = Field(default_factory=list)
+
+
+class GitCommitPlan(StrictModel):
+    schema_version: Literal["git_commit.v1"] = "git_commit.v1"
+    run_id: str
+    action_id: str
+    parent_head: str
+    file_set: list[str]
+    content_hashes: dict[str, str]
+    diff: str
+    diff_hash: str
+    final_message: str = Field(min_length=1)
+    final_message_hash: str
+    policy_profile: str
+    checkpoint_hash: str
+    approved_patch_action_ids: list[str]
+    commit_hash: str | None = None
+    created_at: datetime = Field(default_factory=now_utc)
+    committed_at: datetime | None = None
+
+    @field_validator("file_set")
+    @classmethod
+    def validate_file_set(cls, values: list[str]) -> list[str]:
+        normalized = [normalize_relative_path(value) for value in values]
+        if not normalized:
+            raise ValueError("git_commit requires at least one approved file")
+        if normalized != sorted(set(normalized)):
+            raise ValueError("git_commit file_set must be sorted and unique")
+        return normalized
 
 
 class EvalSpec(StrictModel):

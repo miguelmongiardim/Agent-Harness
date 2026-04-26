@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 
 from agent_harness.cli import main
@@ -100,6 +101,87 @@ def test_cli_template_list_and_show_python_lib(capsys) -> None:  # type: ignore[
     assert template["template_id"] == "python-lib"
     assert template["version"] == "1.0.0"
     assert template["files"]
+
+
+def test_cli_commit_propose_records_pending_git_commit_approval(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    target = tmp_path / "fixture.py"
+    target.write_text("def add_numbers(a, b):\n    return a + b\n", encoding="utf-8")
+    task_path = tmp_path / "task.json"
+    task_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "task.v1",
+                "task_id": "cli-git-commit",
+                "title": "Refactor",
+                "intent": "Refactor add_numbers",
+                "target_paths": ["fixture.py"],
+                "allowed_tools": ["read_file", "patch_file", "git_commit"],
+                "max_steps": 4,
+            }
+        ),
+        encoding="utf-8",
+    )
+    _git(tmp_path, "init")
+    _git(tmp_path, "config", "user.email", "agent-harness@example.test")
+    _git(tmp_path, "config", "user.name", "Agent Harness Test")
+    _git(tmp_path, "add", "agent-harness.yaml", "policies/default.json", "fixture.py", "task.json")
+    _git(tmp_path, "commit", "-m", "initial")
+
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-cli-git-commit")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-26T20:15:00Z")
+    assert main(["run", str(task_path)]) == 0
+    run_summary = json.loads(capsys.readouterr().out)
+    assert run_summary["status"] == "paused"
+
+    assert (
+        main(
+            [
+                "approve",
+                run_summary["run_id"],
+                run_summary["approvals"][0],
+                "--decision",
+                "approve",
+                "--actor",
+                "reviewer",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    assert (
+        main(
+            [
+                "commit",
+                "propose",
+                run_summary["run_id"],
+                "--message",
+                "refactor fixture addition",
+            ]
+        )
+        == 0
+    )
+    commit_summary = json.loads(capsys.readouterr().out)
+    commit_action_id = commit_summary["approvals"][-1]
+    assert commit_summary["status"] == "paused"
+
+    planned = json.loads(
+        (
+            tmp_path
+            / ".agent-harness"
+            / "runs"
+            / run_summary["run_id"]
+            / "git_commit.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert planned["action_id"] == commit_action_id
+    assert planned["file_set"] == ["fixture.py"]
 
 
 def test_cli_template_apply_respects_policy_write_roots(
@@ -228,3 +310,15 @@ def test_cli_task_validate_returns_concrete_errors(
     captured = capsys.readouterr()
     assert "title" in captured.err
     assert "Field required" in captured.err
+
+
+def _git(root: Path, *args: str) -> str:
+    completed = subprocess.run(
+        ["git", *args],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=True,
+    )
+    return completed.stdout.strip()

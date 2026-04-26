@@ -13,6 +13,10 @@ The security model is built around explicit policy mediation:
 - Write operations require approval records that bind the run id, action id,
   tool name, arguments hash, policy profile, checkpoint hash, and proposed
   effect hash.
+- `git_commit` is a separate high-risk approval from patch application. Commit
+  approval binds the parent HEAD, exact file set, file content hashes, diff
+  hash, final message hash, policy profile, and checkpoint hash, then stages
+  only the approved files immediately before `git commit`.
 - Policy is re-checked immediately before an approved action executes.
 
 The current implementation intentionally excludes production identity, remote
