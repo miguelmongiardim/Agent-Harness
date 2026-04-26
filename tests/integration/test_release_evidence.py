@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 from agent_harness import release
 from agent_harness.cli import main
@@ -120,6 +121,75 @@ def test_release_readiness_reports_ready_when_required_evidence_is_present(
     assert report["package"]["console_script"]["status"] == "passed"
     assert report["demos"]["provider-audit"]["status"] == "passed"
     assert report["templates"]["validation"]["status"] == "passed"
+
+
+def test_release_package_check_builds_installs_and_records_evidence(
+    tmp_path: Path,
+    monkeypatch,  # type: ignore[no-untyped-def]
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    _write_release_ready_project(tmp_path, "9.9.9")
+    commands: list[list[str]] = []
+
+    def fake_run_command(
+        command: list[str],
+        *,
+        cwd: Path,
+        timeout_seconds: int,
+    ) -> dict[str, Any]:
+        del timeout_seconds
+        commands.append(command)
+        if command[1:3] == ["-m", "build"]:
+            dist = cwd / "dist"
+            dist.mkdir(exist_ok=True)
+            (dist / "agent_harness-9.9.9-py3-none-any.whl").write_text(
+                "wheel", encoding="utf-8"
+            )
+            (dist / "agent_harness-9.9.9.tar.gz").write_text("sdist", encoding="utf-8")
+        return {
+            "command": " ".join(command),
+            "returncode": 0,
+            "stdout": "ok",
+            "stderr": "",
+            "status": "passed",
+        }
+
+    monkeypatch.setattr(release, "_run_command", fake_run_command, raising=False)
+
+    assert main(["release", "package-check"]) == 0
+    package_report = json.loads(capsys.readouterr().out)
+
+    assert package_report["schema_version"] == "release_package_check.v1"
+    assert package_report["status"] == "passed"
+    assert package_report["version"] == "9.9.9"
+    assert package_report["artifacts"]["wheel"]["sha256"]
+    assert package_report["artifacts"]["sdist"]["sha256"]
+    assert any(command[1:5] == ["-m", "build", "--outdir", "dist"] for command in commands)
+    assert any(command[1:3] == ["-m", "venv"] for command in commands)
+    assert any(command[1:4] == ["-m", "pip", "install"] for command in commands)
+    assert any(command[-1] == "doctor" and "agent-harness" in command[-2] for command in commands)
+
+    evidence_dir = tmp_path / ".agent-harness" / "release" / "evidence"
+    assert json.loads((evidence_dir / "package-build.json").read_text())["status"] == "passed"
+    assert json.loads((evidence_dir / "clean-install.json").read_text())["status"] == "passed"
+    assert json.loads((evidence_dir / "console-script.json").read_text())["status"] == "passed"
+
+    assert main(["release", "readiness"]) == 0
+    readiness = json.loads(capsys.readouterr().out)
+    assert readiness["package"]["build"]["status"] == "passed"
+    assert readiness["package"]["clean_install"]["status"] == "passed"
+    assert readiness["package"]["console_script"]["status"] == "passed"
+
+
+def test_packaging_docs_cover_uv_sync_and_package_install_paths() -> None:
+    readme = Path("README.md").read_text(encoding="utf-8")
+    release_docs = Path("docs/release-readiness.md").read_text(encoding="utf-8")
+    combined = f"{readme}\n{release_docs}"
+
+    assert "uv sync --extra dev" in combined
+    assert "python -m pip install ." in combined
+    assert "agent-harness release package-check" in combined
 
 
 def _write_release_ready_project(root: Path, version: str) -> None:

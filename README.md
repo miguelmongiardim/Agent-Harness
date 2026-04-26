@@ -47,6 +47,14 @@ uv run agent-harness doctor
 uv run pytest
 ```
 
+For package-install verification:
+
+```powershell
+python -m pip install .
+agent-harness doctor
+agent-harness release package-check
+```
+
 The secondary V2 example remains the deterministic Python refactor task:
 
 ```powershell
@@ -80,6 +88,7 @@ agent-harness inspect run <run-id>
 agent-harness inspect context <run-id>
 agent-harness inspect policy default
 agent-harness eval
+agent-harness release package-check
 agent-harness release readiness
 agent-harness export json <run-id>
 agent-harness export markdown <run-id>

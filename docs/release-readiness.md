@@ -15,6 +15,26 @@ agent-harness release readiness --version 0.3.0 --ci-run-id 24962697751
 When GitHub CLI is authenticated, the command attempts to discover the latest
 `CI` workflow run for the release target commit.
 
+Package and clean-install evidence is generated with:
+
+```powershell
+agent-harness release package-check
+```
+
+The local development install path remains:
+
+```powershell
+uv sync --extra dev
+uv run agent-harness doctor
+```
+
+The package install path is:
+
+```powershell
+python -m pip install .
+agent-harness doctor
+```
+
 The report represents:
 
 - package build evidence

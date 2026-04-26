@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 - Started V3 Phase 1 by expanding release readiness with default version
   inference, required evidence gates, and actionable missing-evidence
   diagnostics.
+- Added V3 Phase 2 package-check evidence for wheel/sdist build, clean wheel
+  install, installed console-script doctor, and artifact hashes.
 
 ## [0.3.0] - 2026-04-26
 

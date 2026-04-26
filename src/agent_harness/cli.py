@@ -22,7 +22,10 @@ from agent_harness.evals import run_builtin_evals, write_eval_report
 from agent_harness.exporters import export_json, export_markdown, export_sarif
 from agent_harness.migration import migrate_schemas
 from agent_harness.policy import PolicyEngine, load_policy
-from agent_harness.release import build_release_readiness_report
+from agent_harness.release import (
+    build_release_package_check_report,
+    build_release_readiness_report,
+)
 from agent_harness.schemas import TaskSpec
 from agent_harness.storage import RunStore
 from agent_harness.templates import list_templates, load_template
@@ -192,6 +195,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     release = sub.add_parser("release")
     release_sub = release.add_subparsers(required=True)
+    release_package_check = release_sub.add_parser("package-check")
+    release_package_check.add_argument("--version")
+    release_package_check.add_argument("--output")
+    release_package_check.set_defaults(func=cmd_release_package_check)
     release_readiness = release_sub.add_parser("readiness")
     release_readiness.add_argument("--version")
     release_readiness.add_argument("--output")
@@ -435,6 +442,17 @@ def cmd_release_readiness(args: argparse.Namespace) -> int:
     )
     print(json.dumps(report, indent=2))
     return 0
+
+
+def cmd_release_package_check(args: argparse.Namespace) -> int:
+    output = Path(args.output) if args.output else None
+    report = build_release_package_check_report(
+        Path.cwd(),
+        args.version,
+        output=output,
+    )
+    print(json.dumps(report, indent=2))
+    return 0 if report.get("status") == "passed" else 1
 
 
 def cmd_doctor(args: argparse.Namespace) -> int:

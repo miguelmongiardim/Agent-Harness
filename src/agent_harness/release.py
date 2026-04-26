@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
+import sys
+import tempfile
 import tomllib
 from pathlib import Path
 from typing import Any
 
 from agent_harness.docs_check import run_docs_check
-from agent_harness.utils import now_utc, write_json
+from agent_harness.utils import hash_file, now_utc, write_json
 
 LOCAL_RELEASE_CHECKS = {
     "pytest": "python -m pytest -q",
@@ -18,6 +21,8 @@ LOCAL_RELEASE_CHECKS = {
     "diff_check": "git diff --check",
     "eval": "agent-harness eval",
 }
+
+RELEASE_EVIDENCE_DIR = Path(".agent-harness") / "release" / "evidence"
 
 
 def build_release_readiness_report(
@@ -106,6 +111,120 @@ def build_release_readiness_report(
             "cyclonedx": _advisory_report(advisory_root, "cyclonedx.json"),
         },
         "diagnostics": diagnostics,
+        "report_path": str(report_path.resolve()),
+    }
+    write_json(report_path, report)
+    return report
+
+
+def build_release_package_check_report(
+    project_root: Path,
+    version: str | None = None,
+    output: Path | None = None,
+) -> dict[str, Any]:
+    normalized_version = (version or _project_version(project_root)).removeprefix("v")
+    release_root = project_root / ".agent-harness" / "release"
+    release_root.mkdir(parents=True, exist_ok=True)
+
+    build = _run_command(
+        [sys.executable, "-m", "build", "--outdir", "dist"],
+        cwd=project_root,
+        timeout_seconds=300,
+    )
+    wheel_paths = [project_root / path for path in _matching_files(
+        project_root, f"dist/agent_harness-{normalized_version}-*.whl"
+    )]
+    sdist_paths = [project_root / path for path in _matching_files(
+        project_root, f"dist/agent_harness-{normalized_version}.tar.gz"
+    )]
+    wheel = wheel_paths[0] if wheel_paths else None
+    sdist = sdist_paths[0] if sdist_paths else None
+    build_status = (
+        "passed"
+        if build["status"] == "passed" and wheel is not None and sdist is not None
+        else "failed"
+    )
+    build_evidence = {
+        **build,
+        "status": build_status,
+        "artifacts": {
+            "wheel": _artifact_record(project_root, wheel),
+            "sdist": _artifact_record(project_root, sdist),
+        },
+    }
+    _write_release_evidence(project_root, "package-build", build_evidence)
+
+    install = _skipped_result("clean install skipped because package build failed")
+    console = _skipped_result("console script skipped because clean install failed")
+    if build_status == "passed" and wheel is not None:
+        with tempfile.TemporaryDirectory(
+            prefix="package-check-",
+            dir=release_root,
+        ) as temp_dir:
+            venv_path = Path(temp_dir) / "venv"
+            create_venv = _run_command(
+                [sys.executable, "-m", "venv", str(venv_path)],
+                cwd=project_root,
+                timeout_seconds=120,
+            )
+            if create_venv["status"] == "passed":
+                install = _run_command(
+                    [
+                        str(_venv_python(venv_path)),
+                        "-m",
+                        "pip",
+                        "install",
+                        str(wheel),
+                    ],
+                    cwd=project_root,
+                    timeout_seconds=300,
+                )
+                install = {
+                    **install,
+                    "venv": str(venv_path),
+                    "wheel": _project_relative(project_root, wheel),
+                }
+                if install["status"] == "passed":
+                    console = _run_command(
+                        [str(_console_script(venv_path)), "doctor"],
+                        cwd=project_root,
+                        timeout_seconds=120,
+                    )
+                    console = {
+                        **console,
+                        "venv": str(venv_path),
+                    }
+            else:
+                install = create_venv
+
+    _write_release_evidence(project_root, "clean-install", install)
+    _write_release_evidence(project_root, "console-script", console)
+
+    status = (
+        "passed"
+        if build_status == "passed"
+        and install["status"] == "passed"
+        and console["status"] == "passed"
+        else "failed"
+    )
+    report_path = output or release_root / "package-check.json"
+    report = {
+        "schema_version": "release_package_check.v1",
+        "version": normalized_version,
+        "generated_at": now_utc().isoformat(),
+        "status": status,
+        "build": build_evidence,
+        "clean_install": install,
+        "console_script": console,
+        "artifacts": {
+            "wheel": _artifact_record(project_root, wheel),
+            "sdist": _artifact_record(project_root, sdist),
+        },
+        "evidence": {
+            "package_build": (RELEASE_EVIDENCE_DIR / "package-build.json").as_posix(),
+            "clean_install": (RELEASE_EVIDENCE_DIR / "clean-install.json").as_posix(),
+            "console_script": (RELEASE_EVIDENCE_DIR / "console-script.json").as_posix(),
+        },
         "report_path": str(report_path.resolve()),
     }
     write_json(report_path, report)
@@ -248,8 +367,101 @@ def _matching_files(project_root: Path, pattern: str) -> list[str]:
     return sorted(path.as_posix() for path in project_root.glob(pattern) if path.is_file())
 
 
+def _run_command(
+    command: list[str],
+    *,
+    cwd: Path,
+    timeout_seconds: int,
+) -> dict[str, Any]:
+    try:
+        result = subprocess.run(
+            command,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=timeout_seconds,
+        )
+    except FileNotFoundError as exc:
+        return {
+            "command": " ".join(command),
+            "returncode": 127,
+            "stdout": "",
+            "stderr": str(exc),
+            "status": "failed",
+        }
+    except subprocess.TimeoutExpired as exc:
+        return {
+            "command": " ".join(command),
+            "returncode": -1,
+            "stdout": exc.stdout or "",
+            "stderr": exc.stderr or "command timed out",
+            "status": "failed",
+        }
+    return {
+        "command": " ".join(command),
+        "returncode": result.returncode,
+        "stdout": result.stdout,
+        "stderr": result.stderr,
+        "status": "passed" if result.returncode == 0 else "failed",
+    }
+
+
+def _skipped_result(reason: str) -> dict[str, Any]:
+    return {
+        "command": "",
+        "returncode": None,
+        "stdout": "",
+        "stderr": reason,
+        "status": "failed",
+    }
+
+
+def _write_release_evidence(
+    project_root: Path,
+    name: str,
+    payload: dict[str, Any],
+) -> None:
+    write_json(project_root / RELEASE_EVIDENCE_DIR / f"{name}.json", payload)
+
+
+def _venv_python(venv_path: Path) -> Path:
+    if _is_windows():
+        return venv_path / "Scripts" / "python.exe"
+    return venv_path / "bin" / "python"
+
+
+def _console_script(venv_path: Path) -> Path:
+    if _is_windows():
+        return venv_path / "Scripts" / "agent-harness.exe"
+    return venv_path / "bin" / "agent-harness"
+
+
+def _is_windows() -> bool:
+    return os.name == "nt"
+
+
+def _artifact_record(project_root: Path, path: Path | None) -> dict[str, str | None]:
+    if path is None or not path.exists():
+        return {
+            "path": None,
+            "sha256": None,
+        }
+    return {
+        "path": _project_relative(project_root, path),
+        "sha256": hash_file(path),
+    }
+
+
+def _project_relative(project_root: Path, path: Path) -> str:
+    try:
+        return path.resolve().relative_to(project_root.resolve()).as_posix()
+    except ValueError:
+        return str(path.resolve())
+
+
 def _release_evidence(project_root: Path, name: str) -> dict[str, str]:
-    relative = Path(".agent-harness") / "release" / "evidence" / f"{name}.json"
+    relative = RELEASE_EVIDENCE_DIR / f"{name}.json"
     path = project_root / relative
     if not path.exists():
         return {"status": "missing_evidence", "path": relative.as_posix()}
