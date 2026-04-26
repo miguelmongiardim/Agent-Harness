@@ -6,7 +6,7 @@ Agent Harness V0 proves a local, policy-gated software-engineering workflow
 with deterministic mock execution, inspectable artifacts, approval-bound patch
 flow, provenance-aware retrieval, evals, and exports. That is enough to prove
 the core runtime shape, but it is not yet enough to support the main product
-goal described in [deep-research-report.md](/C:/Users/mmarque9/agent_harness/deep-research-report.md):
+goal summarized in [research-foundations.md](research-foundations.md):
 controlled real-provider execution for software-engineering workflows without
 giving up approval gates, trust boundaries, data controls, auditability, or
 reproducibility.
@@ -22,7 +22,7 @@ That gap matters for three groups:
 
 Without V1, Agent Harness remains a credible V0 proof but not yet a credible
 runtime for controlled provider-backed engineering workflows. The short
-[docs/roadmap.md](/C:/Users/mmarque9/agent_harness/docs/roadmap.md) also
+[docs/roadmap.md](roadmap.md) also
 compresses V1 too aggressively, so V1 needs a stronger product boundary than a
 few roadmap bullets.
 
@@ -195,9 +195,9 @@ V1 deliberately avoids:
 - **Core system boundary**: V1 remains CLI-first and local-first. It extends
   the current runtime rather than replacing it with a different execution
   framework.
-- **Source of truth**: [deep-research-report.md](/C:/Users/mmarque9/agent_harness/deep-research-report.md)
-  is the conceptual anchor for V1. The short roadmap should be updated to match
-  this PRD after acceptance.
+- **Source of truth**: [research-foundations.md](research-foundations.md) is
+  the public conceptual anchor for V1. The short roadmap should be updated to
+  match this PRD after acceptance.
 - **Schema strategy**: materially changed public models move to `v2` while
   loaders remain backward-compatible with V0/V1 files where practical.
 - **Provider profile boundary**: provider selection lives in project config as
