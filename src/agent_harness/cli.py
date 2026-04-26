@@ -195,6 +195,7 @@ def build_parser() -> argparse.ArgumentParser:
     release_readiness = release_sub.add_parser("readiness")
     release_readiness.add_argument("--version", required=True)
     release_readiness.add_argument("--output")
+    release_readiness.add_argument("--ci-run-id")
     release_readiness.set_defaults(func=cmd_release_readiness)
 
     doctor_cmd = sub.add_parser("doctor")
@@ -426,7 +427,12 @@ def cmd_export_markdown(args: argparse.Namespace) -> int:
 
 def cmd_release_readiness(args: argparse.Namespace) -> int:
     output = Path(args.output) if args.output else None
-    report = build_release_readiness_report(Path.cwd(), args.version, output=output)
+    report = build_release_readiness_report(
+        Path.cwd(),
+        args.version,
+        output=output,
+        ci_run_id=args.ci_run_id,
+    )
     print(json.dumps(report, indent=2))
     return 0
 

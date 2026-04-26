@@ -1,6 +1,6 @@
 # Plan: Agent Harness V2
 
-> Source PRD: [docs/prd-agent-harness-v2.md](/C:/Users/mmarque9/agent_harness/docs/prd-agent-harness-v2.md)
+> Source PRD: [docs/prd-agent-harness-v2.md](../docs/prd-agent-harness-v2.md)
 
 ## Delivery Status
 
@@ -17,7 +17,8 @@ Status initialized from the V2 PRD on 2026-04-26.
 - Phase 8: completed
 - Phase 9: completed
 - Phase 10: completed
-- Next target: v0.3.0 remote CI verification and tag push.
+- V2 status: closed at `v0.3.0`.
+- Next target: start V3 from [plans/agent-harness-v3.md](agent-harness-v3.md).
 
 ## Architectural Decisions
 
@@ -848,11 +849,11 @@ wire CI and advisory artifacts into the release checklist.
 - [x] CHANGELOG includes `v0.3.0`.
 - [x] Docs gates pass cleanly.
 - [x] Local tests and checks pass.
-- [ ] Remote blocking CI passes on Python 3.11 and Python 3.12.
+- [x] Remote blocking CI passes on Python 3.11 and Python 3.12.
 - [x] Python 3.13 job is allowed failure if present.
 - [x] Non-blocking Gitleaks and CycloneDX advisory reports are visible when
       available.
-- [ ] Annotated tag `v0.3.0` is pushed after evidence is complete.
+- [x] Annotated tag `v0.3.0` is pushed after evidence is complete.
 
 ### Phase 10 implementation notes
 
@@ -861,13 +862,16 @@ wire CI and advisory artifacts into the release checklist.
 - Architecture, security, retrieval, template, benchmark/evaluation, migration,
   release-readiness, and roadmap docs now describe implemented V2 behavior and
   isolate future work.
-- `agent-harness release readiness --version 0.3.0` writes a
-  `release_readiness.v1` report with docs gate status, local check commands, CI
-  evidence fields, advisory report references, changelog presence, and tag
-  target evidence.
+- `agent-harness release readiness --version 0.3.0 --ci-run-id <run-id>` writes
+  a `release_readiness.v1` report with docs gate status, local check commands,
+  target-commit CI evidence, advisory report references, changelog presence,
+  and tag target evidence.
 - `CHANGELOG.md` includes the `0.3.0` V2 completion release entry.
-- Remote CI and the annotated tag remain post-push release actions for the
-  final Phase 10 commit.
+- Remote CI run `24962697751` passed for
+  `f6fef27c4af6f4dc424ff8b5a96fdd8ceda9a118`, including Python 3.11 and 3.12
+  compatibility jobs.
+- Annotated tag `v0.3.0` was pushed and dereferences to
+  `f6fef27c4af6f4dc424ff8b5a96fdd8ceda9a118`.
 
 ### Out of scope
 

@@ -1,6 +1,6 @@
 # Plan: Agent Harness V1
 
-> Source PRD: [docs/prd-agent-harness-v1.md](/C:/Users/mmarque9/agent_harness/docs/prd-agent-harness-v1.md)
+> Source PRD: [docs/prd-agent-harness-v1.md](../docs/prd-agent-harness-v1.md)
 
 ## Delivery Status
 

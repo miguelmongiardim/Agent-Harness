@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+- Tightened release readiness reporting so GitHub Actions CI evidence can be
+  bound to the target commit through `--ci-run-id` or discovered with the
+  GitHub CLI.
+- Closed V2 planning cleanup and added the V3 planning direction from the
+  deep-research gap comparison.
+
 ## [0.3.0] - 2026-04-26
 
 V2 completion release.

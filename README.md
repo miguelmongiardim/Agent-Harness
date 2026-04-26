@@ -80,7 +80,7 @@ agent-harness inspect run <run-id>
 agent-harness inspect context <run-id>
 agent-harness inspect policy default
 agent-harness eval
-agent-harness release readiness --version 0.3.0
+agent-harness release readiness --version 0.3.0 --ci-run-id <github-actions-run-id>
 agent-harness export json <run-id>
 agent-harness export markdown <run-id>
 agent-harness export sarif <run-id>
@@ -108,7 +108,8 @@ agent-harness doctor
 Agent Harness does not claim enterprise readiness, live provider execution,
 production Qdrant server operation, a web API/UI, MCP workflows, multi-agent
 orchestration, external template catalogs, deployment hardening, or compliance
-assurance. These remain future roadmap topics unless promoted by a later PRD.
+assurance. The V3 plan starts with operational integration hardening rather than
+web/UI or autonomous multi-agent scope.
 
 ## Documentation
 
