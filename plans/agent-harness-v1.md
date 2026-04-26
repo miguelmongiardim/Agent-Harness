@@ -8,7 +8,11 @@ Status synced to the repository implementation on 2026-04-26.
 
 - Phase 0: implemented
 - Phase 1: implemented
-- Next target: Phase 2
+- Phase 2: implemented
+- Phase 3: implemented
+- Phase 4: implemented
+- Phase 5: implemented
+- Next target: Phase 6
 
 ## Architectural Decisions
 
@@ -146,6 +150,15 @@ the provider gateway, while keeping the transport interface small.
 
 ## Phase 2: Provider-Input Sensitivity Gate
 
+**Implementation status**
+
+- Implemented on 2026-04-26 in the current working tree.
+- Coverage: `tests/test_v1_phase2_provider_input.py`
+- Main surfaces: richer V1 sensitivity classes, default provider-input policy
+  matrix, `provider_input.json` artifacts, separate `provider_input`
+  approvals, deny-only narrowing via task specs and CLI flags, and inspectable
+  provider-input policy evidence.
+
 **User stories covered**
 
 - Story 2: provider use respects explicit trust and data boundaries.
@@ -175,12 +188,12 @@ evidence.
 
 ### Acceptance criteria
 
-- [ ] Unlabeled repo files default to `internal`, `generated` remains untrusted
+- [x] Unlabeled repo files default to `internal`, `generated` remains untrusted
       evidence, and `unknown` defaults to denied.
-- [ ] The default provider-input matrix matches the accepted V1 policy.
-- [ ] Hard-denied classes cannot be overridden by normal run approval.
-- [ ] CLI flags and task specs can narrow permissions but cannot widen them.
-- [ ] Provider-bound context records store class, decision, redaction status,
+- [x] The default provider-input matrix matches the accepted V1 policy.
+- [x] Hard-denied classes cannot be overridden by normal run approval.
+- [x] CLI flags and task specs can narrow permissions but cannot widen them.
+- [x] Provider-bound context records store class, decision, redaction status,
       trust zone, and approval id where applicable.
 
 ### Out of scope
@@ -191,6 +204,15 @@ evidence.
 ---
 
 ## Phase 3: Recorded Provider Gateway
+
+**Implementation status**
+
+- Implemented on 2026-04-26 in the current working tree.
+- Coverage: `tests/test_v1_phase3_provider_gateway.py`
+- Main surfaces: shared `ProviderGateway`, recorded `provider_calls.json`
+  artifacts and `provider_call_recorded` events, recorded-fixture
+  `openai_compatible` and `anthropic` transports, env-var resolution for
+  provider execution, and `inspect run` provider-call evidence.
 
 **User stories covered**
 
@@ -220,12 +242,12 @@ contract coverage, and opt-in live smoke hooks behind the shared gateway.
 
 ### Acceptance criteria
 
-- [ ] `mock`, `openai_compatible`, and `anthropic` pass contract tests through
+- [x] `mock`, `openai_compatible`, and `anthropic` pass contract tests through
       the shared gateway.
-- [ ] Missing required env vars fail with clear diagnostics that name only the
+- [x] Missing required env vars fail with clear diagnostics that name only the
       env-var key.
-- [ ] Secret values never enter artifacts or logs.
-- [ ] Normal CI remains credential-free and offline.
+- [x] Secret values never enter artifacts or logs.
+- [x] Normal CI remains credential-free and offline.
 
 ### Out of scope
 
@@ -235,6 +257,15 @@ contract coverage, and opt-in live smoke hooks behind the shared gateway.
 ---
 
 ## Phase 4: Hybrid Retrieval Provenance
+
+**Implementation status**
+
+- Implemented on 2026-04-26 in the current working tree.
+- Coverage: `tests/test_v1_phase4_hybrid_retrieval.py` and updated retrieval
+  regression coverage in `tests/test_phase5_context_retrieval.py`
+- Main surfaces: hybrid lexical+dense retrieval coordination,
+  `context_manifest.v2` included and rejected items, local dense-retrieval
+  metadata, and provider-input records that reference manifest items.
 
 **User stories covered**
 
@@ -264,11 +295,11 @@ policy-filtered, inspectable artifact rather than an internal helper detail.
 
 ### Acceptance criteria
 
-- [ ] Lexical retrieval remains the deterministic baseline and is never
+- [x] Lexical retrieval remains the deterministic baseline and is never
       replaced by dense retrieval.
-- [ ] Dense retrieval uses local embeddings by default.
-- [ ] Included and rejected manifest items both carry policy evidence.
-- [ ] Provider-bound context references manifest items rather than bypassing
+- [x] Dense retrieval uses local embeddings by default.
+- [x] Included and rejected manifest items both carry policy evidence.
+- [x] Provider-bound context references manifest items rather than bypassing
       manifest construction.
 
 ### Out of scope
@@ -279,6 +310,15 @@ policy-filtered, inspectable artifact rather than an internal helper detail.
 ---
 
 ## Phase 5: Template Registry And Approval-Bound Apply
+
+**Implementation status**
+
+- Implemented on 2026-04-26 in the current working tree.
+- Coverage: `tests/test_v1_phase5_template_registry.py` and updated template
+  CLI assertions in `tests/test_cli.py`
+- Main surfaces: packaged SQLite-backed template registry metadata, richer
+  `template list/show` output, approval-bound `template apply` runs, and
+  workspace metadata recording of applied template id and version.
 
 **User stories covered**
 
@@ -302,10 +342,10 @@ approval-bound apply flow while keeping actual template bundles in-repo.
 
 ### Acceptance criteria
 
-- [ ] Registry metadata exposes the agreed V1 template fields.
-- [ ] Bundled templates are discoverable without arbitrary filesystem scanning.
-- [ ] `template apply` uses the mutation approval path rather than direct copy.
-- [ ] Workspace metadata records applied template id and version.
+- [x] Registry metadata exposes the agreed V1 template fields.
+- [x] Bundled templates are discoverable without arbitrary filesystem scanning.
+- [x] `template apply` uses the mutation approval path rather than direct copy.
+- [x] Workspace metadata records applied template id and version.
 
 ### Out of scope
 

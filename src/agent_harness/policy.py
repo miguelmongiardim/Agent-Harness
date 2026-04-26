@@ -10,7 +10,9 @@ from agent_harness.config import load_model
 from agent_harness.schemas import (
     PolicyDecision,
     PolicyProfile,
+    ProviderInputRuleAction,
     RunProviderRecord,
+    Sensitivity,
     TaskSpec,
     ToolCall,
 )
@@ -137,12 +139,96 @@ class PolicyEngine:
 
         return self._decision(True, approval_required, reason, matched)
 
-    def classify_path(self, path: str) -> str:
+    def classify_path(self, path: str | None) -> str:
+        if path is None:
+            return "unknown"
         relative = path.replace("\\", "/")
         for rule in self.profile.sensitivity_rules:
             if fnmatch.fnmatch(relative, rule.pattern):
                 return rule.classification
-        return "public"
+        return "internal"
+
+    def provider_input_action_for(self, sensitivity: Sensitivity) -> ProviderInputRuleAction:
+        return self.profile.provider_input_policy.get(sensitivity, "deny")
+
+    def is_hard_denied_sensitivity(self, sensitivity: Sensitivity) -> bool:
+        return sensitivity in self.profile.hard_deny_sensitivities
+
+    def evaluate_provider_input(
+        self,
+        sensitivity: Sensitivity,
+        provider: RunProviderRecord,
+        path: str | None = None,
+        denied_sensitivities: set[Sensitivity] | None = None,
+    ) -> tuple[ProviderInputRuleAction, PolicyDecision]:
+        matched = [
+            f"provider:{provider.provider_profile_id}",
+            f"trust_zone:{provider.trust_zone}",
+            f"sensitivity:{sensitivity}",
+        ]
+        if path is not None:
+            matched.append(f"path:{path}")
+        if denied_sensitivities and sensitivity in denied_sensitivities:
+            return (
+                "deny",
+                self._decision(
+                    False,
+                    False,
+                    f"{sensitivity} denied by task or CLI provider-input narrowing",
+                    [*matched, "provider_input:narrowed"],
+                ),
+            )
+
+        action = self.provider_input_action_for(sensitivity)
+        if self.is_hard_denied_sensitivity(sensitivity):
+            return (
+                action,
+                self._decision(
+                    False,
+                    False,
+                    f"{sensitivity} is hard-denied for provider input",
+                    [*matched, "provider_input:hard_deny"],
+                ),
+            )
+        if action == "allow":
+            return (
+                action,
+                self._decision(True, False, f"{sensitivity} allowed for provider input", matched),
+            )
+        if action == "allow_untrusted":
+            return (
+                action,
+                self._decision(
+                    True,
+                    False,
+                    f"{sensitivity} allowed as untrusted provider evidence",
+                    [*matched, "provider_input:untrusted"],
+                ),
+            )
+        if action == "approval_required":
+            return (
+                action,
+                self._decision(
+                    True,
+                    True,
+                    f"{sensitivity} requires provider-input approval",
+                    [*matched, "provider_input:approval_required"],
+                ),
+            )
+        if action == "redact":
+            return (
+                action,
+                self._decision(
+                    True,
+                    False,
+                    f"{sensitivity} requires provider-input redaction",
+                    [*matched, "provider_input:redact"],
+                ),
+            )
+        return (
+            action,
+            self._decision(False, False, f"{sensitivity} denied by provider-input policy", matched),
+        )
 
     def redact_text(self, text: str) -> tuple[str, list[str]]:
         redactions: list[str] = []

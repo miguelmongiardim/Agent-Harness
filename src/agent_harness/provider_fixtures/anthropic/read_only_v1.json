@@ -1,0 +1,5 @@
+{
+  "fixture_id": "anthropic.read_only_v1",
+  "planner": "deterministic_mock",
+  "transport": "anthropic"
+}

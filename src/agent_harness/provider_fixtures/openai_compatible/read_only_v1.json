@@ -1,0 +1,5 @@
+{
+  "fixture_id": "openai_compatible.read_only_v1",
+  "planner": "deterministic_mock",
+  "transport": "openai_compatible"
+}

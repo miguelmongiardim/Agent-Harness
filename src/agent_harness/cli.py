@@ -17,7 +17,7 @@ from agent_harness.retrieval import ingest_documents
 from agent_harness.runtime import HarnessRuntime, approve_action
 from agent_harness.schemas import TaskSpec
 from agent_harness.storage import RunStore
-from agent_harness.templates import apply_template, list_templates, load_template
+from agent_harness.templates import list_templates, load_template
 from agent_harness.utils import load_json, write_json
 
 STARTER_DOC = """# Agent Harness Project
@@ -90,6 +90,23 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("task_path")
     run.add_argument("--profile")
     run.add_argument("--provider")
+    run.add_argument(
+        "--deny-provider-input",
+        action="append",
+        default=[],
+        choices=[
+            "public",
+            "internal",
+            "confidential",
+            "restricted",
+            "secret",
+            "pii",
+            "customer",
+            "credential",
+            "generated",
+            "unknown",
+        ],
+    )
     run.add_argument("--auto-approve", action="store_true")
     run.add_argument("--dry-run", action="store_true")
     run.set_defaults(func=cmd_run)
@@ -157,8 +174,8 @@ def cmd_init(args: argparse.Namespace) -> int:
 
 def cmd_template_list(args: argparse.Namespace) -> int:
     del args
-    for name in list_templates():
-        print(name)
+    for template in list_templates():
+        print(f"{template.template_id}\t{template.version}\t{template.title}")
     return 0
 
 
@@ -169,10 +186,13 @@ def cmd_template_show(args: argparse.Namespace) -> int:
 
 def cmd_template_apply(args: argparse.Namespace) -> int:
     destination = Path(args.destination).resolve()
-    profile = load_policy(Path.cwd(), args.profile)
-    policy = PolicyEngine(Path.cwd(), profile)
-    written = apply_template(load_template(args.name), destination, policy, force=args.force)
-    print(json.dumps({"written": [str(path) for path in written]}, indent=2))
+    summary = HarnessRuntime(Path.cwd()).apply_template(
+        args.name,
+        destination,
+        profile_name=args.profile,
+        force=args.force,
+    )
+    print(summary.model_dump_json(indent=2))
     return 0
 
 
@@ -196,6 +216,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         Path(args.task_path),
         profile_name=args.profile,
         provider_name=args.provider,
+        deny_provider_input=args.deny_provider_input,
         auto_approve=args.auto_approve,
         dry_run=args.dry_run,
     )
@@ -219,13 +240,28 @@ def cmd_approve(args: argparse.Namespace) -> int:
 def cmd_inspect_run(args: argparse.Namespace) -> int:
     config = load_config(Path.cwd())
     store = RunStore.open_existing(Path.cwd() / config.artifact_root, args.run_id)
+    summary = store.read_data("summary.json")
     payload = {
         "events": store.events(),
-        "summary": store.read_data("summary.json"),
+        "summary": summary,
         "artifact_index": store.read_data("artifact-index.json"),
     }
     if (store.run_dir / "provider.json").exists():
         payload["provider"] = store.read_data("provider.json")
+    if (store.run_dir / "provider_calls.json").exists():
+        payload["provider_calls"] = store.read_data("provider_calls.json")
+    if (store.run_dir / "provider_input.json").exists():
+        payload["provider_input"] = store.read_data("provider_input.json")
+    if (store.run_dir / "template_apply.json").exists():
+        payload["template_apply"] = store.read_data("template_apply.json")
+    artifacts = summary.get("artifacts")
+    workspace_relative = (
+        artifacts.get("workspace_metadata") if isinstance(artifacts, dict) else None
+    )
+    if isinstance(workspace_relative, str):
+        workspace_path = Path.cwd() / workspace_relative
+        if workspace_path.exists():
+            payload["workspace_metadata"] = load_json(workspace_path)
     print(
         json.dumps(payload, indent=2)
     )

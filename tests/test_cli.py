@@ -51,13 +51,37 @@ def test_cli_init_is_idempotent_unless_forced(
     assert "## Implemented Locally" in starter_doc.read_text(encoding="utf-8")
 
 
-def test_cli_template_apply(tmp_path: Path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+def test_cli_template_apply(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
     monkeypatch.chdir(tmp_path)
 
     assert main(["init"]) == 0
+    capsys.readouterr()
 
     destination = tmp_path / "scratch"
     assert main(["template", "apply", "python-lib", "--destination", str(destination)]) == 0
+    proposed = json.loads(capsys.readouterr().out)
+    assert proposed["status"] == "paused"
+    assert proposed["approvals"]
+    assert not (destination / "pyproject.toml").exists()
+
+    assert (
+        main(
+            [
+                "approve",
+                proposed["run_id"],
+                proposed["approvals"][0],
+                "--decision",
+                "approve",
+                "--actor",
+                "reviewer",
+            ]
+        )
+        == 0
+    )
     assert (destination / "pyproject.toml").exists()
     assert (destination / "src" / "example_python_lib" / "core.py").exists()
 
@@ -65,21 +89,28 @@ def test_cli_template_apply(tmp_path: Path, monkeypatch) -> None:  # type: ignor
 def test_cli_template_list_and_show_python_lib(capsys) -> None:  # type: ignore[no-untyped-def]
     assert main(["template", "list"]) == 0
     listed = capsys.readouterr()
-    assert "python-lib" in listed.out.splitlines()
+    assert any(
+        line.startswith("python-lib\t1.0.0\tPython Library")
+        for line in listed.out.splitlines()
+    )
 
     assert main(["template", "show", "python-lib"]) == 0
     shown = capsys.readouterr()
     template = json.loads(shown.out)
-    assert template["name"] == "python-lib"
+    assert template["template_id"] == "python-lib"
+    assert template["version"] == "1.0.0"
     assert template["files"]
 
 
 def test_cli_template_apply_respects_policy_write_roots(
-    tmp_path: Path, monkeypatch
+    tmp_path: Path,
+    monkeypatch,
+    capsys,  # type: ignore[no-untyped-def]
 ) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.chdir(tmp_path)
 
     assert main(["init"]) == 0
+    capsys.readouterr()
     limited_policy = dict(DEFAULT_POLICY)
     limited_policy["name"] = "limited"
     limited_policy["write_roots"] = ["allowed"]
@@ -100,6 +131,22 @@ def test_cli_template_apply_respects_policy_write_roots(
                 str(allowed),
                 "--profile",
                 "limited",
+            ]
+        )
+        == 0
+    )
+    proposed = json.loads(capsys.readouterr().out)
+    assert proposed["status"] == "paused"
+    assert (
+        main(
+            [
+                "approve",
+                proposed["run_id"],
+                proposed["approvals"][0],
+                "--decision",
+                "approve",
+                "--actor",
+                "reviewer",
             ]
         )
         == 0

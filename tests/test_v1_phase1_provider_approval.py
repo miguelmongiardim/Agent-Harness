@@ -31,10 +31,15 @@ def _seed_v2_project_with_default_provider(root: Path) -> None:
             }
         ],
     }
+    policy = dict(DEFAULT_POLICY)
+    policy["sensitivity_rules"] = [
+        *DEFAULT_POLICY["sensitivity_rules"],
+        {"pattern": "sample.py", "classification": "public"},
+    ]
     (root / "agent-harness.yaml").write_text(json.dumps(config, indent=2), encoding="utf-8")
     (root / "policies").mkdir()
     (root / "policies" / "default.json").write_text(
-        json.dumps(DEFAULT_POLICY, indent=2), encoding="utf-8"
+        json.dumps(policy, indent=2), encoding="utf-8"
     )
 
 
@@ -133,6 +138,8 @@ def test_approving_provider_use_resumes_the_same_run(tmp_path: Path) -> None:
     env = os.environ.copy()
     env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-provider-resume"
     env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-26T12:00:00Z"
+    env["AGENT_HARNESS_LOCAL_ENDPOINT"] = "recorded://openai_compatible/read_only_v1"
+    env["AGENT_HARNESS_API_KEY"] = "phase1-test-secret"
 
     run = subprocess.run(
         [sys.executable, "-m", "agent_harness", "run", str(task_path)],

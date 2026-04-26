@@ -16,12 +16,30 @@ ApprovalSubjectName = Literal[
     "patch_file",
     "git_status",
     "provider_use",
+    "provider_input",
+    "template_apply",
 ]
-Sensitivity = Literal["public", "internal", "confidential", "secret"]
+Sensitivity = Literal[
+    "public",
+    "internal",
+    "confidential",
+    "restricted",
+    "secret",
+    "pii",
+    "customer",
+    "credential",
+    "generated",
+    "unknown",
+]
 RunStatus = Literal["completed", "paused", "failed", "dry_run"]
 ProviderTransport = Literal["mock", "openai_compatible", "anthropic"]
 TrustZone = Literal["mock", "local_process", "local_endpoint", "private_network", "hosted_provider"]
 ProviderUseRuleAction = Literal["allow", "approval_required", "deny"]
+ProviderInputRuleAction = Literal["allow", "allow_untrusted", "approval_required", "redact", "deny"]
+ProviderCallPhase = Literal["initial_actions", "next_actions"]
+ProviderExecutionMode = Literal["mock", "recorded_fixture", "live_smoke"]
+RetrievalMethod = Literal["direct", "lexical", "dense", "both"]
+RetrievalEvidenceMethod = Literal["lexical", "dense"]
 
 
 class StrictModel(BaseModel):
@@ -112,6 +130,7 @@ class TaskSpec(StrictModel):
     provider_profile: str | None = None
     target_paths: list[str] = Field(default_factory=list)
     allowed_tools: list[ToolName] | None = None
+    deny_provider_input_sensitivities: list[Sensitivity] = Field(default_factory=list)
     context_queries: list[str] = Field(default_factory=list)
     test_commands: list[list[str]] = Field(default_factory=list)
     max_steps: int = Field(default=8, ge=1, le=50)
@@ -153,6 +172,9 @@ class PolicyProfile(StrictModel):
     allowed_test_commands: list[list[str]] = Field(default_factory=list)
     allow_network: bool = False
     provider_trust_policy: dict[TrustZone, ProviderUseRuleAction] = Field(default_factory=dict)
+    provider_input_policy: dict[Sensitivity, ProviderInputRuleAction] = Field(default_factory=dict)
+    hard_deny_sensitivities: list[Sensitivity] = Field(default_factory=list)
+    provider_input_redact_reclassify: dict[Sensitivity, Sensitivity] = Field(default_factory=dict)
     max_context_bytes: int = Field(default=20000, ge=1024)
     sensitivity_rules: list[SensitivityRule] = Field(default_factory=list)
     redaction_patterns: list[str] = Field(default_factory=list)
@@ -228,13 +250,109 @@ class ContextChunk(StrictModel):
     sensitivity: Sensitivity = "public"
 
 
+class RetrievalProvenance(StrictModel):
+    method: RetrievalEvidenceMethod
+    score: float = Field(default=0.0, ge=0.0)
+
+
+class DenseRetrievalMetadata(StrictModel):
+    backend: str
+    model: str
+    version: str
+
+
+class ContextManifestItem(StrictModel):
+    item_id: str
+    source_id: str
+    chunk_id: str
+    source_kind: Literal["file", "retrieval"]
+    path: str | None = None
+    content_hash: str | None = None
+    text: str | None = None
+    start_line: int = Field(ge=1)
+    end_line: int = Field(ge=1)
+    sensitivity: Sensitivity = "public"
+    retrieval_method: RetrievalMethod
+    provenance: list[RetrievalProvenance] = Field(default_factory=list)
+    scores: dict[str, float] = Field(default_factory=dict)
+    policy_allowed: bool
+    policy_decision_id: str
+    policy_reason: str
+
+
 class ContextManifest(StrictModel):
-    schema_version: Literal["context_manifest.v1"] = "context_manifest.v1"
+    schema_version: Literal["context_manifest.v1", "context_manifest.v2"] = (
+        "context_manifest.v2"
+    )
     manifest_id: str
     run_id: str
     task_id: str
     sources: list[ContextSource] = Field(default_factory=list)
     chunks: list[ContextChunk] = Field(default_factory=list)
+    items: list[ContextManifestItem] = Field(default_factory=list)
+    rejected_items: list[ContextManifestItem] = Field(default_factory=list)
+    dense_retrieval: DenseRetrievalMetadata | None = None
+    created_at: datetime = Field(default_factory=now_utc)
+
+
+class ProviderInputRecord(StrictModel):
+    record_id: str
+    manifest_item_id: str | None = None
+    source_id: str
+    chunk_id: str
+    path: str | None = None
+    sensitivity: Sensitivity
+    effective_sensitivity: Sensitivity
+    policy_action: ProviderInputRuleAction
+    included: bool
+    untrusted: bool = False
+    redaction_status: Literal["none", "redacted", "reclassified"] = "none"
+    redactions_applied: list[str] = Field(default_factory=list)
+    trust_zone: TrustZone
+    provider_profile_id: str
+    approval_id: str | None = None
+    policy_decision_id: str
+    policy_reason: str
+    text: str | None = None
+    content_hash: str | None = None
+
+
+class ProviderInputManifest(StrictModel):
+    schema_version: Literal["provider_input.v1"] = "provider_input.v1"
+    run_id: str
+    task_id: str
+    provider_profile_id: str
+    trust_zone: TrustZone
+    records: list[ProviderInputRecord] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=now_utc)
+
+
+class ProviderCallAudit(StrictModel):
+    schema_version: Literal["provider_call_audit.v1"] = "provider_call_audit.v1"
+    audit_id: str
+    run_id: str
+    task_id: str
+    provider_profile_id: str
+    transport: ProviderTransport
+    trust_zone: TrustZone
+    model: str
+    endpoint_identity: str
+    network: bool
+    phase: ProviderCallPhase
+    mode: ProviderExecutionMode
+    fixture_id: str | None = None
+    approval_ids: list[str] = Field(default_factory=list)
+    action_count: int = 0
+    actions_hash: str
+    created_at: datetime = Field(default_factory=now_utc)
+
+
+class ProviderCallAuditManifest(StrictModel):
+    schema_version: Literal["provider_calls.v1"] = "provider_calls.v1"
+    run_id: str
+    task_id: str
+    provider_profile_id: str
+    calls: list[ProviderCallAudit] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=now_utc)
 
 
@@ -307,6 +425,80 @@ class TemplateSpec(StrictModel):
     name: str
     description: str
     files: list[TemplateFile]
+
+
+class TemplateRegistryRecord(StrictModel):
+    schema_version: Literal["template_registry_record.v1"] = "template_registry_record.v1"
+    template_id: str
+    version: str
+    title: str
+    description: str
+    bundle_path: str
+    tags: list[str] = Field(default_factory=list)
+
+    @field_validator("bundle_path")
+    @classmethod
+    def validate_bundle_path(cls, value: str) -> str:
+        return normalize_relative_path(value)
+
+
+class TemplateDetail(StrictModel):
+    schema_version: Literal["template_detail.v1"] = "template_detail.v1"
+    template_id: str
+    version: str
+    title: str
+    description: str
+    bundle_path: str
+    tags: list[str] = Field(default_factory=list)
+    files: list[TemplateFile]
+
+
+class TemplateProposedWrite(StrictModel):
+    path: str
+    before_hash: str
+    after_hash: str
+    diff: str
+    proposed_content: str
+
+    @field_validator("path")
+    @classmethod
+    def validate_path(cls, value: str) -> str:
+        return normalize_relative_path(value)
+
+
+class TemplateApplyRecord(StrictModel):
+    schema_version: Literal["template_apply.v1"] = "template_apply.v1"
+    template_id: str
+    version: str
+    title: str
+    description: str
+    destination: str
+    proposed_writes: list[TemplateProposedWrite]
+    force: bool = False
+
+    @field_validator("destination")
+    @classmethod
+    def validate_destination(cls, value: str) -> str:
+        return normalize_relative_path(value)
+
+
+class AppliedTemplateRecord(StrictModel):
+    template_id: str
+    version: str
+    destination: str
+    run_id: str
+    action_id: str
+    applied_at: datetime = Field(default_factory=now_utc)
+
+    @field_validator("destination")
+    @classmethod
+    def validate_destination(cls, value: str) -> str:
+        return normalize_relative_path(value)
+
+
+class WorkspaceMetadata(StrictModel):
+    schema_version: Literal["workspace_metadata.v1"] = "workspace_metadata.v1"
+    applied_templates: list[AppliedTemplateRecord] = Field(default_factory=list)
 
 
 class EvalSpec(StrictModel):
