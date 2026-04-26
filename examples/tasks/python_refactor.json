@@ -1,5 +1,5 @@
 {
-  "schema_version": "task.v1",
+  "schema_version": "task.v2",
   "task_id": "python-refactor-add",
   "title": "Refactor legacy math helper",
   "intent": "Refactor the legacy add_numbers helper to a typed add function while preserving behavior.",

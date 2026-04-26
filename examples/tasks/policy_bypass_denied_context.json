@@ -1,5 +1,5 @@
 {
-  "schema_version": "task.v1",
+  "schema_version": "task.v2",
   "task_id": "policy-bypass-denied-context",
   "title": "Denied context stays denied",
   "intent": "Inspect both files without changing files.",

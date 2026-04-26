@@ -4,7 +4,12 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from agent_harness.config import dump_model, load_config, load_model
+from agent_harness.config import (
+    dump_model,
+    load_config_with_schema_evidence,
+    load_model,
+    load_public_model_with_schema_evidence,
+)
 from agent_harness.context.builder import build_context_manifest
 from agent_harness.context.retrieval import (
     LexicalRetriever,
@@ -12,7 +17,7 @@ from agent_harness.context.retrieval import (
 )
 from agent_harness.core.models import DeterministicMockModel
 from agent_harness.model.adapters import ProviderGateway
-from agent_harness.policy import PolicyEngine, load_policy
+from agent_harness.policy import PolicyEngine, load_policy, load_policy_with_schema_evidence
 from agent_harness.provider_input import build_provider_input_manifest
 from agent_harness.schemas import (
     AppliedTemplateRecord,
@@ -58,7 +63,9 @@ from agent_harness.utils import (
 class HarnessRuntime:
     def __init__(self, project_root: Path) -> None:
         self.project_root = project_root.resolve()
-        self.config = load_config(self.project_root)
+        self.config, self.config_schema_evidence = load_config_with_schema_evidence(
+            self.project_root
+        )
         self.artifact_root = self.project_root / self.config.artifact_root
 
     def run_task(
@@ -71,16 +78,33 @@ class HarnessRuntime:
         dry_run: bool = False,
         runtime_adapter: str | None = None,
     ) -> RunSummary:
-        task = load_model(task_path, TaskSpec)
+        task, task_schema_evidence = load_public_model_with_schema_evidence(
+            task_path, TaskSpec
+        )
         if runtime_adapter not in {None, "langgraph"}:
             raise ValueError(f"unsupported runtime adapter: {runtime_adapter}")
         selected_profile = profile_name or task.policy_profile or self.config.default_policy
-        profile = load_policy(self.project_root, selected_profile)
+        profile, policy_schema_evidence = load_policy_with_schema_evidence(
+            self.project_root, selected_profile
+        )
         policy = PolicyEngine(self.project_root, profile)
         run_id = new_run_id(task.task_id)
         store = RunStore(self.artifact_root, run_id)
         started_at = now_utc()
         store.append_event(make_event(run_id, "run_started", {"task_id": task.task_id}))
+        schema_versions = {
+            "config": self.config_schema_evidence,
+            "task": task_schema_evidence,
+            "policy": policy_schema_evidence,
+        }
+        schema_versions_path = store.write_data("schema_versions.json", schema_versions)
+        store.append_event(
+            make_event(
+                run_id,
+                "schema_versions_recorded",
+                {"schema_versions": schema_versions},
+            )
+        )
         runtime_adapter_path: Path | None = None
         if runtime_adapter == "langgraph":
             adapter_record = RuntimeAdapterRecord(
@@ -128,6 +152,7 @@ class HarnessRuntime:
                 "task": store.run_dir / "task.json",
                 "policy": store.run_dir / "policy.json",
                 "events": store.events_path,
+                "schema_versions": schema_versions_path,
                 "security_findings": security_path,
                 "summary": store.run_dir / "summary.json",
                 "artifact_index": store.run_dir / "artifact-index.json",
@@ -399,6 +424,7 @@ class HarnessRuntime:
             "task": store.run_dir / "task.json",
             "policy": store.run_dir / "policy.json",
             "events": store.events_path,
+            "schema_versions": schema_versions_path,
             "security_findings": security_path,
             "context_manifest": store.run_dir / "context_manifest.json",
             "checkpoint": store.run_dir / "checkpoints" / f"{checkpoint.checkpoint_id}.json",

@@ -6,7 +6,7 @@
 
 Status initialized from the V2 PRD on 2026-04-26.
 
-- Phase 0: pending
+- Phase 0: completed
 - Phase 1: pending
 - Phase 2: pending
 - Phase 3: pending
@@ -17,7 +17,7 @@ Status initialized from the V2 PRD on 2026-04-26.
 - Phase 8: pending
 - Phase 9: pending
 - Phase 10: pending
-- Next target: Phase 0 V2 public baseline walking skeleton
+- Next target: Phase 1 Schema Migration Report And Safe Write
 
 ## Architectural Decisions
 
@@ -108,15 +108,25 @@ widened.
 
 ### Acceptance criteria
 
-- [ ] `agent-harness init` emits `config.v2`.
-- [ ] `agent-harness init` emits default `policy.v2`.
-- [ ] V2 examples use `task.v2`.
-- [ ] A minimal V2 run completes or pauses exactly as policy requires.
-- [ ] `inspect run` exposes original and effective schema versions.
-- [ ] v1 config/task/policy files remain readable where V1 behavior maps safely
+- [x] `agent-harness init` emits `config.v2`.
+- [x] `agent-harness init` emits default `policy.v2`.
+- [x] V2 examples use `task.v2`.
+- [x] A minimal V2 run completes or pauses exactly as policy requires.
+- [x] `inspect run` exposes original and effective schema versions.
+- [x] v1 config/task/policy files remain readable where V1 behavior maps safely
       to V2.
-- [ ] Compatibility loading cannot widen provider input, trust-zone, scanner, or
+- [x] Compatibility loading cannot widen provider input, trust-zone, scanner, or
       template capability behavior.
+
+### Phase 0 implementation notes
+
+- Added `schema_versions.json` run artifacts and `inspect run` output for
+  original/effective config, task, and policy schema versions.
+- New public inputs default to `config.v2`, `task.v2`, and `policy.v2`; v1
+  config/task/policy inputs are compatibility-loaded as effective V2 contracts.
+- Compatibility coverage asserts provider-input, trust-zone, and scanner policy
+  fields are preserved rather than widened. Template capability widening remains
+  structurally unavailable until `template.v2` lands in Phase 7.
 
 ### Out of scope
 

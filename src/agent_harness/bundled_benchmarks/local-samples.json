@@ -17,7 +17,7 @@
         }
       ],
       "task": {
-        "schema_version": "task.v1",
+        "schema_version": "task.v2",
         "task_id": "benchmark-swebench-python-refactor",
         "title": "Refactor legacy add helper",
         "intent": "Refactor add_numbers while preserving behavior.",
@@ -40,7 +40,7 @@
         }
       ],
       "task": {
-        "schema_version": "task.v1",
+        "schema_version": "task.v2",
         "task_id": "benchmark-terminal-readonly-inspect",
         "title": "Inspect terminal workspace",
         "intent": "Inspect the terminal workspace without changing files.",

@@ -183,7 +183,7 @@ class SensitivityRule(StrictModel):
 
 
 class PolicyProfile(StrictModel):
-    schema_version: Literal["policy.v1"]
+    schema_version: Literal["policy.v1", "policy.v2"]
     name: str
     description: str = ""
     allowed_tools: list[ToolName] = Field(default_factory=list)

@@ -47,8 +47,8 @@ def test_cli_init_is_idempotent_unless_forced(
     assert starter_doc.read_text(encoding="utf-8") == "custom docs\n"
 
     assert main(["init", "--force"]) == 0
-    assert "schema_version: config.v1" in config.read_text(encoding="utf-8")
-    assert '"schema_version": "policy.v1"' in policy.read_text(encoding="utf-8")
+    assert "schema_version: config.v2" in config.read_text(encoding="utf-8")
+    assert '"schema_version": "policy.v2"' in policy.read_text(encoding="utf-8")
     assert "## Implemented Locally" in starter_doc.read_text(encoding="utf-8")
 
 

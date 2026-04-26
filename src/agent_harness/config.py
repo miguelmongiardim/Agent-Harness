@@ -13,13 +13,22 @@ T = TypeVar("T", bound=BaseModel)
 
 
 DEFAULT_CONFIG = HarnessConfig(
-    schema_version="config.v1",
+    schema_version="config.v2",
     project_name="agent-harness",
     artifact_root=".agent-harness",
     default_policy="default",
     retrieval_backend="lexical",
     template_catalog="bundled",
 )
+
+EFFECTIVE_PUBLIC_SCHEMA_VERSIONS = {
+    "config.v1": "config.v2",
+    "config.v2": "config.v2",
+    "task.v1": "task.v2",
+    "task.v2": "task.v2",
+    "policy.v1": "policy.v2",
+    "policy.v2": "policy.v2",
+}
 
 
 def _parse_scalar(value: str) -> Any:
@@ -71,7 +80,15 @@ def load_config(root: Path) -> HarnessConfig:
     path = root / "agent-harness.yaml"
     if not path.exists():
         return DEFAULT_CONFIG
-    return HarnessConfig.model_validate(load_mapping(path))
+    return _normalize_public_schema(HarnessConfig.model_validate(load_mapping(path)))
+
+
+def load_config_with_schema_evidence(root: Path) -> tuple[HarnessConfig, dict[str, str]]:
+    path = root / "agent-harness.yaml"
+    if not path.exists():
+        return DEFAULT_CONFIG, _schema_evidence(DEFAULT_CONFIG.schema_version)
+    config = load_config(root)
+    return config, _schema_evidence(_read_schema_version(path))
 
 
 def write_default_config(root: Path, force: bool = False) -> Path:
@@ -80,7 +97,7 @@ def write_default_config(root: Path, force: bool = False) -> Path:
         return path
     text = "\n".join(
         [
-            "schema_version: config.v1",
+            "schema_version: config.v2",
             f"project_name: {DEFAULT_CONFIG.project_name}",
             f"artifact_root: {DEFAULT_CONFIG.artifact_root}",
             f"default_policy: {DEFAULT_CONFIG.default_policy}",
@@ -97,5 +114,40 @@ def load_model(path: Path, model_type: type[T]) -> T:
     return model_type.model_validate_json(path.read_text(encoding="utf-8"))
 
 
+def load_public_model(path: Path, model_type: type[T]) -> T:
+    return _normalize_public_schema(load_model(path, model_type))
+
+
+def load_public_model_with_schema_evidence(
+    path: Path, model_type: type[T]
+) -> tuple[T, dict[str, str]]:
+    model = load_public_model(path, model_type)
+    return model, _schema_evidence(_read_schema_version(path))
+
+
 def dump_model(path: Path, model: BaseModel) -> None:
     write_json(path, model.model_dump(mode="json"))
+
+
+def _normalize_public_schema(model: T) -> T:
+    schema_version = getattr(model, "schema_version", None)
+    if not isinstance(schema_version, str):
+        return model
+    effective = EFFECTIVE_PUBLIC_SCHEMA_VERSIONS.get(schema_version, schema_version)
+    if effective == schema_version:
+        return model
+    return model.model_copy(update={"schema_version": effective})
+
+
+def _read_schema_version(path: Path) -> str:
+    raw = load_mapping(path).get("schema_version")
+    if not isinstance(raw, str):
+        raise ValueError(f"{path} does not record a schema_version")
+    return raw
+
+
+def _schema_evidence(original: str) -> dict[str, str]:
+    return {
+        "original": original,
+        "effective": EFFECTIVE_PUBLIC_SCHEMA_VERSIONS.get(original, original),
+    }

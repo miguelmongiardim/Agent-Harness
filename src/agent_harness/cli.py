@@ -12,7 +12,7 @@ from agent_harness.benchmarks import (
     load_benchmark_pack,
     run_benchmark_case,
 )
-from agent_harness.config import load_config, load_model, write_default_config
+from agent_harness.config import load_config, load_public_model, write_default_config
 from agent_harness.context.retrieval import ingest_documents
 from agent_harness.core.runtime import HarnessRuntime, approve_action
 from agent_harness.defaults import DEFAULT_POLICY
@@ -231,7 +231,7 @@ def cmd_ingest_docs(args: argparse.Namespace) -> int:
 
 
 def cmd_task_validate(args: argparse.Namespace) -> int:
-    task = load_model(Path(args.path), TaskSpec)
+    task = load_public_model(Path(args.path), TaskSpec)
     print(task.model_dump_json(indent=2))
     return 0
 
@@ -318,6 +318,8 @@ def cmd_inspect_run(args: argparse.Namespace) -> int:
         payload["security_findings"] = store.read_data("security_findings.json")
     if (store.run_dir / "runtime_adapter.json").exists():
         payload["runtime_adapter"] = store.read_data("runtime_adapter.json")
+    if (store.run_dir / "schema_versions.json").exists():
+        payload["schema_versions"] = store.read_data("schema_versions.json")
     if (store.run_dir / "template_apply.json").exists():
         payload["template_apply"] = store.read_data("template_apply.json")
     if (store.run_dir / "git_commit.json").exists():

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 DEFAULT_POLICY = {
-    "schema_version": "policy.v1",
+    "schema_version": "policy.v2",
     "name": "default",
     "description": "Default local policy ceiling for deterministic refactor runs.",
     "allowed_tools": [

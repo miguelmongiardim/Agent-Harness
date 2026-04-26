@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from pathlib import Path
 
-from agent_harness.config import load_model
+from agent_harness.config import load_public_model, load_public_model_with_schema_evidence
 from agent_harness.policy.approvals import provider_use_approval
 from agent_harness.policy.classifiers import classify_path
 from agent_harness.policy.path_sandbox import denied_glob, is_within_roots, resolve_relative
@@ -28,7 +28,16 @@ def load_policy(root: Path, name: str) -> PolicyProfile:
     path = root / "policies" / f"{name}.json"
     if not path.exists():
         raise PolicyError(f"policy profile not found: {name}")
-    return load_model(path, PolicyProfile)
+    return load_public_model(path, PolicyProfile)
+
+
+def load_policy_with_schema_evidence(
+    root: Path, name: str
+) -> tuple[PolicyProfile, dict[str, str]]:
+    path = root / "policies" / f"{name}.json"
+    if not path.exists():
+        raise PolicyError(f"policy profile not found: {name}")
+    return load_public_model_with_schema_evidence(path, PolicyProfile)
 
 
 class PolicyEngine:
