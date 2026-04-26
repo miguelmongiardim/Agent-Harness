@@ -64,6 +64,7 @@ agent-harness doctor
 
 ## Documentation
 
+- [Architecture](docs/architecture.md)
 - [Research foundations](docs/research-foundations.md)
 - [Security model](docs/security-model.md)
 - [Context packs and retrieval](docs/context-packs.md)

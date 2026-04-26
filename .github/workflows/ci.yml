@@ -41,13 +41,7 @@ jobs:
       - name: Install dev dependencies
         run: python -m pip install -e .[dev]
       - name: Unit tests
-        run: >
-          python -m pytest
-          tests/test_schemas.py
-          tests/test_policy.py
-          tests/test_mock_model.py
-          tests/test_retrieval.py
-          tests/test_tools.py
+        run: python -m pytest tests/unit
 
   integration:
     runs-on: windows-latest
@@ -59,13 +53,7 @@ jobs:
       - name: Install dev dependencies
         run: python -m pip install -e .[dev]
       - name: Integration tests
-        run: >
-          python -m pytest
-          tests/test_cli.py
-          tests/test_runtime.py
-          tests/test_storage_audit.py
-          tests/test_dry_run_artifacts.py
-          tests/test_context_retrieval.py
+        run: python -m pytest tests/integration
       - name: Compileall
         run: python -m compileall -q src tests
 
@@ -79,11 +67,7 @@ jobs:
       - name: Install dev dependencies
         run: python -m pip install -e .[dev]
       - name: Adversarial tests
-        run: >
-          python -m pytest
-          tests/test_policy_enforcement.py
-          tests/test_tool_approval.py
-          tests/test_evals_exports.py
+        run: python -m pytest tests/adversarial
 
   e2e:
     runs-on: windows-latest
@@ -95,7 +79,4 @@ jobs:
       - name: Install dev dependencies
         run: python -m pip install -e .[dev]
       - name: End-to-end tests
-        run: >
-          python -m pytest
-          tests/test_runtime_resume.py
-          tests/test_e2e_cli_lifecycle.py
+        run: python -m pytest tests/e2e

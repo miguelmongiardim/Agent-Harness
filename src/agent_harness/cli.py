@@ -8,13 +8,13 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from agent_harness.config import load_config, load_model, write_default_config
+from agent_harness.context.retrieval import ingest_documents
+from agent_harness.core.runtime import HarnessRuntime, approve_action
 from agent_harness.defaults import DEFAULT_POLICY
 from agent_harness.doctor import doctor
 from agent_harness.evals import run_builtin_evals, scanner_report, write_eval_report
 from agent_harness.exporters import export_json, export_markdown, export_sarif
 from agent_harness.policy import PolicyEngine, load_policy
-from agent_harness.retrieval import ingest_documents
-from agent_harness.runtime import HarnessRuntime, approve_action
 from agent_harness.schemas import TaskSpec
 from agent_harness.storage import RunStore
 from agent_harness.templates import list_templates, load_template

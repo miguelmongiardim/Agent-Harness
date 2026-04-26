@@ -12,6 +12,7 @@ Status synced to the repository implementation on 2026-04-26.
 - Phase 3: implemented
 - Phase 4: implemented
 - Phase 5: implemented
+- Structure reconciliation: implemented
 - Next target: Phase 6
 
 ## Architectural Decisions
@@ -32,8 +33,15 @@ Durable decisions that apply across all phases:
   template registry is packaged as read-only SQLite metadata over in-repo
   bundles.
 - **Runtime boundary**: the native runtime remains primary. Provider transports
-  are adapters behind a shared provider gateway rather than a new framework
-  runtime.
+  are model adapters behind a shared provider gateway rather than a new
+  framework runtime.
+- **Package layout**: core orchestration and models live under
+  `agent_harness.core`, context ingestion/retrieval under
+  `agent_harness.context`, policy mediation under `agent_harness.policy`, and
+  tool execution under `agent_harness.tools`. The report's named source
+  packages and leaf modules now exist under `src/agent_harness`. Legacy
+  top-level compatibility shims have been removed so new code imports through
+  the report-shaped package paths directly.
 - **Policy boundary**: policy remains the permission ceiling for provider use,
   provider input, retrieval inclusion, tool execution, template apply,
   security-gate decisions, and `git_commit`.
@@ -56,7 +64,7 @@ Durable decisions that apply across all phases:
 **Implementation status**
 
 - Implemented on 2026-04-26 in the current working tree.
-- Coverage: `tests/test_provider_profiles.py`
+- Coverage: `tests/integration/test_provider_profiles.py`
 - Main surfaces: `config.v2`, `task.v2`, `run --provider`, recorded
   `provider.json`, and `inspect run` provider metadata.
 
@@ -103,8 +111,8 @@ existing V0 runtime without adding real provider calls yet.
 **Implementation status**
 
 - Implemented on 2026-04-26 in the current working tree.
-- Coverage: `tests/test_provider_approval.py` and provider-use
-  assertions in `tests/test_policy.py`
+- Coverage: `tests/integration/test_provider_approval.py` and provider-use
+  assertions in `tests/unit/test_policy.py`
 - Main surfaces: trust-zone policy evaluation, pending `provider_use`
   approvals before model execution, approval binding to selected provider
   metadata, and run resume after provider approval.
@@ -153,7 +161,7 @@ the provider gateway, while keeping the transport interface small.
 **Implementation status**
 
 - Implemented on 2026-04-26 in the current working tree.
-- Coverage: `tests/test_provider_input.py`
+- Coverage: `tests/integration/test_provider_input.py`
 - Main surfaces: richer V1 sensitivity classes, default provider-input policy
   matrix, `provider_input.json` artifacts, separate `provider_input`
   approvals, deny-only narrowing via task specs and CLI flags, and inspectable
@@ -208,7 +216,7 @@ evidence.
 **Implementation status**
 
 - Implemented on 2026-04-26 in the current working tree.
-- Coverage: `tests/test_provider_gateway.py`
+- Coverage: `tests/integration/test_provider_gateway.py`
 - Main surfaces: shared `ProviderGateway`, recorded `provider_calls.json`
   artifacts and `provider_call_recorded` events, recorded-fixture
   `openai_compatible` and `anthropic` transports, env-var resolution for
@@ -261,8 +269,8 @@ contract coverage, and opt-in live smoke hooks behind the shared gateway.
 **Implementation status**
 
 - Implemented on 2026-04-26 in the current working tree.
-- Coverage: `tests/test_hybrid_retrieval.py` and updated retrieval
-  regression coverage in `tests/test_context_retrieval.py`
+- Coverage: `tests/integration/test_hybrid_retrieval.py` and updated retrieval
+  regression coverage in `tests/integration/test_context_retrieval.py`
 - Main surfaces: hybrid lexical+dense retrieval coordination,
   `context_manifest.v2` included and rejected items, local dense-retrieval
   metadata, and provider-input records that reference manifest items.
@@ -314,8 +322,8 @@ policy-filtered, inspectable artifact rather than an internal helper detail.
 **Implementation status**
 
 - Implemented on 2026-04-26 in the current working tree.
-- Coverage: `tests/test_template_registry.py` and updated template
-  CLI assertions in `tests/test_cli.py`
+- Coverage: `tests/integration/test_template_registry.py` and updated template
+  CLI assertions in `tests/integration/test_cli.py`
 - Main surfaces: packaged SQLite-backed template registry metadata, richer
   `template list/show` output, approval-bound `template apply` runs, and
   workspace metadata recording of applied template id and version.
@@ -351,6 +359,50 @@ approval-bound apply flow while keeping actual template bundles in-repo.
 
 - External template catalogs
 - Remote template discovery
+
+---
+
+## Structure Reconciliation Before Phase 6
+
+**Implementation status**
+
+- Implemented on 2026-04-26 in the current working tree.
+- Coverage: focused import and behavior checks plus full repo validation.
+- Main surfaces: report-shaped package homes for core, policy, context, tools,
+  model, runtimes, templates, storage, telemetry, evals, and exporters while
+  preserving existing V0/V1 imports.
+
+**Rationale**
+
+The source report's `src/agent_harness` tree is the target layout. Before
+adding `git_commit`, the repo now materializes that tree so future phases have
+predictable files for policy, context, tool, runtime, model, telemetry, eval,
+storage, template, and export work.
+
+**Acceptance criteria**
+
+- [x] `agent_harness.model` is a package with model interfaces and mock model
+      implementation.
+- [x] `agent_harness.templates`, `agent_harness.storage`,
+      `agent_harness.evals`, and `agent_harness.exporters` are packages with
+      import-compatible public surfaces.
+- [x] `agent_harness.runtimes.native` exposes the native runtime boundary.
+- [x] Policy, context, and tool internals are split across the report's leaf
+      modules instead of living in single monolithic files.
+- [x] Telemetry, runtime adapter, model adapter, and eval support leaves exist
+      with explicit unsupported-adapter behavior where implementation is not
+      part of the current phase.
+- [x] Tests and internal imports use the report-shaped package paths rather
+      than legacy top-level compatibility shims.
+- [x] Tests are grouped under report-shaped buckets: `tests/unit`,
+      `tests/integration`, `tests/adversarial`, `tests/e2e`, and
+      `tests/fixtures`.
+- [x] Architecture docs state how the deep research layout maps to the current
+      implementation.
+
+**Out of scope**
+
+- Implementing live provider calls, LangGraph, MCP, or other optional adapters.
 
 ---
 
