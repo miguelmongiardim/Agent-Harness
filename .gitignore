@@ -21,6 +21,8 @@ build/
 .agent-harness/artifacts/
 .agent-harness/evals/
 .agent-harness/exports/
+.agent-harness/benchmarks/
+.agent-harness/eval-work/
 .agent-harness/local/
 
 # Local planning artifacts
