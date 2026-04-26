@@ -252,7 +252,7 @@ def test_cli_template_apply_respects_policy_write_roots(
     assert not (blocked / "pyproject.toml").exists()
 
 
-def test_cli_eval_fails_when_docs_claim_unsupported_behavior(
+def test_cli_docs_check_fails_when_docs_claim_unsupported_behavior(
     tmp_path: Path, monkeypatch
 ) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.chdir(tmp_path)
@@ -281,14 +281,14 @@ def test_cli_eval_fails_when_docs_claim_unsupported_behavior(
         encoding="utf-8",
     )
 
-    assert main(["eval"]) == 1
-    scanner = json.loads(
-        (tmp_path / ".agent-harness" / "exports" / "scanner-report.json").read_text(
+    assert main(["docs", "check"]) == 1
+    report = json.loads(
+        (tmp_path / ".agent-harness" / "docs" / "docs-check.json").read_text(
             encoding="utf-8"
         )
     )
-    assert scanner["status"] == "failed"
-    assert scanner["critical_findings"][0]["rule_id"] == "unsupported_doc_claim"
+    assert report["status"] == "failed"
+    assert report["findings"][0]["rule_id"] == "unsupported_doc_claim"
 
 
 def test_cli_task_validate_returns_concrete_errors(

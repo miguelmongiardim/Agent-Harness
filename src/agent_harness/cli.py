@@ -16,8 +16,9 @@ from agent_harness.config import load_config, load_public_model, write_default_c
 from agent_harness.context.retrieval import ingest_documents
 from agent_harness.core.runtime import HarnessRuntime, approve_action
 from agent_harness.defaults import DEFAULT_POLICY
+from agent_harness.docs_check import write_docs_check_report
 from agent_harness.doctor import doctor
-from agent_harness.evals import run_builtin_evals, scanner_report, write_eval_report
+from agent_harness.evals import run_builtin_evals, write_eval_report
 from agent_harness.exporters import export_json, export_markdown, export_sarif
 from agent_harness.policy import PolicyEngine, load_policy
 from agent_harness.schemas import TaskSpec
@@ -158,6 +159,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     eval_cmd = sub.add_parser("eval")
     eval_cmd.set_defaults(func=cmd_eval)
+
+    docs = sub.add_parser("docs")
+    docs_sub = docs.add_subparsers(required=True)
+    docs_check = docs_sub.add_parser("check")
+    docs_check.add_argument("--output")
+    docs_check.set_defaults(func=cmd_docs_check)
 
     export = sub.add_parser("export")
     export_sub = export.add_subparsers(required=True)
@@ -356,11 +363,16 @@ def cmd_eval(args: argparse.Namespace) -> int:
     root = Path.cwd()
     results = run_builtin_evals(root)
     report = write_eval_report(root, results)
-    scanner = scanner_report(root)
-    scanner_data = load_json(scanner)
-    print(json.dumps({"report": str(report), "scanner_report": str(scanner)}, indent=2))
-    scanner_ok = scanner_data.get("status") != "failed"
-    return 0 if scanner_ok and all(result.passed for result in results) else 1
+    print(json.dumps({"report": str(report)}, indent=2))
+    return 0 if all(result.passed for result in results) else 1
+
+
+def cmd_docs_check(args: argparse.Namespace) -> int:
+    output = Path(args.output) if args.output else None
+    report_path = write_docs_check_report(Path.cwd(), output)
+    report = load_json(report_path)
+    print(json.dumps(report, indent=2))
+    return 0 if report.get("status") == "passed" else 1
 
 
 def cmd_export_sarif(args: argparse.Namespace) -> int:

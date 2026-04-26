@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import shutil
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -44,49 +43,6 @@ ADVANCED_EVAL_RUNNERS = [
     "_run_reproducible_replay_eval",
     "_run_benchmark_sample_pack_eval",
 ]
-
-DOC_SUBJECT_PATTERN = r"(?:Agent Harness|This repo|The current implementation)"
-DOC_CAPABILITY_VERB_PATTERN = r"(?:provides|supports|includes|ships|offers)"
-
-
-def _unsupported_doc_pattern(claim: str, *, uses_is: bool = False) -> re.Pattern[str]:
-    if uses_is:
-        pattern = rf"\b{DOC_SUBJECT_PATTERN}\s+is\s+(?:an?\s+)?{claim}\b"
-    else:
-        pattern = (
-            rf"\b{DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
-            rf"\s+(?:an?\s+)?{claim}\b"
-        )
-    return re.compile(pattern, re.IGNORECASE)
-
-
-UNSUPPORTED_DOC_CLAIMS = [
-    (
-        "enterprise-ready",
-        _unsupported_doc_pattern("enterprise-ready", uses_is=True),
-    ),
-    (
-        "web API",
-        _unsupported_doc_pattern("web API"),
-    ),
-    (
-        "web UI",
-        _unsupported_doc_pattern("web UI"),
-    ),
-    (
-        "network model providers",
-        _unsupported_doc_pattern("network model providers"),
-    ),
-    (
-        "multi-agent execution",
-        _unsupported_doc_pattern("multi-agent execution"),
-    ),
-    (
-        "MCP adapter",
-        _unsupported_doc_pattern("MCP adapter"),
-    ),
-]
-
 
 def run_builtin_evals(project_root: Path) -> list[EvalResult]:
     results: list[EvalResult] = []
@@ -156,52 +112,6 @@ def write_eval_report(project_root: Path, results: list[EvalResult]) -> Path:
             lines.append(f"  artifacts: {', '.join(sorted(result.artifacts))}")
     markdown.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return output
-
-
-def scanner_report(project_root: Path) -> Path:
-    reports = project_root / ".agent-harness" / "exports"
-    reports.mkdir(parents=True, exist_ok=True)
-    critical_findings = _scan_docs_for_unsupported_claims(project_root)
-    report = {
-        "schema_version": "scanner_report.v1",
-        "status": "failed" if critical_findings else "passed",
-        "tools": {
-            "ruff": bool(shutil.which("ruff")),
-            "mypy": bool(shutil.which("mypy")),
-        },
-        "critical_findings": critical_findings,
-    }
-    output = reports / "scanner-report.json"
-    write_json(output, report)
-    return output
-
-
-def _scan_docs_for_unsupported_claims(project_root: Path) -> list[dict[str, object]]:
-    candidates: list[Path] = []
-    readme = project_root / "README.md"
-    if readme.exists():
-        candidates.append(readme)
-    docs = project_root / "docs"
-    if docs.exists():
-        candidates.extend(sorted(docs.rglob("*.md")))
-
-    findings: list[dict[str, object]] = []
-    for path in candidates:
-        lines = path.read_text(encoding="utf-8").splitlines()
-        for line_number, line in enumerate(lines, start=1):
-            for label, pattern in UNSUPPORTED_DOC_CLAIMS:
-                if not pattern.search(line):
-                    continue
-                findings.append(
-                    {
-                        "rule_id": "unsupported_doc_claim",
-                        "path": path.relative_to(project_root).as_posix(),
-                        "line": line_number,
-                        "message": f"Docs claim unsupported behavior as available: {label}",
-                        "text": line.strip(),
-                    }
-                )
-    return findings
 
 
 def _base_invariants(spec: EvalSpec, summary: RunSummary) -> list[EvalInvariant]:

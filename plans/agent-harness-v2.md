@@ -8,7 +8,7 @@ Status initialized from the V2 PRD on 2026-04-26.
 
 - Phase 0: completed
 - Phase 1: pending
-- Phase 2: pending
+- Phase 2: completed
 - Phase 3: pending
 - Phase 4: pending
 - Phase 5: pending
@@ -17,7 +17,8 @@ Status initialized from the V2 PRD on 2026-04-26.
 - Phase 8: pending
 - Phase 9: pending
 - Phase 10: pending
-- Next target: Phase 1 Schema Migration Report And Safe Write
+- Next target: Phase 1 Schema Migration Report And Safe Write remains pending;
+  Phase 2 was completed out of order by request.
 
 ## Architectural Decisions
 
@@ -229,17 +230,27 @@ a time.
 
 ### Acceptance criteria
 
-- [ ] Docs checks are available through `agent-harness docs check` or
+- [x] Docs checks are available through `agent-harness docs check` or
       `agent-harness doctor --docs`.
-- [ ] Docs checks are not exposed through `agent-harness eval`.
-- [ ] Guarded unsupported claims fail with file and line evidence.
-- [ ] Major docs are required to contain implemented-vs-roadmap sections where
+- [x] Docs checks are not exposed through `agent-harness eval`.
+- [x] Guarded unsupported claims fail with file and line evidence.
+- [x] Major docs are required to contain implemented-vs-roadmap sections where
       capability claims are made.
-- [ ] Internal links are checked.
-- [ ] Citation marker placeholders are banned.
-- [ ] Schema references are checked against public schema constants.
-- [ ] Markdown hygiene failures are reported.
-- [ ] CI can run docs checks as a blocking job.
+- [x] Internal links are checked.
+- [x] Citation marker placeholders are banned.
+- [x] Schema references are checked against public schema constants.
+- [x] Markdown hygiene failures are reported.
+- [x] CI can run docs checks as a blocking job.
+
+### Phase 2 implementation notes
+
+- Added `agent-harness docs check`, which writes `docs_check.v1` reports and
+  returns nonzero on findings.
+- Docs checks now own guarded unsupported claims, required scope sections,
+  internal links, citation placeholders, schema reference drift, and basic
+  Markdown hygiene.
+- `agent-harness eval` no longer runs or reports docs scanner output.
+- CI includes a blocking docs-check job.
 
 ### Out of scope
 
