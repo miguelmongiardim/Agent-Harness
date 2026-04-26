@@ -129,6 +129,75 @@ def test_critical_security_finding_blocks_even_when_high_is_relaxed(
     assert findings["findings"][0]["rule_id"] == "credential-literal"
 
 
+def test_critical_secret_blocks_before_context_and_exports_policy_evidence(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    _seed_project_with_mock_provider(tmp_path)
+    (tmp_path / "credentials.py").write_text(
+        'API_KEY = "not-a-real-key"\n',
+        encoding="utf-8",
+    )
+    task_path = _write_task(
+        tmp_path,
+        {
+            "schema_version": "task.v2",
+            "task_id": "critical-secret-policy-evidence",
+            "title": "Inspect credentials",
+            "intent": "Inspect the target through a provider.",
+            "provider_profile": "mock-default",
+            "target_paths": ["credentials.py"],
+            "allowed_tools": ["read_file"],
+            "max_steps": 3,
+        },
+    )
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-critical-secret-policy")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-26T21:18:00Z")
+
+    summary = HarnessRuntime(tmp_path).run_task(task_path)
+
+    assert summary.status == "failed"
+    assert "security_findings" in summary.artifacts
+    assert "context_manifest" not in summary.artifacts
+    assert "provider" not in summary.artifacts
+    run_dir = tmp_path / ".agent-harness" / "runs" / summary.run_id
+    assert not (run_dir / "context_manifest.json").exists()
+    assert not (run_dir / "provider.json").exists()
+
+    findings = json.loads((tmp_path / summary.artifacts["security_findings"]).read_text())
+    finding = findings["findings"][0]
+    assert finding["severity"] == "critical"
+    assert finding["source"] == "first_party_static"
+    assert finding["location"] == {"path": "credentials.py", "line": 1}
+    assert finding["evidence"] == "API_KEY = <redacted>"
+    assert finding["policy_action"] == "block"
+    assert finding["blocking"] is True
+
+    events = _read_jsonl(tmp_path / summary.artifacts["events"])
+    event_types = [event["type"] for event in events]
+    assert "context_manifest_created" not in event_types
+    assert "provider_selected" not in event_types
+    assert "model_action" not in event_types
+
+    assert main(["export", "sarif", summary.run_id]) == 0
+    capsys.readouterr()
+    exported = json.loads(
+        (tmp_path / ".agent-harness" / "exports" / f"{summary.run_id}.sarif").read_text(
+            encoding="utf-8"
+        )
+    )
+    result = next(
+        result
+        for result in exported["runs"][0]["results"]
+        if result["ruleId"] == "credential-literal"
+    )
+    assert result["properties"]["policy_action"] == "block"
+    assert result["properties"]["blocking"] is True
+    assert result["properties"]["evidence"] == "API_KEY = <redacted>"
+
+
 def test_medium_security_finding_is_report_only_by_default(
     tmp_path: Path, monkeypatch
 ) -> None:  # type: ignore[no-untyped-def]
@@ -208,6 +277,59 @@ def test_security_findings_export_to_sarif_and_doctor_reports_optional_scanners(
     doctor = capsys.readouterr().out
     assert "optional scanner" in doctor
     assert "first-party security checks active" in doctor
+
+
+def test_advisory_scanner_reports_are_recorded_without_blocking_runs(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    advisory_dir = tmp_path / ".agent-harness" / "advisories"
+    advisory_dir.mkdir(parents=True)
+    (advisory_dir / "gitleaks.json").write_text(
+        json.dumps({"findings": [{"rule": "example-secret"}]}, indent=2),
+        encoding="utf-8",
+    )
+    (advisory_dir / "cyclonedx.json").write_text(
+        json.dumps({"bomFormat": "CycloneDX", "components": []}, indent=2),
+        encoding="utf-8",
+    )
+    (tmp_path / "safe.py").write_text("def identity(value):\n    return value\n", encoding="utf-8")
+    task_path = _write_task(
+        tmp_path,
+        {
+            "schema_version": "task.v2",
+            "task_id": "advisory-scanner-reports",
+            "title": "Inspect safe file",
+            "intent": "Inspect the target without changing files.",
+            "target_paths": ["safe.py"],
+            "allowed_tools": ["read_file"],
+            "max_steps": 3,
+        },
+    )
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-advisory-scanners")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-26T21:25:00Z")
+
+    summary = HarnessRuntime(tmp_path).run_task(task_path)
+
+    assert summary.status == "completed"
+    assert "advisory_reports" in summary.artifacts
+    advisory_report = json.loads((tmp_path / summary.artifacts["advisory_reports"]).read_text())
+    reports = {report["kind"]: report for report in advisory_report["reports"]}
+    assert reports["gitleaks"]["available"] is True
+    assert reports["gitleaks"]["policy_action"] == "advisory"
+    assert reports["gitleaks"]["blocking"] is False
+    assert reports["cyclonedx"]["available"] is True
+    assert reports["cyclonedx"]["policy_action"] == "advisory"
+    assert reports["cyclonedx"]["blocking"] is False
+
+    monkeypatch.setenv("PATH", "")
+    assert main(["doctor"]) == 0
+    doctor = capsys.readouterr().out
+    assert "WARN optional scanner: gitleaks unavailable" in doctor
+    assert "WARN optional scanner: cyclonedx unavailable" in doctor
 
 
 def _seed_project_with_mock_provider(root: Path) -> None:

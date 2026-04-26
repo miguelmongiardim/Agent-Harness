@@ -50,6 +50,7 @@ RetrievalMethod = Literal["direct", "lexical", "dense", "both"]
 RetrievalEvidenceMethod = Literal["lexical", "dense"]
 BenchmarkKind = Literal["swe_bench_style", "terminal_task"]
 SecuritySeverity = Literal["critical", "high", "medium", "low", "info"]
+SecurityPolicyAction = Literal["block", "report"]
 RuntimeAdapterId = Literal["langgraph"]
 RuntimeExecutionBoundary = Literal["native_runtime_delegate"]
 
@@ -333,11 +334,26 @@ class SecurityFinding(StrictModel):
     rule_id: str
     severity: SecuritySeverity
     scanner: str
+    source: str = ""
     path: str | None = None
     line: int | None = Field(default=None, ge=1)
+    location: dict[str, str | int] = Field(default_factory=dict)
     message: str
     evidence: str | None = None
+    policy_action: SecurityPolicyAction = "report"
+    blocking: bool = False
     created_at: datetime = Field(default_factory=now_utc)
+
+    @model_validator(mode="after")
+    def hydrate_security_evidence_fields(self) -> SecurityFinding:
+        if not self.source:
+            self.source = self.scanner
+        if not self.location and self.path is not None:
+            location: dict[str, str | int] = {"path": self.path}
+            if self.line is not None:
+                location["line"] = self.line
+            self.location = location
+        return self
 
     @field_validator("path")
     @classmethod

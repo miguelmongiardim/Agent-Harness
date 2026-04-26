@@ -41,7 +41,7 @@ from agent_harness.schemas import (
     ToolObservation,
     WorkspaceMetadata,
 )
-from agent_harness.security import scan_task_security
+from agent_harness.security import collect_advisory_reports, scan_task_security
 from agent_harness.storage import RunStore, make_event
 from agent_harness.templates import load_template, plan_template_apply
 from agent_harness.tools.executor import ToolExecutor
@@ -125,6 +125,12 @@ class HarnessRuntime:
         dump_model(store.run_dir / "policy.json", profile)
         security_report = scan_task_security(self.project_root, run_id, task, policy)
         security_path = store.write_model("security_findings.json", security_report)
+        advisory_reports = collect_advisory_reports(self.project_root, self.artifact_root)
+        advisory_reports_path = (
+            store.write_data("advisory_reports.json", advisory_reports)
+            if advisory_reports is not None
+            else None
+        )
         store.append_event(
             make_event(
                 run_id,
@@ -158,6 +164,8 @@ class HarnessRuntime:
                 "summary": store.run_dir / "summary.json",
                 "artifact_index": store.run_dir / "artifact-index.json",
             }
+            if advisory_reports_path is not None:
+                artifact_paths["advisory_reports"] = advisory_reports_path
             if runtime_adapter_path is not None:
                 artifact_paths["runtime_adapter"] = runtime_adapter_path
             return self._finalize_task_run(
@@ -439,6 +447,8 @@ class HarnessRuntime:
             "summary": store.run_dir / "summary.json",
             "artifact_index": store.run_dir / "artifact-index.json",
         }
+        if advisory_reports_path is not None:
+            artifact_paths["advisory_reports"] = advisory_reports_path
         if runtime_adapter_path is not None:
             artifact_paths["runtime_adapter"] = runtime_adapter_path
         if provider_path is not None:

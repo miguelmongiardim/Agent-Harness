@@ -11,13 +11,13 @@ Status initialized from the V2 PRD on 2026-04-26.
 - Phase 2: completed
 - Phase 3: completed
 - Phase 4: completed
-- Phase 5: pending
+- Phase 5: completed
 - Phase 6: pending
 - Phase 7: pending
 - Phase 8: pending
 - Phase 9: pending
 - Phase 10: pending
-- Next target: Phase 5 Security Gates And Advisory Reports.
+- Next target: Phase 6 Retrieval Hardening And Local Dense Fixtures.
 
 ## Architectural Decisions
 
@@ -439,7 +439,7 @@ live smoke marker coverage.
 
 **First RED test**
 
-- `tests/integration/test_security_v2_gates.py::test_critical_secret_blocks_before_context_and_exports_policy_evidence`
+- `tests/integration/test_security_gates.py::test_critical_secret_blocks_before_context_and_exports_policy_evidence`
   should create a critical first-party finding, run a task, assert no context or
   provider artifact exists, and assert SARIF contains the finding plus policy
   evidence.
@@ -459,17 +459,32 @@ without changing default blocking behavior.
 
 ### Acceptance criteria
 
-- [ ] Critical first-party findings block before context assembly.
-- [ ] Critical first-party findings block before provider selection.
-- [ ] Critical first-party findings block before tool execution.
-- [ ] `SecurityFinding` records include severity, source, location, evidence,
+- [x] Critical first-party findings block before context assembly.
+- [x] Critical first-party findings block before provider selection.
+- [x] Critical first-party findings block before tool execution.
+- [x] `SecurityFinding` records include severity, source, location, evidence,
       policy action, and blocking status.
-- [ ] SARIF exports include policy and security evidence.
-- [ ] Gitleaks report availability is detected.
-- [ ] Gitleaks reports are advisory and non-blocking by default.
-- [ ] CycloneDX SBOM availability is detected.
-- [ ] CycloneDX SBOM reports are advisory and non-blocking by default.
-- [ ] Missing optional scanners produce doctor warnings, not local-run failures.
+- [x] SARIF exports include policy and security evidence.
+- [x] Gitleaks report availability is detected.
+- [x] Gitleaks reports are advisory and non-blocking by default.
+- [x] CycloneDX SBOM availability is detected.
+- [x] CycloneDX SBOM reports are advisory and non-blocking by default.
+- [x] Missing optional scanners produce doctor warnings, not local-run failures.
+
+### Phase 5 implementation notes
+
+- First-party security findings now include stable `source`, `location`,
+  `policy_action`, and `blocking` fields while preserving existing scanner,
+  path, line, severity, and evidence fields.
+- Security gate evaluation annotates findings as `block` or `report` based on
+  the active policy threshold before writing `security_findings.json`.
+- SARIF security results include policy action, blocking status, source, and
+  redacted evidence alongside existing finding and gate metadata.
+- Existing Gitleaks and CycloneDX evidence files under
+  `.agent-harness/advisories/` are recorded as `advisory_reports.v1` artifacts
+  and never block runs by default.
+- `doctor` reports explicit non-blocking warnings when optional Gitleaks or
+  CycloneDX tooling is unavailable.
 
 ### Out of scope
 

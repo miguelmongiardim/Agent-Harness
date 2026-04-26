@@ -46,10 +46,16 @@ def doctor(project_root: Path) -> tuple[bool, list[str]]:
             "WARN optional retrieval: qdrant-client/fastembed unavailable; lexical fallback active"
         )
     messages.append("OK first-party security checks active")
-    if importlib.util.find_spec("bandit") or shutil.which("bandit"):
-        messages.append("OK optional scanner: bandit available")
+    if shutil.which("gitleaks"):
+        messages.append("OK optional scanner: gitleaks available")
     else:
         messages.append(
-            "WARN optional scanner: bandit unavailable; first-party security checks active"
+            "WARN optional scanner: gitleaks unavailable; first-party security checks active"
+        )
+    if shutil.which("cyclonedx-py") or shutil.which("cyclonedx"):
+        messages.append("OK optional scanner: cyclonedx available")
+    else:
+        messages.append(
+            "WARN optional scanner: cyclonedx unavailable; first-party security checks active"
         )
     return ok, messages

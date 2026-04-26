@@ -69,6 +69,16 @@ def scan_task_security(
         for finding in findings
         if _SEVERITY_RANK[finding.severity] >= _SEVERITY_RANK[threshold]
     ]
+    blocking_ids = set(blocking)
+    findings = [
+        finding.model_copy(
+            update={
+                "policy_action": "block" if finding.finding_id in blocking_ids else "report",
+                "blocking": finding.finding_id in blocking_ids,
+            }
+        )
+        for finding in findings
+    ]
     return SecurityFindingsReport(
         run_id=run_id,
         task_id=task.task_id,

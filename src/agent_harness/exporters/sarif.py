@@ -60,6 +60,10 @@ def export_sarif(store: RunStore, output: Path) -> Path:
                     "finding_id": finding.get("finding_id"),
                     "severity": finding.get("severity"),
                     "scanner": finding.get("scanner"),
+                    "source": finding.get("source"),
+                    "evidence": finding.get("evidence"),
+                    "policy_action": finding.get("policy_action"),
+                    "blocking": finding.get("blocking"),
                     "gate_status": gate.get("status"),
                     "gate_blocking": finding.get("finding_id")
                     in gate.get("blocking_finding_ids", []),
