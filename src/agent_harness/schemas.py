@@ -248,7 +248,7 @@ class PolicyProfile(StrictModel):
 
     @model_validator(mode="before")
     @classmethod
-    def hydrate_policy_v2_sections(cls, data: Any) -> Any:
+    def hydrate_policy_contract_sections(cls, data: Any) -> Any:
         if not isinstance(data, dict):
             return data
         hydrated = dict(data)

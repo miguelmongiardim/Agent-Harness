@@ -11,7 +11,7 @@ from agent_harness.policy import PolicyEngine
 from agent_harness.schemas import PolicyProfile, RunProviderRecord
 
 
-def test_policy_v2_default_provider_input_matrix_and_non_widening_overrides(
+def test_default_provider_input_matrix_and_non_widening_overrides(
     tmp_path: Path,
 ) -> None:
     assert DEFAULT_POLICY["schema_version"] == "policy.v2"
@@ -93,7 +93,7 @@ def test_policy_v2_default_provider_input_matrix_and_non_widening_overrides(
     assert decision.approval_required
 
 
-def test_policy_v2_rejects_flat_v1_alias_payload() -> None:
+def test_policy_contract_rejects_flat_legacy_alias_payload() -> None:
     policy = deepcopy(DEFAULT_POLICY)
     for section in (
         "trust_zones",
@@ -115,7 +115,7 @@ def test_policy_v2_rejects_flat_v1_alias_payload() -> None:
     assert PolicyProfile.model_validate(policy).schema_version == "policy.v1"
 
 
-def test_policy_v2_looser_profiles_must_be_named_documented_and_deliberate() -> None:
+def test_looser_profiles_must_be_named_documented_and_deliberate() -> None:
     loose = deepcopy(DEFAULT_POLICY)
     loose["name"] = "permissive-provider-input"
     loose["profile_kind"] = "looser_than_default"

@@ -89,7 +89,7 @@ Durable decisions that apply across all phases:
 
 **First RED test**
 
-- `tests/integration/test_v2_public_baseline.py::test_init_run_and_inspect_emit_v2_defaults_and_schema_evidence`
+- `tests/integration/test_public_schema_baseline.py::test_init_run_and_inspect_emit_default_schema_evidence`
   should initialize a project, run a minimal V2 task, inspect the run, and fail
   until the run artifacts record original/effective schema versions.
 
@@ -279,7 +279,7 @@ a time.
 
 **First RED test**
 
-- `tests/unit/test_policy_v2.py::test_policy_v2_default_provider_input_matrix_and_non_widening_overrides`
+- `tests/unit/test_policy_contract.py::test_default_provider_input_matrix_and_non_widening_overrides`
   should validate default `policy.v2`, evaluate each sensitivity class, and fail
   if task or CLI overrides widen any decision.
 

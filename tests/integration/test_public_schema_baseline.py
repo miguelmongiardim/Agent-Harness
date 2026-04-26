@@ -7,13 +7,13 @@ from agent_harness.cli import main
 from agent_harness.defaults import DEFAULT_POLICY
 
 
-def test_init_run_and_inspect_emit_v2_defaults_and_schema_evidence(
+def test_init_run_and_inspect_emit_default_schema_evidence(
     tmp_path: Path,
     monkeypatch,
     capsys,
 ) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-v2-public-baseline")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-public-schema-baseline")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-26T16:00:00Z")
 
     assert main(["init"]) == 0
@@ -31,8 +31,8 @@ def test_init_run_and_inspect_emit_v2_defaults_and_schema_evidence(
         json.dumps(
             {
                 "schema_version": "task.v2",
-                "task_id": "v2-public-baseline",
-                "title": "Inspect V2 target",
+                "task_id": "public-schema-baseline",
+                "title": "Inspect current schema target",
                 "intent": "Inspect the target without changing files.",
                 "target_paths": ["sample.py"],
                 "allowed_tools": ["read_file"],
@@ -51,7 +51,7 @@ def test_init_run_and_inspect_emit_v2_defaults_and_schema_evidence(
     assert summary["status"] == "dry_run"
     assert "schema_versions" in summary["artifacts"]
 
-    assert main(["inspect", "run", "run-v2-public-baseline"]) == 0
+    assert main(["inspect", "run", "run-public-schema-baseline"]) == 0
     inspected = json.loads(capsys.readouterr().out)
     assert inspected["schema_versions"] == {
         "config": {"original": "config.v2", "effective": "config.v2"},
@@ -60,13 +60,13 @@ def test_init_run_and_inspect_emit_v2_defaults_and_schema_evidence(
     }
 
 
-def test_v1_inputs_run_as_effective_v2_without_policy_widening(
+def test_legacy_inputs_run_as_effective_current_schema_without_policy_widening(
     tmp_path: Path,
     monkeypatch,
     capsys,
 ) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-v1-compatible-v2")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-legacy-compatible-current")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-26T16:05:00Z")
 
     (tmp_path / "agent-harness.yaml").write_text(
@@ -99,7 +99,7 @@ def test_v1_inputs_run_as_effective_v2_without_policy_widening(
         json.dumps(
             {
                 "schema_version": "task.v1",
-                "task_id": "v1-compatible-v2",
+                "task_id": "legacy-compatible-current",
                 "title": "Inspect legacy target",
                 "intent": "Inspect the target without changing files.",
                 "target_paths": ["sample.py"],
@@ -118,7 +118,7 @@ def test_v1_inputs_run_as_effective_v2_without_policy_widening(
     summary = json.loads(capsys.readouterr().out)
     assert summary["status"] == "dry_run"
 
-    assert main(["inspect", "run", "run-v1-compatible-v2"]) == 0
+    assert main(["inspect", "run", "run-legacy-compatible-current"]) == 0
     inspected = json.loads(capsys.readouterr().out)
     assert inspected["schema_versions"] == {
         "config": {"original": "config.v1", "effective": "config.v2"},
@@ -127,9 +127,13 @@ def test_v1_inputs_run_as_effective_v2_without_policy_widening(
     }
 
     policy_artifact = json.loads(
-        (tmp_path / ".agent-harness" / "runs" / "run-v1-compatible-v2" / "policy.json").read_text(
-            encoding="utf-8"
-        )
+        (
+            tmp_path
+            / ".agent-harness"
+            / "runs"
+            / "run-legacy-compatible-current"
+            / "policy.json"
+        ).read_text(encoding="utf-8")
     )
     assert policy_artifact["schema_version"] == "policy.v2"
     assert policy_artifact["provider_input_policy"] == legacy_policy["provider_input_policy"]
@@ -137,7 +141,7 @@ def test_v1_inputs_run_as_effective_v2_without_policy_widening(
     assert policy_artifact["security_fail_threshold"] == legacy_policy["security_fail_threshold"]
 
 
-def test_bundled_task_examples_are_v2_public_inputs(capsys) -> None:  # type: ignore[no-untyped-def]
+def test_bundled_task_examples_are_current_public_inputs(capsys) -> None:  # type: ignore[no-untyped-def]
     for task_path in sorted(Path("examples/tasks").glob("*.json")):
         raw = json.loads(task_path.read_text(encoding="utf-8"))
         assert raw["schema_version"] == "task.v2"
