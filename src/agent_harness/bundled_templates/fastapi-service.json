@@ -1,0 +1,53 @@
+{
+  "schema_version": "template.v2",
+  "name": "fastapi-service",
+  "description": "Minimal FastAPI service scaffold with app entry point, src layout, tests, and pyproject metadata.",
+  "minimum_agent_harness_version": "0.2.0",
+  "required_capabilities": [
+    "python.fastapi"
+  ],
+  "generated_schema_versions": {
+    "config": "config.v2",
+    "policy": "policy.v2",
+    "task": "task.v2",
+    "template": "template.v2"
+  },
+  "provider_requirements": {
+    "required": false,
+    "profiles": []
+  },
+  "policy_requirements": {
+    "required_template_capabilities": [
+      "python.fastapi"
+    ],
+    "required_tools": [
+      "patch_file"
+    ]
+  },
+  "retrieval_assumptions": {
+    "backend": "lexical",
+    "remote_embeddings": false
+  },
+  "eval_or_demo_metadata": {
+    "kind": "demo",
+    "command": "uvicorn example_fastapi_service.main:app"
+  },
+  "files": [
+    {
+      "path": "pyproject.toml",
+      "content": "[build-system]\nrequires = [\"setuptools>=69\", \"wheel\"]\nbuild-backend = \"setuptools.build_meta\"\n\n[project]\nname = \"example-fastapi-service\"\nversion = \"0.1.0\"\nrequires-python = \">=3.11\"\ndependencies = [\n  \"fastapi>=0.110\",\n  \"uvicorn[standard]>=0.27\",\n]\n\n[tool.pytest.ini_options]\npythonpath = [\"src\"]\n"
+    },
+    {
+      "path": "src/example_fastapi_service/__init__.py",
+      "content": "from __future__ import annotations\n\nfrom example_fastapi_service.main import app\n\n__all__ = [\"app\"]\n"
+    },
+    {
+      "path": "src/example_fastapi_service/main.py",
+      "content": "from __future__ import annotations\n\nfrom fastapi import FastAPI\n\napp = FastAPI(title=\"Example FastAPI Service\")\n\n\n@app.get(\"/health\")\ndef health() -> dict[str, str]:\n    return {\"status\": \"ok\"}\n"
+    },
+    {
+      "path": "tests/test_health.py",
+      "content": "from __future__ import annotations\n\nfrom fastapi.testclient import TestClient\n\nfrom example_fastapi_service import app\n\n\ndef test_health_endpoint() -> None:\n    response = TestClient(app).get(\"/health\")\n    assert response.status_code == 200\n    assert response.json() == {\"status\": \"ok\"}\n"
+    }
+  ]
+}

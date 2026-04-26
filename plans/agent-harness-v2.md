@@ -13,11 +13,11 @@ Status initialized from the V2 PRD on 2026-04-26.
 - Phase 4: completed
 - Phase 5: completed
 - Phase 6: completed
-- Phase 7: pending
+- Phase 7: completed
 - Phase 8: pending
 - Phase 9: pending
 - Phase 10: pending
-- Next target: Phase 7 `template.v2` Catalog And Python Trio.
+- Next target: Phase 8 Benchmark Adapter Interfaces.
 
 ## Architectural Decisions
 
@@ -610,20 +610,31 @@ with V2 metadata. Preserve approval-bound apply from V1.
 
 ### Acceptance criteria
 
-- [ ] `template.v2` validates as a public manifest.
-- [ ] `template.v2` includes minimum Agent Harness version.
-- [ ] `template.v2` includes required capabilities.
-- [ ] `template.v2` includes generated schema versions.
-- [ ] `template.v2` includes provider/profile requirements.
-- [ ] `template.v2` includes policy requirements.
-- [ ] `template.v2` includes retrieval assumptions.
-- [ ] `template.v2` includes eval or demo metadata.
-- [ ] `template.v1` bundles remain readable.
-- [ ] `python-lib` is migrated to V2 metadata.
-- [ ] `cli-tool` exists as a V2 template.
-- [ ] `fastapi-service` exists as a V2 template.
-- [ ] Incompatible templates fail before write planning.
-- [ ] Workspace metadata records template id and version after successful apply.
+- [x] `template.v2` validates as a public manifest.
+- [x] `template.v2` includes minimum Agent Harness version.
+- [x] `template.v2` includes required capabilities.
+- [x] `template.v2` includes generated schema versions.
+- [x] `template.v2` includes provider/profile requirements.
+- [x] `template.v2` includes policy requirements.
+- [x] `template.v2` includes retrieval assumptions.
+- [x] `template.v2` includes eval or demo metadata.
+- [x] `template.v1` bundles remain readable.
+- [x] `python-lib` is migrated to V2 metadata.
+- [x] `cli-tool` exists as a V2 template.
+- [x] `fastapi-service` exists as a V2 template.
+- [x] Incompatible templates fail before write planning.
+- [x] Workspace metadata records template id and version after successful apply.
+
+### Phase 7 implementation notes
+
+- `TemplateSpec` now accepts `template.v2` manifests with explicit compatibility
+  metadata while keeping `template.v1` readable.
+- Bundled `python-lib`, `cli-tool`, and `fastapi-service` templates expose V2
+  metadata through `agent-harness template show`.
+- Template apply rejects unsupported required template capabilities before run
+  artifact creation, approval planning, or destination writes.
+- Approval-bound apply and workspace metadata recording from V1 remain the
+  mutation path for compatible templates.
 
 ### Out of scope
 

@@ -636,10 +636,41 @@ class TemplateFile(StrictModel):
 
 
 class TemplateSpec(StrictModel):
-    schema_version: Literal["template.v1"]
+    schema_version: Literal["template.v1", "template.v2"]
     name: str
     description: str
+    minimum_agent_harness_version: str | None = None
+    required_capabilities: list[str] = Field(default_factory=list)
+    generated_schema_versions: dict[str, str] = Field(default_factory=dict)
+    provider_requirements: dict[str, Any] = Field(default_factory=dict)
+    policy_requirements: dict[str, Any] = Field(default_factory=dict)
+    retrieval_assumptions: dict[str, Any] = Field(default_factory=dict)
+    eval_or_demo_metadata: dict[str, Any] = Field(default_factory=dict)
     files: list[TemplateFile]
+
+    @model_validator(mode="after")
+    def validate_template_contract(self) -> TemplateSpec:
+        if self.schema_version == "template.v2":
+            missing = [
+                name
+                for name in (
+                    "minimum_agent_harness_version",
+                    "required_capabilities",
+                    "generated_schema_versions",
+                    "provider_requirements",
+                    "policy_requirements",
+                    "retrieval_assumptions",
+                    "eval_or_demo_metadata",
+                )
+                if _is_missing_template_metadata(getattr(self, name))
+            ]
+            if missing:
+                raise ValueError(f"template.v2 missing required metadata: {', '.join(missing)}")
+        return self
+
+
+def _is_missing_template_metadata(value: object) -> bool:
+    return value is None or value == {} or value == []
 
 
 class TemplateRegistryRecord(StrictModel):
@@ -665,6 +696,14 @@ class TemplateDetail(StrictModel):
     description: str
     bundle_path: str
     tags: list[str] = Field(default_factory=list)
+    template_schema_version: Literal["template.v1", "template.v2"] = "template.v1"
+    minimum_agent_harness_version: str | None = None
+    required_capabilities: list[str] = Field(default_factory=list)
+    generated_schema_versions: dict[str, str] = Field(default_factory=dict)
+    provider_requirements: dict[str, Any] = Field(default_factory=dict)
+    policy_requirements: dict[str, Any] = Field(default_factory=dict)
+    retrieval_assumptions: dict[str, Any] = Field(default_factory=dict)
+    eval_or_demo_metadata: dict[str, Any] = Field(default_factory=dict)
     files: list[TemplateFile]
 
 

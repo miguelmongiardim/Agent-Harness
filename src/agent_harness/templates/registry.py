@@ -39,6 +39,14 @@ def load_template(name: str) -> TemplateDetail:
         description=record.description,
         bundle_path=record.bundle_path,
         tags=record.tags,
+        template_schema_version=spec.schema_version,
+        minimum_agent_harness_version=spec.minimum_agent_harness_version,
+        required_capabilities=spec.required_capabilities,
+        generated_schema_versions=spec.generated_schema_versions,
+        provider_requirements=spec.provider_requirements,
+        policy_requirements=spec.policy_requirements,
+        retrieval_assumptions=spec.retrieval_assumptions,
+        eval_or_demo_metadata=spec.eval_or_demo_metadata,
         files=spec.files,
     )
 

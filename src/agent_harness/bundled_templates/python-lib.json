@@ -1,7 +1,37 @@
 {
-  "schema_version": "template.v1",
+  "schema_version": "template.v2",
   "name": "python-lib",
   "description": "Minimal Python library scaffold with src layout, tests, and pyproject metadata.",
+  "minimum_agent_harness_version": "0.2.0",
+  "required_capabilities": [
+    "python.library"
+  ],
+  "generated_schema_versions": {
+    "config": "config.v2",
+    "policy": "policy.v2",
+    "task": "task.v2",
+    "template": "template.v2"
+  },
+  "provider_requirements": {
+    "required": false,
+    "profiles": []
+  },
+  "policy_requirements": {
+    "required_template_capabilities": [
+      "python.library"
+    ],
+    "required_tools": [
+      "patch_file"
+    ]
+  },
+  "retrieval_assumptions": {
+    "backend": "lexical",
+    "remote_embeddings": false
+  },
+  "eval_or_demo_metadata": {
+    "kind": "demo",
+    "command": "python -m pytest"
+  },
   "files": [
     {
       "path": "pyproject.toml",

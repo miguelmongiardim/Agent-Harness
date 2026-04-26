@@ -1,0 +1,53 @@
+{
+  "schema_version": "template.v2",
+  "name": "cli-tool",
+  "description": "Minimal Python CLI tool scaffold with argparse entry point, src layout, tests, and pyproject metadata.",
+  "minimum_agent_harness_version": "0.2.0",
+  "required_capabilities": [
+    "python.cli"
+  ],
+  "generated_schema_versions": {
+    "config": "config.v2",
+    "policy": "policy.v2",
+    "task": "task.v2",
+    "template": "template.v2"
+  },
+  "provider_requirements": {
+    "required": false,
+    "profiles": []
+  },
+  "policy_requirements": {
+    "required_template_capabilities": [
+      "python.cli"
+    ],
+    "required_tools": [
+      "patch_file"
+    ]
+  },
+  "retrieval_assumptions": {
+    "backend": "lexical",
+    "remote_embeddings": false
+  },
+  "eval_or_demo_metadata": {
+    "kind": "demo",
+    "command": "example-cli --name Codex"
+  },
+  "files": [
+    {
+      "path": "pyproject.toml",
+      "content": "[build-system]\nrequires = [\"setuptools>=69\", \"wheel\"]\nbuild-backend = \"setuptools.build_meta\"\n\n[project]\nname = \"example-cli-tool\"\nversion = \"0.1.0\"\nrequires-python = \">=3.11\"\ndependencies = []\n\n[project.scripts]\nexample-cli = \"example_cli_tool.cli:main\"\n\n[tool.pytest.ini_options]\npythonpath = [\"src\"]\n"
+    },
+    {
+      "path": "src/example_cli_tool/__init__.py",
+      "content": "from __future__ import annotations\n\n__all__ = [\"__version__\"]\n\n__version__ = \"0.1.0\"\n"
+    },
+    {
+      "path": "src/example_cli_tool/cli.py",
+      "content": "from __future__ import annotations\n\nimport argparse\n\n\ndef main(argv: list[str] | None = None) -> int:\n    parser = argparse.ArgumentParser(prog=\"example-cli\")\n    parser.add_argument(\"--name\", default=\"world\")\n    args = parser.parse_args(argv)\n    print(f\"hello {args.name}\")\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n"
+    },
+    {
+      "path": "tests/test_cli.py",
+      "content": "from __future__ import annotations\n\nfrom example_cli_tool.cli import main\n\n\ndef test_cli_greets_named_user(capsys) -> None:\n    assert main([\"--name\", \"Codex\"]) == 0\n    assert capsys.readouterr().out == \"hello Codex\\n\"\n"
+    }
+  ]
+}

@@ -40,7 +40,7 @@ DEFAULT_POLICY = {
         "external_reports": "advisory",
     },
     "template_capabilities": {
-        "allowed_capabilities": [],
+        "allowed_capabilities": ["python.library", "python.cli", "python.fastapi"],
         "default_action": "deny",
     },
     "migration": {

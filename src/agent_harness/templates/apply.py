@@ -19,6 +19,13 @@ def plan_template_apply(
     policy: PolicyEngine,
     force: bool = False,
 ) -> TemplateApplyRecord:
+    unsupported = _unsupported_required_capabilities(spec, policy)
+    if unsupported:
+        capabilities = ", ".join(unsupported)
+        raise PermissionError(
+            f"template {spec.template_id} has unsupported template capabilities: {capabilities}"
+        )
+
     try:
         destination_path = destination.resolve().relative_to(policy.project_root).as_posix()
     except ValueError as exc:
@@ -71,6 +78,22 @@ def plan_template_apply(
         proposed_writes=writes,
         force=force,
     )
+
+
+def _unsupported_required_capabilities(
+    spec: TemplateDetail, policy: PolicyEngine
+) -> list[str]:
+    if spec.template_schema_version != "template.v2":
+        return []
+    capability_policy = policy.profile.template_capabilities
+    if capability_policy is None or capability_policy.default_action == "deny":
+        allowed = set(capability_policy.allowed_capabilities if capability_policy else [])
+        return [
+            capability
+            for capability in spec.required_capabilities
+            if capability not in allowed
+        ]
+    return []
 
 
 def _diff(before: str, after: str, path: str) -> str:
