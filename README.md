@@ -81,6 +81,7 @@ uv run agent-harness run examples/tasks/python_refactor.json --runtime langgraph
 agent-harness init
 agent-harness template list
 agent-harness template show python-lib
+agent-harness template validate --all
 agent-harness template apply python-lib --destination ./scratch-lib
 agent-harness ingest docs docs
 agent-harness task validate examples/tasks/python_refactor.json

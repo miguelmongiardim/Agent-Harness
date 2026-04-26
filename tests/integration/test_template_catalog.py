@@ -53,6 +53,50 @@ def test_template_catalog_exposes_python_trio_with_v2_metadata(
         assert detail["eval_or_demo_metadata"]
 
 
+def test_template_validate_all_applies_bundled_templates_cleanly_and_records_release_evidence(
+    tmp_path: Path,
+    monkeypatch,  # type: ignore[no-untyped-def]
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    seed_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-27T11:00:00Z")
+
+    assert main(["template", "validate", "--all"]) == 0
+    report = json.loads(capsys.readouterr().out)
+
+    assert report["schema_version"] == "template_validation.v1"
+    assert report["status"] == "passed"
+    results = {entry["template_id"]: entry for entry in report["templates"]}
+    assert set(results) == {"cli-tool", "fastapi-service", "python-lib"}
+
+    for template_id, result in results.items():
+        assert result["listed"] is True
+        assert result["shown"] is True
+        assert result["status"] == "passed"
+        assert result["apply"]["status"] == "completed"
+        assert result["apply"]["approvals"] == []
+        scaffold = tmp_path / result["apply"]["destination"]
+        assert scaffold.parts[-1] == "scaffold"
+        assert (scaffold / "pyproject.toml").exists(), template_id
+
+    evidence_path = (
+        tmp_path / ".agent-harness" / "release" / "evidence" / "template-validation.json"
+    )
+    evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+    assert evidence["status"] == "passed"
+    assert {entry["template_id"] for entry in evidence["templates"]} == set(results)
+
+
+def test_template_docs_cover_validation_and_clean_apply_boundaries() -> None:
+    docs = Path("docs/templates.md").read_text(encoding="utf-8")
+
+    assert "agent-harness template validate --all" in docs
+    assert "Clean empty-destination scaffolding does not require approval" in docs
+    assert "non-empty destination" in docs
+    assert "--force" in docs
+
+
 def test_incompatible_template_v2_rejects_before_write_planning(
     tmp_path: Path,
     monkeypatch,  # type: ignore[no-untyped-def]

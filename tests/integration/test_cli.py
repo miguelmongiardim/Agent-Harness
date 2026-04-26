@@ -64,25 +64,9 @@ def test_cli_template_apply(
 
     destination = tmp_path / "scratch"
     assert main(["template", "apply", "python-lib", "--destination", str(destination)]) == 0
-    proposed = json.loads(capsys.readouterr().out)
-    assert proposed["status"] == "paused"
-    assert proposed["approvals"]
-    assert not (destination / "pyproject.toml").exists()
-
-    assert (
-        main(
-            [
-                "approve",
-                proposed["run_id"],
-                proposed["approvals"][0],
-                "--decision",
-                "approve",
-                "--actor",
-                "reviewer",
-            ]
-        )
-        == 0
-    )
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["status"] == "completed"
+    assert summary["approvals"] == []
     assert (destination / "pyproject.toml").exists()
     assert (destination / "src" / "example_python_lib" / "core.py").exists()
 
@@ -217,22 +201,9 @@ def test_cli_template_apply_respects_policy_write_roots(
         )
         == 0
     )
-    proposed = json.loads(capsys.readouterr().out)
-    assert proposed["status"] == "paused"
-    assert (
-        main(
-            [
-                "approve",
-                proposed["run_id"],
-                proposed["approvals"][0],
-                "--decision",
-                "approve",
-                "--actor",
-                "reviewer",
-            ]
-        )
-        == 0
-    )
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["status"] == "completed"
+    assert summary["approvals"] == []
     assert (allowed / "pyproject.toml").exists()
 
     assert (

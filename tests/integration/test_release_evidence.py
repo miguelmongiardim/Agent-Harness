@@ -6,6 +6,7 @@ from typing import Any
 
 from agent_harness import release
 from agent_harness.cli import main
+from tests.conftest import seed_project
 
 
 def test_release_readiness_report_requires_docs_checks_ci_advisories_and_changelog(
@@ -51,8 +52,13 @@ def test_release_readiness_report_requires_docs_checks_ci_advisories_and_changel
 
 
 def test_release_readiness_defaults_to_project_version_and_reports_missing_evidence(
+    tmp_path: Path,
+    monkeypatch,  # type: ignore[no-untyped-def]
     capsys,  # type: ignore[no-untyped-def]
 ) -> None:
+    monkeypatch.chdir(tmp_path)
+    _write_release_project_without_evidence(tmp_path, "0.3.0")
+
     assert main(["release", "readiness"]) == 0
     report = json.loads(capsys.readouterr().out)
 
@@ -203,6 +209,28 @@ def test_demo_docs_cover_provider_audit_and_secondary_python_refactor_paths() ->
     assert "demo-python-refactor.json" in combined
 
 
+def test_template_validation_satisfies_release_readiness_template_gate(
+    tmp_path: Path,
+    monkeypatch,  # type: ignore[no-untyped-def]
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    _write_release_ready_project(tmp_path, "9.9.9")
+
+    assert main(["template", "validate", "--all"]) == 0
+    evidence = json.loads(capsys.readouterr().out)
+    assert evidence["status"] == "passed"
+    assert len(evidence["templates"]) == 3
+
+    assert main(["release", "readiness"]) == 0
+    readiness = json.loads(capsys.readouterr().out)
+    assert readiness["templates"]["validation"]["status"] == "passed"
+    assert readiness["templates"]["validation"]["evidence"] == (
+        ".agent-harness/release/evidence/template-validation.json"
+    )
+
+
 def _write_release_ready_project(root: Path, version: str) -> None:
     (root / "pyproject.toml").write_text(
         "\n".join(
@@ -276,3 +304,59 @@ def _write_release_ready_project(root: Path, version: str) -> None:
         (evidence / f"{name}.json").write_text(
             json.dumps({"status": "passed"}), encoding="utf-8"
         )
+
+
+def _write_release_project_without_evidence(root: Path, version: str) -> None:
+    (root / "pyproject.toml").write_text(
+        "\n".join(
+            [
+                "[project]",
+                'name = "agent-harness"',
+                f'version = "{version}"',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (root / "README.md").write_text(
+        "\n".join(
+            [
+                "# Agent Harness",
+                "",
+                "## What This Repo Proves",
+                "",
+                "Agent Harness provides controlled local workflows.",
+                "",
+                "## Roadmap / Not Enabled By Init",
+                "",
+                "Roadmap features remain future scope.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    docs = root / "docs"
+    docs.mkdir()
+    (docs / "prd-agent-harness-v3.md").write_text(
+        "\n".join(
+            [
+                "# Agent Harness V3 / v1.0.0 PRD",
+                "",
+                "Agent Harness V3 is the v1.0.0 maturity release.",
+                "",
+                "## Compatibility And Deprecation Policy",
+                "",
+                "V2 schemas are the v1.0.0 public baseline.",
+                "",
+                "## Implemented vs Roadmap",
+                "",
+                "Implemented capabilities are separate from roadmap scope.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (root / "CHANGELOG.md").write_text(
+        f"# Changelog\n\n## [{version}] - 2026-04-26\n\n- Release.\n",
+        encoding="utf-8",
+    )

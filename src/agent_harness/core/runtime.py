@@ -34,6 +34,7 @@ from agent_harness.schemas import (
     ProviderUseApprovalBinding,
     RetrievalBackendManifest,
     RunProviderRecord,
+    RunStatus,
     RunSummary,
     RuntimeAdapterRecord,
     Sensitivity,
@@ -539,51 +540,9 @@ class HarnessRuntime:
             _template_apply_arguments_payload(template_apply),
             checkpoint_hash,
         )
-        approval = ApprovalRecord(
-            approval_id=stable_id("approval", run_id, action_id),
-            run_id=run_id,
-            action_id=action_id,
-            tool_name="template_apply",
-            arguments_hash=sha256_json(_template_apply_arguments_payload(template_apply)),
-            policy_profile=policy.profile.name,
-            checkpoint_hash=checkpoint_hash,
-            proposed_effect_hash=sha256_json(_template_apply_effect_payload(template_apply)),
-        )
         workspace_metadata_relative = (
             Path(self.config.artifact_root) / "workspace.json"
         ).as_posix()
-        store.write_action(
-            action_id,
-            {
-                "kind": "template_apply",
-                "template": {
-                    "template_id": template_apply.template_id,
-                    "version": template_apply.version,
-                    "title": template_apply.title,
-                    "description": template_apply.description,
-                },
-                "destination": template_apply.destination,
-                "force": template_apply.force,
-                "proposed_writes": [
-                    write.model_dump(mode="json") for write in template_apply.proposed_writes
-                ],
-                "checkpoint_hash": checkpoint_hash,
-                "policy_profile": policy.profile.name,
-                "workspace_metadata_path": workspace_metadata_relative,
-            },
-        )
-        store.write_approval(approval)
-        store.append_event(
-            make_event(
-                run_id,
-                "approval_recorded",
-                {
-                    "approval": approval.model_dump(mode="json"),
-                    "operation": "template_apply",
-                },
-            )
-        )
-
         artifact_paths = {
             "run_dir": store.run_dir,
             "state": store.db_path,
@@ -596,19 +555,90 @@ class HarnessRuntime:
             "artifact_index": store.run_dir / "artifact-index.json",
             "workspace_metadata": self.project_root / workspace_metadata_relative,
         }
+        action_record = {
+            "kind": "template_apply",
+            "template": {
+                "template_id": template_apply.template_id,
+                "version": template_apply.version,
+                "title": template_apply.title,
+                "description": template_apply.description,
+            },
+            "destination": template_apply.destination,
+            "force": template_apply.force,
+            "proposed_writes": [
+                write.model_dump(mode="json") for write in template_apply.proposed_writes
+            ],
+            "checkpoint_hash": checkpoint_hash,
+            "policy_profile": policy.profile.name,
+            "workspace_metadata_path": workspace_metadata_relative,
+        }
+        store.write_action(action_id, action_record)
+
+        approvals: list[str] = []
+        status: RunStatus = "completed"
+        message = "template applied to clean destination"
+        if _template_apply_requires_approval(
+            self.project_root,
+            destination,
+            template_apply,
+            force=force,
+        ):
+            approval = ApprovalRecord(
+                approval_id=stable_id("approval", run_id, action_id),
+                run_id=run_id,
+                action_id=action_id,
+                tool_name="template_apply",
+                arguments_hash=sha256_json(_template_apply_arguments_payload(template_apply)),
+                policy_profile=policy.profile.name,
+                checkpoint_hash=checkpoint_hash,
+                proposed_effect_hash=sha256_json(_template_apply_effect_payload(template_apply)),
+            )
+            store.write_approval(approval)
+            approvals = [action_id]
+            status = "paused"
+            message = "run paused for approval"
+            store.append_event(
+                make_event(
+                    run_id,
+                    "approval_recorded",
+                    {
+                        "approval": approval.model_dump(mode="json"),
+                        "operation": "template_apply",
+                    },
+                )
+            )
+        else:
+            store.append_event(
+                make_event(
+                    run_id,
+                    "template_apply_clean_destination",
+                    {
+                        "template_id": template_apply.template_id,
+                        "destination": template_apply.destination,
+                    },
+                )
+            )
+            _apply_template_approval(
+                self.project_root,
+                store,
+                template_apply,
+                action_id,
+                workspace_metadata_path=workspace_metadata_relative,
+            )
+
         artifacts = {
             name: self._project_relative(path) for name, path in artifact_paths.items()
         }
-        store.append_event(make_event(run_id, "run_finished", {"status": "paused"}))
+        store.append_event(make_event(run_id, "run_finished", {"status": status}))
         summary = RunSummary(
             run_id=run_id,
             task_id=task_id,
-            status="paused",
+            status=status,
             events_count=store.event_count(),
-            approvals=[action_id],
+            approvals=approvals,
             artifacts=artifacts,
             started_at=started_at,
-            message="run paused for approval",
+            message=message,
         )
         store.write_summary(summary)
         artifact_hashes = {
@@ -1217,6 +1247,23 @@ def _template_apply_effect_payload(template_apply: TemplateApplyRecord) -> dict[
             for write in template_apply.proposed_writes
         ],
     }
+
+
+def _template_apply_requires_approval(
+    project_root: Path,
+    destination: Path,
+    template_apply: TemplateApplyRecord,
+    *,
+    force: bool,
+) -> bool:
+    if force:
+        return True
+    if destination.exists():
+        if not destination.is_dir():
+            return True
+        if any(destination.iterdir()):
+            return True
+    return any((project_root / write.path).exists() for write in template_apply.proposed_writes)
 
 
 def _validate_template_apply_approval(

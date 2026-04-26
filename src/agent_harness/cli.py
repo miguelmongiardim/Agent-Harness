@@ -33,6 +33,7 @@ from agent_harness.release import (
 from agent_harness.schemas import TaskSpec
 from agent_harness.storage import RunStore
 from agent_harness.templates import list_templates, load_template
+from agent_harness.templates.validation import validate_templates
 from agent_harness.utils import load_json, write_json
 
 STARTER_DOC = """# Agent Harness Project
@@ -81,6 +82,11 @@ def build_parser() -> argparse.ArgumentParser:
     template_show = template_sub.add_parser("show")
     template_show.add_argument("name")
     template_show.set_defaults(func=cmd_template_show)
+    template_validate = template_sub.add_parser("validate")
+    template_validate.add_argument("name", nargs="?")
+    template_validate.add_argument("--all", action="store_true")
+    template_validate.add_argument("--output")
+    template_validate.set_defaults(func=cmd_template_validate)
     template_apply = template_sub.add_parser("apply")
     template_apply.add_argument("name")
     template_apply.add_argument("--destination", default=".")
@@ -247,6 +253,18 @@ def cmd_template_list(args: argparse.Namespace) -> int:
 def cmd_template_show(args: argparse.Namespace) -> int:
     print(load_template(args.name).model_dump_json(indent=2))
     return 0
+
+
+def cmd_template_validate(args: argparse.Namespace) -> int:
+    output = Path(args.output) if args.output else None
+    report = validate_templates(
+        Path.cwd(),
+        template_id=args.name,
+        all_templates=args.all,
+        output=output,
+    )
+    print(json.dumps(report, indent=2))
+    return 0 if report["status"] == "passed" else 1
 
 
 def cmd_template_apply(args: argparse.Namespace) -> int:

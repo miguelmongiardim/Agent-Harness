@@ -22,9 +22,24 @@ The bundled V2 Python trio is:
 - `cli-tool`
 - `fastapi-service`
 
-Template application remains approval-bound. Incompatible required
-capabilities are rejected before write planning, and successful apply records
-template id and version in workspace metadata.
+Bundled templates can be validated with:
+
+```powershell
+agent-harness template validate --all
+```
+
+Validation lists, loads, and applies each bundled template into a clean local
+validation workspace. The command records
+`.agent-harness/release/evidence/template-validation.json` for release
+readiness.
+
+Clean empty-destination scaffolding does not require approval. A normal apply
+to a new destination completes immediately and records the template id and
+version in workspace metadata.
+
+Approval remains required for a non-empty destination, `--force` overwrite
+planning, or higher-risk mutations. Incompatible required capabilities are
+rejected before write planning.
 
 `template.v1` bundles remain readable through compatibility loading.
 
