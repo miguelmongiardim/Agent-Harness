@@ -1,205 +1,149 @@
-# Plan: Agent Harness V3
-
-> Source comparison: local ignored `deep-research-report.md`, V2 release state
-> in [plans/agent-harness-v2.md](agent-harness-v2.md), and the public roadmap.
+# Agent Harness V3 / v1.0.0 Plan
 
 ## Planning Decision
 
-V3 should focus on operational integration hardening.
+V3 is the v1.0.0 release-maturity track. The goal is to turn the v0.3.0 V2
+architecture-completion prototype into a stable OSS CLI/runtime release with
+auditable release evidence, reproducible demos, packaging checks, Docker demo
+packaging, pre-commit discipline, accurate public docs, and a clear
+compatibility contract.
 
-V2 closed the core control plane: public V2 schemas, non-widening migration,
-policy-gated context and provider input, approval-bound provider execution,
-redacted provider-call evidence, advisory scanner artifacts, local retrieval
-fixtures, V2 templates, benchmark adapter evidence, docs checks, and release
-readiness.
+V3 does not promote deferred platform scope. Enterprise readiness, compliance
+readiness, MCP support, multi-agent support, production Qdrant server mode,
+external catalogs, web/API maturity, and deployment hardening remain out of
+scope until later plans implement and test them.
 
-The deep-research report still points to several gaps that matter before web UI,
-autonomous multi-agent orchestration, or broad platform claims:
+## Phase 0: v1.0.0 PRD, Compatibility Contract, And Scope Reset
 
-- live provider adapters beyond recorded fixtures
-- executable security and SBOM tools rather than passive report discovery
-- configurable audit retention and redacted/non-redacted logging modes
-- trace correlation and operational metrics
-- production local Qdrant server mode without remote embeddings
-- a sandboxed MCP boundary behind explicit capabilities
-- additional templates such as `docs-rag`, `.NET service`, and embedded C/C++
-- reproducible local packaging through Docker and pre-commit hooks
+First RED test: docs check fails until V3 docs define v1.0.0 positioning,
+compatibility rules, and Implemented vs Roadmap boundaries.
 
-V3 should therefore build the next layer of operational evidence while
-preserving V2 invariants: native runtime first, policy as the permission
-ceiling, no raw provider payloads by default, local-first reproducibility, and
-no roadmap claims without tests.
+Acceptance criteria:
 
-## V2 Coverage From The Research Report
+- PRD and plan are written.
+- README, roadmap, architecture, security, and release docs stop implying
+  deferred platform features.
+- Compatibility and deprecation policy are documented.
+- Existing docs-check passes.
 
-- Explicit task, policy, template, and config contracts exist as public V2
-  schemas.
-- Context packs are explicit and include retrieval provenance, sensitivity, and
-  policy evidence.
-- Provider use, provider input, template apply, patch, and git commit mutations
-  are approval-bound.
-- Runs leave append-only events, artifacts, checkpoints, approvals, summaries,
-  exports, and release-readiness evidence.
-- Local benchmark samples exercise real run evidence instead of synthetic
-  result reports.
-- Docs checks gate unsupported claims, schema drift, links, and roadmap scope.
+## Phase 1: Release Readiness As The Control Surface
 
-## Remaining Research Gaps
+First RED test: `agent-harness release readiness` fails on missing
+package/demo/template/docs evidence and passes only when required evidence is
+present.
 
-- Provider adapters are still recorded/local by default; live smoke execution
-  exists only as an opt-in boundary.
-- External security tools are advisory report inputs, not first-class
-  policy-mediated tool adapters with generated artifacts.
-- Audit retention profiles are not yet configurable as `dev`, `ci`, and
-  `enterprise` policy behavior.
-- Redacted and non-redacted logging modes are not selectable through a public
-  policy contract.
-- OpenTelemetry-style trace ids, spans, and exportable run correlations are not
-  emitted.
-- Dense retrieval is limited to deterministic local fixtures; production local
-  Qdrant server mode is deliberately absent.
-- MCP is represented as an adapter boundary only; no read-only resources or
-  prompts flow through policy yet.
-- Template breadth remains the Python trio; the research report also calls for
-  `docs-rag`, `.NET service`, and embedded C/C++ starts.
-- CI does not yet run Semgrep, Trivy, Gitleaks, CycloneDX generation, pre-commit,
-  or SARIF upload as configurable evidence lanes.
-- Docker packaging is absent.
+Acceptance criteria:
 
-## V3 Scope
+- Readiness checks package build, clean install, console script, demos, docs,
+  changelog, roadmap claims, templates, and artifacts.
+- Readiness defaults to current package version.
+- Missing evidence produces actionable diagnostics.
 
-### Phase 1: Live Provider Gateway Smoke Evidence
+## Phase 2: Packaging And Clean Install Golden Path
 
-**Goal**: prove real provider calls can run only through the V2 provider,
-policy, approval, and audit boundaries.
+First RED test: package build plus clean environment install cannot run the
+console script and doctor command until packaging is fixed.
 
-**Acceptance criteria**
+Acceptance criteria:
 
-- OpenAI-compatible live smoke is opt-in through environment variables and a
-  pytest marker.
-- Anthropic-compatible live smoke is represented as the same provider gateway
-  contract or explicitly reported as unsupported.
-- Live calls require provider-use approval unless the selected policy profile
-  allows them.
-- Provider-call artifacts keep raw payloads absent by default.
-- Release evidence records whether live smoke was skipped, passed, or not
-  configured.
+- Wheel and sdist build cleanly.
+- Clean install succeeds.
+- Installed `agent-harness` console script works.
+- Release artifacts are present and verifiable.
+- Install paths using `uv sync` and package install are documented.
 
-### Phase 2: Security Tool Adapters And CI Evidence
+## Phase 3: Demo Command And Local Golden Path
 
-**Goal**: turn external scanner evidence into policy-mediated adapters instead
-of passive optional files.
+First RED test: the documented provider-audit golden path fails until
+`agent-harness demo provider-audit` creates a run and returns an inspectable run
+id.
 
-**Acceptance criteria**
+Acceptance criteria:
 
-- Gitleaks, Semgrep, Trivy, and CycloneDX adapters can run when tools are
-  installed and report clear missing-tool warnings otherwise.
-- Policy controls which scanners are advisory and which are blocking.
-- Generated scanner outputs are recorded as run or release artifacts.
-- SARIF export includes first-party and external scanner findings.
-- CI has optional lanes for scanner execution and SARIF upload without breaking
-  default local workflows.
+- Local golden path works exactly as documented.
+- Provider audit remains the main demo.
+- Python refactor remains the secondary demo.
+- Required demos emit inspectable artifacts.
+- Provider audit eval path works.
 
-### Phase 3: Audit Retention And Logging Modes
+## Phase 4: Template Maturity Without Clean-Workspace Approval
 
-**Goal**: make retention and logging behavior explicit policy, not implicit
-artifact cleanup.
+First RED test: bundled template validation and clean-workspace application fail
+until every bundled template can be validated and applied cleanly without
+approval.
 
-**Acceptance criteria**
+Acceptance criteria:
 
-- Public policy supports `dev`, `ci`, and `enterprise` retention profiles.
-- Retention reports explain what would be retained or pruned before mutation.
-- Redacted logging remains the default.
-- Non-redacted logging requires an explicit named profile and approval gate.
-- Retention behavior is covered by tests without deleting unrelated user files.
+- Every bundled template can be listed, shown, validated, applied to a clean
+  workspace, and documented.
+- Clean empty-destination scaffolding does not pause for approval.
+- Overwrite, non-empty destination, or risky mutation paths still require
+  policy/approval.
+- Release readiness validates bundled templates.
 
-### Phase 4: Observability And Trace Correlation
+## Phase 5: Pre-commit And CI Maturity
 
-**Goal**: expose operational metrics and trace ids across runs, provider calls,
-tools, approvals, retrieval, exports, and benchmarks.
+First RED test: CI lacks pre-commit, packaging, demo, and release-artifact
+checks until dedicated jobs are added.
 
-**Acceptance criteria**
+Acceptance criteria:
 
-- Runs emit stable trace ids and span-like records without requiring a remote
-  collector.
-- Provider calls, tool calls, retrieval, approvals, exports, and benchmark
-  results reference trace ids.
-- Metrics include latency, approval rate, tool success rate, reproducibility
-  evidence, and audit completeness.
-- OpenTelemetry export is optional and fails closed when the dependency is
-  missing.
+- Pre-commit config exists and is documented.
+- CI runs required tests, docs checks, packaging checks, demo validation,
+  template validation, and release artifact checks.
+- Advisory scanners/SBOM remain visible without making normal local workflows
+  brittle.
+- Required CI stays stable.
 
-### Phase 5: Retrieval Backend Hardening
+## Phase 6: Docker Golden Path
 
-**Goal**: promote local Qdrant server mode from future scope into a tested,
-policy-visible backend while keeping remote embeddings out of scope.
+First RED test: Docker build or provider-audit demo command fails until the
+Dockerfile supports the documented local demo.
 
-**Acceptance criteria**
+Acceptance criteria:
 
-- Local Qdrant server mode is explicitly configured and never inferred.
-- Embedding behavior remains local-only.
-- Context manifests record server mode, collection/index id, embedding model,
-  chunk ids, scores, fallback reason, and policy evidence.
-- Missing server or dependency failures fall back or fail according to policy.
-- Benchmarks include one server-mode retrieval case without claiming public
-  benchmark comparability.
+- Docker image builds.
+- Docker provider-audit golden path works.
+- Docs state Docker is local/demo reproducibility packaging, not production
+  deployment.
+- Docker validation is included in CI or release readiness where practical.
 
-### Phase 6: Template Expansion And Catalog Hygiene
+## Phase 7: v1.0.0 Release Closure
 
-**Goal**: add one high-value non-runtime template slice before broad catalog
-work.
+First RED test: release readiness for 1.0.0 fails until changelog, version,
+migration notes, docs, artifacts, demos, templates, and CI evidence are
+complete.
 
-**Acceptance criteria**
+Acceptance criteria:
 
-- Add a `docs-rag` V2 template with policy, retrieval, eval, and demo metadata.
-- Validate template compatibility before write planning.
-- Keep `.NET service` and embedded C/C++ as later candidates unless explicitly
-  promoted.
-- Template docs separate bundled templates from future external catalogs.
+- Version is bumped to 1.0.0.
+- Changelog has 1.0.0 entry.
+- Migration notes from v0.3.0 to v1.0.0 exist.
+- Release checklist, tag process, and artifact verification are documented.
+- `agent-harness release readiness` reports ready when tag and CI evidence are
+  present.
+- No docs claim enterprise readiness, compliance readiness, MCP support,
+  multi-agent support, production Qdrant server mode, external catalogs, or
+  web/API platform maturity.
 
-### Phase 7: MCP Read-Only Adapter Boundary
+## TDD Rules
 
-**Goal**: prove MCP can expose resources and prompts as untrusted, policy-filtered
-context without becoming the runtime trust boundary.
+- Each phase starts with one failing public-interface test.
+- Implement only enough behavior to make the current test green.
+- Refactor only after green.
+- Do not add horizontal infrastructure unless the current or next slice
+  exercises it.
+- Do not implement roadmap features without an observable behavior and
+  acceptance test.
+- Tests verify CLI/runtime behavior through public interfaces, not private
+  function names.
 
-**Acceptance criteria**
+## Cross-Phase Invariants
 
-- MCP support is behind an explicit capability flag and optional dependency.
-- Read-only resources can be imported into context manifests with sensitivity
-  and provenance.
-- MCP prompts are treated as untrusted templates or evidence, not authority.
-- MCP tool execution remains out of scope unless separately approved.
-- Adversarial tests cover resource injection and capability bypass attempts.
-
-### Phase 8: V3 Docs, Packaging, And Release Evidence
-
-**Goal**: close V3 with public docs and release gates that match implemented
-behavior.
-
-**Acceptance criteria**
-
-- README, architecture, security, retrieval, templates, MCP, observability, and
-  release docs describe only implemented V3 behavior.
-- `CHANGELOG.md` has a V3 entry.
-- Release readiness records local checks, docs checks, CI matrix, scanner lanes,
-  live-smoke status, and tag evidence.
-- Dockerfile and pre-commit setup exist if they were implemented in V3, or stay
-  explicitly deferred.
-
-## Deferred Beyond V3
-
-- Web API and approval UI.
-- Autonomous or collaborative multi-agent orchestration.
-- External template catalogs and remote template discovery.
-- Enterprise identity, centralized secrets management, hardened sandboxing,
-  attestation, and compliance readiness claims.
-- Full SWE-bench or Terminal-Bench dataset execution and leaderboard-style
-  comparability claims.
-- Remote embeddings.
-
-## First Next Step
-
-Write the V3 PRD from this plan, then start Phase 1 with a RED test proving a
-live-provider smoke run cannot execute unless the provider-use approval binding
-matches the selected live provider profile, trust zone, model id, input hash,
-policy decision id, and checkpoint hash.
+- Policy remains the permission ceiling.
+- Run artifacts remain inspectable and reviewable.
+- Public docs match implemented behavior.
+- Default workflows remain local-first and credential-free.
+- Optional tools may improve evidence but must not break normal local
+  development when absent.
+- Roadmap features stay clearly marked until implemented and tested.
