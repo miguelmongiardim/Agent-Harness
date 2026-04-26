@@ -50,6 +50,35 @@
       },
       "auto_approve_patches": false,
       "expected_status": "completed"
+    },
+    {
+      "case_id": "swebench-dense-retrieval",
+      "title": "SWE-bench-style dense retrieval fixture",
+      "benchmark_kind": "swe_bench_style",
+      "description": "Issue-style retrieval task that exercises local dense fixture evidence without public dataset downloads.",
+      "workspace_files": [
+        {
+          "path": "docs/retrieval.md",
+          "content": "# Retrieval Notes\n\nsemantic helper guidance for add_numbers refactors\n"
+        },
+        {
+          "path": "src/sample.py",
+          "content": "def semantic_helper():\n    return \"semantic helper guidance\"\n"
+        }
+      ],
+      "task": {
+        "schema_version": "task.v2",
+        "task_id": "benchmark-swebench-dense-retrieval",
+        "title": "Exercise dense retrieval evidence",
+        "intent": "Inspect dense retrieval context without changing files.",
+        "context_queries": ["semantic helper"],
+        "allowed_tools": ["search_code"],
+        "max_steps": 2
+      },
+      "retrieval_backend": "qdrant",
+      "ingest_paths": ["docs"],
+      "auto_approve_patches": false,
+      "expected_status": "completed"
     }
   ]
 }

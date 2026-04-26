@@ -14,10 +14,10 @@ Status initialized from the V2 PRD on 2026-04-26.
 - Phase 5: completed
 - Phase 6: completed
 - Phase 7: completed
-- Phase 8: pending
+- Phase 8: completed
 - Phase 9: pending
 - Phase 10: pending
-- Next target: Phase 8 Benchmark Adapter Interfaces.
+- Next target: Phase 9 Provider Audit Demo And V2 Example Migration.
 
 ## Architectural Decisions
 
@@ -682,16 +682,29 @@ local fixture behavior.
 
 ### Acceptance criteria
 
-- [ ] SWE-bench-style adapter proves task import.
-- [ ] SWE-bench-style adapter proves workspace preparation.
-- [ ] SWE-bench-style adapter proves policy selection.
-- [ ] SWE-bench-style adapter proves run execution.
-- [ ] SWE-bench-style adapter proves eval result mapping.
-- [ ] SWE-bench-style adapter proves benchmark-style export.
-- [ ] Terminal-Bench-style adapter proves the same import/run/export path.
-- [ ] At least one benchmark scenario exercises local dense retrieval.
-- [ ] Benchmark artifacts point to real run evidence.
-- [ ] Full public dataset downloads are not required.
+- [x] SWE-bench-style adapter proves task import.
+- [x] SWE-bench-style adapter proves workspace preparation.
+- [x] SWE-bench-style adapter proves policy selection.
+- [x] SWE-bench-style adapter proves run execution.
+- [x] SWE-bench-style adapter proves eval result mapping.
+- [x] SWE-bench-style adapter proves benchmark-style export.
+- [x] Terminal-Bench-style adapter proves the same import/run/export path.
+- [x] At least one benchmark scenario exercises local dense retrieval.
+- [x] Benchmark artifacts point to real run evidence.
+- [x] Full public dataset downloads are not required.
+
+### Phase 8 implementation notes
+
+- Benchmark cases now run through explicit adapter evidence mapping for
+  SWE-bench-style and terminal-bench-style local samples.
+- `benchmark_result.v1` records adapter id plus evidence for task import,
+  workspace preparation, policy selection, run execution, eval result mapping,
+  benchmark-style result export, and retrieval backend evidence when present.
+- The local sample pack includes a dense-retrieval case that uses bundled files,
+  local ingestion, `retrieval_backend: qdrant`, and local dense fixture evidence
+  without public dataset downloads.
+- Benchmark result artifacts still point to exported real run evidence rather
+  than replacing run artifacts with synthetic reports.
 
 ### Out of scope
 

@@ -49,6 +49,7 @@ ProviderExecutionMode = Literal["mock", "recorded_fixture", "live_smoke"]
 RetrievalMethod = Literal["direct", "lexical", "dense", "both"]
 RetrievalEvidenceMethod = Literal["lexical", "dense"]
 BenchmarkKind = Literal["swe_bench_style", "terminal_task"]
+BenchmarkAdapterId = Literal["swebench_style", "terminal_bench_style"]
 SecuritySeverity = Literal["critical", "high", "medium", "low", "info"]
 SecurityPolicyAction = Literal["block", "report"]
 RuntimeAdapterId = Literal["langgraph"]
@@ -791,8 +792,29 @@ class BenchmarkCaseRecord(StrictModel):
     description: str = ""
     workspace_files: list[TemplateFile]
     task: TaskSpec
+    retrieval_backend: Literal["lexical", "qdrant"] = "lexical"
+    ingest_paths: list[str] = Field(default_factory=list)
     auto_approve_patches: bool = False
     expected_status: RunStatus = "completed"
+
+    @field_validator("ingest_paths")
+    @classmethod
+    def validate_ingest_paths(cls, values: list[str]) -> list[str]:
+        return [normalize_relative_path(value) for value in values]
+
+
+class BenchmarkAdapterEvidence(StrictModel):
+    schema_version: Literal["benchmark_adapter_evidence.v1"] = (
+        "benchmark_adapter_evidence.v1"
+    )
+    adapter_id: BenchmarkAdapterId
+    task_import: dict[str, str]
+    workspace_preparation: dict[str, str | list[str]]
+    policy_selection: dict[str, str]
+    run_execution: dict[str, str]
+    eval_result_mapping: dict[str, str | bool]
+    export: dict[str, str]
+    retrieval: dict[str, str | bool] = Field(default_factory=dict)
 
 
 class BenchmarkPackRecord(StrictModel):
@@ -817,6 +839,7 @@ class BenchmarkResult(StrictModel):
     version: str
     case_id: str
     benchmark_kind: BenchmarkKind
+    adapter_id: BenchmarkAdapterId
     run_id: str
     task_id: str
     status: RunStatus
@@ -826,6 +849,7 @@ class BenchmarkResult(StrictModel):
     result_artifact: str
     run_export: str
     run_artifacts: dict[str, str]
+    adapter_evidence: BenchmarkAdapterEvidence
     approval_ids: list[str] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=now_utc)
 

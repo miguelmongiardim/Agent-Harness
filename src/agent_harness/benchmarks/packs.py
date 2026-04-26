@@ -3,20 +3,25 @@ from __future__ import annotations
 import shutil
 from importlib import resources
 from pathlib import Path
+from typing import Any, cast
 
+from agent_harness.benchmarks.adapters import BenchmarkAdapterContext, adapter_for_case
 from agent_harness.config import dump_model, write_default_config
+from agent_harness.context.retrieval import ingest_documents
 from agent_harness.core.runtime import HarnessRuntime, approve_action
 from agent_harness.defaults import DEFAULT_POLICY
 from agent_harness.exporters import export_json
+from agent_harness.policy import PolicyEngine
 from agent_harness.schemas import (
     ApprovalRecord,
     BenchmarkCaseRecord,
     BenchmarkPackRecord,
     BenchmarkResult,
+    PolicyProfile,
     RunSummary,
 )
 from agent_harness.storage import RunStore
-from agent_harness.utils import write_json
+from agent_harness.utils import load_json, write_json
 
 BUNDLED_PACKS = {"local-samples": "local-samples.json"}
 
@@ -56,20 +61,41 @@ def run_benchmark_case(project_root: Path, pack_id: str, case_id: str) -> Benchm
     export_json(store, export_path)
 
     result_path = result_dir / f"{pack.pack_id}-{case.case_id}-{summary.run_id}.json"
+    workspace_relative = _project_relative(project_root, workspace)
+    task_relative = _project_relative(project_root, task_path)
+    result_relative = _project_relative(project_root, result_path)
+    export_relative = _project_relative(project_root, export_path)
+    adapter = adapter_for_case(case)
+    passed = summary.status == case.expected_status
+    adapter_evidence = adapter.evidence(
+        BenchmarkAdapterContext(
+            case=case,
+            workspace=workspace_relative,
+            task_path=task_relative,
+            run_id=summary.run_id,
+            status=summary.status,
+            passed=passed,
+            result_artifact=result_relative,
+            run_export=export_relative,
+            retrieval=_retrieval_evidence(workspace, summary),
+        )
+    )
     result = BenchmarkResult(
         pack_id=pack.pack_id,
         version=pack.version,
         case_id=case.case_id,
         benchmark_kind=case.benchmark_kind,
+        adapter_id=adapter.adapter_id,
         run_id=summary.run_id,
         task_id=summary.task_id,
         status=summary.status,
-        passed=summary.status == case.expected_status,
-        workspace=_project_relative(project_root, workspace),
-        task_path=_project_relative(project_root, task_path),
-        result_artifact=_project_relative(project_root, result_path),
-        run_export=_project_relative(project_root, export_path),
+        passed=passed,
+        workspace=workspace_relative,
+        task_path=task_relative,
+        result_artifact=result_relative,
+        run_export=export_relative,
         run_artifacts=summary.artifacts,
+        adapter_evidence=adapter_evidence,
         approval_ids=approval_ids,
     )
     write_json(result_path, result.model_dump(mode="json"))
@@ -99,13 +125,37 @@ def _prepare_benchmark_workspace(
     if workspace.exists():
         shutil.rmtree(workspace)
     workspace.mkdir(parents=True, exist_ok=True)
-    write_default_config(workspace, force=True)
+    _write_benchmark_config(workspace, pack, case)
     write_json(workspace / "policies" / "default.json", DEFAULT_POLICY)
     for file in case.workspace_files:
         path = workspace / file.path
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(file.content, encoding="utf-8")
+    if case.ingest_paths:
+        ingest_documents(
+            workspace,
+            workspace / ".agent-harness",
+            case.ingest_paths,
+            PolicyEngine(workspace, PolicyProfile.model_validate(DEFAULT_POLICY)),
+        )
     return workspace
+
+
+def _write_benchmark_config(
+    workspace: Path, pack: BenchmarkPackRecord, case: BenchmarkCaseRecord
+) -> None:
+    write_default_config(workspace, force=True)
+    write_json(
+        workspace / "agent-harness.yaml",
+        {
+            "schema_version": "config.v2",
+            "project_name": f"{pack.pack_id}-{case.case_id}",
+            "artifact_root": ".agent-harness",
+            "default_policy": "default",
+            "retrieval_backend": case.retrieval_backend,
+            "template_catalog": "bundled",
+        },
+    )
 
 
 def _approve_pending_patch_actions(workspace: Path, summary: RunSummary) -> list[str]:
@@ -133,6 +183,21 @@ def _read_summary(workspace: Path, run_id: str) -> RunSummary:
             encoding="utf-8"
         )
     )
+
+
+def _retrieval_evidence(workspace: Path, summary: RunSummary) -> dict[str, str | bool]:
+    manifest_relative = summary.artifacts.get("context_manifest")
+    if manifest_relative is None:
+        return {}
+    manifest = cast(dict[str, Any], load_json(workspace / manifest_relative))
+    retrieval = manifest.get("retrieval")
+    if not isinstance(retrieval, dict):
+        return {}
+    return {
+        "requested_backend": str(retrieval.get("requested_backend", "")),
+        "active_backend": str(retrieval.get("active_backend", "")),
+        "remote_embeddings": retrieval.get("remote_embeddings") is True,
+    }
 
 
 def _project_relative(project_root: Path, path: Path) -> str:
