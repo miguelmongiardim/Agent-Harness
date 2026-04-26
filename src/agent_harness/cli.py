@@ -300,6 +300,8 @@ def cmd_inspect_run(args: argparse.Namespace) -> int:
         payload["provider_calls"] = store.read_data("provider_calls.json")
     if (store.run_dir / "provider_input.json").exists():
         payload["provider_input"] = store.read_data("provider_input.json")
+    if (store.run_dir / "security_findings.json").exists():
+        payload["security_findings"] = store.read_data("security_findings.json")
     if (store.run_dir / "template_apply.json").exists():
         payload["template_apply"] = store.read_data("template_apply.json")
     if (store.run_dir / "git_commit.json").exists():

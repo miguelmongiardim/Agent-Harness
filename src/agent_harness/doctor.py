@@ -45,4 +45,11 @@ def doctor(project_root: Path) -> tuple[bool, list[str]]:
         messages.append(
             "WARN optional retrieval: qdrant-client/fastembed unavailable; lexical fallback active"
         )
+    messages.append("OK first-party security checks active")
+    if importlib.util.find_spec("bandit") or shutil.which("bandit"):
+        messages.append("OK optional scanner: bandit available")
+    else:
+        messages.append(
+            "WARN optional scanner: bandit unavailable; first-party security checks active"
+        )
     return ok, messages

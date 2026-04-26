@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 
 from agent_harness.config import dump_model, load_config, load_model
@@ -33,6 +34,7 @@ from agent_harness.schemas import (
     ToolObservation,
     WorkspaceMetadata,
 )
+from agent_harness.security import scan_task_security
 from agent_harness.storage import RunStore, make_event
 from agent_harness.templates import load_template, plan_template_apply
 from agent_harness.tools.executor import ToolExecutor
@@ -77,6 +79,49 @@ class HarnessRuntime:
         store.append_event(make_event(run_id, "run_started", {"task_id": task.task_id}))
         dump_model(store.run_dir / "task.json", task)
         dump_model(store.run_dir / "policy.json", profile)
+        security_report = scan_task_security(self.project_root, run_id, task, policy)
+        security_path = store.write_model("security_findings.json", security_report)
+        store.append_event(
+            make_event(
+                run_id,
+                "security_scan_completed",
+                {
+                    "scanner": security_report.scanner,
+                    "findings": len(security_report.findings),
+                    "gate": security_report.gate.model_dump(mode="json"),
+                },
+            )
+        )
+        if security_report.gate.status == "failed":
+            store.append_event(
+                make_event(
+                    run_id,
+                    "security_gate_blocked",
+                    {
+                        "fail_threshold": security_report.gate.fail_threshold,
+                        "blocking_finding_ids": security_report.gate.blocking_finding_ids,
+                    },
+                )
+            )
+            artifact_paths = {
+                "run_dir": store.run_dir,
+                "state": store.db_path,
+                "task": store.run_dir / "task.json",
+                "policy": store.run_dir / "policy.json",
+                "events": store.events_path,
+                "security_findings": security_path,
+                "summary": store.run_dir / "summary.json",
+                "artifact_index": store.run_dir / "artifact-index.json",
+            }
+            return self._finalize_task_run(
+                store,
+                task,
+                started_at,
+                "failed",
+                artifact_paths,
+                approvals=[],
+                message="run blocked by security findings",
+            )
 
         index_path = self.artifact_root / "indexes" / "documents.jsonl"
         lexical_retriever = LexicalRetriever(index_path)
@@ -333,6 +378,7 @@ class HarnessRuntime:
             "task": store.run_dir / "task.json",
             "policy": store.run_dir / "policy.json",
             "events": store.events_path,
+            "security_findings": security_path,
             "context_manifest": store.run_dir / "context_manifest.json",
             "checkpoint": store.run_dir / "checkpoints" / f"{checkpoint.checkpoint_id}.json",
             "checkpoint_index": store.run_dir / "checkpoint-index.json",
@@ -345,41 +391,14 @@ class HarnessRuntime:
             artifact_paths["provider_input"] = provider_input_path
         if provider_calls_path is not None:
             artifact_paths["provider_calls"] = provider_calls_path
-        artifacts = {
-            name: self._project_relative(path) for name, path in artifact_paths.items()
-        }
-        store.append_event(make_event(run_id, "run_finished", {"status": status}))
-        summary = RunSummary(
-            run_id=run_id,
-            task_id=task.task_id,
-            status=status,  # type: ignore[arg-type]
-            events_count=store.event_count(),
+        return self._finalize_task_run(
+            store,
+            task,
+            started_at,
+            status,
+            artifact_paths,
             approvals=approvals,
-            artifacts=artifacts,
-            started_at=started_at,
-            message=(
-                "run paused for approval"
-                if status == "paused"
-                else "dry run complete"
-                if status == "dry_run"
-                else "run complete"
-            ),
         )
-        store.write_summary(summary)
-        artifact_hashes = {
-            name: hash_file(path)
-            for name, path in artifact_paths.items()
-            if path.is_file() and name not in {"artifact_index", "state"}
-        }
-        store.write_data(
-            "artifact-index.json",
-            {
-                "run_id": run_id,
-                "artifacts": artifacts,
-                "artifact_hashes": artifact_hashes,
-            },
-        )
-        return summary
 
     def apply_template(
         self,
@@ -638,6 +657,46 @@ class HarnessRuntime:
 
     def _project_relative(self, path: Path) -> str:
         return path.relative_to(self.project_root).as_posix()
+
+    def _finalize_task_run(
+        self,
+        store: RunStore,
+        task: TaskSpec,
+        started_at: datetime,
+        status: str,
+        artifact_paths: dict[str, Path],
+        approvals: list[str],
+        message: str | None = None,
+    ) -> RunSummary:
+        artifacts = {
+            name: self._project_relative(path) for name, path in artifact_paths.items()
+        }
+        store.append_event(make_event(store.run_id, "run_finished", {"status": status}))
+        summary = RunSummary(
+            run_id=store.run_id,
+            task_id=task.task_id,
+            status=status,  # type: ignore[arg-type]
+            events_count=store.event_count(),
+            approvals=approvals,
+            artifacts=artifacts,
+            started_at=started_at,
+            message=message or _summary_message_for_status(status),
+        )
+        store.write_summary(summary)
+        artifact_hashes = {
+            name: hash_file(path)
+            for name, path in artifact_paths.items()
+            if path.is_file() and name not in {"artifact_index", "state"}
+        }
+        store.write_data(
+            "artifact-index.json",
+            {
+                "run_id": store.run_id,
+                "artifacts": artifacts,
+                "artifact_hashes": artifact_hashes,
+            },
+        )
+        return summary
 
     def _resolve_provider(
         self, task: TaskSpec, provider_name: str | None = None

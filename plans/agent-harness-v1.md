@@ -15,7 +15,8 @@ Status synced to the repository implementation on 2026-04-26.
 - Structure reconciliation: implemented
 - Phase 6: implemented
 - Phase 7: implemented
-- Next target: Phase 8
+- Phase 8: implemented
+- Next target: Phase 9
 
 ## Architectural Decisions
 
@@ -520,6 +521,15 @@ existing runtime end to end.
 
 ## Phase 8: Security Findings And Pre-Run Gates
 
+**Implementation status**
+
+- Implemented on 2026-04-26 in the current working tree.
+- Coverage: `tests/integration/test_security_gates.py`, with existing
+  adversarial policy and eval suites covering compatibility.
+- Main surfaces: `security_findings.v1` artifacts, `SecurityFinding`,
+  policy-driven pre-run gate thresholds, SARIF security results, and doctor
+  reporting for optional scanners.
+
 **User stories covered**
 
 - Story 10: risky runs fail early through normalized findings and policy
@@ -546,11 +556,11 @@ reporting for optional scanners, and SARIF export integration.
 
 ### Acceptance criteria
 
-- [ ] Critical findings always fail.
-- [ ] High findings fail by default unless policy relaxes them.
-- [ ] Medium, low, and info are report-only by default.
-- [ ] Required first-party checks always run.
-- [ ] Optional external tools contribute findings when available without making
+- [x] Critical findings always fail.
+- [x] High findings fail by default unless policy relaxes them.
+- [x] Medium, low, and info are report-only by default.
+- [x] Required first-party checks always run.
+- [x] Optional external tools contribute findings when available without making
       normal local runs brittle.
 
 ### Out of scope
