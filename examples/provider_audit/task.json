@@ -1,0 +1,11 @@
+{
+  "schema_version": "task.v2",
+  "task_id": "provider-audit-demo",
+  "title": "Provider Audit Demo",
+  "intent": "Inspect public provider-audit input without changing files.",
+  "policy_profile": "default",
+  "provider_profile": "provider-audit",
+  "target_paths": ["docs/public.md"],
+  "allowed_tools": ["read_file"],
+  "max_steps": 3
+}

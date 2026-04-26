@@ -15,9 +15,9 @@ Status initialized from the V2 PRD on 2026-04-26.
 - Phase 6: completed
 - Phase 7: completed
 - Phase 8: completed
-- Phase 9: pending
+- Phase 9: completed
 - Phase 10: pending
-- Next target: Phase 9 Provider Audit Demo And V2 Example Migration.
+- Next target: Phase 10 Docs, CI, And v0.3.0 Release Evidence.
 
 ## Architectural Decisions
 
@@ -753,20 +753,34 @@ schema and policy defaults are stable.
 
 ### Acceptance criteria
 
-- [ ] `examples/provider_audit/` exists.
-- [ ] The demo uses deterministic mock transport.
-- [ ] The demo uses a non-mock trust zone.
-- [ ] The demo sets `network: false`.
-- [ ] The demo requires provider-use approval.
-- [ ] The demo proves offline pause/resume.
-- [ ] The demo records provider approval linkage.
-- [ ] The demo records provider-input policy evidence.
-- [ ] The demo records redacted provider-call artifacts.
-- [ ] The demo is inspectable through `inspect run`.
-- [ ] The demo exports JSON.
-- [ ] The demo exports Markdown.
-- [ ] The demo exports SARIF.
-- [ ] `python_refactor` is migrated to V2 as a secondary demo.
+- [x] `examples/provider_audit/` exists.
+- [x] The demo uses deterministic mock transport.
+- [x] The demo uses a non-mock trust zone.
+- [x] The demo sets `network: false`.
+- [x] The demo requires provider-use approval.
+- [x] The demo proves offline pause/resume.
+- [x] The demo records provider approval linkage.
+- [x] The demo records provider-input policy evidence.
+- [x] The demo records redacted provider-call artifacts.
+- [x] The demo is inspectable through `inspect run`.
+- [x] The demo exports JSON.
+- [x] The demo exports Markdown.
+- [x] The demo exports SARIF.
+- [x] `python_refactor` is migrated to V2 as a secondary demo.
+
+### Phase 9 implementation notes
+
+- `examples/provider_audit/` is a runnable V2 workspace with recorded
+  OpenAI-compatible fixture transport, `local_endpoint` trust zone,
+  `network: false`, and required provider-use approval.
+- The provider audit e2e test copies the real example, proves pause/resume,
+  validates provider-use approval binding, checks provider-input policy
+  evidence, verifies redacted provider-call artifacts, inspects the run, and
+  exports JSON, Markdown, and SARIF.
+- Markdown exports now include the task title when the run has a task artifact,
+  making example walkthrough exports self-identifying.
+- The existing `examples/tasks/python_refactor.json` secondary demo validates
+  as `task.v2` and runs as a V2 dry run.
 
 ### Out of scope
 

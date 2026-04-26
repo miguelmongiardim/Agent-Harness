@@ -1,0 +1,20 @@
+{
+  "schema_version": "config.v2",
+  "project_name": "Provider Audit Demo",
+  "artifact_root": ".agent-harness",
+  "default_policy": "default",
+  "retrieval_backend": "lexical",
+  "template_catalog": "bundled",
+  "default_provider_profile": "provider-audit",
+  "provider_profiles": [
+    {
+      "provider_profile_id": "provider-audit",
+      "transport": "openai_compatible",
+      "trust_zone": "local_endpoint",
+      "model": "deterministic-audit",
+      "endpoint_env": "AGENT_HARNESS_PROVIDER_AUDIT_ENDPOINT",
+      "network": false,
+      "requires_approval": true
+    }
+  ]
+}
