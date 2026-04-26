@@ -8,8 +8,21 @@ The security model is built around explicit policy mediation:
   runtime decision must pass through the policy engine.
 - Policy profiles are permission ceilings. Task specs can narrow allowed tools,
   paths, and commands, but cannot grant capabilities absent from the profile.
+- `policy.v2` is the current public policy contract. It has explicit sections
+  for provider input, trust zones, approval requirements, scanner behavior,
+  template capabilities, and migration policy.
+- Provider-input policy defaults allow public input, allow generated input only
+  as untrusted evidence, require approval for internal input, deny confidential,
+  restricted, and unknown input, and hard-deny secret, credential, pii, and
+  customer input.
 - All external or model-produced data is untrusted evidence. It may inform a
   decision, but it does not authorize a decision.
+- Provider-use approvals bind provider profile, trust zone, model id,
+  provider-input hash, policy decision id, and checkpoint hash. Resume rejects
+  drift in those bound fields before provider execution.
+- Provider-call artifacts record approval ids, prompt/response hashes, redacted
+  summaries, latency/token metrics, and policy decision references. Raw
+  provider request and response payloads are not stored by default.
 - Write operations require approval records that bind the run id, action id,
   tool name, arguments hash, policy profile, checkpoint hash, and proposed
   effect hash.
@@ -18,6 +31,9 @@ The security model is built around explicit policy mediation:
   hash, final message hash, policy profile, and checkpoint hash, then stages
   only the approved files immediately before `git commit`.
 - Policy is re-checked immediately before an approved action executes.
+- First-party security findings can block runs before context or provider
+  execution. External Gitleaks and CycloneDX reports are advisory when present;
+  missing local tools are reported without failing normal local workflows.
 
 The current implementation intentionally excludes production identity, remote
 provider controls, centralized secrets management, hardened sandbox isolation,

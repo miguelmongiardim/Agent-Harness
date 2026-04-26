@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-04-26
+
+V2 completion release.
+
+- Added public V2 defaults for `config.v2`, `task.v2`, `policy.v2`, and
+  `template.v2`, with compatibility loading and non-widening migration reports
+  for readable v1 inputs.
+- Added first-class `policy.v2` provider-input, trust-zone, approval, scanner,
+  template capability, and migration policy sections.
+- Added approval-bound provider-use evidence with provider profile, trust zone,
+  model id, provider-input hash, policy decision id, and checkpoint binding.
+- Added provider-call audit artifacts with approval ids, prompt/response hashes,
+  redacted summaries, token/latency metrics, and policy decision references
+  without storing raw provider payloads by default.
+- Added security gate evidence, advisory Gitleaks/CycloneDX report discovery,
+  SARIF security properties, and doctor warnings for optional advisory tools.
+- Hardened retrieval defaults so lexical remains deterministic, local dense
+  retrieval is opt-in through local fixtures, missing Qdrant/FastEmbed
+  dependencies fall back cleanly, and remote embeddings remain out of scope.
+- Added `template.v2` compatibility metadata and the Python trio templates:
+  `python-lib`, `cli-tool`, and `fastapi-service`.
+- Added benchmark adapter evidence for SWE-bench-style and terminal-task
+  miniature sample packs, including a local dense-retrieval sample whose
+  benchmark result points to real run evidence.
+- Added `examples/provider_audit/` as the main V2 walkthrough for offline
+  provider-use approval, inspectable provider-input policy evidence, redacted
+  provider-call artifacts, and JSON/Markdown/SARIF exports.
+- Added release-readiness reporting for docs gates, local checks, CI evidence
+  fields, advisory report references, changelog entries, and tag target
+  evidence.
+
 ## [0.2.0] - 2026-04-26
 
 V1 release.

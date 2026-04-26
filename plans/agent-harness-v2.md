@@ -16,8 +16,8 @@ Status initialized from the V2 PRD on 2026-04-26.
 - Phase 7: completed
 - Phase 8: completed
 - Phase 9: completed
-- Phase 10: pending
-- Next target: Phase 10 Docs, CI, And v0.3.0 Release Evidence.
+- Phase 10: completed
+- Next target: v0.3.0 remote CI verification and tag push.
 
 ## Architectural Decisions
 
@@ -831,28 +831,43 @@ wire CI and advisory artifacts into the release checklist.
 
 ### Acceptance criteria
 
-- [ ] README uses `provider_audit` as the main walkthrough.
-- [ ] README documents V2 defaults without unsupported claims.
-- [ ] Architecture docs reflect V2 boundaries.
-- [ ] Security docs reflect `policy.v2`, provider approvals, and advisory
+- [x] README uses `provider_audit` as the main walkthrough.
+- [x] README documents V2 defaults without unsupported claims.
+- [x] Architecture docs reflect V2 boundaries.
+- [x] Security docs reflect `policy.v2`, provider approvals, and advisory
       scanner scope.
-- [ ] Retrieval docs reflect lexical default, local dense fixtures, fallback,
+- [x] Retrieval docs reflect lexical default, local dense fixtures, fallback,
       and Qdrant/FastEmbed limits.
-- [ ] Template docs reflect `template.v2` and Python trio templates.
-- [ ] Benchmark docs reflect adapter interfaces, miniature samples, dense
+- [x] Template docs reflect `template.v2` and Python trio templates.
+- [x] Benchmark docs reflect adapter interfaces, miniature samples, dense
       scenario, and no benchmark-comparability claim.
-- [ ] Migration docs explain report mode and `--write`.
-- [ ] Roadmap separates V3/future items: MCP, web API/UI, multi-agent workflows,
+- [x] Migration docs explain report mode and `--write`.
+- [x] Roadmap separates V3/future items: MCP, web API/UI, multi-agent workflows,
       external catalogs, production Qdrant server mode, deployment tuning, and
       enterprise/compliance readiness.
-- [ ] CHANGELOG includes `v0.3.0`.
-- [ ] Docs gates pass cleanly.
-- [ ] Local tests and checks pass.
+- [x] CHANGELOG includes `v0.3.0`.
+- [x] Docs gates pass cleanly.
+- [x] Local tests and checks pass.
 - [ ] Remote blocking CI passes on Python 3.11 and Python 3.12.
-- [ ] Python 3.13 job is allowed failure if present.
-- [ ] Non-blocking Gitleaks and CycloneDX advisory reports are visible when
+- [x] Python 3.13 job is allowed failure if present.
+- [x] Non-blocking Gitleaks and CycloneDX advisory reports are visible when
       available.
 - [ ] Annotated tag `v0.3.0` is pushed after evidence is complete.
+
+### Phase 10 implementation notes
+
+- README now uses `examples/provider_audit/` as the main walkthrough and
+  documents V2 defaults with roadmap exclusions.
+- Architecture, security, retrieval, template, benchmark/evaluation, migration,
+  release-readiness, and roadmap docs now describe implemented V2 behavior and
+  isolate future work.
+- `agent-harness release readiness --version 0.3.0` writes a
+  `release_readiness.v1` report with docs gate status, local check commands, CI
+  evidence fields, advisory report references, changelog presence, and tag
+  target evidence.
+- `CHANGELOG.md` includes the `0.3.0` V2 completion release entry.
+- Remote CI and the annotated tag remain post-push release actions for the
+  final Phase 10 commit.
 
 ### Out of scope
 

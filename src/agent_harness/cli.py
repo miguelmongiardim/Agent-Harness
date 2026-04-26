@@ -22,6 +22,7 @@ from agent_harness.evals import run_builtin_evals, write_eval_report
 from agent_harness.exporters import export_json, export_markdown, export_sarif
 from agent_harness.migration import migrate_schemas
 from agent_harness.policy import PolicyEngine, load_policy
+from agent_harness.release import build_release_readiness_report
 from agent_harness.schemas import TaskSpec
 from agent_harness.storage import RunStore
 from agent_harness.templates import list_templates, load_template
@@ -188,6 +189,13 @@ def build_parser() -> argparse.ArgumentParser:
     sarif.add_argument("run_id")
     sarif.add_argument("--output")
     sarif.set_defaults(func=cmd_export_sarif)
+
+    release = sub.add_parser("release")
+    release_sub = release.add_subparsers(required=True)
+    release_readiness = release_sub.add_parser("readiness")
+    release_readiness.add_argument("--version", required=True)
+    release_readiness.add_argument("--output")
+    release_readiness.set_defaults(func=cmd_release_readiness)
 
     doctor_cmd = sub.add_parser("doctor")
     doctor_cmd.set_defaults(func=cmd_doctor)
@@ -413,6 +421,13 @@ def cmd_export_markdown(args: argparse.Namespace) -> int:
     store = RunStore.open_existing(root / config.artifact_root, args.run_id)
     output = _export_output(root, config.artifact_root, args.run_id, args.output, ".md")
     print(export_markdown(store, output))
+    return 0
+
+
+def cmd_release_readiness(args: argparse.Namespace) -> int:
+    output = Path(args.output) if args.output else None
+    report = build_release_readiness_report(Path.cwd(), args.version, output=output)
+    print(json.dumps(report, indent=2))
     return 0
 
 

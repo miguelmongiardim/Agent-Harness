@@ -14,6 +14,7 @@ runtime around explicit ownership boundaries.
   execution, and the exact-state `git_commit` planning/execution boundary.
 - `agent_harness.benchmarks` owns packaged local benchmark sample packs,
   workspace staging, result mapping, and evidence-backed benchmark exports.
+- `agent_harness.release` owns local release-readiness evidence collection.
 - `agent_harness.model`, `agent_harness.runtimes`, `agent_harness.templates`,
   `agent_harness.storage`, `agent_harness.telemetry`, `agent_harness.evals`,
   and `agent_harness.exporters` provide the report's package-level structural
@@ -28,6 +29,7 @@ removed; callers should import from the report-shaped package paths directly.
 
 Current public paths:
 
+- Public inputs: `config.v2`, `task.v2`, `policy.v2`, and `template.v2`.
 - Runtime orchestration: `agent_harness.runtimes.native` and
   `agent_harness.core.runtime`.
 - Optional LangGraph boundary proof: `agent_harness.runtimes.langgraph_adapter`.
@@ -48,15 +50,24 @@ but should not absorb their detailed implementation. Policy remains the common
 gate for context inclusion, provider input, template writes, tool execution, and
 separate git commit approval.
 
-Benchmark adapters are deliberately thin. They prepare local sample workspaces
-and then call the native runtime, approval path, and JSON exporter; benchmark
-results are pointers to real run evidence rather than independent synthetic
-reports.
+Benchmark adapters are deliberately thin. They prepare local sample workspaces,
+map SWE-bench-style or terminal-task adapter evidence, and then call the native
+runtime, approval path, and JSON exporter; benchmark results are pointers to
+real run evidence rather than independent synthetic reports.
 
 Provider transports live under `agent_harness.model.adapters` behind
 `ProviderGateway`; they call the deterministic model contract or recorded
 fixtures without becoming the runtime itself. Storage remains the append-only
 evidence boundary for run artifacts, approvals, checkpoints, and event logs.
+
+Template loading is a schema and catalog boundary. `template.v2` manifests carry
+compatibility, capability, generated-schema, provider, policy, retrieval, and
+demo metadata. Template application remains approval-bound and records applied
+template id and version in workspace metadata.
+
+Schema migration stays outside runtime execution. The migration module reports
+original and proposed effective schema versions by default, and `--write` only
+performs deterministic safe upgrades.
 
 The LangGraph adapter is deliberately narrow. It lazy-loads the optional
 `langgraph` package, delegates the covered execution path through the native

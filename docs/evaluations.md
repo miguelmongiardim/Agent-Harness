@@ -12,6 +12,11 @@ The bundled eval suite focuses on:
 - fixed-seed replay stability for run artifacts
 - local benchmark-shaped sample packs for SWE-bench-style and terminal-task
   workflows
+- benchmark adapter evidence for task import, workspace preparation, policy
+  selection, run execution, eval result mapping, export paths, and retrieval
+  backend evidence when present
+- a local dense-retrieval benchmark scenario that uses deterministic fixture
+  behavior rather than public dataset downloads
 - optional LangGraph boundary compatibility through the same native policy and
   audit evidence path
 
@@ -23,6 +28,8 @@ Benchmark sample packs are not claims of benchmark comparability. They are
 small packaged cases that import into local workspaces, run through the same
 task, policy, approval, runtime, and export paths as normal Agent Harness runs,
 and produce `benchmark_result.v1` artifacts that point back to run exports.
+The bundled adapters prove local import/run/export behavior only; they are not
+full SWE-bench or Terminal-Bench executions.
 
 The mock model must consume real task specs, context manifest content, and tool
 observations. Tests intentionally verify that changing observations changes
