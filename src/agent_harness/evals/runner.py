@@ -13,6 +13,7 @@ from agent_harness.config import load_model, write_default_config
 from agent_harness.context.retrieval import ingest_documents
 from agent_harness.core.runtime import HarnessRuntime, approve_action
 from agent_harness.defaults import DEFAULT_POLICY
+from agent_harness.demos import PROVIDER_AUDIT_WORKSPACE, run_provider_audit_demo
 from agent_harness.policy import PolicyEngine, load_policy
 from agent_harness.schemas import EvalInvariant, EvalResult, EvalSpec, RunSummary, TaskSpec
 from agent_harness.storage import RunStore
@@ -42,6 +43,7 @@ ADVANCED_EVAL_RUNNERS = [
     "_run_approval_flow_eval",
     "_run_reproducible_replay_eval",
     "_run_benchmark_sample_pack_eval",
+    "_run_provider_audit_demo_eval",
 ]
 
 def run_builtin_evals(project_root: Path) -> list[EvalResult]:
@@ -554,6 +556,107 @@ def _run_benchmark_sample_pack_eval(project_root: Path) -> EvalResult:
         artifacts=artifacts,
         invariants=invariants,
     )
+
+
+def _run_provider_audit_demo_eval(project_root: Path) -> EvalResult:
+    eval_id = "provider-audit-demo-golden-path"
+    title = "Provider audit demo produces inspectable provider evidence"
+    if not (project_root / PROVIDER_AUDIT_WORKSPACE / "task.json").exists():
+        return EvalResult(
+            eval_id=eval_id,
+            title=title,
+            passed=True,
+            message="skipped: provider-audit demo fixture is not present",
+        )
+
+    payload = run_provider_audit_demo(project_root)
+    artifacts = cast(dict[str, str], payload["artifacts"])
+    events = _read_jsonl(project_root / artifacts.get("events", ""))
+    provider_input = _read_artifact(project_root, artifacts, "provider_input")
+    provider_calls = _read_artifact(project_root, artifacts, "provider_calls")
+
+    approval_events = [
+        event
+        for event in events
+        if event.get("type") == "approval_recorded"
+        and event.get("payload", {}).get("operation") == "provider_use"
+    ]
+    provider_call_events = [
+        event for event in events if event.get("type") == "provider_call_recorded"
+    ]
+    records = provider_input.get("records") if isinstance(provider_input, dict) else None
+    calls = provider_calls.get("calls") if isinstance(provider_calls, dict) else None
+    invariants = [
+        EvalInvariant(
+            name="demo_completed",
+            passed=payload["status"] == "completed",
+            message=(
+                "provider-audit demo completed"
+                if payload["status"] == "completed"
+                else f"provider-audit demo status was {payload['status']}"
+            ),
+        ),
+        EvalInvariant(
+            name="provider_input_created",
+            passed=isinstance(records, list) and len(records) > 0,
+            message=(
+                "provider input evidence was recorded"
+                if isinstance(records, list) and records
+                else "provider input evidence was missing"
+            ),
+        ),
+        EvalInvariant(
+            name="provider_use_approval_recorded",
+            passed=any(
+                event.get("payload", {})
+                .get("approval", {})
+                .get("status")
+                == "approved"
+                for event in approval_events
+            ),
+            message=(
+                "provider-use approval evidence was recorded"
+                if approval_events
+                else "provider-use approval evidence was missing"
+            ),
+        ),
+        EvalInvariant(
+            name="provider_call_recorded",
+            passed=(
+                isinstance(calls, list)
+                and len(calls) > 0
+                and len(provider_call_events) > 0
+            ),
+            message=(
+                "provider call evidence was recorded"
+                if isinstance(calls, list) and calls and provider_call_events
+                else "provider call evidence was missing"
+            ),
+        ),
+    ]
+    return EvalResult(
+        eval_id=eval_id,
+        title=title,
+        passed=all(invariant.passed for invariant in invariants),
+        message=_invariant_summary(invariants),
+        artifacts=artifacts,
+        invariants=invariants,
+    )
+
+
+def _read_artifact(
+    project_root: Path,
+    artifacts: dict[str, str],
+    name: str,
+) -> dict[str, Any]:
+    relative = artifacts.get(name)
+    if relative is None:
+        return {}
+    path = project_root / relative
+    if not path.exists():
+        return {}
+    data = load_json(path)
+    return data if isinstance(data, dict) else {}
 
 
 def _result_from_summary(

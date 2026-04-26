@@ -192,6 +192,17 @@ def test_packaging_docs_cover_uv_sync_and_package_install_paths() -> None:
     assert "agent-harness release package-check" in combined
 
 
+def test_demo_docs_cover_provider_audit_and_secondary_python_refactor_paths() -> None:
+    readme = Path("README.md").read_text(encoding="utf-8")
+    provider_demo = Path("examples/provider_audit/README.md").read_text(encoding="utf-8")
+    release_docs = Path("docs/release-readiness.md").read_text(encoding="utf-8")
+    combined = f"{readme}\n{provider_demo}\n{release_docs}"
+
+    assert "agent-harness demo provider-audit" in combined
+    assert "agent-harness run examples/tasks/python_refactor.json --dry-run" in combined
+    assert "demo-python-refactor.json" in combined
+
+
 def _write_release_ready_project(root: Path, version: str) -> None:
     (root / "pyproject.toml").write_text(
         "\n".join(

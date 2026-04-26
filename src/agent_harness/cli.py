@@ -16,6 +16,10 @@ from agent_harness.config import load_config, load_public_model, write_default_c
 from agent_harness.context.retrieval import ingest_documents
 from agent_harness.core.runtime import HarnessRuntime, approve_action
 from agent_harness.defaults import DEFAULT_POLICY
+from agent_harness.demos import (
+    record_python_refactor_demo_if_applicable,
+    run_provider_audit_demo,
+)
 from agent_harness.docs_check import write_docs_check_report
 from agent_harness.doctor import doctor
 from agent_harness.evals import run_builtin_evals, write_eval_report
@@ -165,6 +169,11 @@ def build_parser() -> argparse.ArgumentParser:
     eval_cmd = sub.add_parser("eval")
     eval_cmd.set_defaults(func=cmd_eval)
 
+    demo = sub.add_parser("demo")
+    demo_sub = demo.add_subparsers(required=True)
+    demo_provider_audit = demo_sub.add_parser("provider-audit")
+    demo_provider_audit.set_defaults(func=cmd_demo_provider_audit)
+
     docs = sub.add_parser("docs")
     docs_sub = docs.add_subparsers(required=True)
     docs_check = docs_sub.add_parser("check")
@@ -268,11 +277,12 @@ def cmd_task_validate(args: argparse.Namespace) -> int:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
+    root = Path.cwd()
     if args.runtime == "langgraph":
         from agent_harness.runtimes.langgraph_adapter import run_langgraph_adapter
 
         summary = run_langgraph_adapter(
-            Path.cwd(),
+            root,
             Path(args.task_path),
             profile_name=args.profile,
             provider_name=args.provider,
@@ -281,7 +291,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             dry_run=args.dry_run,
         )
     else:
-        summary = HarnessRuntime(Path.cwd()).run_task(
+        summary = HarnessRuntime(root).run_task(
             Path(args.task_path),
             profile_name=args.profile,
             provider_name=args.provider,
@@ -289,6 +299,12 @@ def cmd_run(args: argparse.Namespace) -> int:
             auto_approve=args.auto_approve,
             dry_run=args.dry_run,
         )
+    record_python_refactor_demo_if_applicable(
+        root,
+        Path(args.task_path),
+        summary,
+        dry_run=args.dry_run,
+    )
     print(summary.model_dump_json(indent=2))
     return 0
 
@@ -389,6 +405,13 @@ def cmd_eval(args: argparse.Namespace) -> int:
     report = write_eval_report(root, results)
     print(json.dumps({"report": str(report)}, indent=2))
     return 0 if all(result.passed for result in results) else 1
+
+
+def cmd_demo_provider_audit(args: argparse.Namespace) -> int:
+    del args
+    payload = run_provider_audit_demo(Path.cwd())
+    print(json.dumps(payload, indent=2))
+    return 0 if payload["status"] == "completed" else 1
 
 
 def cmd_docs_check(args: argparse.Namespace) -> int:

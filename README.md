@@ -26,25 +26,27 @@ assurance.
 ## Quick Start
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\python -m pip install -e ".[dev]"
-agent-harness doctor
-cd examples\provider_audit
-$env:AGENT_HARNESS_PROVIDER_AUDIT_ENDPOINT="recorded://openai_compatible/read_only"
-agent-harness run task.json
-agent-harness approve provider-audit-demo-run <approval-id> --decision approve
-agent-harness inspect run provider-audit-demo-run
-agent-harness export json provider-audit-demo-run
-agent-harness export markdown provider-audit-demo-run
-agent-harness export sarif provider-audit-demo-run
-```
-
-The intended project workflow uses `uv`:
-
-```powershell
 uv sync --extra dev
 uv run agent-harness doctor
+uv run agent-harness demo provider-audit
+```
+
+The provider-audit demo is the main local golden path. It runs from the repo
+root, uses the recorded provider fixture when no endpoint env var is set,
+auto-approves the provider-use gate for reproducibility, and prints JSON with a
+`run_id` plus the inspect working directory:
+
+```powershell
+cd examples\provider_audit
+uv run agent-harness inspect run <run-id>
+```
+
+Run the local checks with:
+
+```powershell
 uv run pytest
+uv run agent-harness eval
+uv run agent-harness release readiness
 ```
 
 For package-install verification:
@@ -58,9 +60,13 @@ agent-harness release package-check
 The secondary V2 example remains the deterministic Python refactor task:
 
 ```powershell
-agent-harness task validate examples\tasks\python_refactor.json
-agent-harness run examples\tasks\python_refactor.json --dry-run
+agent-harness task validate examples/tasks/python_refactor.json
+agent-harness run examples/tasks/python_refactor.json --dry-run
 ```
+
+When the secondary demo is run from the repo root, it records
+`.agent-harness/release/evidence/demo-python-refactor.json` for release
+readiness.
 
 The optional LangGraph boundary proof is isolated behind the `langgraph` extra:
 
@@ -78,6 +84,7 @@ agent-harness template show python-lib
 agent-harness template apply python-lib --destination ./scratch-lib
 agent-harness ingest docs docs
 agent-harness task validate examples/tasks/python_refactor.json
+agent-harness demo provider-audit
 agent-harness run examples/tasks/python_refactor.json --dry-run
 agent-harness run examples/tasks/python_refactor.json --runtime langgraph --dry-run
 agent-harness approve <run-id> <action-id> --decision approve

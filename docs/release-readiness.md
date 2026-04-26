@@ -35,6 +35,18 @@ python -m pip install .
 agent-harness doctor
 ```
 
+Required demo evidence is generated with:
+
+```powershell
+agent-harness demo provider-audit
+agent-harness run examples/tasks/python_refactor.json --dry-run
+```
+
+Those commands record `.agent-harness/release/evidence/demo-provider-audit.json`
+and `.agent-harness/release/evidence/demo-python-refactor.json`. The
+provider-audit demo remains the main reproducible walkthrough; Python refactor
+remains the secondary dry-run demo.
+
 The report represents:
 
 - package build evidence

@@ -6,6 +6,8 @@ quality.
 The bundled eval suite focuses on:
 
 - success scenarios over the bundled Python refactor task
+- the provider-audit demo golden path with provider-input, provider-use
+  approval, and provider-call evidence
 - denied-context and policy-bypass adversarial checks
 - prompt-injection resistance over retrieved local docs
 - approval pause/resume lifecycle completion

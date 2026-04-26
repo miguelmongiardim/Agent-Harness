@@ -27,6 +27,7 @@ build/
 .agent-harness/docs/
 .agent-harness/migrations/
 .agent-harness/release/
+examples/**/.agent-harness/
 
 # Local planning artifacts
 deep-research-report.md

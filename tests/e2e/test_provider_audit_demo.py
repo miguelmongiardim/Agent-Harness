@@ -8,6 +8,90 @@ import sys
 from pathlib import Path
 
 
+def test_provider_audit_demo_command_returns_inspectable_run_id() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    env = os.environ.copy()
+    env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-27T10:00:00Z"
+    env.pop("AGENT_HARNESS_PROVIDER_AUDIT_ENDPOINT", None)
+
+    demo = _run_cli(repo_root, env, "demo", "provider-audit")
+    payload = json.loads(demo.stdout)
+
+    run_id = payload["run_id"]
+    workspace = repo_root / payload["workspace"]
+    assert payload["schema_version"] == "demo_run.v1"
+    assert payload["demo_id"] == "provider-audit"
+    assert payload["status"] == "completed"
+    assert payload["inspect"]["cwd"] == "examples/provider_audit"
+    assert payload["inspect"]["command"] == f"agent-harness inspect run {run_id}"
+
+    inspected = json.loads(
+        _run_cli(workspace, env, "inspect", "run", run_id).stdout
+    )
+    assert inspected["summary"]["run_id"] == run_id
+    assert inspected["summary"]["status"] == "completed"
+    assert inspected["provider_calls"]["calls"]
+    assert inspected["provider_input"]["records"]
+
+    evidence_path = repo_root / ".agent-harness" / "release" / "evidence" / (
+        "demo-provider-audit.json"
+    )
+    evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+    assert evidence["status"] == "passed"
+    assert evidence["run_id"] == run_id
+    assert evidence["command"] == "agent-harness demo provider-audit"
+
+
+def test_provider_audit_demo_golden_path_is_covered_by_eval() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    env = os.environ.copy()
+    env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-27T10:05:00Z"
+    env.pop("AGENT_HARNESS_PROVIDER_AUDIT_ENDPOINT", None)
+
+    eval_run = _run_cli(repo_root, env, "eval")
+    report = json.loads(Path(json.loads(eval_run.stdout)["report"]).read_text(encoding="utf-8"))
+    results = {result["eval_id"]: result for result in report["results"]}
+
+    provider_audit = results["provider-audit-demo-golden-path"]
+    assert provider_audit["passed"] is True
+    assert {
+        "provider_input_created",
+        "provider_call_recorded",
+        "provider_use_approval_recorded",
+    } <= {item["name"] for item in provider_audit["invariants"]}
+    assert "summary" in provider_audit["artifacts"]
+    assert "provider_calls" in provider_audit["artifacts"]
+
+
+def test_python_refactor_secondary_demo_records_release_evidence() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    env = os.environ.copy()
+    env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-27T10:10:00Z"
+
+    run = _run_cli(
+        repo_root,
+        env,
+        "run",
+        "examples/tasks/python_refactor.json",
+        "--dry-run",
+    )
+    summary = json.loads(run.stdout)
+    inspect = json.loads(
+        _run_cli(repo_root, env, "inspect", "run", summary["run_id"]).stdout
+    )
+
+    evidence_path = repo_root / ".agent-harness" / "release" / "evidence" / (
+        "demo-python-refactor.json"
+    )
+    evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+    assert inspect["summary"]["status"] == "dry_run"
+    assert evidence["status"] == "passed"
+    assert evidence["run_id"] == summary["run_id"]
+    assert evidence["command"] == (
+        "agent-harness run examples/tasks/python_refactor.json --dry-run"
+    )
+
+
 def test_provider_audit_demo_pauses_resumes_and_exports_all_evidence(
     tmp_path: Path,
 ) -> None:
