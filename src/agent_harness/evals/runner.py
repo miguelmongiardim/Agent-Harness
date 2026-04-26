@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, cast
 
+from agent_harness.benchmarks import run_benchmark_case
 from agent_harness.config import load_model, write_default_config
 from agent_harness.context.retrieval import ingest_documents
 from agent_harness.core.runtime import HarnessRuntime, approve_action
@@ -41,6 +42,7 @@ ADVANCED_EVAL_RUNNERS = [
     "_run_prompt_injection_eval",
     "_run_approval_flow_eval",
     "_run_reproducible_replay_eval",
+    "_run_benchmark_sample_pack_eval",
 ]
 
 DOC_SUBJECT_PATTERN = r"(?:Agent Harness|This repo|The current implementation)"
@@ -560,6 +562,83 @@ def _run_reproducible_replay_eval(project_root: Path) -> EvalResult:
         "second_artifact_index": _artifact_link(
             project_root, second / second_summary.artifacts["artifact_index"]
         ),
+    }
+    return EvalResult(
+        eval_id=eval_id,
+        title=title,
+        passed=all(invariant.passed for invariant in invariants),
+        message=_invariant_summary(invariants),
+        artifacts=artifacts,
+        invariants=invariants,
+    )
+
+
+def _run_benchmark_sample_pack_eval(project_root: Path) -> EvalResult:
+    eval_id = "benchmark-sample-packs-run"
+    title = "Local benchmark sample packs run through real evidence"
+    swebench = run_benchmark_case(project_root, "local-samples", "swebench-python-refactor")
+    terminal = run_benchmark_case(project_root, "local-samples", "terminal-readonly-inspect")
+    swebench_export = cast(dict[str, Any], load_json(project_root / swebench.run_export))
+    terminal_export = cast(dict[str, Any], load_json(project_root / terminal.run_export))
+    invariants = [
+        EvalInvariant(
+            name="swebench_sample_completed",
+            passed=swebench.passed and swebench.status == "completed",
+            message=(
+                "SWE-bench-style sample completed"
+                if swebench.passed and swebench.status == "completed"
+                else f"SWE-bench-style sample status was {swebench.status}"
+            ),
+        ),
+        EvalInvariant(
+            name="terminal_sample_completed",
+            passed=terminal.passed and terminal.status == "completed",
+            message=(
+                "terminal-task sample completed"
+                if terminal.passed and terminal.status == "completed"
+                else f"terminal-task sample status was {terminal.status}"
+            ),
+        ),
+        EvalInvariant(
+            name="swebench_export_matches_run_evidence",
+            passed=(
+                swebench_export.get("run_id") == swebench.run_id
+                and swebench_export.get("summary", {}).get("status") == swebench.status
+                and any(
+                    event.get("type") == "approval_decided"
+                    for event in swebench_export.get("events", [])
+                )
+            ),
+            message=(
+                "SWE-bench-style benchmark result points to real run export evidence"
+                if swebench_export.get("run_id") == swebench.run_id
+                and swebench_export.get("summary", {}).get("status") == swebench.status
+                else "SWE-bench-style benchmark export did not match run evidence"
+            ),
+        ),
+        EvalInvariant(
+            name="terminal_export_matches_run_evidence",
+            passed=(
+                terminal_export.get("run_id") == terminal.run_id
+                and terminal_export.get("summary", {}).get("status") == terminal.status
+                and any(
+                    event.get("type") == "tool_observation"
+                    for event in terminal_export.get("events", [])
+                )
+            ),
+            message=(
+                "terminal-task benchmark result points to real run export evidence"
+                if terminal_export.get("run_id") == terminal.run_id
+                and terminal_export.get("summary", {}).get("status") == terminal.status
+                else "terminal-task benchmark export did not match run evidence"
+            ),
+        ),
+    ]
+    artifacts = {
+        "benchmark_result": swebench.result_artifact,
+        "benchmark_run_export": swebench.run_export,
+        "terminal_result": terminal.result_artifact,
+        "terminal_run_export": terminal.run_export,
     }
     return EvalResult(
         eval_id=eval_id,

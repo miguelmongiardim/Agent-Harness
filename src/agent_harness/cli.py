@@ -7,6 +7,11 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
+from agent_harness.benchmarks import (
+    list_benchmark_packs,
+    load_benchmark_pack,
+    run_benchmark_case,
+)
 from agent_harness.config import load_config, load_model, write_default_config
 from agent_harness.context.retrieval import ingest_documents
 from agent_harness.core.runtime import HarnessRuntime, approve_action
@@ -125,6 +130,18 @@ def build_parser() -> argparse.ArgumentParser:
     commit_propose.add_argument("run_id")
     commit_propose.add_argument("--message", required=True)
     commit_propose.set_defaults(func=cmd_commit_propose)
+
+    benchmark = sub.add_parser("benchmark")
+    benchmark_sub = benchmark.add_subparsers(required=True)
+    benchmark_list = benchmark_sub.add_parser("list")
+    benchmark_list.set_defaults(func=cmd_benchmark_list)
+    benchmark_show = benchmark_sub.add_parser("show")
+    benchmark_show.add_argument("pack_id")
+    benchmark_show.set_defaults(func=cmd_benchmark_show)
+    benchmark_run = benchmark_sub.add_parser("run")
+    benchmark_run.add_argument("pack_id")
+    benchmark_run.add_argument("case_id")
+    benchmark_run.set_defaults(func=cmd_benchmark_run)
 
     inspect = sub.add_parser("inspect")
     inspect_sub = inspect.add_subparsers(required=True)
@@ -247,6 +264,24 @@ def cmd_approve(args: argparse.Namespace) -> int:
 def cmd_commit_propose(args: argparse.Namespace) -> int:
     summary = HarnessRuntime(Path.cwd()).propose_git_commit(args.run_id, args.message)
     print(summary.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_benchmark_list(args: argparse.Namespace) -> int:
+    del args
+    for pack in list_benchmark_packs():
+        print(f"{pack.pack_id}\t{pack.version}\t{pack.title}")
+    return 0
+
+
+def cmd_benchmark_show(args: argparse.Namespace) -> int:
+    print(load_benchmark_pack(args.pack_id).model_dump_json(indent=2))
+    return 0
+
+
+def cmd_benchmark_run(args: argparse.Namespace) -> int:
+    result = run_benchmark_case(Path.cwd(), args.pack_id, args.case_id)
+    print(result.model_dump_json(indent=2))
     return 0
 
 

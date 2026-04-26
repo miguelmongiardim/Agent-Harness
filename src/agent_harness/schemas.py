@@ -48,6 +48,7 @@ ProviderCallPhase = Literal["initial_actions", "next_actions"]
 ProviderExecutionMode = Literal["mock", "recorded_fixture", "live_smoke"]
 RetrievalMethod = Literal["direct", "lexical", "dense", "both"]
 RetrievalEvidenceMethod = Literal["lexical", "dense"]
+BenchmarkKind = Literal["swe_bench_style", "terminal_task"]
 
 
 class StrictModel(BaseModel):
@@ -536,6 +537,52 @@ class GitCommitPlan(StrictModel):
         if normalized != sorted(set(normalized)):
             raise ValueError("git_commit file_set must be sorted and unique")
         return normalized
+
+
+class BenchmarkCaseRecord(StrictModel):
+    case_id: str = Field(min_length=1)
+    title: str = Field(min_length=1)
+    benchmark_kind: BenchmarkKind
+    description: str = ""
+    workspace_files: list[TemplateFile]
+    task: TaskSpec
+    auto_approve_patches: bool = False
+    expected_status: RunStatus = "completed"
+
+
+class BenchmarkPackRecord(StrictModel):
+    schema_version: Literal["benchmark_pack.v1"] = "benchmark_pack.v1"
+    pack_id: str = Field(min_length=1)
+    version: str = Field(min_length=1)
+    title: str = Field(min_length=1)
+    description: str = ""
+    cases: list[BenchmarkCaseRecord]
+
+    @model_validator(mode="after")
+    def validate_case_ids(self) -> BenchmarkPackRecord:
+        case_ids = [case.case_id for case in self.cases]
+        if len(case_ids) != len(set(case_ids)):
+            raise ValueError("benchmark case_id values must be unique")
+        return self
+
+
+class BenchmarkResult(StrictModel):
+    schema_version: Literal["benchmark_result.v1"] = "benchmark_result.v1"
+    pack_id: str
+    version: str
+    case_id: str
+    benchmark_kind: BenchmarkKind
+    run_id: str
+    task_id: str
+    status: RunStatus
+    passed: bool
+    workspace: str
+    task_path: str
+    result_artifact: str
+    run_export: str
+    run_artifacts: dict[str, str]
+    approval_ids: list[str] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=now_utc)
 
 
 class EvalSpec(StrictModel):

@@ -1,0 +1,55 @@
+{
+  "schema_version": "benchmark_pack.v1",
+  "pack_id": "local-samples",
+  "version": "1.0.0",
+  "title": "Local Benchmark Samples",
+  "description": "Small local benchmark-shaped cases for CI-safe Agent Harness workflows.",
+  "cases": [
+    {
+      "case_id": "swebench-python-refactor",
+      "title": "SWE-bench-style Python refactor",
+      "benchmark_kind": "swe_bench_style",
+      "description": "Issue-style Python maintenance task that exercises patch approval and run export evidence.",
+      "workspace_files": [
+        {
+          "path": "fixtures/legacy_math.py",
+          "content": "def add_numbers(a, b):\n    return a + b\n"
+        }
+      ],
+      "task": {
+        "schema_version": "task.v1",
+        "task_id": "benchmark-swebench-python-refactor",
+        "title": "Refactor legacy add helper",
+        "intent": "Refactor add_numbers while preserving behavior.",
+        "target_paths": ["fixtures/legacy_math.py"],
+        "allowed_tools": ["read_file", "patch_file"],
+        "max_steps": 4
+      },
+      "auto_approve_patches": true,
+      "expected_status": "completed"
+    },
+    {
+      "case_id": "terminal-readonly-inspect",
+      "title": "Terminal-task-style read-only inspection",
+      "benchmark_kind": "terminal_task",
+      "description": "Terminal-task-shaped case that completes without mutation.",
+      "workspace_files": [
+        {
+          "path": "workspace/README.md",
+          "content": "# Local Terminal Sample\n\nInspect this file without mutation.\n"
+        }
+      ],
+      "task": {
+        "schema_version": "task.v1",
+        "task_id": "benchmark-terminal-readonly-inspect",
+        "title": "Inspect terminal workspace",
+        "intent": "Inspect the terminal workspace without changing files.",
+        "target_paths": ["workspace/README.md"],
+        "allowed_tools": ["read_file"],
+        "max_steps": 3
+      },
+      "auto_approve_patches": false,
+      "expected_status": "completed"
+    }
+  ]
+}

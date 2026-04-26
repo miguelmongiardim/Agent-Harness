@@ -5,14 +5,15 @@
 Agent Harness currently provides a controlled local software-engineering workflow
 using a deterministic mock agent, configured provider profiles, provider-input
 policy gates, hybrid context manifests, approval-bound template application,
-separate `git_commit` approval, audit logs, evals, and reproducible artifacts.
+separate `git_commit` approval, packaged benchmark sample packs, audit logs,
+evals, and reproducible artifacts.
 
 ## Next Priorities
 
-- Add richer benchmark adapters.
 - Tighten scanner gates beyond critical findings.
 - Add the optional LangGraph boundary proof.
 - Expand the template catalog.
+- Add richer benchmark adapters beyond bundled local samples.
 - Strengthen Qdrant/server retrieval modes.
 
 ## Later Possibilities

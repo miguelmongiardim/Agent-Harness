@@ -53,6 +53,8 @@ agent-harness task validate examples/tasks/python_refactor.json
 agent-harness run examples/tasks/python_refactor.json --dry-run
 agent-harness approve <run-id> <action-id> --decision approve
 agent-harness commit propose <run-id> --message "refactor: update approved files"
+agent-harness benchmark list
+agent-harness benchmark run local-samples swebench-python-refactor
 agent-harness inspect run <run-id>
 agent-harness inspect context <run-id>
 agent-harness inspect policy default

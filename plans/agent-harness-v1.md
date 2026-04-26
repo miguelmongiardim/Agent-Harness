@@ -14,7 +14,8 @@ Status synced to the repository implementation on 2026-04-26.
 - Phase 5: implemented
 - Structure reconciliation: implemented
 - Phase 6: implemented
-- Next target: Phase 7
+- Phase 7: implemented
+- Next target: Phase 8
 
 ## Architectural Decisions
 
@@ -469,6 +470,16 @@ before commit creation.
 
 ## Phase 7: Benchmark Sample Packs
 
+**Implementation status**
+
+- Implemented on 2026-04-26 in the current working tree.
+- Coverage: `tests/integration/test_benchmark_packs.py` and benchmark eval
+  assertions in `tests/adversarial/test_evals_exports.py`
+- Main surfaces: packaged `local-samples` benchmark pack,
+  `benchmark list/show/run`, staged local benchmark workspaces,
+  `benchmark_result.v1` artifacts, run JSON exports, and eval scorecard mapping
+  through `benchmark-sample-packs-run`.
+
 **User stories covered**
 
 - Story 9: benchmark-shaped execution is demonstrated without full benchmark
@@ -480,6 +491,8 @@ before commit creation.
   workspace, policy, eval, and export flows.
 - Sample packs run in CI without large downloads.
 - Benchmark-shaped result artifacts map back to actual run evidence.
+- The SWE-bench-style sample completes through approval-bound patch evidence;
+  the terminal-task sample completes without mutation.
 
 **First RED test**
 
@@ -493,10 +506,10 @@ existing runtime end to end.
 
 ### Acceptance criteria
 
-- [ ] Sample packs prove task import, workspace prep, policy selection, run
+- [x] Sample packs prove task import, workspace prep, policy selection, run
       execution, eval mapping, and benchmark-style export.
-- [ ] Sample packs run in normal CI without external dataset downloads.
-- [ ] Result exports reflect actual run evidence rather than synthetic reports.
+- [x] Sample packs run in normal CI without external dataset downloads.
+- [x] Result exports reflect actual run evidence rather than synthetic reports.
 
 ### Out of scope
 

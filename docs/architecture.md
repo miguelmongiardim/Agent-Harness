@@ -12,6 +12,8 @@ runtime around explicit ownership boundaries.
   assembly, and retrieval provenance.
 - `agent_harness.tools` owns typed tool arguments, policy-mediated tool
   execution, and the exact-state `git_commit` planning/execution boundary.
+- `agent_harness.benchmarks` owns packaged local benchmark sample packs,
+  workspace staging, result mapping, and evidence-backed benchmark exports.
 - `agent_harness.model`, `agent_harness.runtimes`, `agent_harness.templates`,
   `agent_harness.storage`, `agent_harness.telemetry`, `agent_harness.evals`,
   and `agent_harness.exporters` provide the report's package-level structural
@@ -45,6 +47,11 @@ and export boundaries. Core runtime orchestration coordinates these boundaries
 but should not absorb their detailed implementation. Policy remains the common
 gate for context inclusion, provider input, template writes, tool execution, and
 separate git commit approval.
+
+Benchmark adapters are deliberately thin. They prepare local sample workspaces
+and then call the native runtime, approval path, and JSON exporter; benchmark
+results are pointers to real run evidence rather than independent synthetic
+reports.
 
 Provider transports live under `agent_harness.model.adapters` behind
 `ProviderGateway`; they call the deterministic model contract or recorded

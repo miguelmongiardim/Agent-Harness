@@ -202,10 +202,13 @@ def test_cli_eval_scorecard_covers_prompt_injection_approval_and_replay(
         "prompt-injection-does-not-widen-access",
         "approval-flow-completes-after-review",
         "reproducible-replay-fixed-seed",
+        "benchmark-sample-packs-run",
     } <= set(results)
     assert results["prompt-injection-does-not-widen-access"]["passed"] is True
     assert results["approval-flow-completes-after-review"]["passed"] is True
     assert results["reproducible-replay-fixed-seed"]["passed"] is True
+    assert results["benchmark-sample-packs-run"]["passed"] is True
+    assert "benchmark_result" in results["benchmark-sample-packs-run"]["artifacts"]
 
 
 def _write_task(path: Path, payload: dict[str, object]) -> None:
