@@ -8,7 +8,7 @@ from agent_harness.context.retrieval import ingest_documents
 from agent_harness.defaults import DEFAULT_POLICY
 from agent_harness.policy import PolicyEngine
 from agent_harness.runtimes.native import HarnessRuntime
-from agent_harness.schemas import PolicyProfile
+from agent_harness.schemas import DenseRetrievalMetadata, PolicyProfile
 from tests.conftest import seed_project
 
 
@@ -37,12 +37,12 @@ class _DenseFixtureRetriever:
             ),
         ][:limit]
 
-    def metadata(self) -> dict[str, str]:
-        return {
-            "backend": "local_fixture",
-            "model": "fixture-embeddings",
-            "version": "baseline",
-        }
+    def metadata(self) -> DenseRetrievalMetadata:
+        return DenseRetrievalMetadata(
+            backend="local_fixture",
+            model="fixture-embeddings",
+            version="baseline",
+        )
 
 
 def _seed_project_with_mock_provider(root: Path) -> None:
@@ -79,6 +79,13 @@ def test_hybrid_retrieval_manifest_deduplicates_overlap_and_records_rejected_evi
     monkeypatch,
 ) -> None:
     seed_project(tmp_path)
+    config_path = tmp_path / "agent-harness.yaml"
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8").replace(
+            "retrieval_backend: lexical", "retrieval_backend: qdrant"
+        ),
+        encoding="utf-8",
+    )
     docs_dir = tmp_path / "docs"
     docs_dir.mkdir()
     (docs_dir / "both.md").write_text(
@@ -129,6 +136,10 @@ def test_hybrid_retrieval_manifest_deduplicates_overlap_and_records_rejected_evi
         _DenseFixtureRetriever,
         raising=False,
     )
+    monkeypatch.setattr(
+        "agent_harness.core.runtime.optional_dense_dependencies_available",
+        lambda: True,
+    )
 
     summary = HarnessRuntime(tmp_path).run_task(task_path, dry_run=True)
     manifest = json.loads(
@@ -143,6 +154,13 @@ def test_hybrid_retrieval_manifest_deduplicates_overlap_and_records_rejected_evi
         "model": "fixture-embeddings",
         "version": "baseline",
     }
+    assert manifest["retrieval"]["requested_backend"] == "qdrant"
+    assert manifest["retrieval"]["active_backend"] == "local_dense_fixture"
+    assert manifest["retrieval"]["backend"] == "local_fixture"
+    assert manifest["retrieval"]["embedding_model"] == "fixture-embeddings"
+    assert manifest["retrieval"]["index_id"]
+    assert manifest["retrieval"]["remote_embeddings"] is False
+    assert manifest["retrieval"]["fallback_reason"] is None
 
     included_by_path = {item["path"]: item for item in manifest["items"]}
     assert set(included_by_path) == {"docs/both.md", "docs/lexical.md", "docs/dense.md"}

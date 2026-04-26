@@ -14,6 +14,7 @@ from agent_harness.schemas import (
     ContextManifestItem,
     ContextSource,
     PolicyDecision,
+    RetrievalBackendManifest,
     TaskSpec,
 )
 from agent_harness.utils import sha256_text, stable_id
@@ -32,6 +33,7 @@ def build_context_manifest(
     policy: PolicyEngine,
     lexical_retriever: Retriever,
     dense_retriever: DenseRetriever | None = None,
+    retrieval: RetrievalBackendManifest | None = None,
 ) -> ContextBuildResult:
     sources: dict[str, ContextSource] = {}
     chunks: list[ContextChunk] = []
@@ -174,6 +176,7 @@ def build_context_manifest(
             items=items,
             rejected_items=rejected_items,
             dense_retrieval=dense_metadata,
+            retrieval=retrieval,
         ),
         retrieval_decisions=retrieval_decisions,
     )

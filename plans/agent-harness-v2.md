@@ -12,12 +12,12 @@ Status initialized from the V2 PRD on 2026-04-26.
 - Phase 3: completed
 - Phase 4: completed
 - Phase 5: completed
-- Phase 6: pending
+- Phase 6: completed
 - Phase 7: pending
 - Phase 8: pending
 - Phase 9: pending
 - Phase 10: pending
-- Next target: Phase 6 Retrieval Hardening And Local Dense Fixtures.
+- Next target: Phase 7 `template.v2` Catalog And Python Trio.
 
 ## Architectural Decisions
 
@@ -515,7 +515,7 @@ without changing default blocking behavior.
 
 **First RED test**
 
-- `tests/integration/test_retrieval_v2.py::test_missing_dense_dependencies_warn_and_fall_back_to_lexical_manifest`
+- `tests/integration/test_retrieval_hardening.py::test_missing_dense_dependencies_warn_and_fall_back_to_lexical_manifest`
   should configure dense retrieval without installed extras, run a task, assert
   doctor warns, and assert the manifest records lexical fallback without remote
   embedding behavior.
@@ -535,18 +535,32 @@ provider input and context policy filtering remain unchanged.
 
 ### Acceptance criteria
 
-- [ ] Lexical retrieval remains default.
-- [ ] Lexical fallback is deterministic.
-- [ ] Hybrid manifests include backend.
-- [ ] Hybrid manifests include embedding model.
-- [ ] Hybrid manifests include index id.
-- [ ] Hybrid manifests include chunk ids and per-source scores.
-- [ ] Hybrid manifests include sensitivity and policy evidence.
-- [ ] Qdrant/FastEmbed tests use deterministic local fixtures.
-- [ ] Missing optional retrieval dependencies produce doctor warnings.
-- [ ] Missing optional retrieval dependencies fall back gracefully.
-- [ ] Remote embeddings are not used.
-- [ ] Production Qdrant server mode is not exposed as V2 behavior.
+- [x] Lexical retrieval remains default.
+- [x] Lexical fallback is deterministic.
+- [x] Hybrid manifests include backend.
+- [x] Hybrid manifests include embedding model.
+- [x] Hybrid manifests include index id.
+- [x] Hybrid manifests include chunk ids and per-source scores.
+- [x] Hybrid manifests include sensitivity and policy evidence.
+- [x] Qdrant/FastEmbed tests use deterministic local fixtures.
+- [x] Missing optional retrieval dependencies produce doctor warnings.
+- [x] Missing optional retrieval dependencies fall back gracefully.
+- [x] Remote embeddings are not used.
+- [x] Production Qdrant server mode is not exposed as V2 behavior.
+
+### Phase 6 implementation notes
+
+- Runtime retrieval selection now honors `retrieval_backend`: default `lexical`
+  uses lexical retrieval only, while `qdrant` is an opt-in request for local
+  dense fixture behavior.
+- `context_manifest.v2` now includes `retrieval_backend.v1` evidence with
+  requested backend, active backend, backend id, embedding model, index id,
+  fallback reason, and `remote_embeddings: false`.
+- Missing Qdrant/FastEmbed dependencies keep runs on deterministic lexical
+  fallback and record `fallback_reason: missing_optional_dependencies`.
+- Hybrid coverage opts into `qdrant`, stubs dependency availability, and uses a
+  deterministic local dense fixture; no production Qdrant server or remote
+  embedding behavior is exposed.
 
 ### Out of scope
 

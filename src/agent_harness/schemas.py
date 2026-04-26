@@ -444,6 +444,17 @@ class DenseRetrievalMetadata(StrictModel):
     version: str
 
 
+class RetrievalBackendManifest(StrictModel):
+    schema_version: Literal["retrieval_backend.v1"] = "retrieval_backend.v1"
+    requested_backend: Literal["fake", "lexical", "qdrant"]
+    active_backend: str
+    backend: str
+    embedding_model: str | None = None
+    index_id: str | None = None
+    fallback_reason: str | None = None
+    remote_embeddings: bool = False
+
+
 class ContextManifestItem(StrictModel):
     item_id: str
     source_id: str
@@ -475,6 +486,7 @@ class ContextManifest(StrictModel):
     items: list[ContextManifestItem] = Field(default_factory=list)
     rejected_items: list[ContextManifestItem] = Field(default_factory=list)
     dense_retrieval: DenseRetrievalMetadata | None = None
+    retrieval: RetrievalBackendManifest | None = None
     created_at: datetime = Field(default_factory=now_utc)
 
 

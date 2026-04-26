@@ -14,6 +14,7 @@ from agent_harness.context.builder import build_context_manifest
 from agent_harness.context.retrieval import (
     LexicalRetriever,
     LocalDenseRetriever,
+    optional_dense_dependencies_available,
 )
 from agent_harness.core.models import DeterministicMockModel
 from agent_harness.model.adapters import ProviderGateway
@@ -31,6 +32,7 @@ from agent_harness.schemas import (
     ProviderInputManifest,
     ProviderProfileConfig,
     ProviderUseApprovalBinding,
+    RetrievalBackendManifest,
     RunProviderRecord,
     RunSummary,
     RuntimeAdapterRecord,
@@ -180,7 +182,10 @@ class HarnessRuntime:
 
         index_path = self.artifact_root / "indexes" / "documents.jsonl"
         lexical_retriever = LexicalRetriever(index_path)
-        dense_retriever = LocalDenseRetriever(index_path)
+        dense_retriever, retrieval = _select_retrieval_backend(
+            self.config.retrieval_backend,
+            index_path,
+        )
         context = build_context_manifest(
             self.project_root,
             run_id,
@@ -188,6 +193,7 @@ class HarnessRuntime:
             policy,
             lexical_retriever,
             dense_retriever=dense_retriever,
+            retrieval=retrieval,
         )
         manifest = context.manifest
         store.write_model("context_manifest.json", manifest)
@@ -1605,3 +1611,37 @@ def _coerce_provider_input_sensitivities(values: list[str]) -> list[Sensitivity]
             raise ValueError(f"unknown provider-input sensitivity: {value}")
         normalized.append(value)  # type: ignore[arg-type]
     return normalized
+
+
+def _select_retrieval_backend(
+    requested_backend: str,
+    index_path: Path,
+) -> tuple[LocalDenseRetriever | None, RetrievalBackendManifest]:
+    index_id = hash_file(index_path) if index_path.exists() else sha256_text("")
+    if requested_backend == "qdrant":
+        if not optional_dense_dependencies_available():
+            return None, RetrievalBackendManifest(
+                requested_backend="qdrant",
+                active_backend="lexical",
+                backend="lexical",
+                index_id=index_id,
+                fallback_reason="missing_optional_dependencies",
+                remote_embeddings=False,
+            )
+        dense = LocalDenseRetriever(index_path)
+        metadata = dense.metadata()
+        return dense, RetrievalBackendManifest(
+            requested_backend="qdrant",
+            active_backend="local_dense_fixture",
+            backend=metadata.backend,
+            embedding_model=metadata.model,
+            index_id=index_id,
+            remote_embeddings=False,
+        )
+    return None, RetrievalBackendManifest(
+        requested_backend="lexical" if requested_backend != "fake" else "fake",
+        active_backend="lexical",
+        backend="lexical",
+        index_id=index_id,
+        remote_embeddings=False,
+    )

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 from pathlib import Path
@@ -152,6 +153,13 @@ def ingest_documents(
     return index_path
 
 
+def optional_dense_dependencies_available() -> bool:
+    return (
+        importlib.util.find_spec("qdrant_client") is not None
+        and importlib.util.find_spec("fastembed") is not None
+    )
+
+
 def _dense_tokens(text: str) -> set[str]:
     return {
         token
@@ -176,4 +184,5 @@ __all__ = [
     "Retriever",
     "chunk_text",
     "ingest_documents",
+    "optional_dense_dependencies_available",
 ]

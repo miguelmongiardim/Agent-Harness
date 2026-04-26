@@ -83,7 +83,10 @@ def test_fixed_seed_retrieval_manifest_is_stable_and_logs_denied_retrieval_polic
     assert manifest_a["sources"][0]["policy_decision_id"]
     assert manifest_a["chunks"][0]["content_hash"]
     assert manifest_a["chunks"][0]["sensitivity"] == "internal"
-    assert manifest_a["dense_retrieval"]["backend"] == "local_token_similarity"
+    assert manifest_a["dense_retrieval"] is None
+    assert manifest_a["retrieval"]["active_backend"] == "lexical"
+    assert manifest_a["retrieval"]["requested_backend"] == "lexical"
+    assert manifest_a["retrieval"]["remote_embeddings"] is False
     rejected_by_path = {item["path"]: item for item in manifest_a["rejected_items"]}
     assert rejected_by_path["docs/private.md"]["policy_allowed"] is False
     assert rejected_by_path["docs/private.md"]["text"] is None
