@@ -30,15 +30,15 @@ Current public paths:
 
 - Runtime orchestration: `agent_harness.runtimes.native` and
   `agent_harness.core.runtime`.
+- Optional LangGraph boundary proof: `agent_harness.runtimes.langgraph_adapter`.
 - Context ingestion and retrieval: `agent_harness.context.retrieval`,
   `agent_harness.context.builder`, and `agent_harness.context.chunking`.
 - Provider adapters: `agent_harness.model.adapters`.
 
 Some report leaf modules are explicit adapter boundaries rather than completed
-features. For example, `agent_harness.runtimes.langgraph_adapter`,
-`agent_harness.runtimes.mcp_adapter`, and the live OpenAI-compatible adapter
-entry point fail clearly with `UnsupportedAdapterError` until those phases are
-implemented.
+features. For example, `agent_harness.runtimes.mcp_adapter` and the live
+OpenAI-compatible adapter entry point fail clearly with `UnsupportedAdapterError`
+until those phases are implemented.
 
 ## Dependency Direction
 
@@ -57,3 +57,9 @@ Provider transports live under `agent_harness.model.adapters` behind
 `ProviderGateway`; they call the deterministic model contract or recorded
 fixtures without becoming the runtime itself. Storage remains the append-only
 evidence boundary for run artifacts, approvals, checkpoints, and event logs.
+
+The LangGraph adapter is deliberately narrow. It lazy-loads the optional
+`langgraph` package, delegates the covered execution path through the native
+runtime, and records `runtime_adapter.json` plus a `runtime_adapter_selected`
+event. It proves the framework boundary can share policy and audit artifacts
+without making LangGraph the primary runtime.

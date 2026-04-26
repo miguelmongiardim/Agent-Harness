@@ -16,7 +16,8 @@ Status synced to the repository implementation on 2026-04-26.
 - Phase 6: implemented
 - Phase 7: implemented
 - Phase 8: implemented
-- Next target: Phase 9
+- Phase 9: implemented
+- Next target: V1 closure review
 
 ## Architectural Decisions
 
@@ -572,6 +573,14 @@ reporting for optional scanners, and SARIF export integration.
 
 ## Phase 9: Optional LangGraph Boundary Proof
 
+**Implementation status**
+
+- Implemented on 2026-04-26 in the current working tree.
+- Coverage: `tests/integration/test_langgraph_runtime_adapter.py`
+- Main surfaces: optional `langgraph` extra, `run --runtime langgraph`,
+  lazy adapter loading, `runtime_adapter.v1` evidence, and `inspect run`
+  runtime-adapter output.
+
 **User stories covered**
 
 - Story 12: boundary compatibility can be demonstrated without replacing the
@@ -595,9 +604,9 @@ chasing feature parity.
 
 ### Acceptance criteria
 
-- [ ] LangGraph remains optional and isolated behind an extra.
-- [ ] The native runtime remains the primary execution path.
-- [ ] Shared policy and audit invariants still hold for the covered path.
+- [x] LangGraph remains optional and isolated behind an extra.
+- [x] The native runtime remains the primary execution path.
+- [x] Shared policy and audit invariants still hold for the covered path.
 
 ### Out of scope
 

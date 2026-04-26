@@ -85,10 +85,6 @@ UNSUPPORTED_DOC_CLAIMS = [
         "MCP adapter",
         _unsupported_doc_pattern("MCP adapter"),
     ),
-    (
-        "LangGraph adapter",
-        _unsupported_doc_pattern("LangGraph adapter"),
-    ),
 ]
 
 

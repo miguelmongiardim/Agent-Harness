@@ -27,6 +27,7 @@ from agent_harness.schemas import (
     ProviderProfileConfig,
     RunProviderRecord,
     RunSummary,
+    RuntimeAdapterRecord,
     Sensitivity,
     TaskSpec,
     TemplateApplyRecord,
@@ -68,8 +69,11 @@ class HarnessRuntime:
         deny_provider_input: list[str] | None = None,
         auto_approve: bool = False,
         dry_run: bool = False,
+        runtime_adapter: str | None = None,
     ) -> RunSummary:
         task = load_model(task_path, TaskSpec)
+        if runtime_adapter not in {None, "langgraph"}:
+            raise ValueError(f"unsupported runtime adapter: {runtime_adapter}")
         selected_profile = profile_name or task.policy_profile or self.config.default_policy
         profile = load_policy(self.project_root, selected_profile)
         policy = PolicyEngine(self.project_root, profile)
@@ -77,6 +81,21 @@ class HarnessRuntime:
         store = RunStore(self.artifact_root, run_id)
         started_at = now_utc()
         store.append_event(make_event(run_id, "run_started", {"task_id": task.task_id}))
+        runtime_adapter_path: Path | None = None
+        if runtime_adapter == "langgraph":
+            adapter_record = RuntimeAdapterRecord(
+                adapter_id="langgraph",
+                run_id=run_id,
+                task_id=task.task_id,
+            )
+            runtime_adapter_path = store.write_model("runtime_adapter.json", adapter_record)
+            store.append_event(
+                make_event(
+                    run_id,
+                    "runtime_adapter_selected",
+                    {"runtime_adapter": adapter_record.model_dump(mode="json")},
+                )
+            )
         dump_model(store.run_dir / "task.json", task)
         dump_model(store.run_dir / "policy.json", profile)
         security_report = scan_task_security(self.project_root, run_id, task, policy)
@@ -113,6 +132,8 @@ class HarnessRuntime:
                 "summary": store.run_dir / "summary.json",
                 "artifact_index": store.run_dir / "artifact-index.json",
             }
+            if runtime_adapter_path is not None:
+                artifact_paths["runtime_adapter"] = runtime_adapter_path
             return self._finalize_task_run(
                 store,
                 task,
@@ -385,6 +406,8 @@ class HarnessRuntime:
             "summary": store.run_dir / "summary.json",
             "artifact_index": store.run_dir / "artifact-index.json",
         }
+        if runtime_adapter_path is not None:
+            artifact_paths["runtime_adapter"] = runtime_adapter_path
         if provider_path is not None:
             artifact_paths["provider"] = provider_path
         if provider_input_path is not None:

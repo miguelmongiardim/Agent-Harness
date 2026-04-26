@@ -41,6 +41,13 @@ uv run agent-harness doctor
 uv run pytest
 ```
 
+The optional LangGraph boundary proof is isolated behind the `langgraph` extra:
+
+```powershell
+uv sync --extra dev --extra langgraph
+uv run agent-harness run examples/tasks/python_refactor.json --runtime langgraph --dry-run
+```
+
 ## CLI Surface
 
 ```text
@@ -51,6 +58,7 @@ agent-harness template apply python-lib --destination ./scratch-lib
 agent-harness ingest docs docs
 agent-harness task validate examples/tasks/python_refactor.json
 agent-harness run examples/tasks/python_refactor.json --dry-run
+agent-harness run examples/tasks/python_refactor.json --runtime langgraph --dry-run
 agent-harness approve <run-id> <action-id> --decision approve
 agent-harness commit propose <run-id> --message "refactor: update approved files"
 agent-harness benchmark list

@@ -12,6 +12,8 @@ The bundled eval suite focuses on:
 - fixed-seed replay stability for run artifacts
 - local benchmark-shaped sample packs for SWE-bench-style and terminal-task
   workflows
+- optional LangGraph boundary compatibility through the same native policy and
+  audit evidence path
 
 Each `agent-harness eval` run writes a JSON and Markdown scorecard under
 `.agent-harness/evals/`. Scorecards record pass/fail status per scenario plus

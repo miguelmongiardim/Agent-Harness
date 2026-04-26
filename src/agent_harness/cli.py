@@ -114,6 +114,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     run.add_argument("--auto-approve", action="store_true")
     run.add_argument("--dry-run", action="store_true")
+    run.add_argument("--runtime", choices=["native", "langgraph"], default="native")
     run.set_defaults(func=cmd_run)
 
     approve = sub.add_parser("approve")
@@ -236,14 +237,27 @@ def cmd_task_validate(args: argparse.Namespace) -> int:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    summary = HarnessRuntime(Path.cwd()).run_task(
-        Path(args.task_path),
-        profile_name=args.profile,
-        provider_name=args.provider,
-        deny_provider_input=args.deny_provider_input,
-        auto_approve=args.auto_approve,
-        dry_run=args.dry_run,
-    )
+    if args.runtime == "langgraph":
+        from agent_harness.runtimes.langgraph_adapter import run_langgraph_adapter
+
+        summary = run_langgraph_adapter(
+            Path.cwd(),
+            Path(args.task_path),
+            profile_name=args.profile,
+            provider_name=args.provider,
+            deny_provider_input=args.deny_provider_input,
+            auto_approve=args.auto_approve,
+            dry_run=args.dry_run,
+        )
+    else:
+        summary = HarnessRuntime(Path.cwd()).run_task(
+            Path(args.task_path),
+            profile_name=args.profile,
+            provider_name=args.provider,
+            deny_provider_input=args.deny_provider_input,
+            auto_approve=args.auto_approve,
+            dry_run=args.dry_run,
+        )
     print(summary.model_dump_json(indent=2))
     return 0
 
@@ -302,6 +316,8 @@ def cmd_inspect_run(args: argparse.Namespace) -> int:
         payload["provider_input"] = store.read_data("provider_input.json")
     if (store.run_dir / "security_findings.json").exists():
         payload["security_findings"] = store.read_data("security_findings.json")
+    if (store.run_dir / "runtime_adapter.json").exists():
+        payload["runtime_adapter"] = store.read_data("runtime_adapter.json")
     if (store.run_dir / "template_apply.json").exists():
         payload["template_apply"] = store.read_data("template_apply.json")
     if (store.run_dir / "git_commit.json").exists():

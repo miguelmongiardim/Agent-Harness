@@ -50,6 +50,8 @@ RetrievalMethod = Literal["direct", "lexical", "dense", "both"]
 RetrievalEvidenceMethod = Literal["lexical", "dense"]
 BenchmarkKind = Literal["swe_bench_style", "terminal_task"]
 SecuritySeverity = Literal["critical", "high", "medium", "low", "info"]
+RuntimeAdapterId = Literal["langgraph"]
+RuntimeExecutionBoundary = Literal["native_runtime_delegate"]
 
 
 class StrictModel(BaseModel):
@@ -95,6 +97,16 @@ class RunProviderRecord(StrictModel):
     endpoint_identity: str
     network: bool
     requires_approval: bool = False
+
+
+class RuntimeAdapterRecord(StrictModel):
+    schema_version: Literal["runtime_adapter.v1"] = "runtime_adapter.v1"
+    adapter_id: RuntimeAdapterId
+    execution_boundary: RuntimeExecutionBoundary = "native_runtime_delegate"
+    package: str = "langgraph"
+    package_present: bool = True
+    run_id: str
+    task_id: str
 
 
 class HarnessConfig(StrictModel):
