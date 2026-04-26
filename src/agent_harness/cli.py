@@ -193,7 +193,7 @@ def build_parser() -> argparse.ArgumentParser:
     release = sub.add_parser("release")
     release_sub = release.add_subparsers(required=True)
     release_readiness = release_sub.add_parser("readiness")
-    release_readiness.add_argument("--version", required=True)
+    release_readiness.add_argument("--version")
     release_readiness.add_argument("--output")
     release_readiness.add_argument("--ci-run-id")
     release_readiness.set_defaults(func=cmd_release_readiness)

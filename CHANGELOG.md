@@ -9,6 +9,9 @@ All notable changes to this project will be documented in this file.
   GitHub CLI.
 - Closed V2 planning cleanup and added the V3 planning direction from the
   deep-research gap comparison.
+- Started V3 Phase 1 by expanding release readiness with default version
+  inference, required evidence gates, and actionable missing-evidence
+  diagnostics.
 
 ## [0.3.0] - 2026-04-26
 

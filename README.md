@@ -80,7 +80,7 @@ agent-harness inspect run <run-id>
 agent-harness inspect context <run-id>
 agent-harness inspect policy default
 agent-harness eval
-agent-harness release readiness --version 0.3.0 --ci-run-id <github-actions-run-id>
+agent-harness release readiness
 agent-harness export json <run-id>
 agent-harness export markdown <run-id>
 agent-harness export sarif <run-id>

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import tomllib
 from pathlib import Path
 from typing import Any
 
@@ -21,11 +22,11 @@ LOCAL_RELEASE_CHECKS = {
 
 def build_release_readiness_report(
     project_root: Path,
-    version: str,
+    version: str | None = None,
     output: Path | None = None,
     ci_run_id: str | None = None,
 ) -> dict[str, Any]:
-    normalized_version = version.removeprefix("v")
+    normalized_version = (version or _project_version(project_root)).removeprefix("v")
     tag_name = f"v{normalized_version}"
     docs_report = run_docs_check(project_root)
     changelog_present = _changelog_entry_present(project_root, normalized_version)
@@ -36,6 +37,22 @@ def build_release_readiness_report(
     )
     remote_ci = _remote_ci_evidence(project_root, target_commit, ci_run_id)
     advisory_root = project_root / ".agent-harness" / "advisories"
+    package = _package_evidence(project_root, normalized_version)
+    demos = _demo_evidence(project_root)
+    docs = _docs_evidence(project_root, docs_report)
+    templates = _template_evidence(project_root)
+    release_artifacts = _release_artifact_evidence(project_root, normalized_version)
+    diagnostics = _diagnostics(
+        package=package,
+        demos=demos,
+        docs=docs,
+        templates=templates,
+        release_artifacts=release_artifacts,
+        changelog_present=changelog_present,
+        tag_exists=tag_exists,
+        tag_pushed=tag_pushed,
+        remote_ci=remote_ci,
+    )
     report_path = output or (
         project_root
         / ".agent-harness"
@@ -48,7 +65,8 @@ def build_release_readiness_report(
         "generated_at": now_utc().isoformat(),
         "status": (
             "ready"
-            if docs_report["status"] == "passed"
+            if not diagnostics
+            and docs_report["status"] == "passed"
             and changelog_present
             and tag_exists
             and tag_pushed
@@ -70,6 +88,11 @@ def build_release_readiness_report(
             "status": docs_report["status"],
             "findings": docs_report["counts"]["findings"],
         },
+        "package": package,
+        "demos": demos,
+        "docs": docs,
+        "templates": templates,
+        "release_artifacts": release_artifacts,
         "local_checks": {
             name: {
                 "command": command,
@@ -82,10 +105,242 @@ def build_release_readiness_report(
             "gitleaks": _advisory_report(advisory_root, "gitleaks.json"),
             "cyclonedx": _advisory_report(advisory_root, "cyclonedx.json"),
         },
+        "diagnostics": diagnostics,
         "report_path": str(report_path.resolve()),
     }
     write_json(report_path, report)
     return report
+
+
+def _project_version(project_root: Path) -> str:
+    pyproject = project_root / "pyproject.toml"
+    if not pyproject.exists():
+        raise FileNotFoundError("pyproject.toml is required to infer release version")
+    data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+    project = data.get("project")
+    if not isinstance(project, dict):
+        raise ValueError("pyproject.toml must define [project].version")
+    version = project.get("version")
+    if not isinstance(version, str):
+        raise ValueError("pyproject.toml must define [project].version")
+    return version
+
+
+def _package_evidence(project_root: Path, version: str) -> dict[str, Any]:
+    wheel = _matching_files(project_root, f"dist/agent_harness-{version}-*.whl")
+    sdist = _matching_files(project_root, f"dist/agent_harness-{version}.tar.gz")
+    artifacts_present = bool(wheel and sdist)
+    build_evidence = _release_evidence(project_root, "package-build")
+    clean_install_evidence = _release_evidence(project_root, "clean-install")
+    console_script_evidence = _release_evidence(project_root, "console-script")
+    return {
+        "build": {
+            "command": "python -m build",
+            "status": (
+                "passed"
+                if artifacts_present and build_evidence["status"] == "passed"
+                else "missing_evidence"
+            ),
+            "artifacts": [*wheel, *sdist],
+            "evidence": build_evidence["path"],
+            "action": "Run python -m build and keep the wheel and sdist under dist/.",
+        },
+        "clean_install": {
+            "command": f"python -m pip install dist/agent_harness-{version}-*.whl",
+            "status": (
+                "blocked"
+                if not wheel
+                else _evidence_status(clean_install_evidence)
+            ),
+            "evidence": clean_install_evidence["path"],
+            "action": (
+                "Build the wheel, install it in a clean environment, and record "
+                "the result before release."
+            ),
+        },
+        "console_script": {
+            "command": "agent-harness doctor",
+            "status": _evidence_status(console_script_evidence),
+            "evidence": console_script_evidence["path"],
+            "action": (
+                "After clean install, run the installed agent-harness console "
+                "script and record the result."
+            ),
+        },
+    }
+
+
+def _demo_evidence(project_root: Path) -> dict[str, Any]:
+    provider_audit_evidence = _release_evidence(project_root, "demo-provider-audit")
+    python_refactor_evidence = _release_evidence(project_root, "demo-python-refactor")
+    return {
+        "provider-audit": {
+            "command": "agent-harness demo provider-audit",
+            "status": _evidence_status(provider_audit_evidence),
+            "evidence": provider_audit_evidence["path"],
+            "action": "Run the provider-audit demo and record the inspectable run id.",
+        },
+        "python-refactor": {
+            "command": "agent-harness run examples/tasks/python_refactor.json --dry-run",
+            "status": _evidence_status(python_refactor_evidence),
+            "evidence": python_refactor_evidence["path"],
+            "action": "Run the Python refactor demo path and record the resulting run id.",
+        },
+    }
+
+
+def _docs_evidence(project_root: Path, docs_report: dict[str, Any]) -> dict[str, Any]:
+    compatibility_path = project_root / "docs" / "prd-agent-harness-v3.md"
+    return {
+        "check": {
+            "command": "agent-harness docs check",
+            "status": docs_report["status"],
+            "findings": docs_report["counts"]["findings"],
+        },
+        "schema_compatibility": {
+            "path": "docs/prd-agent-harness-v3.md",
+            "present": compatibility_path.exists(),
+            "status": "passed" if compatibility_path.exists() else "missing_evidence",
+            "action": "Document the public schema compatibility policy in the V3 PRD.",
+        },
+        "roadmap_claims": {
+            "command": "agent-harness docs check",
+            "status": docs_report["status"],
+            "action": "Resolve docs-check findings before release.",
+        },
+    }
+
+
+def _template_evidence(project_root: Path) -> dict[str, Any]:
+    evidence = _release_evidence(project_root, "template-validation")
+    return {
+        "validation": {
+            "command": "agent-harness template validate --all",
+            "status": _evidence_status(evidence),
+            "evidence": evidence["path"],
+            "action": "Run bundled template validation and record the report.",
+        }
+    }
+
+
+def _release_artifact_evidence(project_root: Path, version: str) -> dict[str, Any]:
+    wheel_glob = f"dist/agent_harness-{version}-*.whl"
+    sdist_glob = f"dist/agent_harness-{version}.tar.gz"
+    wheel = _matching_files(project_root, wheel_glob)
+    sdist = _matching_files(project_root, sdist_glob)
+    return {
+        "wheel": {
+            "expected_glob": wheel_glob,
+            "status": "passed" if wheel else "missing_evidence",
+            "files": wheel,
+            "action": "Build and verify the release wheel.",
+        },
+        "sdist": {
+            "expected_glob": sdist_glob,
+            "status": "passed" if sdist else "missing_evidence",
+            "files": sdist,
+            "action": "Build and verify the release source distribution.",
+        },
+    }
+
+
+def _matching_files(project_root: Path, pattern: str) -> list[str]:
+    return sorted(path.as_posix() for path in project_root.glob(pattern) if path.is_file())
+
+
+def _release_evidence(project_root: Path, name: str) -> dict[str, str]:
+    relative = Path(".agent-harness") / "release" / "evidence" / f"{name}.json"
+    path = project_root / relative
+    if not path.exists():
+        return {"status": "missing_evidence", "path": relative.as_posix()}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {"status": "failed", "path": relative.as_posix()}
+    status = payload.get("status") if isinstance(payload, dict) else None
+    return {
+        "status": "passed" if status == "passed" else "failed",
+        "path": relative.as_posix(),
+    }
+
+
+def _evidence_status(evidence: dict[str, str]) -> str:
+    return evidence["status"]
+
+
+def _diagnostics(
+    *,
+    package: dict[str, Any],
+    demos: dict[str, Any],
+    docs: dict[str, Any],
+    templates: dict[str, Any],
+    release_artifacts: dict[str, Any],
+    changelog_present: bool,
+    tag_exists: bool,
+    tag_pushed: bool,
+    remote_ci: dict[str, Any],
+) -> list[dict[str, str]]:
+    diagnostics: list[dict[str, str]] = []
+    _collect_status_diagnostics(diagnostics, "package", package)
+    _collect_status_diagnostics(diagnostics, "demos", demos)
+    _collect_status_diagnostics(diagnostics, "docs", docs)
+    _collect_status_diagnostics(diagnostics, "templates", templates)
+    _collect_status_diagnostics(diagnostics, "release_artifacts", release_artifacts)
+    if not changelog_present:
+        diagnostics.append(
+            {
+                "gate": "changelog",
+                "status": "missing_evidence",
+                "action": "Add a CHANGELOG.md entry for the release version.",
+            }
+        )
+    if not tag_exists:
+        diagnostics.append(
+            {
+                "gate": "tag.local",
+                "status": "missing_evidence",
+                "action": "Create the local release tag after final verification.",
+            }
+        )
+    if not tag_pushed:
+        diagnostics.append(
+            {
+                "gate": "tag.remote",
+                "status": "missing_evidence",
+                "action": "Create and push the release tag after final verification.",
+            }
+        )
+    if not _required_remote_ci_passed(remote_ci):
+        diagnostics.append(
+            {
+                "gate": "remote_ci",
+                "status": "missing_evidence",
+                "action": "Record a passing GitHub Actions CI run for the target commit.",
+            }
+        )
+    return diagnostics
+
+
+def _collect_status_diagnostics(
+    diagnostics: list[dict[str, str]],
+    prefix: str,
+    node: dict[str, Any],
+) -> None:
+    for key, value in node.items():
+        if not isinstance(value, dict):
+            continue
+        status = value.get("status")
+        if status in {None, "passed"}:
+            _collect_status_diagnostics(diagnostics, f"{prefix}.{key}", value)
+            continue
+        action = value.get("action")
+        diagnostics.append(
+            {
+                "gate": f"{prefix}.{key}",
+                "status": str(status),
+                "action": str(action or f"Resolve {prefix}.{key} before release."),
+            }
+        )
 
 
 def _changelog_entry_present(project_root: Path, version: str) -> bool:
