@@ -30,6 +30,7 @@ from agent_harness.schemas import (
     ProviderCallAuditManifest,
     ProviderInputManifest,
     ProviderProfileConfig,
+    ProviderUseApprovalBinding,
     RunProviderRecord,
     RunSummary,
     RuntimeAdapterRecord,
@@ -305,11 +306,14 @@ class HarnessRuntime:
                 status = "failed"
                 should_execute_model = False
             elif provider_decision.approval_required:
+                provider_input_hash = _provider_input_hash(provider_input_manifest)
                 approval = _provider_approval_record(
                     run_id,
                     provider,
                     checkpoint_hash,
                     policy.profile.name,
+                    provider_input_hash=provider_input_hash,
+                    policy_decision_id=provider_decision.decision_id,
                     auto_approve=auto_approve,
                     dry_run=dry_run,
                 )
@@ -320,6 +324,8 @@ class HarnessRuntime:
                         "provider": provider.model_dump(mode="json"),
                         "checkpoint_hash": checkpoint_hash,
                         "policy_profile": policy.profile.name,
+                        "provider_input_hash": provider_input_hash,
+                        "policy_decision_id": provider_decision.decision_id,
                     },
                 )
                 store.write_approval(approval)
@@ -413,6 +419,7 @@ class HarnessRuntime:
                     else None
                 ),
                 provider_approval_ids=provider_call_approval_ids,
+                provider_input_manifest=provider_input_manifest if provider is not None else None,
                 auto_approve=auto_approve,
                 dry_run=dry_run,
             )
@@ -868,6 +875,10 @@ def approve_action(
             checkpoint_hash=str(action_record["checkpoint_hash"]),
             run_id=run_id,
             policy_profile=policy.profile.name,
+            provider_input_hash=_provider_input_hash(
+                load_model(store.run_dir / "provider_input.json", ProviderInputManifest)
+            ),
+            policy_decision_id=str(action_record["policy_decision_id"]),
         )
         if _has_pending_approvals(store):
             _update_resumed_summary(store, "paused")
@@ -884,6 +895,9 @@ def approve_action(
             provider=provider,
             provider_config=runtime._configured_provider(provider.provider_profile_id),
             provider_approval_ids=_approved_provider_execution_approval_ids(store),
+            provider_input_manifest=load_model(
+                store.run_dir / "provider_input.json", ProviderInputManifest
+            ),
             auto_approve=False,
             dry_run=False,
         )
@@ -921,6 +935,9 @@ def approve_action(
             provider=provider,
             provider_config=runtime._configured_provider(provider.provider_profile_id),
             provider_approval_ids=_approved_provider_execution_approval_ids(store),
+            provider_input_manifest=load_model(
+                store.run_dir / "provider_input.json", ProviderInputManifest
+            ),
             auto_approve=False,
             dry_run=False,
         )
@@ -974,6 +991,7 @@ def _execute_model_actions(
     provider: RunProviderRecord | None = None,
     provider_config: ProviderProfileConfig | None = None,
     provider_approval_ids: list[str] | None = None,
+    provider_input_manifest: ProviderInputManifest | None = None,
     auto_approve: bool = False,
     dry_run: bool = False,
 ) -> tuple[str, list[str]]:
@@ -996,6 +1014,7 @@ def _execute_model_actions(
             provider,
             provider_config,
             approval_ids=provider_approval_ids,
+            provider_input=provider_input_manifest,
         )
         _append_provider_call_audit(store, provider_call)
     else:
@@ -1039,6 +1058,7 @@ def _execute_model_actions(
             provider,
             provider_config,
             approval_ids=provider_approval_ids,
+            provider_input=provider_input_manifest,
         )
         _append_provider_call_audit(store, provider_call)
     else:
@@ -1126,12 +1146,22 @@ def _provider_approval_record(
     provider: RunProviderRecord,
     checkpoint_hash: str,
     policy_profile: str,
+    provider_input_hash: str,
+    policy_decision_id: str,
     auto_approve: bool = False,
     dry_run: bool = False,
 ) -> ApprovalRecord:
     provider_payload = provider.model_dump(mode="json")
     action_id = stable_id("action", run_id, "provider_use", provider_payload, checkpoint_hash)
     binding_hash = sha256_json(provider_payload)
+    provider_use_binding = ProviderUseApprovalBinding(
+        provider_profile_id=provider.provider_profile_id,
+        trust_zone=provider.trust_zone,
+        model_id=provider.model,
+        provider_input_hash=provider_input_hash,
+        policy_decision_id=policy_decision_id,
+        checkpoint_hash=checkpoint_hash,
+    )
     return ApprovalRecord(
         approval_id=stable_id("approval", run_id, action_id),
         run_id=run_id,
@@ -1144,6 +1174,7 @@ def _provider_approval_record(
         status="approved" if auto_approve and not dry_run else "pending",
         decided_at=now_utc() if auto_approve and not dry_run else None,
         actor="auto-approve" if auto_approve and not dry_run else None,
+        provider_use_binding=provider_use_binding,
     )
 
 
@@ -1311,11 +1342,21 @@ def _validate_provider_approval(
     checkpoint_hash: str,
     run_id: str,
     policy_profile: str,
+    provider_input_hash: str,
+    policy_decision_id: str,
 ) -> None:
     provider_payload = provider.model_dump(mode="json")
     binding_hash = sha256_json(provider_payload)
     expected_action_id = stable_id(
         "action", run_id, "provider_use", provider_payload, checkpoint_hash
+    )
+    expected_binding = ProviderUseApprovalBinding(
+        provider_profile_id=provider.provider_profile_id,
+        trust_zone=provider.trust_zone,
+        model_id=provider.model,
+        provider_input_hash=provider_input_hash,
+        policy_decision_id=policy_decision_id,
+        checkpoint_hash=checkpoint_hash,
     )
     expected = {
         "run_id": run_id,
@@ -1325,6 +1366,7 @@ def _validate_provider_approval(
         "policy_profile": policy_profile,
         "checkpoint_hash": checkpoint_hash,
         "proposed_effect_hash": binding_hash,
+        "provider_use_binding": expected_binding.model_dump(mode="json"),
     }
     actual = {
         "run_id": approval.run_id,
@@ -1334,9 +1376,14 @@ def _validate_provider_approval(
         "policy_profile": approval.policy_profile,
         "checkpoint_hash": approval.checkpoint_hash,
         "proposed_effect_hash": approval.proposed_effect_hash,
+        "provider_use_binding": (
+            approval.provider_use_binding.model_dump(mode="json")
+            if approval.provider_use_binding is not None
+            else None
+        ),
     }
     if actual != expected:
-        raise ValueError("provider approval binding does not match selected provider")
+        raise ValueError("provider-use approval binding does not match provider operation")
 
 
 def _validate_provider_input_approval(
@@ -1396,6 +1443,10 @@ def _bind_provider_input_approval(
             )
         )
     return manifest.model_copy(update={"records": records})
+
+
+def _provider_input_hash(manifest: ProviderInputManifest) -> str:
+    return sha256_json(manifest.model_dump(mode="json"))
 
 
 def _append_provider_call_audit(store: RunStore, audit: ProviderCallAudit) -> None:

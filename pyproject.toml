@@ -67,3 +67,6 @@ packages = ["agent_harness"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+markers = [
+  "live_provider: opt-in live provider smoke tests; require AGENT_HARNESS_RUN_LIVE_PROVIDER_TESTS=1 and explicit pytest -m live_provider",
+]

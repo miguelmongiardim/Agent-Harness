@@ -12,6 +12,7 @@ from agent_harness.schemas import (
     ContextManifest,
     ProviderCallAudit,
     ProviderCallPhase,
+    ProviderInputManifest,
     ProviderProfileConfig,
     ProviderTransport,
     RunProviderRecord,
@@ -42,6 +43,7 @@ class ProviderGateway:
         provider: RunProviderRecord,
         provider_config: ProviderProfileConfig,
         approval_ids: list[str] | None = None,
+        provider_input: ProviderInputManifest | None = None,
     ) -> tuple[list[ToolCall], ProviderCallAudit]:
         transport = self._transport(provider, provider_config)
         actions = transport.initial_actions(task, manifest)
@@ -51,6 +53,7 @@ class ProviderGateway:
             "initial_actions",
             actions,
             approval_ids or [],
+            provider_input,
         )
 
     def next_actions(
@@ -62,6 +65,7 @@ class ProviderGateway:
         provider: RunProviderRecord,
         provider_config: ProviderProfileConfig,
         approval_ids: list[str] | None = None,
+        provider_input: ProviderInputManifest | None = None,
     ) -> tuple[list[ToolCall], ProviderCallAudit]:
         transport = self._transport(provider, provider_config)
         actions = transport.next_actions(task, manifest, observations)
@@ -71,6 +75,7 @@ class ProviderGateway:
             "next_actions",
             actions,
             approval_ids or [],
+            provider_input,
         )
 
     def _transport(
@@ -113,6 +118,7 @@ class _BaseTransport:
         phase: ProviderCallPhase,
         actions: list[ToolCall],
         approval_ids: list[str],
+        provider_input: ProviderInputManifest | None,
     ) -> ProviderCallAudit:
         raise NotImplementedError
 
@@ -125,6 +131,7 @@ class _MockTransport(_BaseTransport):
         phase: ProviderCallPhase,
         actions: list[ToolCall],
         approval_ids: list[str],
+        provider_input: ProviderInputManifest | None,
     ) -> ProviderCallAudit:
         return _build_provider_audit(
             run_id,
@@ -133,6 +140,7 @@ class _MockTransport(_BaseTransport):
             phase,
             actions,
             approval_ids,
+            provider_input,
             mode="mock",
         )
 
@@ -158,6 +166,7 @@ class _RecordedTransport(_BaseTransport):
         phase: ProviderCallPhase,
         actions: list[ToolCall],
         approval_ids: list[str],
+        provider_input: ProviderInputManifest | None,
     ) -> ProviderCallAudit:
         return _build_provider_audit(
             run_id,
@@ -166,13 +175,14 @@ class _RecordedTransport(_BaseTransport):
             phase,
             actions,
             approval_ids,
+            provider_input,
             mode="recorded_fixture",
             fixture_id=self.fixture.fixture_id,
         )
 
     def _load_fixture(self) -> _RecordedFixture:
         if not self._endpoint.startswith("recorded://"):
-            if os.environ.get("AGENT_HARNESS_ENABLE_LIVE_PROVIDER_TESTS") == "1":
+            if os.environ.get("AGENT_HARNESS_RUN_LIVE_PROVIDER_TESTS") == "1":
                 raise ValueError("live provider smoke is not implemented")
             raise ValueError(
                 "live provider transport is disabled; use a recorded:// fixture endpoint"
@@ -212,10 +222,12 @@ def _build_provider_audit(
     phase: ProviderCallPhase,
     actions: list[ToolCall],
     approval_ids: list[str],
+    provider_input: ProviderInputManifest | None,
     mode: Literal["mock", "recorded_fixture", "live_smoke"],
     fixture_id: str | None = None,
 ) -> ProviderCallAudit:
-    payload = [action.model_dump(mode="json") for action in actions]
+    response_payload = [action.model_dump(mode="json") for action in actions]
+    prompt_payload = _provider_prompt_payload(provider_input)
     unique_approval_ids = list(dict.fromkeys(approval_ids))
     return ProviderCallAudit(
         audit_id=stable_id(
@@ -223,7 +235,7 @@ def _build_provider_audit(
             run_id,
             provider.provider_profile_id,
             phase,
-            payload,
+            response_payload,
             unique_approval_ids,
             fixture_id,
             mode,
@@ -241,5 +253,74 @@ def _build_provider_audit(
         fixture_id=fixture_id,
         approval_ids=unique_approval_ids,
         action_count=len(actions),
-        actions_hash=sha256_json(payload),
+        actions_hash=sha256_json(response_payload),
+        prompt_hash=sha256_json(prompt_payload),
+        response_hash=sha256_json(response_payload),
+        redacted_prompt_summary=_redacted_prompt_summary(provider_input),
+        redacted_response_summary={
+            "kind": "tool_calls",
+            "tool_calls": len(actions),
+        },
+        latency_ms=0,
+        token_metrics={
+            "prompt_records": len(provider_input.records) if provider_input is not None else 0,
+            "included_prompt_records": (
+                sum(1 for record in provider_input.records if record.included)
+                if provider_input is not None
+                else 0
+            ),
+            "response_actions": len(actions),
+        },
+        policy_decision_ids=_policy_decision_ids(provider_input),
+    )
+
+def _provider_prompt_payload(provider_input: ProviderInputManifest | None) -> dict[str, object]:
+    if provider_input is None:
+        return {"records": []}
+    return {
+        "run_id": provider_input.run_id,
+        "task_id": provider_input.task_id,
+        "provider_profile_id": provider_input.provider_profile_id,
+        "trust_zone": provider_input.trust_zone,
+        "records": [
+            {
+                "record_id": record.record_id,
+                "manifest_item_id": record.manifest_item_id,
+                "source_id": record.source_id,
+                "chunk_id": record.chunk_id,
+                "path": record.path,
+                "sensitivity": record.sensitivity,
+                "effective_sensitivity": record.effective_sensitivity,
+                "policy_action": record.policy_action,
+                "included": record.included,
+                "untrusted": record.untrusted,
+                "redaction_status": record.redaction_status,
+                "redactions_applied": record.redactions_applied,
+                "policy_decision_id": record.policy_decision_id,
+                "content_hash": record.content_hash,
+            }
+            for record in provider_input.records
+        ],
+    }
+
+def _redacted_prompt_summary(
+    provider_input: ProviderInputManifest | None,
+) -> dict[str, str | int]:
+    if provider_input is None:
+        return {"kind": "provider_input", "records": 0, "included_records": 0}
+    return {
+        "kind": "provider_input",
+        "records": len(provider_input.records),
+        "included_records": sum(1 for record in provider_input.records if record.included),
+    }
+
+def _policy_decision_ids(provider_input: ProviderInputManifest | None) -> list[str]:
+    if provider_input is None:
+        return []
+    return list(
+        dict.fromkeys(
+            record.policy_decision_id
+            for record in provider_input.records
+            if record.policy_decision_id
+        )
     )

@@ -169,6 +169,56 @@ def test_recorded_openai_provider_missing_required_env_var_fails_clearly(
     assert "gateway-test-secret" not in run.stderr
 
 
+def test_live_provider_transport_uses_documented_opt_in_env_var(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    endpoint_env = "AGENT_HARNESS_LIVE_TEST_ENDPOINT"
+    api_key_env = "AGENT_HARNESS_LIVE_TEST_API_KEY"
+    monkeypatch.setenv(endpoint_env, "https://provider.example.test")
+    monkeypatch.setenv(api_key_env, "live-test-secret")
+
+    provider_config = ProviderProfileConfig(
+        provider_profile_id="live-contract",
+        transport="openai_compatible",
+        trust_zone="hosted_provider",
+        model="live-model",
+        endpoint_env=endpoint_env,
+        network=True,
+        requires_approval=True,
+        api_key_env=api_key_env,
+    )
+    provider = RunProviderRecord(
+        provider_profile_id=provider_config.provider_profile_id,
+        transport=provider_config.transport,
+        trust_zone=provider_config.trust_zone,
+        model=provider_config.model,
+        endpoint_env=provider_config.endpoint_env,
+        endpoint_identity=f"env:{provider_config.endpoint_env}",
+        network=provider_config.network,
+        requires_approval=provider_config.requires_approval,
+    )
+    gateway = ProviderGateway(Path.cwd())
+
+    with pytest.raises(ValueError, match="live provider transport is disabled"):
+        gateway.initial_actions(
+            "run-live-provider-disabled",
+            _gateway_task(),
+            _gateway_manifest(),
+            provider,
+            provider_config,
+        )
+
+    monkeypatch.setenv("AGENT_HARNESS_RUN_LIVE_PROVIDER_TESTS", "1")
+    with pytest.raises(ValueError, match="live provider smoke is not implemented"):
+        gateway.initial_actions(
+            "run-live-provider-opted-in",
+            _gateway_task(),
+            _gateway_manifest(),
+            provider,
+            provider_config,
+        )
+
+
 def _gateway_task() -> TaskSpec:
     return TaskSpec.model_validate(
         {

@@ -511,6 +511,13 @@ class ProviderCallAudit(StrictModel):
     approval_ids: list[str] = Field(default_factory=list)
     action_count: int = 0
     actions_hash: str
+    prompt_hash: str = ""
+    response_hash: str = ""
+    redacted_prompt_summary: dict[str, str | int] = Field(default_factory=dict)
+    redacted_response_summary: dict[str, str | int] = Field(default_factory=dict)
+    latency_ms: int = Field(default=0, ge=0)
+    token_metrics: dict[str, int] = Field(default_factory=dict)
+    policy_decision_ids: list[str] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=now_utc)
 
 
@@ -537,6 +544,18 @@ class Checkpoint(StrictModel):
         return sha256_json(self.model_dump(mode="json"))
 
 
+class ProviderUseApprovalBinding(StrictModel):
+    schema_version: Literal["provider_use_approval_binding.v1"] = (
+        "provider_use_approval_binding.v1"
+    )
+    provider_profile_id: str
+    trust_zone: TrustZone
+    model_id: str
+    provider_input_hash: str
+    policy_decision_id: str
+    checkpoint_hash: str
+
+
 class ApprovalRecord(StrictModel):
     schema_version: Literal["approval.v1"] = "approval.v1"
     approval_id: str
@@ -552,6 +571,7 @@ class ApprovalRecord(StrictModel):
     decided_at: datetime | None = None
     actor: str | None = None
     reason: str | None = None
+    provider_use_binding: ProviderUseApprovalBinding | None = None
 
 
 class RunEvent(StrictModel):

@@ -10,15 +10,14 @@ Status initialized from the V2 PRD on 2026-04-26.
 - Phase 1: completed
 - Phase 2: completed
 - Phase 3: completed
-- Phase 4: pending
+- Phase 4: completed
 - Phase 5: pending
 - Phase 6: pending
 - Phase 7: pending
 - Phase 8: pending
 - Phase 9: pending
 - Phase 10: pending
-- Next target: Phase 4 Provider Approval Binding And Call Evidence; Phases 2
-  and 3 were completed out of order before Phase 1 was filled back in.
+- Next target: Phase 5 Security Gates And Advisory Reports.
 
 ## Architectural Decisions
 
@@ -363,7 +362,7 @@ public evaluation methods.
 
 **First RED test**
 
-- `tests/adversarial/test_provider_audit_binding.py::test_provider_use_approval_denies_provider_input_hash_drift`
+- `tests/adversarial/test_provider_approval_binding.py::test_provider_use_approval_denies_provider_input_hash_drift`
   should pause for provider approval, alter provider-bound input evidence, then
   assert resume is denied before any provider call is recorded.
 
@@ -382,22 +381,36 @@ live smoke marker coverage.
 
 ### Acceptance criteria
 
-- [ ] Provider-use approval binds provider profile, trust zone, model id,
+- [x] Provider-use approval binds provider profile, trust zone, model id,
       provider input hash, policy decision id, and checkpoint hash.
-- [ ] Approval execution rejects provider profile drift.
-- [ ] Approval execution rejects trust-zone drift.
-- [ ] Approval execution rejects model-id drift.
-- [ ] Approval execution rejects provider-input hash drift.
-- [ ] Approval execution rejects policy-decision-id drift.
-- [ ] Approval execution rejects checkpoint-hash drift.
-- [ ] Provider-call artifacts include approval ids.
-- [ ] Provider-call artifacts include prompt and response hashes.
-- [ ] Provider-call artifacts include redacted prompt/response artifacts or
+- [x] Approval execution rejects provider profile drift.
+- [x] Approval execution rejects trust-zone drift.
+- [x] Approval execution rejects model-id drift.
+- [x] Approval execution rejects provider-input hash drift.
+- [x] Approval execution rejects policy-decision-id drift.
+- [x] Approval execution rejects checkpoint-hash drift.
+- [x] Provider-call artifacts include approval ids.
+- [x] Provider-call artifacts include prompt and response hashes.
+- [x] Provider-call artifacts include redacted prompt/response artifacts or
       summaries according to policy.
-- [ ] Provider-call artifacts include latency and token metrics where available.
-- [ ] Raw provider request/response payloads are not stored by default.
-- [ ] Live provider tests require
+- [x] Provider-call artifacts include latency and token metrics where available.
+- [x] Raw provider request/response payloads are not stored by default.
+- [x] Live provider tests require
       `AGENT_HARNESS_RUN_LIVE_PROVIDER_TESTS=1 uv run pytest -m live_provider`.
+
+### Phase 4 implementation notes
+
+- Provider-use approvals now carry `provider_use_approval_binding.v1` evidence
+  for provider profile, trust zone, model id, provider-input hash, provider-use
+  policy decision id, and checkpoint hash.
+- Approval resume recomputes the current provider-input hash and rejects drift
+  before provider execution; adversarial tests cover each bound field.
+- Provider-call audit artifacts now include approval ids, prompt and response
+  hashes, redacted prompt/response summaries, deterministic latency and token
+  metrics, and provider-input policy decision references.
+- Recorded/live provider transport uses the documented
+  `AGENT_HARNESS_RUN_LIVE_PROVIDER_TESTS` opt-in boundary, and the
+  `live_provider` pytest marker is registered.
 
 ### Out of scope
 
