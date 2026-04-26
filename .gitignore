@@ -24,6 +24,8 @@ build/
 .agent-harness/benchmarks/
 .agent-harness/eval-work/
 .agent-harness/local/
+.agent-harness/docs/
+.agent-harness/migrations/
 
 # Local planning artifacts
 deep-research-report.md

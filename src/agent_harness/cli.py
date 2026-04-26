@@ -20,6 +20,7 @@ from agent_harness.docs_check import write_docs_check_report
 from agent_harness.doctor import doctor
 from agent_harness.evals import run_builtin_evals, write_eval_report
 from agent_harness.exporters import export_json, export_markdown, export_sarif
+from agent_harness.migration import migrate_schemas
 from agent_harness.policy import PolicyEngine, load_policy
 from agent_harness.schemas import TaskSpec
 from agent_harness.storage import RunStore
@@ -165,6 +166,13 @@ def build_parser() -> argparse.ArgumentParser:
     docs_check = docs_sub.add_parser("check")
     docs_check.add_argument("--output")
     docs_check.set_defaults(func=cmd_docs_check)
+
+    migrate = sub.add_parser("migrate")
+    migrate_sub = migrate.add_subparsers(required=True)
+    migrate_schemas_cmd = migrate_sub.add_parser("schemas")
+    migrate_schemas_cmd.add_argument("--write", action="store_true")
+    migrate_schemas_cmd.add_argument("--output")
+    migrate_schemas_cmd.set_defaults(func=cmd_migrate_schemas)
 
     export = sub.add_parser("export")
     export_sub = export.add_subparsers(required=True)
@@ -373,6 +381,12 @@ def cmd_docs_check(args: argparse.Namespace) -> int:
     report = load_json(report_path)
     print(json.dumps(report, indent=2))
     return 0 if report.get("status") == "passed" else 1
+
+def cmd_migrate_schemas(args: argparse.Namespace) -> int:
+    output = Path(args.output) if args.output else None
+    report = migrate_schemas(Path.cwd(), write=args.write, output=output)
+    print(json.dumps(report, indent=2))
+    return 0
 
 
 def cmd_export_sarif(args: argparse.Namespace) -> int:

@@ -7,7 +7,7 @@
 Status initialized from the V2 PRD on 2026-04-26.
 
 - Phase 0: completed
-- Phase 1: pending
+- Phase 1: completed
 - Phase 2: completed
 - Phase 3: completed
 - Phase 4: pending
@@ -17,8 +17,8 @@ Status initialized from the V2 PRD on 2026-04-26.
 - Phase 8: pending
 - Phase 9: pending
 - Phase 10: pending
-- Next target: Phase 1 Schema Migration Report And Safe Write remains pending;
-  Phases 2 and 3 were completed out of order by request.
+- Next target: Phase 4 Provider Approval Binding And Call Evidence; Phases 2
+  and 3 were completed out of order before Phase 1 was filled back in.
 
 ## Architectural Decisions
 
@@ -175,15 +175,28 @@ defined by behavior tests.
 
 ### Acceptance criteria
 
-- [ ] Report mode is the default and does not mutate files.
-- [ ] Report output includes original schema version, effective schema version,
+- [x] Report mode is the default and does not mutate files.
+- [x] Report output includes original schema version, effective schema version,
       changed fields, unchanged fields, warnings, and unsupported upgrade
       reasons.
-- [ ] `--write` updates only safe config, task, policy, and template schema
+- [x] `--write` updates only safe config, task, policy, and template schema
       changes.
-- [ ] `--write` reports skipped files with actionable reasons.
-- [ ] Migration tests prove v1 policy defaults are not widened.
-- [ ] Migration output can be stored as an artifact under `.agent-harness/`.
+- [x] `--write` reports skipped files with actionable reasons.
+- [x] Migration tests prove v1 policy defaults are not widened.
+- [x] Migration output can be stored as an artifact under `.agent-harness/`.
+
+### Phase 1 implementation notes
+
+- Added `agent-harness migrate schemas` with non-mutating report mode by
+  default and optional `--output` report storage.
+- Added `agent-harness migrate schemas --write` for safe deterministic
+  config/task/policy schema upgrades from v1 to effective V2 contracts.
+- Local `template.v1` inputs are discovered and reported but left unchanged with
+  an unsupported-upgrade reason until `template.v2` compatibility metadata lands
+  in Phase 7.
+- Policy migration hydrates flat legacy provider/trust/approval/scanner
+  sections and adds the non-permissive template and migration sections without
+  widening stricter provider-input decisions.
 
 ### Out of scope
 
