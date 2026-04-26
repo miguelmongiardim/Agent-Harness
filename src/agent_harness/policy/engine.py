@@ -31,9 +31,7 @@ def load_policy(root: Path, name: str) -> PolicyProfile:
     return load_public_model(path, PolicyProfile)
 
 
-def load_policy_with_schema_evidence(
-    root: Path, name: str
-) -> tuple[PolicyProfile, dict[str, str]]:
+def load_policy_with_schema_evidence(root: Path, name: str) -> tuple[PolicyProfile, dict[str, str]]:
     path = root / "policies" / f"{name}.json"
     if not path.exists():
         raise PolicyError(f"policy profile not found: {name}")

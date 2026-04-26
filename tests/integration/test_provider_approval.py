@@ -38,9 +38,7 @@ def _seed_project_with_default_provider(root: Path) -> None:
     ]
     (root / "agent-harness.yaml").write_text(json.dumps(config, indent=2), encoding="utf-8")
     (root / "policies").mkdir()
-    (root / "policies" / "default.json").write_text(
-        json.dumps(policy, indent=2), encoding="utf-8"
-    )
+    (root / "policies" / "default.json").write_text(json.dumps(policy, indent=2), encoding="utf-8")
 
 
 def test_local_endpoint_provider_pauses_before_model_actions_and_records_pending_approval(

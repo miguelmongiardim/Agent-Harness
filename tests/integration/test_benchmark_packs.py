@@ -27,9 +27,7 @@ def test_cli_benchmark_run_imports_swebench_style_sample_into_evidence_backed_re
         "terminal-readonly-inspect",
     }
 
-    assert (
-        main(["benchmark", "run", "local-samples", "swebench-python-refactor"]) == 0
-    )
+    assert main(["benchmark", "run", "local-samples", "swebench-python-refactor"]) == 0
     result = json.loads(capsys.readouterr().out)
 
     assert result["schema_version"] == "benchmark_result.v1"
@@ -62,9 +60,7 @@ def test_cli_benchmark_run_imports_terminal_task_sample_without_synthetic_export
     monkeypatch.chdir(tmp_path)
     seed_project(tmp_path)
 
-    assert (
-        main(["benchmark", "run", "local-samples", "terminal-readonly-inspect"]) == 0
-    )
+    assert main(["benchmark", "run", "local-samples", "terminal-readonly-inspect"]) == 0
     result = json.loads(capsys.readouterr().out)
     exported = json.loads((tmp_path / result["run_export"]).read_text(encoding="utf-8"))
 

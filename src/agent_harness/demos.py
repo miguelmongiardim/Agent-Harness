@@ -25,9 +25,7 @@ def run_provider_audit_demo(project_root: Path) -> dict[str, Any]:
     workspace = project_root / PROVIDER_AUDIT_WORKSPACE
     task_path = workspace / "task.json"
     if not task_path.exists():
-        raise FileNotFoundError(
-            "provider-audit demo requires examples/provider_audit/task.json"
-        )
+        raise FileNotFoundError("provider-audit demo requires examples/provider_audit/task.json")
 
     with _default_env(PROVIDER_AUDIT_ENDPOINT_ENV, RECORDED_PROVIDER_AUDIT_ENDPOINT):
         summary = HarnessRuntime(workspace).run_task(task_path, auto_approve=True)

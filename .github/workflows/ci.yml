@@ -6,92 +6,21 @@ on:
       - main
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
-  lint:
+  pre-commit:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Install dev dependencies
         run: python -m pip install -e .[dev]
-      - name: Ruff
-        run: python -m ruff check src tests
-
-  typecheck:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-      - name: Install dev dependencies
-        run: python -m pip install -e .[dev]
-      - name: Mypy
-        run: python -m mypy
-
-  docs-check:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-      - name: Install dev dependencies
-        run: python -m pip install -e .[dev]
-      - name: Docs check
-        run: python -m agent_harness docs check
-
-  unit:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-      - name: Install dev dependencies
-        run: python -m pip install -e .[dev]
-      - name: Unit tests
-        run: python -m pytest tests/unit
-
-  integration:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-      - name: Install dev dependencies
-        run: python -m pip install -e .[dev]
-      - name: Integration tests
-        run: python -m pytest tests/integration
-      - name: Compileall
-        run: python -m compileall -q src tests
-
-  adversarial:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-      - name: Install dev dependencies
-        run: python -m pip install -e .[dev]
-      - name: Adversarial tests
-        run: python -m pytest tests/adversarial
-
-  e2e:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-      - name: Install dev dependencies
-        run: python -m pip install -e .[dev]
-      - name: End-to-end tests
-        run: python -m pytest tests/e2e
+      - name: Pre-commit
+        run: python -m pre_commit run --all-files
 
   compatibility:
     runs-on: windows-latest
@@ -101,11 +30,99 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dev dependencies
         run: python -m pip install -e .[dev]
       - name: Compatibility tests
         run: python -m pytest -q
+
+  docs-check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dev dependencies
+        run: python -m pip install -e .[dev]
+      - name: Docs check
+        run: python -m agent_harness docs check
+
+  static:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dev dependencies
+        run: python -m pip install -e .[dev]
+      - name: Ruff
+        run: python -m ruff check src tests scripts
+      - name: Mypy
+        run: python -m mypy
+      - name: Compileall
+        run: python -m compileall -q src tests scripts
+
+  release-evidence:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dev dependencies
+        run: python -m pip install -e .[dev]
+      - name: Package and clean install evidence
+        run: python -m agent_harness release package-check
+      - name: Provider audit demo evidence
+        run: python -m agent_harness demo provider-audit
+      - name: Python refactor demo evidence
+        run: python -m agent_harness run examples/tasks/python_refactor.json --dry-run
+      - name: Template validation evidence
+        run: python -m agent_harness template validate --all
+      - name: Eval scorecard
+        run: python -m agent_harness eval
+      - name: Release readiness report
+        run: python -m agent_harness release readiness --ci-run-id ${{ github.run_id }}
+      - name: Upload release evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-evidence
+          path: |
+            .agent-harness/release
+            .agent-harness/evals
+            dist/
+
+  advisory-evidence:
+    runs-on: windows-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Advisory scanner placeholders
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force .agent-harness/advisories
+          if (Get-Command gitleaks -ErrorAction SilentlyContinue) {
+            gitleaks detect --source . --report-format json --report-path .agent-harness/advisories/gitleaks.json
+          } else {
+            '{"required":false,"status":"not_installed","tool":"gitleaks"}' |
+              Out-File -Encoding utf8 .agent-harness/advisories/gitleaks.json
+          }
+          if (Get-Command cyclonedx-py -ErrorAction SilentlyContinue) {
+            cyclonedx-py environment --output-format JSON --output-file .agent-harness/advisories/cyclonedx.json
+          } else {
+            '{"required":false,"status":"not_installed","tool":"cyclonedx-py"}' |
+              Out-File -Encoding utf8 .agent-harness/advisories/cyclonedx.json
+          }
+      - name: Upload advisory evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: advisory-evidence
+          path: .agent-harness/advisories

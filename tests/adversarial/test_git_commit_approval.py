@@ -41,9 +41,7 @@ def test_git_commit_requires_separate_approval_and_commits_exact_files(
 
     assert _git(tmp_path, "rev-parse", "HEAD") != parent_head
     assert _git(tmp_path, "log", "-1", "--pretty=%B") == message
-    assert _git(tmp_path, "show", "--name-only", "--pretty=", "HEAD").splitlines() == [
-        "fixture.py"
-    ]
+    assert _git(tmp_path, "show", "--name-only", "--pretty=", "HEAD").splitlines() == ["fixture.py"]
 
 
 def test_git_commit_denies_message_drift_before_execution(

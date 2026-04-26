@@ -47,12 +47,8 @@ def test_runtime_records_pending_patch_approval_and_diff(
 
     run_dir = tmp_path / ".agent-harness" / "runs" / "run-patch-approval"
     action_id = summary.approvals[0]
-    approval = json.loads(
-        (run_dir / "approvals" / f"{action_id}.json").read_text(encoding="utf-8")
-    )
-    action = json.loads(
-        (run_dir / "actions" / f"{action_id}.json").read_text(encoding="utf-8")
-    )
+    approval = json.loads((run_dir / "approvals" / f"{action_id}.json").read_text(encoding="utf-8"))
+    action = json.loads((run_dir / "actions" / f"{action_id}.json").read_text(encoding="utf-8"))
     events = [
         json.loads(line)
         for line in (run_dir / "events.jsonl").read_text(encoding="utf-8").splitlines()

@@ -62,11 +62,7 @@ def test_denied_target_file_is_excluded_from_context_and_denied_by_tool_policy(
     assert run.returncode == 0, run.stderr
     manifest = json.loads(
         (
-            tmp_path
-            / ".agent-harness"
-            / "runs"
-            / "run-denied-data"
-            / "context_manifest.json"
+            tmp_path / ".agent-harness" / "runs" / "run-denied-data" / "context_manifest.json"
         ).read_text(encoding="utf-8")
     )
     assert [source["path"] for source in manifest["sources"]] == ["src/allowed.py"]
@@ -200,11 +196,7 @@ def test_context_and_read_observations_redact_secret_like_content_before_storage
 
     assert run.returncode == 0, run.stderr
     manifest_text = (
-        tmp_path
-        / ".agent-harness"
-        / "runs"
-        / "run-redact-read"
-        / "context_manifest.json"
+        tmp_path / ".agent-harness" / "runs" / "run-redact-read" / "context_manifest.json"
     ).read_text(encoding="utf-8")
     assert "[REDACTED]" in manifest_text
     assert "visible-to-read" not in manifest_text

@@ -46,6 +46,7 @@ ADVANCED_EVAL_RUNNERS = [
     "_run_provider_audit_demo_eval",
 ]
 
+
 def run_builtin_evals(project_root: Path) -> list[EvalResult]:
     results: list[EvalResult] = []
     for spec in BUILTIN_EVALS:
@@ -157,9 +158,7 @@ def _policy_bypass_denied_context_invariants(
     denied_targets = [
         path for path in task.target_paths if not policy.evaluate_context_source(path).allowed
     ]
-    manifest = cast(
-        dict[str, Any], load_json(project_root / summary.artifacts["context_manifest"])
-    )
+    manifest = cast(dict[str, Any], load_json(project_root / summary.artifacts["context_manifest"]))
     manifest_paths = {
         str(source.get("path"))
         for source in manifest.get("sources", [])
@@ -608,10 +607,7 @@ def _run_provider_audit_demo_eval(project_root: Path) -> EvalResult:
         EvalInvariant(
             name="provider_use_approval_recorded",
             passed=any(
-                event.get("payload", {})
-                .get("approval", {})
-                .get("status")
-                == "approved"
+                event.get("payload", {}).get("approval", {}).get("status") == "approved"
                 for event in approval_events
             ),
             message=(
@@ -622,11 +618,7 @@ def _run_provider_audit_demo_eval(project_root: Path) -> EvalResult:
         ),
         EvalInvariant(
             name="provider_call_recorded",
-            passed=(
-                isinstance(calls, list)
-                and len(calls) > 0
-                and len(provider_call_events) > 0
-            ),
+            passed=(isinstance(calls, list) and len(calls) > 0 and len(provider_call_events) > 0),
             message=(
                 "provider call evidence was recorded"
                 if isinstance(calls, list) and calls and provider_call_events

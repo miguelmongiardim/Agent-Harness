@@ -128,11 +128,7 @@ def test_legacy_inputs_run_as_effective_current_schema_without_policy_widening(
 
     policy_artifact = json.loads(
         (
-            tmp_path
-            / ".agent-harness"
-            / "runs"
-            / "run-legacy-compatible-current"
-            / "policy.json"
+            tmp_path / ".agent-harness" / "runs" / "run-legacy-compatible-current" / "policy.json"
         ).read_text(encoding="utf-8")
     )
     assert policy_artifact["schema_version"] == "policy.v2"

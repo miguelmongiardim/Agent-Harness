@@ -44,10 +44,14 @@ uv run agent-harness inspect run <run-id>
 Run the local checks with:
 
 ```powershell
+uv run python -m pre_commit run --all-files
 uv run pytest
 uv run agent-harness eval
 uv run agent-harness release readiness
 ```
+
+The local pre-commit config runs Ruff lint/format checks, mypy, docs check,
+compileall, a large file guard, and a private key guard.
 
 For package-install verification:
 

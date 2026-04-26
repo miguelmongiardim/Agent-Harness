@@ -13,13 +13,11 @@ from agent_harness.utils import sha256_text, stable_id
 
 
 class Retriever(Protocol):
-    def retrieve(self, queries: list[str], limit: int = 5) -> list[RetrievedChunk]:
-        ...
+    def retrieve(self, queries: list[str], limit: int = 5) -> list[RetrievedChunk]: ...
 
 
 class DenseRetriever(Retriever, Protocol):
-    def metadata(self) -> DenseRetrievalMetadata:
-        ...
+    def metadata(self) -> DenseRetrievalMetadata: ...
 
 
 class FakeRetriever:
@@ -125,9 +123,7 @@ def ingest_documents(
     for raw_path in paths:
         root = (project_root / raw_path).resolve()
         candidates = (
-            [root]
-            if root.is_file()
-            else sorted(path for path in root.rglob("*") if path.is_file())
+            [root] if root.is_file() else sorted(path for path in root.rglob("*") if path.is_file())
         )
         for candidate in candidates:
             rel = candidate.relative_to(project_root).as_posix()
@@ -161,11 +157,7 @@ def optional_dense_dependencies_available() -> bool:
 
 
 def _dense_tokens(text: str) -> set[str]:
-    return {
-        token
-        for token in re.split(r"[^a-z0-9]+", text.lower().replace("_", " "))
-        if token
-    }
+    return {token for token in re.split(r"[^a-z0-9]+", text.lower().replace("_", " ")) if token}
 
 
 def _jaccard_score(left: set[str], right: set[str]) -> float:

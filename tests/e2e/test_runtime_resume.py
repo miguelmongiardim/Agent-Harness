@@ -70,9 +70,7 @@ def test_approve_action_completes_paused_run_and_updates_audit_artifacts(
     )
 
 
-def test_runtime_records_model_actions_as_run_evidence(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_runtime_records_model_actions_as_run_evidence(tmp_path: Path, monkeypatch) -> None:
     seed_project(tmp_path)
     target = tmp_path / "fixture.py"
     target.write_text("def add_numbers(a, b):\n    return a + b\n", encoding="utf-8")
@@ -99,9 +97,9 @@ def test_runtime_records_model_actions_as_run_evidence(
 
     events = [
         json.loads(line)
-        for line in (
-            tmp_path / ".agent-harness" / "runs" / "model-events-run" / "events.jsonl"
-        ).read_text(encoding="utf-8").splitlines()
+        for line in (tmp_path / ".agent-harness" / "runs" / "model-events-run" / "events.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
     ]
     model_actions = [
         event["payload"]["call"] for event in events if event["type"] == "model_action"

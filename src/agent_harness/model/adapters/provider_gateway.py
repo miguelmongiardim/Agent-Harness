@@ -274,6 +274,7 @@ def _build_provider_audit(
         policy_decision_ids=_policy_decision_ids(provider_input),
     )
 
+
 def _provider_prompt_payload(provider_input: ProviderInputManifest | None) -> dict[str, object]:
     if provider_input is None:
         return {"records": []}
@@ -303,6 +304,7 @@ def _provider_prompt_payload(provider_input: ProviderInputManifest | None) -> di
         ],
     }
 
+
 def _redacted_prompt_summary(
     provider_input: ProviderInputManifest | None,
 ) -> dict[str, str | int]:
@@ -313,6 +315,7 @@ def _redacted_prompt_summary(
         "records": len(provider_input.records),
         "included_records": sum(1 for record in provider_input.records if record.included),
     }
+
 
 def _policy_decision_ids(provider_input: ProviderInputManifest | None) -> list[str]:
     if provider_input is None:

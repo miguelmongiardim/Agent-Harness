@@ -63,9 +63,9 @@ def test_fixed_seed_retrieval_manifest_is_stable_and_logs_denied_retrieval_polic
     )
     events_a = [
         json.loads(line)
-        for line in (
-            tmp_path / ".agent-harness" / "runs" / summary_a.run_id / "events.jsonl"
-        ).read_text(encoding="utf-8").splitlines()
+        for line in (tmp_path / ".agent-harness" / "runs" / summary_a.run_id / "events.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
     ]
 
     monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "retrieval-run-b")
@@ -175,9 +175,9 @@ def test_retrieved_manifest_redacts_text_and_carries_sensitivity(
 
     summary = HarnessRuntime(tmp_path).run_task(task_path, dry_run=True)
     manifest = json.loads(
-        (
-            tmp_path / ".agent-harness" / "runs" / summary.run_id / "context_manifest.json"
-        ).read_text(encoding="utf-8")
+        (tmp_path / ".agent-harness" / "runs" / summary.run_id / "context_manifest.json").read_text(
+            encoding="utf-8"
+        )
     )
 
     assert manifest["sources"][0]["path"] == "docs/confidential.md"

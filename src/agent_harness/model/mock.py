@@ -72,13 +72,10 @@ class DeterministicMockModel:
                 .replace("Add two numbers.", "Add two integers.")
             )
         if "def multiply_numbers(a, b):" in content:
-            return (
-                content.replace(
-                    "def multiply_numbers(a, b):\n    return a * b",
-                    "def multiply(a: int, b: int) -> int:\n    return a * b",
-                )
-                .replace("multiply_numbers(", "multiply(")
-            )
+            return content.replace(
+                "def multiply_numbers(a, b):\n    return a * b",
+                "def multiply(a: int, b: int) -> int:\n    return a * b",
+            ).replace("multiply_numbers(", "multiply(")
         if "# TODO: simplify" in content and "return value + 0" in content:
             return content.replace("# TODO: simplify\n    return value + 0", "return value")
         return None

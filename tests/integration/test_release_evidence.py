@@ -149,9 +149,7 @@ def test_release_package_check_builds_installs_and_records_evidence(
         if command[1:3] == ["-m", "build"]:
             dist = cwd / "dist"
             dist.mkdir(exist_ok=True)
-            (dist / "agent_harness-9.9.9-py3-none-any.whl").write_text(
-                "wheel", encoding="utf-8"
-            )
+            (dist / "agent_harness-9.9.9-py3-none-any.whl").write_text("wheel", encoding="utf-8")
             (dist / "agent_harness-9.9.9.tar.gz").write_text("sdist", encoding="utf-8")
         return {
             "command": " ".join(command),
@@ -287,9 +285,7 @@ def _write_release_ready_project(root: Path, version: str) -> None:
     )
     dist = root / "dist"
     dist.mkdir()
-    (dist / f"agent_harness-{version}-py3-none-any.whl").write_text(
-        "wheel", encoding="utf-8"
-    )
+    (dist / f"agent_harness-{version}-py3-none-any.whl").write_text("wheel", encoding="utf-8")
     (dist / f"agent_harness-{version}.tar.gz").write_text("sdist", encoding="utf-8")
     evidence = root / ".agent-harness" / "release" / "evidence"
     evidence.mkdir(parents=True)
@@ -301,9 +297,7 @@ def _write_release_ready_project(root: Path, version: str) -> None:
         "demo-python-refactor",
         "template-validation",
     ):
-        (evidence / f"{name}.json").write_text(
-            json.dumps({"status": "passed"}), encoding="utf-8"
-        )
+        (evidence / f"{name}.json").write_text(json.dumps({"status": "passed"}), encoding="utf-8")
 
 
 def _write_release_project_without_evidence(root: Path, version: str) -> None:

@@ -59,6 +59,4 @@ def test_cli_run_approve_inspect_and_export_completes_full_lifecycle(
         )
     )
     assert exported["summary"]["status"] == "completed"
-    assert any(
-        event["type"] == "approval_decided" for event in exported["events"]
-    )
+    assert any(event["type"] == "approval_decided" for event in exported["events"])

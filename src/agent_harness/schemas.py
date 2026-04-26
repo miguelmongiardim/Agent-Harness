@@ -257,9 +257,7 @@ class PolicyProfile(StrictModel):
         if "provider_input_policy" in hydrated:
             provider_input = dict(hydrated.get("provider_input") or {})
             provider_input["rules"] = hydrated["provider_input_policy"]
-            provider_input["hard_deny_sensitivities"] = hydrated.get(
-                "hard_deny_sensitivities", []
-            )
+            provider_input["hard_deny_sensitivities"] = hydrated.get("hard_deny_sensitivities", [])
             provider_input["redact_reclassify"] = hydrated.get(
                 "provider_input_redact_reclassify", {}
             )
@@ -312,9 +310,7 @@ class PolicyProfile(StrictModel):
             if not self.description or not self.documented:
                 raise ValueError("looser-than-default policy profiles must be documented")
             if not self.deliberate_selection_required:
-                raise ValueError(
-                    "looser-than-default policy profiles require deliberate selection"
-                )
+                raise ValueError("looser-than-default policy profiles require deliberate selection")
         return self
 
 
@@ -476,9 +472,7 @@ class ContextManifestItem(StrictModel):
 
 
 class ContextManifest(StrictModel):
-    schema_version: Literal["context_manifest.v1", "context_manifest.v2"] = (
-        "context_manifest.v2"
-    )
+    schema_version: Literal["context_manifest.v1", "context_manifest.v2"] = "context_manifest.v2"
     manifest_id: str
     run_id: str
     task_id: str
@@ -574,9 +568,7 @@ class Checkpoint(StrictModel):
 
 
 class ProviderUseApprovalBinding(StrictModel):
-    schema_version: Literal["provider_use_approval_binding.v1"] = (
-        "provider_use_approval_binding.v1"
-    )
+    schema_version: Literal["provider_use_approval_binding.v1"] = "provider_use_approval_binding.v1"
     provider_profile_id: str
     trust_zone: TrustZone
     model_id: str
@@ -804,9 +796,7 @@ class BenchmarkCaseRecord(StrictModel):
 
 
 class BenchmarkAdapterEvidence(StrictModel):
-    schema_version: Literal["benchmark_adapter_evidence.v1"] = (
-        "benchmark_adapter_evidence.v1"
-    )
+    schema_version: Literal["benchmark_adapter_evidence.v1"] = "benchmark_adapter_evidence.v1"
     adapter_id: BenchmarkAdapterId
     task_import: dict[str, str]
     workspace_preparation: dict[str, str | list[str]]

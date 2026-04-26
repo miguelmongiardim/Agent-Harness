@@ -88,15 +88,11 @@ def test_hybrid_retrieval_manifest_deduplicates_overlap_and_records_rejected_evi
     )
     docs_dir = tmp_path / "docs"
     docs_dir.mkdir()
-    (docs_dir / "both.md").write_text(
-        "# Both\n\nadd_numbers shared guidance\n", encoding="utf-8"
-    )
+    (docs_dir / "both.md").write_text("# Both\n\nadd_numbers shared guidance\n", encoding="utf-8")
     (docs_dir / "lexical.md").write_text(
         "# Lexical\n\nadd_numbers exact symbol notes\n", encoding="utf-8"
     )
-    (docs_dir / "dense.md").write_text(
-        "# Dense\n\nsemantic helper guidance\n", encoding="utf-8"
-    )
+    (docs_dir / "dense.md").write_text("# Dense\n\nsemantic helper guidance\n", encoding="utf-8")
     (docs_dir / "private.md").write_text(
         "# Private\n\nadd_numbers private denied notes\n", encoding="utf-8"
     )
@@ -143,9 +139,9 @@ def test_hybrid_retrieval_manifest_deduplicates_overlap_and_records_rejected_evi
 
     summary = HarnessRuntime(tmp_path).run_task(task_path, dry_run=True)
     manifest = json.loads(
-        (
-            tmp_path / ".agent-harness" / "runs" / summary.run_id / "context_manifest.json"
-        ).read_text(encoding="utf-8")
+        (tmp_path / ".agent-harness" / "runs" / summary.run_id / "context_manifest.json").read_text(
+            encoding="utf-8"
+        )
     )
 
     assert manifest["schema_version"] == "context_manifest.v2"
@@ -178,9 +174,7 @@ def test_hybrid_retrieval_manifest_deduplicates_overlap_and_records_rejected_evi
     assert list(rejected_by_path) == ["docs/private.md"]
     assert rejected_by_path["docs/private.md"]["retrieval_method"] == "lexical"
     assert rejected_by_path["docs/private.md"]["policy_allowed"] is False
-    assert rejected_by_path["docs/private.md"]["policy_reason"].startswith(
-        "path denied by glob"
-    )
+    assert rejected_by_path["docs/private.md"]["policy_reason"].startswith("path denied by glob")
     assert rejected_by_path["docs/private.md"]["text"] is None
     assert "private denied notes" not in json.dumps(rejected_by_path["docs/private.md"])
 

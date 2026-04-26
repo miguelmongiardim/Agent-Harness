@@ -82,9 +82,7 @@ class HarnessRuntime:
         dry_run: bool = False,
         runtime_adapter: str | None = None,
     ) -> RunSummary:
-        task, task_schema_evidence = load_public_model_with_schema_evidence(
-            task_path, TaskSpec
-        )
+        task, task_schema_evidence = load_public_model_with_schema_evidence(task_path, TaskSpec)
         if runtime_adapter not in {None, "langgraph"}:
             raise ValueError(f"unsupported runtime adapter: {runtime_adapter}")
         selected_profile = profile_name or task.policy_profile or self.config.default_policy
@@ -626,9 +624,7 @@ class HarnessRuntime:
                 workspace_metadata_path=workspace_metadata_relative,
             )
 
-        artifacts = {
-            name: self._project_relative(path) for name, path in artifact_paths.items()
-        }
+        artifacts = {name: self._project_relative(path) for name, path in artifact_paths.items()}
         store.append_event(make_event(run_id, "run_finished", {"status": status}))
         summary = RunSummary(
             run_id=run_id,
@@ -770,9 +766,7 @@ class HarnessRuntime:
         approvals: list[str],
         message: str | None = None,
     ) -> RunSummary:
-        artifacts = {
-            name: self._project_relative(path) for name, path in artifact_paths.items()
-        }
+        artifacts = {name: self._project_relative(path) for name, path in artifact_paths.items()}
         store.append_event(make_event(store.run_id, "run_finished", {"status": status}))
         summary = RunSummary(
             run_id=store.run_id,
@@ -1462,9 +1456,7 @@ def _validate_provider_input_approval(
         "record_ids": sorted(record_ids),
     }
     binding_hash = sha256_json(payload)
-    expected_action_id = stable_id(
-        "action", run_id, "provider_input", payload, checkpoint_hash
-    )
+    expected_action_id = stable_id("action", run_id, "provider_input", payload, checkpoint_hash)
     expected = {
         "run_id": run_id,
         "action_id": expected_action_id,

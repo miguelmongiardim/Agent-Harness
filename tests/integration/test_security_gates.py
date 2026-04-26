@@ -52,9 +52,7 @@ def test_high_security_finding_blocks_before_provider_execution(
     assert "model_action" not in event_types
 
 
-def test_high_security_finding_can_be_relaxed_to_report_only(
-    tmp_path: Path, monkeypatch
-) -> None:  # type: ignore[no-untyped-def]
+def test_high_security_finding_can_be_relaxed_to_report_only(tmp_path: Path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
     seed_project(tmp_path)
     relaxed = dict(DEFAULT_POLICY)
     relaxed["name"] = "relaxed-security"
@@ -198,9 +196,7 @@ def test_critical_secret_blocks_before_context_and_exports_policy_evidence(
     assert result["properties"]["evidence"] == "API_KEY = <redacted>"
 
 
-def test_medium_security_finding_is_report_only_by_default(
-    tmp_path: Path, monkeypatch
-) -> None:  # type: ignore[no-untyped-def]
+def test_medium_security_finding_is_report_only_by_default(tmp_path: Path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
     seed_project(tmp_path)
     (tmp_path / "review.py").write_text(
         "# TODO: security review\n\ndef identity(value):\n    return value\n",

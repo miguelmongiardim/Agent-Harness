@@ -112,12 +112,14 @@ def test_fixed_seed_dry_runs_write_stable_artifact_hashes(tmp_path: Path) -> Non
     first_summary = _run_fixed_seed_dry_run(first_root, first_task, "run-reproducible")
     second_summary = _run_fixed_seed_dry_run(second_root, second_task, "run-reproducible")
     first_index = json.loads(
-        (first_root / ".agent-harness" / "runs" / "run-reproducible" / "artifact-index.json")
-        .read_text(encoding="utf-8")
+        (
+            first_root / ".agent-harness" / "runs" / "run-reproducible" / "artifact-index.json"
+        ).read_text(encoding="utf-8")
     )
     second_index = json.loads(
-        (second_root / ".agent-harness" / "runs" / "run-reproducible" / "artifact-index.json")
-        .read_text(encoding="utf-8")
+        (
+            second_root / ".agent-harness" / "runs" / "run-reproducible" / "artifact-index.json"
+        ).read_text(encoding="utf-8")
     )
 
     stable_summary_fields = ["run_id", "task_id", "status", "events_count", "message"]
@@ -141,9 +143,10 @@ def test_fixed_seed_dry_runs_write_stable_artifact_hashes(tmp_path: Path) -> Non
     for name in required_hashed_artifacts:
         artifact_path = first_root / first_index["artifacts"][name]
         assert artifact_path.exists(), name
-        assert first_index["artifact_hashes"][name] == hashlib.sha256(
-            artifact_path.read_bytes()
-        ).hexdigest()
+        assert (
+            first_index["artifact_hashes"][name]
+            == hashlib.sha256(artifact_path.read_bytes()).hexdigest()
+        )
 
 
 def test_reusing_fixed_run_id_is_rejected_without_changing_existing_audit_log(
@@ -181,9 +184,7 @@ def test_checkpoint_hash_includes_prior_event_evidence(tmp_path: Path) -> None:
     run_dir = tmp_path / ".agent-harness" / "runs" / "run-checkpoint-evidence"
     checkpoint_index = json.loads((run_dir / "checkpoint-index.json").read_text(encoding="utf-8"))
     checkpoint = json.loads(
-        (run_dir / "checkpoints" / f"{checkpoint_index['latest']}.json").read_text(
-            encoding="utf-8"
-        )
+        (run_dir / "checkpoints" / f"{checkpoint_index['latest']}.json").read_text(encoding="utf-8")
     )
     event_lines = (run_dir / "events.jsonl").read_text(encoding="utf-8").splitlines()
     events = [json.loads(line) for line in event_lines]
@@ -192,7 +193,8 @@ def test_checkpoint_hash_includes_prior_event_evidence(tmp_path: Path) -> None:
     )
     prior_event_log = "".join(f"{line}\n" for line in event_lines[:checkpoint_event_index])
 
-    assert checkpoint["previous_event_hash"] == hashlib.sha256(
-        prior_event_log.encode("utf-8")
-    ).hexdigest()
+    assert (
+        checkpoint["previous_event_hash"]
+        == hashlib.sha256(prior_event_log.encode("utf-8")).hexdigest()
+    )
     assert events[checkpoint_event_index]["payload"]["checkpoint_hash"]

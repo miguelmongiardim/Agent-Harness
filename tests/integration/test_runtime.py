@@ -7,9 +7,7 @@ from agent_harness.runtimes.native import HarnessRuntime
 from tests.conftest import seed_project
 
 
-def test_runtime_dry_run_produces_approval_without_patching(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_runtime_dry_run_produces_approval_without_patching(tmp_path: Path, monkeypatch) -> None:
     seed_project(tmp_path)
     fixture = tmp_path / "fixture.py"
     original = "def add_numbers(a, b):\n    return a + b\n"

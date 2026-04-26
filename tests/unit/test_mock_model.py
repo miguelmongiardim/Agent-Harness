@@ -101,9 +101,7 @@ def test_mock_model_initial_actions_change_with_relevant_context() -> None:
     )
 
     add_actions = model.initial_actions(task, _manifest_with_query("same", "add_numbers"))
-    multiply_actions = model.initial_actions(
-        task, _manifest_with_query("same", "multiply_numbers")
-    )
+    multiply_actions = model.initial_actions(task, _manifest_with_query("same", "multiply_numbers"))
 
     assert add_actions[0].tool_name == "search_code"
     assert multiply_actions[0].tool_name == "search_code"

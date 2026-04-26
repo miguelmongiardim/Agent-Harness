@@ -21,9 +21,7 @@ def chunk_text(text: str, source_id: str, path: str, max_chars: int = 1200) -> l
     for line_no, line in enumerate(text.splitlines(), start=1):
         if current and current_len + len(line) + 1 > max_chars:
             body = "\n".join(current)
-            chunks.append(
-                RetrievedChunk(source_id, path, body, 1.0, start_line, line_no - 1)
-            )
+            chunks.append(RetrievedChunk(source_id, path, body, 1.0, start_line, line_no - 1))
             current = []
             current_len = 0
             start_line = line_no

@@ -28,9 +28,7 @@ def test_cli_init_creates_project_foundation_and_honest_starter_docs(
     assert "enterprise-ready" not in text.lower()
 
 
-def test_cli_init_is_idempotent_unless_forced(
-    tmp_path: Path, monkeypatch
-) -> None:  # type: ignore[no-untyped-def]
+def test_cli_init_is_idempotent_unless_forced(tmp_path: Path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.chdir(tmp_path)
 
     assert main(["init"]) == 0
@@ -75,8 +73,7 @@ def test_cli_template_list_and_show_python_lib(capsys) -> None:  # type: ignore[
     assert main(["template", "list"]) == 0
     listed = capsys.readouterr()
     assert any(
-        line.startswith("python-lib\t1.0.0\tPython Library")
-        for line in listed.out.splitlines()
+        line.startswith("python-lib\t1.0.0\tPython Library") for line in listed.out.splitlines()
     )
 
     assert main(["template", "show", "python-lib"]) == 0
@@ -157,11 +154,7 @@ def test_cli_commit_propose_records_pending_git_commit_approval(
 
     planned = json.loads(
         (
-            tmp_path
-            / ".agent-harness"
-            / "runs"
-            / run_summary["run_id"]
-            / "git_commit.json"
+            tmp_path / ".agent-harness" / "runs" / run_summary["run_id"] / "git_commit.json"
         ).read_text(encoding="utf-8")
     )
     assert planned["action_id"] == commit_action_id
@@ -254,17 +247,13 @@ def test_cli_docs_check_fails_when_docs_claim_unsupported_behavior(
 
     assert main(["docs", "check"]) == 1
     report = json.loads(
-        (tmp_path / ".agent-harness" / "docs" / "docs-check.json").read_text(
-            encoding="utf-8"
-        )
+        (tmp_path / ".agent-harness" / "docs" / "docs-check.json").read_text(encoding="utf-8")
     )
     assert report["status"] == "failed"
     assert report["findings"][0]["rule_id"] == "unsupported_doc_claim"
 
 
-def test_cli_task_validate_returns_concrete_errors(
-    tmp_path: Path, capsys
-) -> None:  # type: ignore[no-untyped-def]
+def test_cli_task_validate_returns_concrete_errors(tmp_path: Path, capsys) -> None:  # type: ignore[no-untyped-def]
     invalid_task = tmp_path / "invalid-task.json"
     invalid_task.write_text(
         json.dumps(

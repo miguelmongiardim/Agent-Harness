@@ -43,9 +43,7 @@ def migrate_schemas(
             "files_scanned": len(records),
             "files_with_changes": sum(bool(record["changed_fields"]) for record in records),
             "files_written": sum(bool(record["written"]) for record in records),
-            "files_skipped": sum(
-                bool(record["unsupported_upgrade_reasons"]) for record in records
-            ),
+            "files_skipped": sum(bool(record["unsupported_upgrade_reasons"]) for record in records),
         },
     }
     if output is not None:

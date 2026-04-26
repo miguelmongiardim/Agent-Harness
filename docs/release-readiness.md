@@ -28,6 +28,21 @@ uv sync --extra dev
 uv run agent-harness doctor
 ```
 
+Contributor hygiene is available through the local pre-commit config:
+
+```powershell
+python -m pre_commit run --all-files
+```
+
+The hooks run Ruff lint/format checks, mypy, docs check, compileall, a large
+file guard, and a private key guard. They use local hooks so normal contributor
+checks do not depend on optional advisory scanner installs.
+
+CI keeps advisory evidence visible with optional Gitleaks and CycloneDX/SBOM
+outputs under `.agent-harness/advisories/`. Those reports are useful review
+inputs, but advisory tooling is optional and must not block required CI when the
+tools are absent.
+
 The package install path is:
 
 ```powershell

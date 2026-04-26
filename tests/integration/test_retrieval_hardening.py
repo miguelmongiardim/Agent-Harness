@@ -42,9 +42,9 @@ def test_missing_dense_dependencies_warn_and_fall_back_to_lexical_manifest(
 
     summary = HarnessRuntime(tmp_path).run_task(task_path, dry_run=True)
     manifest = json.loads(
-        (
-            tmp_path / ".agent-harness" / "runs" / summary.run_id / "context_manifest.json"
-        ).read_text(encoding="utf-8")
+        (tmp_path / ".agent-harness" / "runs" / summary.run_id / "context_manifest.json").read_text(
+            encoding="utf-8"
+        )
     )
 
     assert summary.status == "dry_run"

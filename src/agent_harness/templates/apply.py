@@ -80,18 +80,14 @@ def plan_template_apply(
     )
 
 
-def _unsupported_required_capabilities(
-    spec: TemplateDetail, policy: PolicyEngine
-) -> list[str]:
+def _unsupported_required_capabilities(spec: TemplateDetail, policy: PolicyEngine) -> list[str]:
     if spec.template_schema_version != "template.v2":
         return []
     capability_policy = policy.profile.template_capabilities
     if capability_policy is None or capability_policy.default_action == "deny":
         allowed = set(capability_policy.allowed_capabilities if capability_policy else [])
         return [
-            capability
-            for capability in spec.required_capabilities
-            if capability not in allowed
+            capability for capability in spec.required_capabilities if capability not in allowed
         ]
     return []
 

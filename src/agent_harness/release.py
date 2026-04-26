@@ -59,10 +59,7 @@ def build_release_readiness_report(
         remote_ci=remote_ci,
     )
     report_path = output or (
-        project_root
-        / ".agent-harness"
-        / "release"
-        / f"{tag_name}-readiness.json"
+        project_root / ".agent-harness" / "release" / f"{tag_name}-readiness.json"
     )
     report = {
         "schema_version": "release_readiness.v1",
@@ -131,12 +128,14 @@ def build_release_package_check_report(
         cwd=project_root,
         timeout_seconds=300,
     )
-    wheel_paths = [project_root / path for path in _matching_files(
-        project_root, f"dist/agent_harness-{normalized_version}-*.whl"
-    )]
-    sdist_paths = [project_root / path for path in _matching_files(
-        project_root, f"dist/agent_harness-{normalized_version}.tar.gz"
-    )]
+    wheel_paths = [
+        project_root / path
+        for path in _matching_files(project_root, f"dist/agent_harness-{normalized_version}-*.whl")
+    ]
+    sdist_paths = [
+        project_root / path
+        for path in _matching_files(project_root, f"dist/agent_harness-{normalized_version}.tar.gz")
+    ]
     wheel = wheel_paths[0] if wheel_paths else None
     sdist = sdist_paths[0] if sdist_paths else None
     build_status = (
@@ -266,11 +265,7 @@ def _package_evidence(project_root: Path, version: str) -> dict[str, Any]:
         },
         "clean_install": {
             "command": f"python -m pip install dist/agent_harness-{version}-*.whl",
-            "status": (
-                "blocked"
-                if not wheel
-                else _evidence_status(clean_install_evidence)
-            ),
+            "status": ("blocked" if not wheel else _evidence_status(clean_install_evidence)),
             "evidence": clean_install_evidence["path"],
             "action": (
                 "Build the wheel, install it in a clean environment, and record "

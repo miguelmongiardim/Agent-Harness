@@ -25,16 +25,14 @@ def test_provider_audit_demo_command_returns_inspectable_run_id() -> None:
     assert payload["inspect"]["cwd"] == "examples/provider_audit"
     assert payload["inspect"]["command"] == f"agent-harness inspect run {run_id}"
 
-    inspected = json.loads(
-        _run_cli(workspace, env, "inspect", "run", run_id).stdout
-    )
+    inspected = json.loads(_run_cli(workspace, env, "inspect", "run", run_id).stdout)
     assert inspected["summary"]["run_id"] == run_id
     assert inspected["summary"]["status"] == "completed"
     assert inspected["provider_calls"]["calls"]
     assert inspected["provider_input"]["records"]
 
-    evidence_path = repo_root / ".agent-harness" / "release" / "evidence" / (
-        "demo-provider-audit.json"
+    evidence_path = (
+        repo_root / ".agent-harness" / "release" / "evidence" / ("demo-provider-audit.json")
     )
     evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
     assert evidence["status"] == "passed"
@@ -76,12 +74,10 @@ def test_python_refactor_secondary_demo_records_release_evidence() -> None:
         "--dry-run",
     )
     summary = json.loads(run.stdout)
-    inspect = json.loads(
-        _run_cli(repo_root, env, "inspect", "run", summary["run_id"]).stdout
-    )
+    inspect = json.loads(_run_cli(repo_root, env, "inspect", "run", summary["run_id"]).stdout)
 
-    evidence_path = repo_root / ".agent-harness" / "release" / "evidence" / (
-        "demo-python-refactor.json"
+    evidence_path = (
+        repo_root / ".agent-harness" / "release" / "evidence" / ("demo-python-refactor.json")
     )
     evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
     assert inspect["summary"]["status"] == "dry_run"
@@ -101,9 +97,7 @@ def test_provider_audit_demo_pauses_resumes_and_exports_all_evidence(
     env = os.environ.copy()
     env["AGENT_HARNESS_FIXED_RUN_ID"] = "provider-audit-demo-run"
     env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-26T19:00:00Z"
-    env["AGENT_HARNESS_PROVIDER_AUDIT_ENDPOINT"] = (
-        "recorded://openai_compatible/read_only"
-    )
+    env["AGENT_HARNESS_PROVIDER_AUDIT_ENDPOINT"] = "recorded://openai_compatible/read_only"
 
     run = _run_cli(workspace, env, "run", "task.json")
     summary = json.loads(run.stdout)
@@ -148,9 +142,7 @@ def test_provider_audit_demo_pauses_resumes_and_exports_all_evidence(
     assert provider_calls[0]["redacted_prompt_summary"]["included_records"] == 1
     assert provider_calls[0]["redacted_response_summary"]["kind"] == "tool_calls"
     assert "safe to include" not in json.dumps(inspected["provider_calls"])
-    assert "docs/public.md" in {
-        record["path"] for record in inspected["provider_input"]["records"]
-    }
+    assert "docs/public.md" in {record["path"] for record in inspected["provider_input"]["records"]}
     assert any(event["type"] == "provider_call_recorded" for event in inspected["events"])
 
     json_export = workspace / "exports" / "provider-audit.json"
@@ -195,9 +187,7 @@ def test_provider_audit_demo_pauses_resumes_and_exports_all_evidence(
     assert sarif["runs"][0]["results"]
 
 
-def _run_cli(
-    cwd: Path, env: dict[str, str], *args: str
-) -> subprocess.CompletedProcess[str]:
+def _run_cli(cwd: Path, env: dict[str, str], *args: str) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(
         [sys.executable, "-m", "agent_harness", *args],
         cwd=cwd,

@@ -6,13 +6,11 @@ from agent_harness.schemas import ContextManifest, TaskSpec, ToolCall, ToolObser
 
 
 class ModelClient(Protocol):
-    def initial_actions(self, task: TaskSpec, manifest: ContextManifest) -> list[ToolCall]:
-        ...
+    def initial_actions(self, task: TaskSpec, manifest: ContextManifest) -> list[ToolCall]: ...
 
     def next_actions(
         self,
         task: TaskSpec,
         manifest: ContextManifest,
         observations: list[ToolObservation],
-    ) -> list[ToolCall]:
-        ...
+    ) -> list[ToolCall]: ...

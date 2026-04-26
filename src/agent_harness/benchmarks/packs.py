@@ -34,8 +34,10 @@ def load_benchmark_pack(pack_id: str) -> BenchmarkPackRecord:
     filename = BUNDLED_PACKS.get(pack_id)
     if filename is None:
         raise ValueError(f"benchmark pack not found: {pack_id}")
-    text = resources.files("agent_harness.bundled_benchmarks").joinpath(filename).read_text(
-        encoding="utf-8"
+    text = (
+        resources.files("agent_harness.bundled_benchmarks")
+        .joinpath(filename)
+        .read_text(encoding="utf-8")
     )
     return BenchmarkPackRecord.model_validate_json(text)
 
@@ -115,12 +117,7 @@ def _prepare_benchmark_workspace(
     case: BenchmarkCaseRecord,
 ) -> Path:
     workspace = (
-        project_root
-        / ".agent-harness"
-        / "benchmarks"
-        / "workspaces"
-        / pack.pack_id
-        / case.case_id
+        project_root / ".agent-harness" / "benchmarks" / "workspaces" / pack.pack_id / case.case_id
     )
     if workspace.exists():
         shutil.rmtree(workspace)

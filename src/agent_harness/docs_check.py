@@ -141,8 +141,7 @@ def _agent_harness_v1_release_scope_findings(project_root: Path) -> list[dict[st
                     "missing_v1_compatibility_contract",
                     "docs/prd-agent-harness-v3.md",
                     1,
-                    "V3 PRD is missing required v1.0.0 scope markers: "
-                    + ", ".join(missing),
+                    "V3 PRD is missing required v1.0.0 scope markers: " + ", ".join(missing),
                     "",
                 )
             )
@@ -181,9 +180,7 @@ def _is_agent_harness_repo(project_root: Path) -> bool:
     )
 
 
-def _unsupported_claim_findings(
-    relative: str, lines: list[str]
-) -> list[dict[str, object]]:
+def _unsupported_claim_findings(relative: str, lines: list[str]) -> list[dict[str, object]]:
     findings: list[dict[str, object]] = []
     for line_number, line in enumerate(lines, start=1):
         for label, pattern in UNSUPPORTED_DOC_CLAIMS:
@@ -288,9 +285,7 @@ def _is_external_or_anchor(target: str) -> bool:
     )
 
 
-def _citation_placeholder_findings(
-    relative: str, lines: list[str]
-) -> list[dict[str, object]]:
+def _citation_placeholder_findings(relative: str, lines: list[str]) -> list[dict[str, object]]:
     findings: list[dict[str, object]] = []
     pattern = re.compile(r"\[(?:citation needed|todo:?\s*cite)\]|\bcitation needed\b", re.I)
     for line_number, line in enumerate(lines, start=1):
@@ -307,9 +302,7 @@ def _citation_placeholder_findings(
     return findings
 
 
-def _schema_reference_findings(
-    relative: str, lines: list[str]
-) -> list[dict[str, object]]:
+def _schema_reference_findings(relative: str, lines: list[str]) -> list[dict[str, object]]:
     findings: list[dict[str, object]] = []
     pattern = re.compile(r"\b(?:config|task|policy|template)\.v\d+\b")
     for line_number, line in enumerate(lines, start=1):
@@ -328,9 +321,7 @@ def _schema_reference_findings(
     return findings
 
 
-def _markdown_hygiene_findings(
-    relative: str, lines: list[str]
-) -> list[dict[str, object]]:
+def _markdown_hygiene_findings(relative: str, lines: list[str]) -> list[dict[str, object]]:
     findings: list[dict[str, object]] = []
     previous_heading_level = 0
     for line_number, line in enumerate(lines, start=1):
@@ -362,9 +353,7 @@ def _markdown_hygiene_findings(
     return findings
 
 
-def _finding(
-    rule_id: str, path: str, line: int, message: str, text: str
-) -> dict[str, object]:
+def _finding(rule_id: str, path: str, line: int, message: str, text: str) -> dict[str, object]:
     return {
         "rule_id": rule_id,
         "path": path,

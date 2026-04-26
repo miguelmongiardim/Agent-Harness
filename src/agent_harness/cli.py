@@ -397,9 +397,7 @@ def cmd_inspect_run(args: argparse.Namespace) -> int:
         workspace_path = Path.cwd() / workspace_relative
         if workspace_path.exists():
             payload["workspace_metadata"] = load_json(workspace_path)
-    print(
-        json.dumps(payload, indent=2)
-    )
+    print(json.dumps(payload, indent=2))
     return 0
 
 
@@ -438,6 +436,7 @@ def cmd_docs_check(args: argparse.Namespace) -> int:
     report = load_json(report_path)
     print(json.dumps(report, indent=2))
     return 0 if report.get("status") == "passed" else 1
+
 
 def cmd_migrate_schemas(args: argparse.Namespace) -> int:
     output = Path(args.output) if args.output else None

@@ -81,9 +81,7 @@ def test_cli_eval_writes_scorecard_with_artifact_links_for_adversarial_denied_co
         assert (tmp_path / relative).exists()
 
 
-def test_cli_export_json_markdown_and_sarif_match_run_evidence(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_cli_export_json_markdown_and_sarif_match_run_evidence(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T12:00:00Z")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-export-evidence")
@@ -119,9 +117,9 @@ def test_cli_export_json_markdown_and_sarif_match_run_evidence(
     )
     events = [
         json.loads(line)
-        for line in (
-            tmp_path / ".agent-harness" / "runs" / "run-export-evidence" / "events.jsonl"
-        ).read_text(encoding="utf-8").splitlines()
+        for line in (tmp_path / ".agent-harness" / "runs" / "run-export-evidence" / "events.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
     ]
     exported_json = json.loads(
         (tmp_path / ".agent-harness" / "exports" / "run-export-evidence.json").read_text(

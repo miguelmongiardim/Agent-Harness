@@ -71,15 +71,22 @@ def test_migrate_schemas_write_updates_safe_inputs_and_reports_skips(
     assert "schema_version: config.v2" in (tmp_path / "agent-harness.yaml").read_text(
         encoding="utf-8"
     )
-    assert json.loads((tmp_path / "task.json").read_text(encoding="utf-8"))[
-        "schema_version"
-    ] == "task.v2"
-    assert json.loads((tmp_path / "policies" / "default.json").read_text(encoding="utf-8"))[
-        "schema_version"
-    ] == "policy.v2"
-    assert json.loads((tmp_path / "templates" / "example.json").read_text(encoding="utf-8"))[
-        "schema_version"
-    ] == "template.v1"
+    assert (
+        json.loads((tmp_path / "task.json").read_text(encoding="utf-8"))["schema_version"]
+        == "task.v2"
+    )
+    assert (
+        json.loads((tmp_path / "policies" / "default.json").read_text(encoding="utf-8"))[
+            "schema_version"
+        ]
+        == "policy.v2"
+    )
+    assert (
+        json.loads((tmp_path / "templates" / "example.json").read_text(encoding="utf-8"))[
+            "schema_version"
+        ]
+        == "template.v1"
+    )
 
 
 def test_migrate_schemas_write_preserves_stricter_legacy_policy(

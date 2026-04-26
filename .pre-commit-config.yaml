@@ -1,0 +1,38 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: python -m ruff check src tests scripts
+        language: system
+        pass_filenames: false
+      - id: ruff-format-check
+        name: ruff format check
+        entry: python -m ruff format --check src tests scripts
+        language: system
+        pass_filenames: false
+      - id: mypy
+        name: mypy
+        entry: python -m mypy
+        language: system
+        pass_filenames: false
+      - id: docs-check
+        name: docs check
+        entry: python -m agent_harness docs check
+        language: system
+        pass_filenames: false
+      - id: compileall
+        name: compileall
+        entry: python -m compileall -q src tests scripts
+        language: system
+        pass_filenames: false
+      - id: no-large-files
+        name: large file guard
+        entry: python scripts/check_large_files.py --max-bytes 1048576
+        language: system
+        exclude: ^(dist/|build/|\.agent-harness/|\.venv)
+      - id: private-key-guard
+        name: private key guard
+        entry: python scripts/check_private_keys.py
+        language: system
+        exclude: ^(dist/|build/|\.agent-harness/|\.venv)

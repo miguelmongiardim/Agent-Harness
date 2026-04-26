@@ -19,8 +19,10 @@ class MergedRetrievedChunk:
 
     @property
     def source_id(self) -> str:
-        return self.source_ids.get("lexical") or self.source_ids.get("dense") or stable_id(
-            "source", self.path, sha256_text(self.text)
+        return (
+            self.source_ids.get("lexical")
+            or self.source_ids.get("dense")
+            or stable_id("source", self.path, sha256_text(self.text))
         )
 
     @property

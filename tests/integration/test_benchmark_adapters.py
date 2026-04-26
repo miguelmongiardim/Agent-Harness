@@ -94,11 +94,7 @@ def test_benchmark_adapter_exercises_local_dense_retrieval_fixture(
     assert main(["benchmark", "run", "local-samples", "swebench-dense-retrieval"]) == 0
     result = json.loads(capsys.readouterr().out)
 
-    manifest_path = (
-        tmp_path
-        / result["workspace"]
-        / result["run_artifacts"]["context_manifest"]
-    )
+    manifest_path = tmp_path / result["workspace"] / result["run_artifacts"]["context_manifest"]
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
     assert result["adapter_id"] == "swebench_style"
@@ -111,7 +107,4 @@ def test_benchmark_adapter_exercises_local_dense_retrieval_fixture(
     assert manifest["retrieval"]["active_backend"] == "local_dense_fixture"
     assert manifest["retrieval"]["remote_embeddings"] is False
     assert manifest["dense_retrieval"]["backend"] == "local_token_similarity"
-    assert any(
-        item["retrieval_method"] in {"dense", "both"}
-        for item in manifest["items"]
-    )
+    assert any(item["retrieval_method"] in {"dense", "both"} for item in manifest["items"])
