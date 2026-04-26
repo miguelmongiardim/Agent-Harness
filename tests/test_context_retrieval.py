@@ -40,7 +40,7 @@ def test_fixed_seed_retrieval_manifest_is_stable_and_logs_denied_retrieval_polic
         json.dumps(
             {
                 "schema_version": "task.v1",
-                "task_id": "phase5-retrieval",
+                "task_id": "retrieval-manifest",
                 "title": "Retrieve docs into context",
                 "intent": "Inspect retrieval context without changing files.",
                 "policy_profile": "retrieval-restrictive",
@@ -54,7 +54,7 @@ def test_fixed_seed_retrieval_manifest_is_stable_and_logs_denied_retrieval_polic
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T14:00:00Z")
 
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "phase5-run-a")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "retrieval-run-a")
     summary_a = HarnessRuntime(tmp_path).run_task(task_path, dry_run=True)
     manifest_a = json.loads(
         (
@@ -68,7 +68,7 @@ def test_fixed_seed_retrieval_manifest_is_stable_and_logs_denied_retrieval_polic
         ).read_text(encoding="utf-8").splitlines()
     ]
 
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "phase5-run-b")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "retrieval-run-b")
     summary_b = HarnessRuntime(tmp_path).run_task(task_path, dry_run=True)
     manifest_b = json.loads(
         (
@@ -155,7 +155,7 @@ def test_retrieved_manifest_redacts_text_and_carries_sensitivity(
         json.dumps(
             {
                 "schema_version": "task.v1",
-                "task_id": "phase5-sensitive",
+                "task_id": "retrieval-sensitive",
                 "title": "Retrieve sensitive docs into context",
                 "intent": "Inspect retrieval context without changing files.",
                 "policy_profile": "retrieval-sensitive",
@@ -167,7 +167,7 @@ def test_retrieved_manifest_redacts_text_and_carries_sensitivity(
         encoding="utf-8",
     )
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "phase5-sensitive-run")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "retrieval-sensitive-run")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T14:15:00Z")
 
     summary = HarnessRuntime(tmp_path).run_task(task_path, dry_run=True)

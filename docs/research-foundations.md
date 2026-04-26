@@ -1,7 +1,7 @@
 # Research Foundations
 
 This document records public, self-contained references that inform Agent
-Harness V0. Private or local planning notes may influence implementation
+Harness. Private or local planning notes may influence implementation
 decisions, but they are not required sources for understanding the public
 project.
 
@@ -26,17 +26,17 @@ project.
 - [LangChain human-in-the-loop documentation](https://docs.langchain.com/oss/python/langchain/human-in-the-loop)
 - [Model Context Protocol documentation](https://modelcontextprotocol.io/docs)
 
-## V0 Interpretation
+## Current Interpretation
 
-Agent Harness V0 applies these references conservatively:
+Agent Harness applies these references conservatively:
 
-- RAG informs context manifest provenance and retrieval boundaries, but V0
+- RAG informs context manifest provenance and retrieval boundaries, but the
   keeps retrieval local and deterministic by default.
-- ReAct informs the plan-act-observe loop, but V0 uses a deterministic mock
+- ReAct informs the plan-act-observe loop, but the current runtime uses a deterministic mock
   model rather than a network model provider.
 - Lost in the Middle motivates small, explicit context packs rather than
   indiscriminate long-context stuffing.
-- SWE-bench motivates software-engineering eval scenarios, but V0 ships small
+- SWE-bench motivates software-engineering eval scenarios, but the repo ships small
   bundled fixtures rather than claiming benchmark comparability.
 - OWASP and NIST references motivate policy ceilings, least privilege,
   untrusted evidence handling, approval gates, auditability, and report-only

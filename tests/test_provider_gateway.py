@@ -19,7 +19,7 @@ from agent_harness.schemas import (
 )
 
 
-def _seed_v2_project_with_recorded_openai_provider(root: Path) -> None:
+def _seed_project_with_recorded_openai_provider(root: Path) -> None:
     config = {
         "schema_version": "config.v2",
         "project_name": "test-project",
@@ -57,7 +57,7 @@ def _seed_v2_project_with_recorded_openai_provider(root: Path) -> None:
 def test_recorded_openai_provider_run_completes_and_records_provider_audit(
     tmp_path: Path,
 ) -> None:
-    _seed_v2_project_with_recorded_openai_provider(tmp_path)
+    _seed_project_with_recorded_openai_provider(tmp_path)
     target = tmp_path / "sample.py"
     target.write_text("def identity(value):\n    return value\n", encoding="utf-8")
     task_path = tmp_path / "task.json"
@@ -65,7 +65,7 @@ def test_recorded_openai_provider_run_completes_and_records_provider_audit(
         json.dumps(
             {
                 "schema_version": "task.v2",
-                "task_id": "phase3-recorded-openai",
+                "task_id": "recorded-openai",
                 "title": "Inspect target",
                 "intent": "Inspect the target without changing files.",
                 "target_paths": ["sample.py"],
@@ -76,10 +76,10 @@ def test_recorded_openai_provider_run_completes_and_records_provider_audit(
         encoding="utf-8",
     )
     env = os.environ.copy()
-    env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-provider-phase3"
+    env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-recorded-openai"
     env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-26T16:00:00Z"
-    env["AGENT_HARNESS_RECORDED_OPENAI_ENDPOINT"] = "recorded://openai_compatible/read_only_v1"
-    env["AGENT_HARNESS_RECORDED_OPENAI_API_KEY"] = "phase3-test-secret"
+    env["AGENT_HARNESS_RECORDED_OPENAI_ENDPOINT"] = "recorded://openai_compatible/read_only"
+    env["AGENT_HARNESS_RECORDED_OPENAI_API_KEY"] = "gateway-test-secret"
 
     run = subprocess.run(
         [sys.executable, "-m", "agent_harness", "run", str(task_path)],
@@ -95,7 +95,7 @@ def test_recorded_openai_provider_run_completes_and_records_provider_audit(
     assert summary["status"] == "completed"
 
     inspect = subprocess.run(
-        [sys.executable, "-m", "agent_harness", "inspect", "run", "run-provider-phase3"],
+        [sys.executable, "-m", "agent_harness", "inspect", "run", "run-recorded-openai"],
         cwd=tmp_path,
         env=env,
         capture_output=True,
@@ -113,24 +113,24 @@ def test_recorded_openai_provider_run_completes_and_records_provider_audit(
     assert provider_calls[0]["endpoint_identity"] == "env:AGENT_HARNESS_RECORDED_OPENAI_ENDPOINT"
     assert provider_calls[0]["network"] is False
     assert provider_calls[0]["mode"] == "recorded_fixture"
-    assert provider_calls[0]["fixture_id"] == "openai_compatible.read_only_v1"
+    assert provider_calls[0]["fixture_id"] == "openai_compatible.read_only"
     assert inspected["artifact_index"]["artifacts"]["provider_calls"].endswith(
         "provider_calls.json"
     )
 
-    run_dir = tmp_path / ".agent-harness" / "runs" / "run-provider-phase3"
+    run_dir = tmp_path / ".agent-harness" / "runs" / "run-recorded-openai"
     serialized_artifacts = "\n".join(
         path.read_text(encoding="utf-8")
         for path in run_dir.rglob("*")
         if path.is_file() and path.suffix in {".json", ".jsonl"}
     )
-    assert "phase3-test-secret" not in serialized_artifacts
+    assert "gateway-test-secret" not in serialized_artifacts
 
 
 def test_recorded_openai_provider_missing_required_env_var_fails_clearly(
     tmp_path: Path,
 ) -> None:
-    _seed_v2_project_with_recorded_openai_provider(tmp_path)
+    _seed_project_with_recorded_openai_provider(tmp_path)
     target = tmp_path / "sample.py"
     target.write_text("def identity(value):\n    return value\n", encoding="utf-8")
     task_path = tmp_path / "task.json"
@@ -138,7 +138,7 @@ def test_recorded_openai_provider_missing_required_env_var_fails_clearly(
         json.dumps(
             {
                 "schema_version": "task.v2",
-                "task_id": "phase3-missing-env",
+                "task_id": "missing-provider-env",
                 "title": "Inspect target",
                 "intent": "Inspect the target without changing files.",
                 "target_paths": ["sample.py"],
@@ -149,9 +149,9 @@ def test_recorded_openai_provider_missing_required_env_var_fails_clearly(
         encoding="utf-8",
     )
     env = os.environ.copy()
-    env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-provider-phase3-missing-env"
+    env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-missing-provider-env"
     env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-26T16:15:00Z"
-    env["AGENT_HARNESS_RECORDED_OPENAI_ENDPOINT"] = "recorded://openai_compatible/read_only_v1"
+    env["AGENT_HARNESS_RECORDED_OPENAI_ENDPOINT"] = "recorded://openai_compatible/read_only"
     env.pop("AGENT_HARNESS_RECORDED_OPENAI_API_KEY", None)
 
     run = subprocess.run(
@@ -165,15 +165,15 @@ def test_recorded_openai_provider_missing_required_env_var_fails_clearly(
 
     assert run.returncode == 1
     assert "missing required env var: AGENT_HARNESS_RECORDED_OPENAI_API_KEY" in run.stderr
-    assert "phase3-test-secret" not in run.stdout
-    assert "phase3-test-secret" not in run.stderr
+    assert "gateway-test-secret" not in run.stdout
+    assert "gateway-test-secret" not in run.stderr
 
 
 def _gateway_task() -> TaskSpec:
     return TaskSpec.model_validate(
         {
             "schema_version": "task.v2",
-            "task_id": "phase3-gateway-contract",
+            "task_id": "provider-gateway-contract",
             "title": "Refactor sample",
             "intent": "Refactor add_numbers for clarity",
             "target_paths": ["sample.py"],
@@ -185,9 +185,9 @@ def _gateway_task() -> TaskSpec:
 
 def _gateway_manifest() -> ContextManifest:
     return ContextManifest(
-        manifest_id="manifest-phase3-gateway",
-        run_id="run-phase3-gateway",
-        task_id="phase3-gateway-contract",
+        manifest_id="manifest-provider-gateway",
+        run_id="run-provider-gateway",
+        task_id="provider-gateway-contract",
     )
 
 
@@ -220,18 +220,18 @@ def _gateway_read_observation() -> ToolObservation:
             "openai_compatible",
             "local_process",
             "AGENT_HARNESS_GATEWAY_OPENAI_ENDPOINT",
-            "recorded://openai_compatible/read_only_v1",
+            "recorded://openai_compatible/read_only",
             "AGENT_HARNESS_GATEWAY_OPENAI_API_KEY",
-            "openai_compatible.read_only_v1",
+            "openai_compatible.read_only",
             "recorded_fixture",
         ),
         (
             "anthropic",
             "local_process",
             "AGENT_HARNESS_GATEWAY_ANTHROPIC_ENDPOINT",
-            "recorded://anthropic/read_only_v1",
+            "recorded://anthropic/read_only",
             "AGENT_HARNESS_GATEWAY_ANTHROPIC_API_KEY",
-            "anthropic.read_only_v1",
+            "anthropic.read_only",
             "recorded_fixture",
         ),
     ],
@@ -274,7 +274,7 @@ def test_provider_gateway_contract_is_shared_across_transports(
     gateway = ProviderGateway(Path.cwd())
 
     initial_actions, initial_audit = gateway.initial_actions(
-        "run-phase3-gateway",
+        "run-provider-gateway",
         _gateway_task(),
         _gateway_manifest(),
         provider,
@@ -282,7 +282,7 @@ def test_provider_gateway_contract_is_shared_across_transports(
         approval_ids=["provider-approval-action"],
     )
     next_actions, next_audit = gateway.next_actions(
-        "run-phase3-gateway",
+        "run-provider-gateway",
         _gateway_task(),
         _gateway_manifest(),
         [_gateway_read_observation()],

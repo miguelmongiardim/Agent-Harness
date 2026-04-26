@@ -21,7 +21,7 @@ class ModelClient(Protocol):
 
 
 class DeterministicMockModel:
-    """A content-driven mock model for V0 evals and demos."""
+    """A content-driven mock model for evals and demos."""
 
     def initial_actions(self, task: TaskSpec, manifest: ContextManifest) -> list[ToolCall]:
         actions: list[ToolCall] = []

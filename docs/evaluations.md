@@ -1,6 +1,6 @@
 # Evaluations
 
-V0 evals are designed to catch workflow regressions rather than benchmark model
+The eval suite is designed to catch workflow regressions rather than benchmark model
 quality.
 
 The bundled eval suite focuses on:

@@ -54,13 +54,13 @@ def test_policy_sensitivity_defaults(tmp_path: Path) -> None:
     assert engine.classify_path(None) == "unknown"
 
 
-def test_default_provider_input_policy_matrix_matches_v1(tmp_path: Path) -> None:
+def test_default_provider_input_policy_matrix_matches_defaults(tmp_path: Path) -> None:
     engine = PolicyEngine(tmp_path, PolicyProfile.model_validate(DEFAULT_POLICY))
     provider = RunProviderRecord(
         provider_profile_id="mock-default",
         transport="mock",
         trust_zone="mock",
-        model="deterministic-v1",
+        model="deterministic",
         endpoint_env="AGENT_HARNESS_MOCK_ENDPOINT",
         endpoint_identity="env:AGENT_HARNESS_MOCK_ENDPOINT",
         network=False,
@@ -99,7 +99,7 @@ def test_provider_profile_requires_approval_can_only_tighten_policy(tmp_path: Pa
         provider_profile_id="mock-strict",
         transport="mock",
         trust_zone="mock",
-        model="deterministic-v1",
+        model="deterministic",
         endpoint_env="AGENT_HARNESS_MOCK_ENDPOINT",
         endpoint_identity="env:AGENT_HARNESS_MOCK_ENDPOINT",
         network=False,

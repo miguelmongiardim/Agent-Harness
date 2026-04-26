@@ -3,7 +3,7 @@ from __future__ import annotations
 DEFAULT_POLICY = {
     "schema_version": "policy.v1",
     "name": "default",
-    "description": "Default V0 local policy ceiling for deterministic refactor runs.",
+    "description": "Default local policy ceiling for deterministic refactor runs.",
     "allowed_tools": ["read_file", "search_code", "run_tests", "patch_file", "git_status"],
     "read_roots": ["."],
     "write_roots": ["."],

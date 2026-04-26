@@ -40,11 +40,11 @@ class _DenseFixtureRetriever:
         return {
             "backend": "local_fixture",
             "model": "fixture-embeddings",
-            "version": "v1",
+            "version": "baseline",
         }
 
 
-def _seed_v2_project_with_mock_provider(root: Path) -> None:
+def _seed_project_with_mock_provider(root: Path) -> None:
     config = {
         "schema_version": "config.v2",
         "project_name": "test-project",
@@ -58,7 +58,7 @@ def _seed_v2_project_with_mock_provider(root: Path) -> None:
                 "provider_profile_id": "mock-default",
                 "transport": "mock",
                 "trust_zone": "mock",
-                "model": "deterministic-v1",
+                "model": "deterministic",
                 "endpoint_env": "AGENT_HARNESS_MOCK_ENDPOINT",
                 "network": False,
                 "requires_approval": False,
@@ -109,7 +109,7 @@ def test_hybrid_retrieval_manifest_deduplicates_overlap_and_records_rejected_evi
         json.dumps(
             {
                 "schema_version": "task.v1",
-                "task_id": "phase4-hybrid-retrieval",
+                "task_id": "hybrid-retrieval",
                 "title": "Assemble hybrid retrieval context",
                 "intent": "Inspect retrieval context without changing files.",
                 "policy_profile": "retrieval-restrictive",
@@ -121,7 +121,7 @@ def test_hybrid_retrieval_manifest_deduplicates_overlap_and_records_rejected_evi
         encoding="utf-8",
     )
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "phase4-hybrid-run")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-hybrid-retrieval")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-26T18:00:00Z")
     monkeypatch.setattr(
         "agent_harness.runtime.LocalDenseRetriever",
@@ -140,7 +140,7 @@ def test_hybrid_retrieval_manifest_deduplicates_overlap_and_records_rejected_evi
     assert manifest["dense_retrieval"] == {
         "backend": "local_fixture",
         "model": "fixture-embeddings",
-        "version": "v1",
+        "version": "baseline",
     }
 
     included_by_path = {item["path"]: item for item in manifest["items"]}
@@ -170,7 +170,7 @@ def test_provider_input_records_reference_manifest_items_for_retrieved_context(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
-    _seed_v2_project_with_mock_provider(tmp_path)
+    _seed_project_with_mock_provider(tmp_path)
     docs_dir = tmp_path / "docs"
     docs_dir.mkdir()
     (docs_dir / "public.md").write_text(
@@ -187,7 +187,7 @@ def test_provider_input_records_reference_manifest_items_for_retrieved_context(
         json.dumps(
             {
                 "schema_version": "task.v2",
-                "task_id": "phase4-provider-input-manifest",
+                "task_id": "provider-input-manifest",
                 "title": "Bind provider input to manifest items",
                 "intent": "Inspect retrieval context without changing files.",
                 "context_queries": ["add_numbers"],
@@ -198,7 +198,7 @@ def test_provider_input_records_reference_manifest_items_for_retrieved_context(
         encoding="utf-8",
     )
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "phase4-provider-input-run")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-provider-input-manifest")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-26T18:30:00Z")
 
     summary = HarnessRuntime(tmp_path).run_task(task_path, dry_run=True)

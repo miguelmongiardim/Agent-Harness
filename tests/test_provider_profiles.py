@@ -9,7 +9,7 @@ from pathlib import Path
 from agent_harness.defaults import DEFAULT_POLICY
 
 
-def _seed_v2_project(root: Path) -> None:
+def _seed_project_with_provider_profiles(root: Path) -> None:
     config = {
         "schema_version": "config.v2",
         "project_name": "test-project",
@@ -46,10 +46,10 @@ def _seed_v2_project(root: Path) -> None:
     )
 
 
-def test_v2_task_selects_configured_mock_provider_and_records_provider_metadata(
+def test_task_selects_configured_mock_provider_and_records_provider_metadata(
     tmp_path: Path,
 ) -> None:
-    _seed_v2_project(tmp_path)
+    _seed_project_with_provider_profiles(tmp_path)
     target = tmp_path / "sample.py"
     target.write_text("def identity(value):\n    return value\n", encoding="utf-8")
     task_path = tmp_path / "task.json"
@@ -57,7 +57,7 @@ def test_v2_task_selects_configured_mock_provider_and_records_provider_metadata(
         json.dumps(
             {
                 "schema_version": "task.v2",
-                "task_id": "phase0-provider-profile",
+                "task_id": "provider-profile-selection",
                 "title": "Inspect target",
                 "intent": "Inspect the target without changing files.",
                 "provider_profile": "mock-selected",
@@ -69,7 +69,7 @@ def test_v2_task_selects_configured_mock_provider_and_records_provider_metadata(
         encoding="utf-8",
     )
     env = os.environ.copy()
-    env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-provider-phase0"
+    env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-provider-profile-selection"
     env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-26T12:00:00Z"
 
     run = subprocess.run(
@@ -86,7 +86,7 @@ def test_v2_task_selects_configured_mock_provider_and_records_provider_metadata(
     assert summary["status"] == "dry_run"
 
     inspect = subprocess.run(
-        [sys.executable, "-m", "agent_harness", "inspect", "run", "run-provider-phase0"],
+        [sys.executable, "-m", "agent_harness", "inspect", "run", "run-provider-profile-selection"],
         cwd=tmp_path,
         env=env,
         capture_output=True,
@@ -107,7 +107,7 @@ def test_v2_task_selects_configured_mock_provider_and_records_provider_metadata(
 
 
 def test_cli_provider_override_switches_to_another_configured_profile(tmp_path: Path) -> None:
-    _seed_v2_project(tmp_path)
+    _seed_project_with_provider_profiles(tmp_path)
     target = tmp_path / "sample.py"
     target.write_text("def identity(value):\n    return value\n", encoding="utf-8")
     task_path = tmp_path / "task.json"
@@ -115,7 +115,7 @@ def test_cli_provider_override_switches_to_another_configured_profile(tmp_path: 
         json.dumps(
             {
                 "schema_version": "task.v2",
-                "task_id": "phase0-provider-override",
+                "task_id": "provider-profile-override",
                 "title": "Inspect target",
                 "intent": "Inspect the target without changing files.",
                 "provider_profile": "mock-selected",

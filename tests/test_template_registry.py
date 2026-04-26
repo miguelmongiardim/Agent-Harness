@@ -33,7 +33,7 @@ def test_template_apply_is_approval_bound_and_records_applied_version(
 ) -> None:
     seed_project(tmp_path)
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "phase5-template-run")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "template-apply-run")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-26T14:00:00Z")
 
     destination = tmp_path / "scaffold"
@@ -41,12 +41,12 @@ def test_template_apply_is_approval_bound_and_records_applied_version(
     assert main(["template", "apply", "python-lib", "--destination", str(destination)]) == 0
     proposed = json.loads(capsys.readouterr().out)
 
-    assert proposed["run_id"] == "phase5-template-run"
+    assert proposed["run_id"] == "template-apply-run"
     assert proposed["status"] == "paused"
     assert proposed["approvals"]
     assert not (destination / "pyproject.toml").exists()
 
-    run_dir = tmp_path / ".agent-harness" / "runs" / "phase5-template-run"
+    run_dir = tmp_path / ".agent-harness" / "runs" / "template-apply-run"
     action_id = proposed["approvals"][0]
     action = json.loads((run_dir / "actions" / f"{action_id}.json").read_text(encoding="utf-8"))
 
@@ -65,7 +65,7 @@ def test_template_apply_is_approval_bound_and_records_applied_version(
         main(
             [
                 "approve",
-                "phase5-template-run",
+                "template-apply-run",
                 action_id,
                 "--decision",
                 "approve",
@@ -85,7 +85,7 @@ def test_template_apply_is_approval_bound_and_records_applied_version(
             "template_id": "python-lib",
             "version": "1.0.0",
             "destination": "scaffold",
-            "run_id": "phase5-template-run",
+            "run_id": "template-apply-run",
             "action_id": action_id,
             "applied_at": "2026-04-26T14:00:00Z",
         }

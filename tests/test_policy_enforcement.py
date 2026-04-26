@@ -36,7 +36,7 @@ def test_denied_target_file_is_excluded_from_context_and_denied_by_tool_policy(
         json.dumps(
             {
                 "schema_version": "task.v1",
-                "task_id": "phase3-denied-data",
+                "task_id": "denied-data",
                 "title": "Inspect allowed and denied data",
                 "intent": "Inspect target files without changing them.",
                 "target_paths": ["src/allowed.py", "config/secret.py"],
@@ -115,7 +115,7 @@ def test_search_observations_redact_secret_like_content_before_storage(
         json.dumps(
             {
                 "schema_version": "task.v1",
-                "task_id": "phase3-redact-search",
+                "task_id": "redact-search",
                 "title": "Search for a token",
                 "intent": "Search code without changing files.",
                 "target_paths": [],
@@ -175,7 +175,7 @@ def test_context_and_read_observations_redact_secret_like_content_before_storage
         json.dumps(
             {
                 "schema_version": "task.v1",
-                "task_id": "phase3-redact-read",
+                "task_id": "redact-read",
                 "title": "Read a file containing a secret-like value",
                 "intent": "Inspect target files without changing them.",
                 "target_paths": ["src/settings.py"],
@@ -251,7 +251,7 @@ def test_task_allowed_tools_cannot_widen_policy_profile_tool_ceiling(
         json.dumps(
             {
                 "schema_version": "task.v1",
-                "task_id": "phase3-profile-ceiling",
+                "task_id": "profile-ceiling",
                 "title": "Try to widen allowed tools",
                 "intent": "Inspect and search without changing files.",
                 "policy_profile": "read-only",

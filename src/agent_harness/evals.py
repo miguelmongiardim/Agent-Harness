@@ -43,52 +43,49 @@ ADVANCED_EVAL_RUNNERS = [
     "_run_reproducible_replay_eval",
 ]
 
-UNSUPPORTED_V0_CLAIMS = [
+DOC_SUBJECT_PATTERN = r"(?:Agent Harness|This repo|The current implementation)"
+DOC_CAPABILITY_VERB_PATTERN = r"(?:provides|supports|includes|ships|offers)"
+
+
+def _unsupported_doc_pattern(claim: str, *, uses_is: bool = False) -> re.Pattern[str]:
+    if uses_is:
+        pattern = rf"\b{DOC_SUBJECT_PATTERN}\s+is\s+(?:an?\s+)?{claim}\b"
+    else:
+        pattern = (
+            rf"\b{DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            rf"\s+(?:an?\s+)?{claim}\b"
+        )
+    return re.compile(pattern, re.IGNORECASE)
+
+
+UNSUPPORTED_DOC_CLAIMS = [
     (
         "enterprise-ready",
-        re.compile(r"\bV0\s+is\s+(?:an?\s+)?enterprise-ready\b", re.IGNORECASE),
+        _unsupported_doc_pattern("enterprise-ready", uses_is=True),
     ),
     (
         "web API",
-        re.compile(
-            r"\bV0\s+(?:provides|supports|includes|ships|offers)\s+(?:an?\s+)?web API\b",
-            re.IGNORECASE,
-        ),
+        _unsupported_doc_pattern("web API"),
     ),
     (
         "web UI",
-        re.compile(
-            r"\bV0\s+(?:provides|supports|includes|ships|offers)\s+(?:an?\s+)?web UI\b",
-            re.IGNORECASE,
-        ),
+        _unsupported_doc_pattern("web UI"),
     ),
     (
         "network model providers",
-        re.compile(
-            r"\bV0\s+(?:provides|supports|includes|ships|offers)\s+network model providers\b",
-            re.IGNORECASE,
-        ),
+        _unsupported_doc_pattern("network model providers"),
     ),
     (
         "multi-agent execution",
-        re.compile(
-            r"\bV0\s+(?:provides|supports|includes|ships|offers)\s+multi-agent execution\b",
-            re.IGNORECASE,
-        ),
+        _unsupported_doc_pattern("multi-agent execution"),
     ),
     (
         "MCP adapter",
-        re.compile(
-            r"\bV0\s+(?:provides|supports|includes|ships|offers)\s+(?:an?\s+)?MCP adapter\b",
-            re.IGNORECASE,
-        ),
+        _unsupported_doc_pattern("MCP adapter"),
     ),
     (
         "LangGraph adapter",
-        re.compile(
-            r"\bV0\s+(?:provides|supports|includes|ships|offers)\s+(?:an?\s+)?LangGraph adapter\b",
-            re.IGNORECASE,
-        ),
+        _unsupported_doc_pattern("LangGraph adapter"),
     ),
 ]
 
@@ -194,15 +191,15 @@ def _scan_docs_for_unsupported_claims(project_root: Path) -> list[dict[str, obje
     for path in candidates:
         lines = path.read_text(encoding="utf-8").splitlines()
         for line_number, line in enumerate(lines, start=1):
-            for label, pattern in UNSUPPORTED_V0_CLAIMS:
+            for label, pattern in UNSUPPORTED_DOC_CLAIMS:
                 if not pattern.search(line):
                     continue
                 findings.append(
                     {
-                        "rule_id": "unsupported_v0_claim",
+                        "rule_id": "unsupported_doc_claim",
                         "path": path.relative_to(project_root).as_posix(),
                         "line": line_number,
-                        "message": f"V0 docs claim unsupported behavior as available: {label}",
+                        "message": f"Docs claim unsupported behavior as available: {label}",
                         "text": line.strip(),
                     }
                 )

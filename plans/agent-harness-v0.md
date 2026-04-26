@@ -56,7 +56,7 @@ migrating code or restructuring the repository.
 
 - [x] `docs/prd-agent-harness-v0.md` exists and defines V0 scope.
 - [x] `plans/agent-harness-v0.md` exists and slices work by public behavior.
-- [x] `docs/spike-audit-v0.md` exists and classifies spike material.
+- [x] `docs/spike-audit.md` exists and classifies spike material.
 - [x] No code migration or package restructuring occurs in this phase.
 - [x] The first Phase 0 RED test is identified.
 

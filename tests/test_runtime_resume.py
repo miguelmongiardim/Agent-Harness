@@ -19,7 +19,7 @@ def test_approve_action_completes_paused_run_and_updates_audit_artifacts(
         json.dumps(
             {
                 "schema_version": "task.v1",
-                "task_id": "phase6-resume",
+                "task_id": "approval-resume",
                 "title": "Refactor",
                 "intent": "Refactor add_numbers",
                 "target_paths": ["fixture.py"],
@@ -30,17 +30,23 @@ def test_approve_action_completes_paused_run_and_updates_audit_artifacts(
         encoding="utf-8",
     )
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "phase6-run")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "runtime-resume-run")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T14:30:00Z")
 
     paused = HarnessRuntime(tmp_path).run_task(task_path)
 
     assert paused.status == "paused"
     action_id = paused.approvals[0]
-    run_dir = tmp_path / ".agent-harness" / "runs" / "phase6-run"
+    run_dir = tmp_path / ".agent-harness" / "runs" / "runtime-resume-run"
 
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T14:31:00Z")
-    approval = approve_action(tmp_path, "phase6-run", action_id, "approve", actor="reviewer")
+    approval = approve_action(
+        tmp_path,
+        "runtime-resume-run",
+        action_id,
+        "approve",
+        actor="reviewer",
+    )
 
     summary = json.loads((run_dir / "summary.json").read_text(encoding="utf-8"))
     action = json.loads((run_dir / "actions" / f"{action_id}.json").read_text(encoding="utf-8"))
@@ -75,7 +81,7 @@ def test_runtime_records_model_actions_as_run_evidence(
         json.dumps(
             {
                 "schema_version": "task.v1",
-                "task_id": "phase6-model-events",
+                "task_id": "model-events",
                 "title": "Refactor",
                 "intent": "Refactor add_numbers",
                 "target_paths": ["fixture.py"],
@@ -86,7 +92,7 @@ def test_runtime_records_model_actions_as_run_evidence(
         encoding="utf-8",
     )
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "phase6-model-run")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "model-events-run")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T14:40:00Z")
 
     HarnessRuntime(tmp_path).run_task(task_path)
@@ -94,7 +100,7 @@ def test_runtime_records_model_actions_as_run_evidence(
     events = [
         json.loads(line)
         for line in (
-            tmp_path / ".agent-harness" / "runs" / "phase6-model-run" / "events.jsonl"
+            tmp_path / ".agent-harness" / "runs" / "model-events-run" / "events.jsonl"
         ).read_text(encoding="utf-8").splitlines()
     ]
     model_actions = [
@@ -120,7 +126,7 @@ def test_denied_approval_leaves_file_unchanged_and_updates_run_summary(
         json.dumps(
             {
                 "schema_version": "task.v1",
-                "task_id": "phase6-deny",
+                "task_id": "denied-approval",
                 "title": "Refactor",
                 "intent": "Refactor add_numbers",
                 "target_paths": ["fixture.py"],
@@ -131,17 +137,23 @@ def test_denied_approval_leaves_file_unchanged_and_updates_run_summary(
         encoding="utf-8",
     )
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "phase6-deny-run")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "denied-approval-run")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T14:50:00Z")
 
     paused = HarnessRuntime(tmp_path).run_task(task_path)
 
     assert paused.status == "paused"
     action_id = paused.approvals[0]
-    run_dir = tmp_path / ".agent-harness" / "runs" / "phase6-deny-run"
+    run_dir = tmp_path / ".agent-harness" / "runs" / "denied-approval-run"
 
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T14:51:00Z")
-    approval = approve_action(tmp_path, "phase6-deny-run", action_id, "deny", actor="reviewer")
+    approval = approve_action(
+        tmp_path,
+        "denied-approval-run",
+        action_id,
+        "deny",
+        actor="reviewer",
+    )
 
     summary = json.loads((run_dir / "summary.json").read_text(encoding="utf-8"))
     events = [

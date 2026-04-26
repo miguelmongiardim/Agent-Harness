@@ -91,11 +91,13 @@ class QdrantFastEmbedRetriever:
             import fastembed  # type: ignore[import-not-found]  # noqa: F401
             import qdrant_client  # type: ignore[import-not-found]  # noqa: F401
         except ImportError as exc:
-            raise RuntimeError("qdrant-client and fastembed are optional V0 dependencies") from exc
+            raise RuntimeError(
+                "qdrant-client and fastembed are optional retrieval dependencies"
+            ) from exc
 
     def retrieve(self, queries: list[str], limit: int = 5) -> list[RetrievedChunk]:
         del queries, limit
-        raise RuntimeError("Qdrant/FastEmbed retrieval is smoke-only in V0")
+        raise RuntimeError("Qdrant/FastEmbed retrieval is smoke-only in the current repo")
 
 
 class LocalDenseRetriever:
@@ -106,7 +108,7 @@ class LocalDenseRetriever:
         return DenseRetrievalMetadata(
             backend="local_token_similarity",
             model="token-set",
-            version="v1",
+            version="baseline",
         )
 
     def retrieve(self, queries: list[str], limit: int = 5) -> list[RetrievedChunk]:

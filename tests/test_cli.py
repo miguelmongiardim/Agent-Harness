@@ -170,14 +170,14 @@ def test_cli_template_apply_respects_policy_write_roots(
     assert not (blocked / "pyproject.toml").exists()
 
 
-def test_cli_eval_fails_when_docs_claim_unsupported_v0_behavior(
+def test_cli_eval_fails_when_docs_claim_unsupported_behavior(
     tmp_path: Path, monkeypatch
 ) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.chdir(tmp_path)
     seed_project(tmp_path)
     (tmp_path / "docs").mkdir()
     (tmp_path / "docs" / "claim.md").write_text(
-        "# Claim\n\nV0 provides a web API.\n", encoding="utf-8"
+        "# Claim\n\nAgent Harness provides a web API.\n", encoding="utf-8"
     )
     target = tmp_path / "fixtures" / "python_refactor" / "legacy_math.py"
     target.parent.mkdir(parents=True)
@@ -206,7 +206,7 @@ def test_cli_eval_fails_when_docs_claim_unsupported_v0_behavior(
         )
     )
     assert scanner["status"] == "failed"
-    assert scanner["critical_findings"][0]["rule_id"] == "unsupported_v0_claim"
+    assert scanner["critical_findings"][0]["rule_id"] == "unsupported_doc_claim"
 
 
 def test_cli_task_validate_returns_concrete_errors(

@@ -1,16 +1,16 @@
 # Agent Harness
 
 Agent Harness is a portfolio-grade, enterprise-inspired Python CLI for
-controlled agent workflow experiments. V0 demonstrates policy-gated software
+controlled agent workflow experiments. The current implementation demonstrates policy-gated software
 engineering runs with deterministic mock agents, explicit context manifests,
 approval binding, audit logs, evals, and reproducible local artifacts.
 
-V0 is intentionally not enterprise-ready. It is designed toward enterprise
+The project is intentionally not enterprise-ready. It is designed toward enterprise
 concerns such as permission ceilings, auditability, approval checkpoints,
 context provenance, and reportable evidence, without claiming production
 assurance.
 
-## What V0 Proves
+## What This Repo Proves
 
 - A deterministic mock model consumes real task specs, context evidence, and
   tool observations before proposing actions.

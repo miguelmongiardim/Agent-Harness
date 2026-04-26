@@ -86,7 +86,7 @@ def test_cli_export_json_markdown_and_sarif_match_run_evidence(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T12:00:00Z")
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-export-phase7")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-export-evidence")
 
     seed_project(tmp_path)
     target = tmp_path / "fixtures" / "allowed.py"
@@ -97,7 +97,7 @@ def test_cli_export_json_markdown_and_sarif_match_run_evidence(
         task_path,
         {
             "schema_version": "task.v1",
-            "task_id": "phase7-export",
+            "task_id": "export-evidence",
             "title": "Inspect allowed file",
             "intent": "Inspect the target without changing files.",
             "target_paths": ["fixtures/allowed.py"],
@@ -108,31 +108,31 @@ def test_cli_export_json_markdown_and_sarif_match_run_evidence(
 
     HarnessRuntime(tmp_path).run_task(task_path, dry_run=True)
 
-    assert main(["export", "json", "run-export-phase7"]) == 0
-    assert main(["export", "markdown", "run-export-phase7"]) == 0
-    assert main(["export", "sarif", "run-export-phase7"]) == 0
+    assert main(["export", "json", "run-export-evidence"]) == 0
+    assert main(["export", "markdown", "run-export-evidence"]) == 0
+    assert main(["export", "sarif", "run-export-evidence"]) == 0
 
     summary = json.loads(
-        (tmp_path / ".agent-harness" / "runs" / "run-export-phase7" / "summary.json").read_text(
+        (tmp_path / ".agent-harness" / "runs" / "run-export-evidence" / "summary.json").read_text(
             encoding="utf-8"
         )
     )
     events = [
         json.loads(line)
         for line in (
-            tmp_path / ".agent-harness" / "runs" / "run-export-phase7" / "events.jsonl"
+            tmp_path / ".agent-harness" / "runs" / "run-export-evidence" / "events.jsonl"
         ).read_text(encoding="utf-8").splitlines()
     ]
     exported_json = json.loads(
-        (tmp_path / ".agent-harness" / "exports" / "run-export-phase7.json").read_text(
+        (tmp_path / ".agent-harness" / "exports" / "run-export-evidence.json").read_text(
             encoding="utf-8"
         )
     )
     exported_markdown = (
-        tmp_path / ".agent-harness" / "exports" / "run-export-phase7.md"
+        tmp_path / ".agent-harness" / "exports" / "run-export-evidence.md"
     ).read_text(encoding="utf-8")
     exported_sarif = json.loads(
-        (tmp_path / ".agent-harness" / "exports" / "run-export-phase7.sarif").read_text(
+        (tmp_path / ".agent-harness" / "exports" / "run-export-evidence.sarif").read_text(
             encoding="utf-8"
         )
     )
@@ -141,7 +141,7 @@ def test_cli_export_json_markdown_and_sarif_match_run_evidence(
     assert exported_json["summary"] == summary
     assert exported_json["events"] == events
     assert "# Agent Harness Run Export" in exported_markdown
-    assert "run-export-phase7" in exported_markdown
+    assert "run-export-evidence" in exported_markdown
     assert summary["status"] in exported_markdown
     policy_decisions = [event for event in events if event["type"] == "policy_decision"]
     assert len(exported_sarif["runs"][0]["results"]) == len(policy_decisions)

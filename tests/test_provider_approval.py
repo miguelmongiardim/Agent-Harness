@@ -9,7 +9,7 @@ from pathlib import Path
 from agent_harness.defaults import DEFAULT_POLICY
 
 
-def _seed_v2_project_with_default_provider(root: Path) -> None:
+def _seed_project_with_default_provider(root: Path) -> None:
     config = {
         "schema_version": "config.v2",
         "project_name": "test-project",
@@ -46,7 +46,7 @@ def _seed_v2_project_with_default_provider(root: Path) -> None:
 def test_local_endpoint_provider_pauses_before_model_actions_and_records_pending_approval(
     tmp_path: Path,
 ) -> None:
-    _seed_v2_project_with_default_provider(tmp_path)
+    _seed_project_with_default_provider(tmp_path)
     target = tmp_path / "sample.py"
     target.write_text("def identity(value):\n    return value\n", encoding="utf-8")
     task_path = tmp_path / "task.json"
@@ -54,7 +54,7 @@ def test_local_endpoint_provider_pauses_before_model_actions_and_records_pending
         json.dumps(
             {
                 "schema_version": "task.v2",
-                "task_id": "phase1-provider-approval",
+                "task_id": "provider-use-approval",
                 "title": "Inspect target",
                 "intent": "Inspect the target without changing files.",
                 "target_paths": ["sample.py"],
@@ -65,7 +65,7 @@ def test_local_endpoint_provider_pauses_before_model_actions_and_records_pending
         encoding="utf-8",
     )
     env = os.environ.copy()
-    env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-provider-phase1"
+    env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-provider-use-approval"
     env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-26T12:00:00Z"
 
     run = subprocess.run(
@@ -83,7 +83,7 @@ def test_local_endpoint_provider_pauses_before_model_actions_and_records_pending
     assert len(summary["approvals"]) == 1
 
     inspect = subprocess.run(
-        [sys.executable, "-m", "agent_harness", "inspect", "run", "run-provider-phase1"],
+        [sys.executable, "-m", "agent_harness", "inspect", "run", "run-provider-use-approval"],
         cwd=tmp_path,
         env=env,
         capture_output=True,
@@ -117,7 +117,7 @@ def test_local_endpoint_provider_pauses_before_model_actions_and_records_pending
 
 
 def test_approving_provider_use_resumes_the_same_run(tmp_path: Path) -> None:
-    _seed_v2_project_with_default_provider(tmp_path)
+    _seed_project_with_default_provider(tmp_path)
     target = tmp_path / "sample.py"
     target.write_text("def identity(value):\n    return value\n", encoding="utf-8")
     task_path = tmp_path / "task.json"
@@ -125,7 +125,7 @@ def test_approving_provider_use_resumes_the_same_run(tmp_path: Path) -> None:
         json.dumps(
             {
                 "schema_version": "task.v2",
-                "task_id": "phase1-provider-resume",
+                "task_id": "provider-use-resume",
                 "title": "Inspect target",
                 "intent": "Inspect the target without changing files.",
                 "target_paths": ["sample.py"],
@@ -138,8 +138,8 @@ def test_approving_provider_use_resumes_the_same_run(tmp_path: Path) -> None:
     env = os.environ.copy()
     env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-provider-resume"
     env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-26T12:00:00Z"
-    env["AGENT_HARNESS_LOCAL_ENDPOINT"] = "recorded://openai_compatible/read_only_v1"
-    env["AGENT_HARNESS_API_KEY"] = "phase1-test-secret"
+    env["AGENT_HARNESS_LOCAL_ENDPOINT"] = "recorded://openai_compatible/read_only"
+    env["AGENT_HARNESS_API_KEY"] = "approval-test-secret"
 
     run = subprocess.run(
         [sys.executable, "-m", "agent_harness", "run", str(task_path)],

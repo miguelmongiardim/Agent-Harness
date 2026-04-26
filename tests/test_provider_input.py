@@ -9,7 +9,7 @@ from pathlib import Path
 from agent_harness.defaults import DEFAULT_POLICY
 
 
-def _seed_v2_project_with_mock_provider(root: Path) -> None:
+def _seed_project_with_mock_provider(root: Path) -> None:
     config = {
         "schema_version": "config.v2",
         "project_name": "test-project",
@@ -23,7 +23,7 @@ def _seed_v2_project_with_mock_provider(root: Path) -> None:
                 "provider_profile_id": "mock-default",
                 "transport": "mock",
                 "trust_zone": "mock",
-                "model": "deterministic-v1",
+                "model": "deterministic",
                 "endpoint_env": "AGENT_HARNESS_MOCK_ENDPOINT",
                 "network": False,
                 "requires_approval": False,
@@ -44,7 +44,7 @@ def _seed_v2_project_with_mock_provider(root: Path) -> None:
     )
 
 
-def _seed_v2_project_with_local_endpoint_provider(root: Path) -> None:
+def _seed_project_with_local_endpoint_provider(root: Path) -> None:
     config = {
         "schema_version": "config.v2",
         "project_name": "test-project",
@@ -80,7 +80,7 @@ def _seed_v2_project_with_local_endpoint_provider(root: Path) -> None:
 def test_mock_provider_run_records_mixed_sensitivity_provider_input_evidence(
     tmp_path: Path,
 ) -> None:
-    _seed_v2_project_with_mock_provider(tmp_path)
+    _seed_project_with_mock_provider(tmp_path)
     (tmp_path / "docs").mkdir()
     (tmp_path / "docs" / "public.md").write_text("# Public\n\nsafe to share\n", encoding="utf-8")
     (tmp_path / "build" / "generated").mkdir(parents=True)
@@ -98,7 +98,7 @@ def test_mock_provider_run_records_mixed_sensitivity_provider_input_evidence(
         json.dumps(
             {
                 "schema_version": "task.v2",
-                "task_id": "phase2-provider-input",
+                "task_id": "provider-input-mixed",
                 "title": "Record provider input evidence",
                 "intent": "Inspect target files without changing them.",
                 "target_paths": [
@@ -113,7 +113,7 @@ def test_mock_provider_run_records_mixed_sensitivity_provider_input_evidence(
         encoding="utf-8",
     )
     env = os.environ.copy()
-    env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-provider-input-phase2"
+    env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-provider-input-mixed"
     env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-26T14:00:00Z"
 
     run = subprocess.run(
@@ -127,7 +127,7 @@ def test_mock_provider_run_records_mixed_sensitivity_provider_input_evidence(
 
     assert run.returncode == 0, run.stderr
     inspect = subprocess.run(
-        [sys.executable, "-m", "agent_harness", "inspect", "run", "run-provider-input-phase2"],
+        [sys.executable, "-m", "agent_harness", "inspect", "run", "run-provider-input-mixed"],
         cwd=tmp_path,
         env=env,
         capture_output=True,
@@ -167,7 +167,7 @@ def test_mock_provider_run_records_mixed_sensitivity_provider_input_evidence(
 def test_internal_provider_input_requires_distinct_approval_and_resume(
     tmp_path: Path,
 ) -> None:
-    _seed_v2_project_with_mock_provider(tmp_path)
+    _seed_project_with_mock_provider(tmp_path)
     (tmp_path / "src").mkdir()
     (tmp_path / "src" / "internal.py").write_text(
         "def internal_only() -> str:\n    return 'internal'\n",
@@ -178,7 +178,7 @@ def test_internal_provider_input_requires_distinct_approval_and_resume(
         json.dumps(
             {
                 "schema_version": "task.v2",
-                "task_id": "phase2-provider-input-approval",
+                "task_id": "provider-input-approval",
                 "title": "Pause for provider input approval",
                 "intent": "Inspect target files without changing them.",
                 "target_paths": ["src/internal.py"],
@@ -262,7 +262,7 @@ def test_internal_provider_input_requires_distinct_approval_and_resume(
 def test_task_spec_can_narrow_provider_input_permissions(
     tmp_path: Path,
 ) -> None:
-    _seed_v2_project_with_mock_provider(tmp_path)
+    _seed_project_with_mock_provider(tmp_path)
     (tmp_path / "docs").mkdir()
     (tmp_path / "docs" / "public.md").write_text("# Public\n\nsafe to share\n", encoding="utf-8")
     task_path = tmp_path / "task.json"
@@ -270,7 +270,7 @@ def test_task_spec_can_narrow_provider_input_permissions(
         json.dumps(
             {
                 "schema_version": "task.v2",
-                "task_id": "phase2-task-narrowing",
+                "task_id": "task-provider-input-narrowing",
                 "title": "Narrow provider input",
                 "intent": "Inspect target files without changing them.",
                 "target_paths": ["docs/public.md"],
@@ -321,7 +321,7 @@ def test_task_spec_can_narrow_provider_input_permissions(
 def test_cli_can_narrow_provider_input_permissions(
     tmp_path: Path,
 ) -> None:
-    _seed_v2_project_with_mock_provider(tmp_path)
+    _seed_project_with_mock_provider(tmp_path)
     (tmp_path / "build" / "generated").mkdir(parents=True)
     (tmp_path / "build" / "generated" / "output.txt").write_text(
         "generated summary\n",
@@ -332,7 +332,7 @@ def test_cli_can_narrow_provider_input_permissions(
         json.dumps(
             {
                 "schema_version": "task.v2",
-                "task_id": "phase2-cli-narrowing",
+                "task_id": "cli-provider-input-narrowing",
                 "title": "Narrow provider input from CLI",
                 "intent": "Inspect target files without changing them.",
                 "target_paths": ["build/generated/output.txt"],
@@ -391,7 +391,7 @@ def test_cli_can_narrow_provider_input_permissions(
 def test_provider_use_approval_cannot_override_hard_denied_provider_input(
     tmp_path: Path,
 ) -> None:
-    _seed_v2_project_with_local_endpoint_provider(tmp_path)
+    _seed_project_with_local_endpoint_provider(tmp_path)
     (tmp_path / "vault").mkdir()
     (tmp_path / "vault" / "customer.md").write_text(
         "# Customer\n\naccount data\n",
@@ -402,7 +402,7 @@ def test_provider_use_approval_cannot_override_hard_denied_provider_input(
         json.dumps(
             {
                 "schema_version": "task.v2",
-                "task_id": "phase2-hard-deny",
+                "task_id": "provider-input-hard-deny",
                 "title": "Keep customer data out of provider input",
                 "intent": "Inspect target files without changing them.",
                 "target_paths": ["vault/customer.md"],
@@ -415,7 +415,7 @@ def test_provider_use_approval_cannot_override_hard_denied_provider_input(
     env = os.environ.copy()
     env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-provider-hard-deny"
     env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-26T15:30:00Z"
-    env["AGENT_HARNESS_LOCAL_ENDPOINT"] = "recorded://openai_compatible/read_only_v1"
+    env["AGENT_HARNESS_LOCAL_ENDPOINT"] = "recorded://openai_compatible/read_only"
 
     run = subprocess.run(
         [sys.executable, "-m", "agent_harness", "run", str(task_path)],
@@ -471,7 +471,7 @@ def test_provider_use_approval_cannot_override_hard_denied_provider_input(
 def test_provider_input_redaction_reclassification_and_reevaluation_are_recorded(
     tmp_path: Path,
 ) -> None:
-    _seed_v2_project_with_mock_provider(tmp_path)
+    _seed_project_with_mock_provider(tmp_path)
     policy_path = tmp_path / "policies" / "default.json"
     policy = json.loads(policy_path.read_text(encoding="utf-8"))
     policy["sensitivity_rules"] = [
@@ -491,7 +491,7 @@ def test_provider_input_redaction_reclassification_and_reevaluation_are_recorded
         json.dumps(
             {
                 "schema_version": "task.v2",
-                "task_id": "phase2-redact-reclassify",
+                "task_id": "provider-input-redact-reclassify",
                 "title": "Redact provider input",
                 "intent": "Inspect target files without changing them.",
                 "target_paths": ["vault/confidential.md"],

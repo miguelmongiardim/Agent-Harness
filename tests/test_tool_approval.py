@@ -25,7 +25,7 @@ def test_runtime_records_pending_patch_approval_and_diff(
         json.dumps(
             {
                 "schema_version": "task.v1",
-                "task_id": "phase4-patch",
+                "task_id": "patch-approval",
                 "title": "Refactor",
                 "intent": "Refactor add_numbers",
                 "target_paths": ["fixture.py"],
@@ -36,7 +36,7 @@ def test_runtime_records_pending_patch_approval_and_diff(
         encoding="utf-8",
     )
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "phase4-run")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-patch-approval")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T13:00:00Z")
 
     summary = HarnessRuntime(tmp_path).run_task(task_path)
@@ -45,7 +45,7 @@ def test_runtime_records_pending_patch_approval_and_diff(
     assert len(summary.approvals) == 1
     assert target.read_text(encoding="utf-8") == original
 
-    run_dir = tmp_path / ".agent-harness" / "runs" / "phase4-run"
+    run_dir = tmp_path / ".agent-harness" / "runs" / "run-patch-approval"
     action_id = summary.approvals[0]
     approval = json.loads(
         (run_dir / "approvals" / f"{action_id}.json").read_text(encoding="utf-8")
@@ -58,7 +58,7 @@ def test_runtime_records_pending_patch_approval_and_diff(
         for line in (run_dir / "events.jsonl").read_text(encoding="utf-8").splitlines()
     ]
 
-    assert approval["run_id"] == "phase4-run"
+    assert approval["run_id"] == "run-patch-approval"
     assert approval["status"] == "pending"
     assert action["observation"]["status"] == "pending_approval"
     assert action["observation"]["output"]["path"] == "fixture.py"
@@ -84,7 +84,7 @@ def test_approve_action_rejects_tampered_action_before_mutation(
         json.dumps(
             {
                 "schema_version": "task.v1",
-                "task_id": "phase4-approve",
+                "task_id": "tampered-approval",
                 "title": "Refactor",
                 "intent": "Refactor add_numbers",
                 "target_paths": ["fixture.py"],
@@ -95,13 +95,13 @@ def test_approve_action_rejects_tampered_action_before_mutation(
         encoding="utf-8",
     )
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "phase4-approve-run")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-tampered-approval")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T13:15:00Z")
 
     summary = HarnessRuntime(tmp_path).run_task(task_path)
     assert summary.status == "paused"
 
-    run_dir = tmp_path / ".agent-harness" / "runs" / "phase4-approve-run"
+    run_dir = tmp_path / ".agent-harness" / "runs" / "run-tampered-approval"
     action_id = summary.approvals[0]
     action_path = run_dir / "actions" / f"{action_id}.json"
     action = json.loads(action_path.read_text(encoding="utf-8"))
@@ -109,7 +109,7 @@ def test_approve_action_rejects_tampered_action_before_mutation(
     action_path.write_text(json.dumps(action, indent=2), encoding="utf-8")
 
     with pytest.raises(ValueError, match="approval binding does not match action"):
-        approve_action(tmp_path, "phase4-approve-run", action_id, "approve", actor="reviewer")
+        approve_action(tmp_path, "run-tampered-approval", action_id, "approve", actor="reviewer")
 
     assert target.read_text(encoding="utf-8") == original
 
@@ -134,7 +134,7 @@ def test_run_tests_denies_non_allow_listed_command(tmp_path: Path) -> None:
     call = ToolCall(
         action_id="run-tests-1",
         tool_name="run_tests",
-        arguments={"command": ["python", "-m", "pytest", "tests", "-k", "phase4"]},
+        arguments={"command": ["python", "-m", "pytest", "tests", "-k", "tool_approval"]},
         reason="run targeted tests",
     )
 

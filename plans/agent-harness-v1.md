@@ -56,7 +56,7 @@ Durable decisions that apply across all phases:
 **Implementation status**
 
 - Implemented on 2026-04-26 in the current working tree.
-- Coverage: `tests/test_v1_phase0_provider_profiles.py`
+- Coverage: `tests/test_provider_profiles.py`
 - Main surfaces: `config.v2`, `task.v2`, `run --provider`, recorded
   `provider.json`, and `inspect run` provider metadata.
 
@@ -103,7 +103,7 @@ existing V0 runtime without adding real provider calls yet.
 **Implementation status**
 
 - Implemented on 2026-04-26 in the current working tree.
-- Coverage: `tests/test_v1_phase1_provider_approval.py` and provider-use
+- Coverage: `tests/test_provider_approval.py` and provider-use
   assertions in `tests/test_policy.py`
 - Main surfaces: trust-zone policy evaluation, pending `provider_use`
   approvals before model execution, approval binding to selected provider
@@ -153,7 +153,7 @@ the provider gateway, while keeping the transport interface small.
 **Implementation status**
 
 - Implemented on 2026-04-26 in the current working tree.
-- Coverage: `tests/test_v1_phase2_provider_input.py`
+- Coverage: `tests/test_provider_input.py`
 - Main surfaces: richer V1 sensitivity classes, default provider-input policy
   matrix, `provider_input.json` artifacts, separate `provider_input`
   approvals, deny-only narrowing via task specs and CLI flags, and inspectable
@@ -208,7 +208,7 @@ evidence.
 **Implementation status**
 
 - Implemented on 2026-04-26 in the current working tree.
-- Coverage: `tests/test_v1_phase3_provider_gateway.py`
+- Coverage: `tests/test_provider_gateway.py`
 - Main surfaces: shared `ProviderGateway`, recorded `provider_calls.json`
   artifacts and `provider_call_recorded` events, recorded-fixture
   `openai_compatible` and `anthropic` transports, env-var resolution for
@@ -261,8 +261,8 @@ contract coverage, and opt-in live smoke hooks behind the shared gateway.
 **Implementation status**
 
 - Implemented on 2026-04-26 in the current working tree.
-- Coverage: `tests/test_v1_phase4_hybrid_retrieval.py` and updated retrieval
-  regression coverage in `tests/test_phase5_context_retrieval.py`
+- Coverage: `tests/test_hybrid_retrieval.py` and updated retrieval
+  regression coverage in `tests/test_context_retrieval.py`
 - Main surfaces: hybrid lexical+dense retrieval coordination,
   `context_manifest.v2` included and rejected items, local dense-retrieval
   metadata, and provider-input records that reference manifest items.
@@ -314,7 +314,7 @@ policy-filtered, inspectable artifact rather than an internal helper detail.
 **Implementation status**
 
 - Implemented on 2026-04-26 in the current working tree.
-- Coverage: `tests/test_v1_phase5_template_registry.py` and updated template
+- Coverage: `tests/test_template_registry.py` and updated template
   CLI assertions in `tests/test_cli.py`
 - Main surfaces: packaged SQLite-backed template registry metadata, richer
   `template list/show` output, approval-bound `template apply` runs, and

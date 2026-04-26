@@ -1,12 +1,12 @@
 # Roadmap
 
-## V0
+## Current Capabilities
 
-V0 demonstrates a controlled local software-engineering workflow using a
+Agent Harness currently provides a controlled local software-engineering workflow using a
 deterministic mock agent, policy-gated tools, explicit context manifests,
 approval binding, audit logs, evals, and reproducible artifacts.
 
-## V1
+## Next Priorities
 
 - Add `git_commit` for exact approved files only.
 - Add an OpenAI-compatible provider adapter behind explicit network approval.
@@ -15,7 +15,7 @@ approval binding, audit logs, evals, and reproducible artifacts.
 - Add richer benchmark adapters.
 - Tighten scanner gates beyond critical findings.
 
-## V2
+## Later Possibilities
 
 - Add a web API.
 - Add an approval and inspection UI.

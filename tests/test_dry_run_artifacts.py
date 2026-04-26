@@ -24,7 +24,7 @@ def test_cli_dry_run_creates_inspectable_run_artifacts(tmp_path: Path) -> None:
         json.dumps(
             {
                 "schema_version": "task.v1",
-                "task_id": "phase0-walking-skeleton",
+                "task_id": "dry-run-artifacts",
                 "title": "Inspect target",
                 "intent": "Inspect the target without changing files.",
                 "target_paths": ["sample.py"],
@@ -35,7 +35,7 @@ def test_cli_dry_run_creates_inspectable_run_artifacts(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     env = os.environ.copy()
-    env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-phase0"
+    env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-dry-run-artifacts"
     env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-25T12:00:00Z"
 
     run = subprocess.run(
@@ -49,12 +49,12 @@ def test_cli_dry_run_creates_inspectable_run_artifacts(tmp_path: Path) -> None:
 
     assert run.returncode == 0, run.stderr
     summary = json.loads(run.stdout)
-    assert summary["run_id"] == "run-phase0"
+    assert summary["run_id"] == "run-dry-run-artifacts"
     assert summary["status"] == "dry_run"
 
     runs_dir = tmp_path / ".agent-harness" / "runs"
-    assert [path.name for path in runs_dir.iterdir()] == ["run-phase0"]
-    run_dir = tmp_path / ".agent-harness" / "runs" / "run-phase0"
+    assert [path.name for path in runs_dir.iterdir()] == ["run-dry-run-artifacts"]
+    run_dir = tmp_path / ".agent-harness" / "runs" / "run-dry-run-artifacts"
     checkpoint_index = json.loads((run_dir / "checkpoint-index.json").read_text(encoding="utf-8"))
     checkpoint_path = run_dir / "checkpoints" / f"{checkpoint_index['latest']}.json"
     required_artifacts = {
@@ -70,7 +70,7 @@ def test_cli_dry_run_creates_inspectable_run_artifacts(tmp_path: Path) -> None:
         assert path.exists(), path
 
     inspect = subprocess.run(
-        [sys.executable, "-m", "agent_harness", "inspect", "run", "run-phase0"],
+        [sys.executable, "-m", "agent_harness", "inspect", "run", "run-dry-run-artifacts"],
         cwd=tmp_path,
         env=env,
         capture_output=True,
@@ -80,7 +80,7 @@ def test_cli_dry_run_creates_inspectable_run_artifacts(tmp_path: Path) -> None:
 
     assert inspect.returncode == 0, inspect.stderr
     inspected = json.loads(inspect.stdout)
-    assert inspected["summary"]["run_id"] == "run-phase0"
+    assert inspected["summary"]["run_id"] == "run-dry-run-artifacts"
     event_types = [event["type"] for event in inspected["events"]]
     assert "run_started" in event_types
     assert "context_manifest_created" in event_types
@@ -98,7 +98,7 @@ def test_cli_dry_run_writes_artifact_index(tmp_path: Path) -> None:
         json.dumps(
             {
                 "schema_version": "task.v1",
-                "task_id": "phase0-artifact-index",
+                "task_id": "artifact-index",
                 "title": "Inspect target",
                 "intent": "Inspect the target without changing files.",
                 "target_paths": ["sample.py"],
@@ -148,7 +148,7 @@ def test_cli_dry_run_records_context_policy_evidence(tmp_path: Path) -> None:
         json.dumps(
             {
                 "schema_version": "task.v1",
-                "task_id": "phase0-policy-evidence",
+                "task_id": "context-policy-evidence",
                 "title": "Inspect target",
                 "intent": "Inspect the target without changing files.",
                 "target_paths": ["sample.py"],
@@ -216,7 +216,7 @@ def test_inspect_run_returns_stored_artifact_index(tmp_path: Path) -> None:
         json.dumps(
             {
                 "schema_version": "task.v1",
-                "task_id": "phase0-inspect-artifacts",
+                "task_id": "inspect-artifacts",
                 "title": "Inspect target",
                 "intent": "Inspect the target without changing files.",
                 "target_paths": ["sample.py"],

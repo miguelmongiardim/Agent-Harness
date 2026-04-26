@@ -1,6 +1,6 @@
 # Security Model
 
-Agent Harness V0 is enterprise-inspired, not enterprise-ready.
+Agent Harness is enterprise-inspired, not enterprise-ready.
 
 The security model is built around explicit policy mediation:
 
@@ -15,6 +15,6 @@ The security model is built around explicit policy mediation:
   effect hash.
 - Policy is re-checked immediately before an approved action executes.
 
-V0 intentionally excludes production identity, remote provider controls,
-centralized secrets management, hardened sandbox isolation, enterprise DLP, and
-multi-tenant guarantees. Those belong in later versions.
+The current implementation intentionally excludes production identity, remote
+provider controls, centralized secrets management, hardened sandbox isolation,
+enterprise DLP, and multi-tenant guarantees. Those belong in future roadmap work.

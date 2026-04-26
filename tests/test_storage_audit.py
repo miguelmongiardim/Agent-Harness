@@ -50,7 +50,7 @@ def _run_fixed_seed_dry_run(root: Path, task_path: Path, run_id: str) -> dict[st
 
 def test_sqlite_audit_rows_match_jsonl_events_and_summary(tmp_path: Path) -> None:
     seed_project(tmp_path)
-    task_path = _write_read_only_task(tmp_path, "phase2-audit-consistency")
+    task_path = _write_read_only_task(tmp_path, "audit-consistency")
 
     _run_fixed_seed_dry_run(tmp_path, task_path, "run-audit-consistency")
     run_dir = tmp_path / ".agent-harness" / "runs" / "run-audit-consistency"
@@ -79,7 +79,7 @@ def test_sqlite_audit_rows_match_jsonl_events_and_summary(tmp_path: Path) -> Non
 
     assert run_row is not None
     task_id, status, summary_path, events_count = run_row
-    assert task_id == "phase2-audit-consistency"
+    assert task_id == "audit-consistency"
     assert status == "dry_run"
     stored_summary_path = Path(summary_path)
     if not stored_summary_path.is_absolute():
@@ -106,8 +106,8 @@ def test_fixed_seed_dry_runs_write_stable_artifact_hashes(tmp_path: Path) -> Non
     second_root.mkdir()
     seed_project(first_root)
     seed_project(second_root)
-    first_task = _write_read_only_task(first_root, "phase2-reproducible")
-    second_task = _write_read_only_task(second_root, "phase2-reproducible")
+    first_task = _write_read_only_task(first_root, "reproducible-audit")
+    second_task = _write_read_only_task(second_root, "reproducible-audit")
 
     first_summary = _run_fixed_seed_dry_run(first_root, first_task, "run-reproducible")
     second_summary = _run_fixed_seed_dry_run(second_root, second_task, "run-reproducible")
@@ -150,7 +150,7 @@ def test_reusing_fixed_run_id_is_rejected_without_changing_existing_audit_log(
     tmp_path: Path,
 ) -> None:
     seed_project(tmp_path)
-    task_path = _write_read_only_task(tmp_path, "phase2-duplicate-run")
+    task_path = _write_read_only_task(tmp_path, "duplicate-run")
 
     _run_fixed_seed_dry_run(tmp_path, task_path, "run-duplicate")
     events_path = tmp_path / ".agent-harness" / "runs" / "run-duplicate" / "events.jsonl"
@@ -175,7 +175,7 @@ def test_reusing_fixed_run_id_is_rejected_without_changing_existing_audit_log(
 
 def test_checkpoint_hash_includes_prior_event_evidence(tmp_path: Path) -> None:
     seed_project(tmp_path)
-    task_path = _write_read_only_task(tmp_path, "phase2-checkpoint-evidence")
+    task_path = _write_read_only_task(tmp_path, "checkpoint-evidence")
 
     _run_fixed_seed_dry_run(tmp_path, task_path, "run-checkpoint-evidence")
     run_dir = tmp_path / ".agent-harness" / "runs" / "run-checkpoint-evidence"

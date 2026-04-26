@@ -1,6 +1,6 @@
 # Context Packs And Retrieval
 
-V0 context handling favors inspectability over recall volume.
+Current context handling favors inspectability over recall volume.
 
 Context manifests record:
 
