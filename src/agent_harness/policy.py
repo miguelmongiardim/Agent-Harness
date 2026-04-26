@@ -7,7 +7,13 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from agent_harness.config import load_model
-from agent_harness.schemas import PolicyDecision, PolicyProfile, TaskSpec, ToolCall
+from agent_harness.schemas import (
+    PolicyDecision,
+    PolicyProfile,
+    RunProviderRecord,
+    TaskSpec,
+    ToolCall,
+)
 from agent_harness.utils import normalize_relative_path, sha256_json, stable_id
 
 
@@ -100,6 +106,36 @@ class PolicyEngine:
 
         approval_required = call.tool_name in self.profile.approval_required_tools
         return self._decision(True, approval_required, "tool call allowed", matched)
+
+    def evaluate_provider_use(
+        self, provider: RunProviderRecord, checkpoint_hash: str
+    ) -> PolicyDecision:
+        matched = [
+            f"provider:{provider.provider_profile_id}",
+            f"trust_zone:{provider.trust_zone}",
+            f"checkpoint:{checkpoint_hash[:12]}",
+            f"network_boundary:{str(provider.network).lower()}",
+        ]
+        trust_action = self.profile.provider_trust_policy.get(provider.trust_zone)
+        if trust_action is None:
+            return self._decision(False, False, "trust zone not allowed by policy", matched)
+        if trust_action == "deny":
+            return self._decision(False, False, "provider use denied by trust-zone policy", matched)
+
+        approval_required = trust_action == "approval_required"
+        reason = "provider use allowed"
+        if provider.trust_zone == "local_process" and provider.network:
+            approval_required = True
+            reason = "local_process with network boundary requires approval"
+        elif approval_required:
+            reason = f"{provider.trust_zone} requires approval"
+
+        if provider.requires_approval:
+            approval_required = True
+            matched.append("provider:requires_approval")
+            reason = "provider profile requires approval"
+
+        return self._decision(True, approval_required, reason, matched)
 
     def classify_path(self, path: str) -> str:
         relative = path.replace("\\", "/")

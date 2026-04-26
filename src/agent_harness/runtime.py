@@ -10,6 +10,9 @@ from agent_harness.retrieval import LexicalRetriever, build_context_manifest
 from agent_harness.schemas import (
     ApprovalRecord,
     Checkpoint,
+    ContextManifest,
+    ProviderProfileConfig,
+    RunProviderRecord,
     RunSummary,
     TaskSpec,
     ToolCall,
@@ -17,7 +20,13 @@ from agent_harness.schemas import (
 )
 from agent_harness.storage import RunStore, make_event
 from agent_harness.tools import ToolExecutor
-from agent_harness.utils import hash_file, new_run_id, now_utc, sha256_json, stable_id
+from agent_harness.utils import (
+    hash_file,
+    new_run_id,
+    now_utc,
+    sha256_json,
+    stable_id,
+)
 
 
 class HarnessRuntime:
@@ -30,6 +39,7 @@ class HarnessRuntime:
         self,
         task_path: Path,
         profile_name: str | None = None,
+        provider_name: str | None = None,
         auto_approve: bool = False,
         dry_run: bool = False,
     ) -> RunSummary:
@@ -103,105 +113,83 @@ class HarnessRuntime:
             )
         )
 
-        executor = ToolExecutor(self.project_root, policy)
-        model = DeterministicMockModel()
-        observations: list[ToolObservation] = []
-        status = "dry_run" if dry_run else "completed"
+        provider = self._resolve_provider(task, provider_name)
+        provider_path = None
+        if provider is not None:
+            provider_path = store.write_model("provider.json", provider)
+            store.append_event(
+                make_event(
+                    run_id,
+                    "provider_selected",
+                    {"provider": provider.model_dump(mode="json")},
+                )
+            )
+
         approvals: list[str] = []
-
-        for call in model.initial_actions(task, manifest):
-            store.append_event(
-                make_event(run_id, "model_action", {"call": call.model_dump(mode="json")})
-            )
-            observation, decision = executor.execute(
-                call, task, checkpoint_hash, run_id=run_id, dry_run=False
-            )
-            observations.append(observation)
+        status = "dry_run" if dry_run else "completed"
+        should_execute_model = True
+        if provider is not None:
+            provider_decision = policy.evaluate_provider_use(provider, checkpoint_hash)
             store.append_event(
                 make_event(
                     run_id,
                     "policy_decision",
-                    {"action_id": call.action_id, "decision": decision.model_dump(mode="json")},
-                )
-            )
-            store.append_event(
-                make_event(
-                    run_id,
-                    "tool_observation",
-                    {"observation": observation.model_dump(mode="json")},
-                )
-            )
-
-        for call in model.next_actions(task, manifest, observations):
-            store.append_event(
-                make_event(run_id, "model_action", {"call": call.model_dump(mode="json")})
-            )
-            approval = None
-            if call.tool_name == "patch_file":
-                proposed_hash = executor.proposed_effect_hash(call)
-                approval = ApprovalRecord(
-                    approval_id=stable_id("approval", run_id, call.action_id),
-                    run_id=run_id,
-                    action_id=call.action_id,
-                    tool_name=call.tool_name,
-                    arguments_hash=call.arguments_hash(),
-                    policy_profile=policy.profile.name,
-                    checkpoint_hash=checkpoint_hash,
-                    proposed_effect_hash=proposed_hash,
-                    status="approved" if auto_approve and not dry_run else "pending",
-                    decided_at=now_utc() if auto_approve and not dry_run else None,
-                    actor="auto-approve" if auto_approve and not dry_run else None,
-                )
-            observation, decision = executor.execute(
-                call,
-                task,
-                checkpoint_hash,
-                run_id=run_id,
-                approval=approval if approval and approval.status == "approved" else None,
-                dry_run=False,
-            )
-            store.append_event(
-                make_event(
-                    run_id,
-                    "policy_decision",
-                    {"action_id": call.action_id, "decision": decision.model_dump(mode="json")},
-                )
-            )
-            if call.tool_name == "patch_file":
-                store.write_action(
-                    call.action_id,
                     {
-                        "call": call.model_dump(mode="json"),
-                        "checkpoint_hash": checkpoint_hash,
-                        "policy_profile": policy.profile.name,
-                        "proposed_effect_hash": executor.proposed_effect_hash(call),
-                        "observation": observation.model_dump(mode="json"),
+                        "operation": "provider_use",
+                        "provider_profile_id": provider.provider_profile_id,
+                        "decision": provider_decision.model_dump(mode="json"),
                     },
                 )
-                assert approval is not None
+            )
+            if not provider_decision.allowed:
+                status = "failed"
+                should_execute_model = False
+            elif provider_decision.approval_required:
+                approval = _provider_approval_record(
+                    run_id,
+                    provider,
+                    checkpoint_hash,
+                    policy.profile.name,
+                    auto_approve=auto_approve,
+                    dry_run=dry_run,
+                )
+                store.write_action(
+                    approval.action_id,
+                    {
+                        "kind": "provider_use",
+                        "provider": provider.model_dump(mode="json"),
+                        "checkpoint_hash": checkpoint_hash,
+                        "policy_profile": policy.profile.name,
+                    },
+                )
                 store.write_approval(approval)
                 approvals.append(approval.action_id)
                 store.append_event(
                     make_event(
                         run_id,
                         "approval_recorded",
-                        {"approval": approval.model_dump(mode="json")},
+                        {
+                            "approval": approval.model_dump(mode="json"),
+                            "operation": "provider_use",
+                        },
                     )
                 )
-            store.append_event(
-                make_event(
-                    run_id,
-                    "tool_observation",
-                    {"observation": observation.model_dump(mode="json")},
-                )
+                if approval.status != "approved":
+                    status = "dry_run" if dry_run else "paused"
+                    should_execute_model = False
+
+        if should_execute_model:
+            status, model_approvals = _execute_model_actions(
+                self.project_root,
+                store,
+                task,
+                policy,
+                manifest,
+                checkpoint_hash,
+                auto_approve=auto_approve,
+                dry_run=dry_run,
             )
-            observations.append(observation)
-            if observation.status == "pending_approval":
-                status = "dry_run" if dry_run else "paused"
-                break
-            if not observation.success:
-                status = "failed"
-                break
+            approvals.extend(model_approvals)
 
         artifact_paths = {
             "run_dir": store.run_dir,
@@ -215,6 +203,8 @@ class HarnessRuntime:
             "summary": store.run_dir / "summary.json",
             "artifact_index": store.run_dir / "artifact-index.json",
         }
+        if provider_path is not None:
+            artifact_paths["provider"] = provider_path
         artifacts = {
             name: self._project_relative(path) for name, path in artifact_paths.items()
         }
@@ -254,6 +244,32 @@ class HarnessRuntime:
     def _project_relative(self, path: Path) -> str:
         return path.relative_to(self.project_root).as_posix()
 
+    def _resolve_provider(
+        self, task: TaskSpec, provider_name: str | None = None
+    ) -> RunProviderRecord | None:
+        provider_profile_id = (
+            provider_name or task.provider_profile or self.config.default_provider_profile
+        )
+        if provider_profile_id is None:
+            return None
+        configured = self._configured_provider(provider_profile_id)
+        return RunProviderRecord(
+            provider_profile_id=configured.provider_profile_id,
+            transport=configured.transport,
+            trust_zone=configured.trust_zone,
+            model=configured.model,
+            endpoint_env=configured.endpoint_env,
+            endpoint_identity=f"env:{configured.endpoint_env}",
+            network=configured.network,
+            requires_approval=configured.requires_approval,
+        )
+
+    def _configured_provider(self, provider_profile_id: str) -> ProviderProfileConfig:
+        for provider in self.config.provider_profiles:
+            if provider.provider_profile_id == provider_profile_id:
+                return provider
+        raise ValueError(f"provider profile not found: {provider_profile_id}")
+
 
 def approve_action(
     project_root: Path,
@@ -284,11 +300,35 @@ def approve_action(
         _finalize_resumed_run(store, "failed")
         return updated
 
+    action_record = store.read_action(action_id)
     task = load_model(store.run_dir / "task.json", TaskSpec)
     profile = load_policy(project_root, updated.policy_profile)
     policy = PolicyEngine(project_root, profile)
+    if action_record.get("kind") == "provider_use":
+        provider = RunProviderRecord.model_validate(action_record["provider"])
+        _validate_provider_approval(
+            updated,
+            provider,
+            checkpoint_hash=str(action_record["checkpoint_hash"]),
+            run_id=run_id,
+            policy_profile=policy.profile.name,
+        )
+        manifest = load_model(store.run_dir / "context_manifest.json", ContextManifest)
+        status, new_approvals = _execute_model_actions(
+            project_root,
+            store,
+            task,
+            policy,
+            manifest,
+            checkpoint_hash=str(action_record["checkpoint_hash"]),
+            auto_approve=False,
+            dry_run=False,
+        )
+        store.append_event(make_event(run_id, "run_finished", {"status": status}))
+        _update_resumed_summary(store, status, new_approvals)
+        return updated
+
     executor = ToolExecutor(project_root, policy)
-    action_record = store.read_action(action_id)
     call = ToolCall.model_validate_json(json.dumps(action_record["call"]))
     observation, policy_decision = executor.execute(
         call,
@@ -320,13 +360,214 @@ def approve_action(
 
 def _finalize_resumed_run(store: RunStore, final_status: str) -> None:
     store.append_event(make_event(store.run_id, "run_finished", {"status": final_status}))
+    _update_resumed_summary(store, final_status)
+
+
+def _execute_model_actions(
+    project_root: Path,
+    store: RunStore,
+    task: TaskSpec,
+    policy: PolicyEngine,
+    manifest: ContextManifest,
+    checkpoint_hash: str,
+    auto_approve: bool = False,
+    dry_run: bool = False,
+) -> tuple[str, list[str]]:
+    executor = ToolExecutor(project_root, policy)
+    model = DeterministicMockModel()
+    observations: list[ToolObservation] = []
+    approvals: list[str] = []
+    status = "dry_run" if dry_run else "completed"
+
+    for call in model.initial_actions(task, manifest):
+        store.append_event(
+            make_event(
+                store.run_id,
+                "model_action",
+                {"call": call.model_dump(mode="json")},
+            )
+        )
+        observation, decision = executor.execute(
+            call, task, checkpoint_hash, run_id=store.run_id, dry_run=False
+        )
+        observations.append(observation)
+        store.append_event(
+            make_event(
+                store.run_id,
+                "policy_decision",
+                {"action_id": call.action_id, "decision": decision.model_dump(mode="json")},
+            )
+        )
+        store.append_event(
+            make_event(
+                store.run_id,
+                "tool_observation",
+                {"observation": observation.model_dump(mode="json")},
+            )
+        )
+
+    for call in model.next_actions(task, manifest, observations):
+        store.append_event(
+            make_event(
+                store.run_id,
+                "model_action",
+                {"call": call.model_dump(mode="json")},
+            )
+        )
+        approval = None
+        if call.tool_name == "patch_file":
+            proposed_hash = executor.proposed_effect_hash(call)
+            approval = ApprovalRecord(
+                approval_id=stable_id("approval", store.run_id, call.action_id),
+                run_id=store.run_id,
+                action_id=call.action_id,
+                tool_name=call.tool_name,
+                arguments_hash=call.arguments_hash(),
+                policy_profile=policy.profile.name,
+                checkpoint_hash=checkpoint_hash,
+                proposed_effect_hash=proposed_hash,
+                status="approved" if auto_approve and not dry_run else "pending",
+                decided_at=now_utc() if auto_approve and not dry_run else None,
+                actor="auto-approve" if auto_approve and not dry_run else None,
+            )
+        observation, decision = executor.execute(
+            call,
+            task,
+            checkpoint_hash,
+            run_id=store.run_id,
+            approval=approval if approval and approval.status == "approved" else None,
+            dry_run=False,
+        )
+        store.append_event(
+            make_event(
+                store.run_id,
+                "policy_decision",
+                {"action_id": call.action_id, "decision": decision.model_dump(mode="json")},
+            )
+        )
+        if call.tool_name == "patch_file":
+            store.write_action(
+                call.action_id,
+                {
+                    "call": call.model_dump(mode="json"),
+                    "checkpoint_hash": checkpoint_hash,
+                    "policy_profile": policy.profile.name,
+                    "proposed_effect_hash": executor.proposed_effect_hash(call),
+                    "observation": observation.model_dump(mode="json"),
+                },
+            )
+            assert approval is not None
+            store.write_approval(approval)
+            approvals.append(approval.action_id)
+            store.append_event(
+                make_event(
+                    store.run_id,
+                    "approval_recorded",
+                    {"approval": approval.model_dump(mode="json")},
+                )
+            )
+        store.append_event(
+            make_event(
+                store.run_id,
+                "tool_observation",
+                {"observation": observation.model_dump(mode="json")},
+            )
+        )
+        observations.append(observation)
+        if observation.status == "pending_approval":
+            status = "dry_run" if dry_run else "paused"
+            break
+        if not observation.success:
+            status = "failed"
+            break
+    return status, approvals
+
+
+def _provider_approval_record(
+    run_id: str,
+    provider: RunProviderRecord,
+    checkpoint_hash: str,
+    policy_profile: str,
+    auto_approve: bool = False,
+    dry_run: bool = False,
+) -> ApprovalRecord:
+    provider_payload = provider.model_dump(mode="json")
+    action_id = stable_id("action", run_id, "provider_use", provider_payload, checkpoint_hash)
+    binding_hash = sha256_json(provider_payload)
+    return ApprovalRecord(
+        approval_id=stable_id("approval", run_id, action_id),
+        run_id=run_id,
+        action_id=action_id,
+        tool_name="provider_use",
+        arguments_hash=binding_hash,
+        policy_profile=policy_profile,
+        checkpoint_hash=checkpoint_hash,
+        proposed_effect_hash=binding_hash,
+        status="approved" if auto_approve and not dry_run else "pending",
+        decided_at=now_utc() if auto_approve and not dry_run else None,
+        actor="auto-approve" if auto_approve and not dry_run else None,
+    )
+
+
+def _validate_provider_approval(
+    approval: ApprovalRecord,
+    provider: RunProviderRecord,
+    checkpoint_hash: str,
+    run_id: str,
+    policy_profile: str,
+) -> None:
+    provider_payload = provider.model_dump(mode="json")
+    binding_hash = sha256_json(provider_payload)
+    expected_action_id = stable_id(
+        "action", run_id, "provider_use", provider_payload, checkpoint_hash
+    )
+    expected = {
+        "run_id": run_id,
+        "action_id": expected_action_id,
+        "tool_name": "provider_use",
+        "arguments_hash": binding_hash,
+        "policy_profile": policy_profile,
+        "checkpoint_hash": checkpoint_hash,
+        "proposed_effect_hash": binding_hash,
+    }
+    actual = {
+        "run_id": approval.run_id,
+        "action_id": approval.action_id,
+        "tool_name": approval.tool_name,
+        "arguments_hash": approval.arguments_hash,
+        "policy_profile": approval.policy_profile,
+        "checkpoint_hash": approval.checkpoint_hash,
+        "proposed_effect_hash": approval.proposed_effect_hash,
+    }
+    if actual != expected:
+        raise ValueError("provider approval binding does not match selected provider")
+
+
+def _update_resumed_summary(
+    store: RunStore, final_status: str, new_approvals: list[str] | None = None
+) -> None:
     previous = load_model(store.run_dir / "summary.json", RunSummary)
+    approvals = list(previous.approvals)
+    for action_id in new_approvals or []:
+        if action_id not in approvals:
+            approvals.append(action_id)
     summary = previous.model_copy(
         update={
             "status": final_status,
+            "approvals": approvals,
             "events_count": store.event_count(),
             "ended_at": now_utc(),
-            "message": "run complete" if final_status == "completed" else "run failed",
+            "message": _summary_message_for_status(final_status),
         }
     )
     store.write_summary(summary)
+
+
+def _summary_message_for_status(status: str) -> str:
+    if status == "paused":
+        return "run paused for approval"
+    if status == "dry_run":
+        return "dry run complete"
+    if status == "failed":
+        return "run failed"
+    return "run complete"

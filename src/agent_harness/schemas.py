@@ -1,41 +1,115 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from agent_harness.utils import normalize_relative_path, now_utc, sha256_json
 
 ToolName = Literal["read_file", "search_code", "run_tests", "patch_file", "git_status"]
+ApprovalSubjectName = Literal[
+    "read_file",
+    "search_code",
+    "run_tests",
+    "patch_file",
+    "git_status",
+    "provider_use",
+]
 Sensitivity = Literal["public", "internal", "confidential", "secret"]
 RunStatus = Literal["completed", "paused", "failed", "dry_run"]
+ProviderTransport = Literal["mock", "openai_compatible", "anthropic"]
+TrustZone = Literal["mock", "local_process", "local_endpoint", "private_network", "hosted_provider"]
+ProviderUseRuleAction = Literal["allow", "approval_required", "deny"]
 
 
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, str_strip_whitespace=True)
 
 
+def _validate_env_var_name(value: str) -> str:
+    if not re.fullmatch(r"[A-Z_][A-Z0-9_]*", value):
+        raise ValueError("env var names must match [A-Z_][A-Z0-9_]*")
+    return value
+
+
+class ProviderProfileConfig(StrictModel):
+    provider_profile_id: str = Field(min_length=1)
+    transport: ProviderTransport
+    trust_zone: TrustZone
+    model: str = Field(min_length=1)
+    endpoint_env: str
+    network: bool
+    requires_approval: bool = False
+    api_key_env: str | None = None
+
+    @field_validator("endpoint_env")
+    @classmethod
+    def validate_endpoint_env(cls, value: str) -> str:
+        return _validate_env_var_name(value)
+
+    @field_validator("api_key_env")
+    @classmethod
+    def validate_api_key_env(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        return _validate_env_var_name(value)
+
+
+class RunProviderRecord(StrictModel):
+    schema_version: Literal["provider_record.v1"] = "provider_record.v1"
+    provider_profile_id: str
+    transport: ProviderTransport
+    trust_zone: TrustZone
+    model: str
+    endpoint_env: str
+    endpoint_identity: str
+    network: bool
+    requires_approval: bool = False
+
+
 class HarnessConfig(StrictModel):
-    schema_version: Literal["config.v1"]
+    schema_version: Literal["config.v1", "config.v2"]
     project_name: str
     artifact_root: str = ".agent-harness"
     default_policy: str = "default"
     retrieval_backend: Literal["fake", "lexical", "qdrant"] = "lexical"
     template_catalog: str = "bundled"
+    default_provider_profile: str | None = None
+    provider_profiles: list[ProviderProfileConfig] = Field(default_factory=list)
 
     @field_validator("artifact_root")
     @classmethod
     def validate_artifact_root(cls, value: str) -> str:
         return normalize_relative_path(value)
 
+    @model_validator(mode="after")
+    def validate_provider_settings(self) -> HarnessConfig:
+        if self.schema_version == "config.v1":
+            if self.default_provider_profile is not None or self.provider_profiles:
+                raise ValueError("config.v1 does not support provider profiles")
+            return self
+        configured = [profile.provider_profile_id for profile in self.provider_profiles]
+        if len(configured) != len(set(configured)):
+            raise ValueError("provider_profile_id values must be unique")
+        if (
+            self.default_provider_profile is not None
+            and self.default_provider_profile not in configured
+        ):
+            raise ValueError(
+                "default_provider_profile must reference a configured provider profile"
+            )
+        return self
+
 
 class TaskSpec(StrictModel):
-    schema_version: Literal["task.v1"]
+    schema_version: Literal["task.v1", "task.v2"]
     task_id: str = Field(min_length=1)
     title: str = Field(min_length=1)
     intent: str = Field(min_length=1)
     policy_profile: str = "default"
+    provider_profile: str | None = None
     target_paths: list[str] = Field(default_factory=list)
     allowed_tools: list[ToolName] | None = None
     context_queries: list[str] = Field(default_factory=list)
@@ -55,6 +129,12 @@ class TaskSpec(StrictModel):
                 raise ValueError("test commands must be non-empty argv arrays")
         return commands
 
+    @model_validator(mode="after")
+    def validate_provider_profile_usage(self) -> TaskSpec:
+        if self.schema_version == "task.v1" and self.provider_profile is not None:
+            raise ValueError("task.v1 does not support provider_profile")
+        return self
+
 
 class SensitivityRule(StrictModel):
     pattern: str
@@ -72,6 +152,7 @@ class PolicyProfile(StrictModel):
     approval_required_tools: list[ToolName] = Field(default_factory=list)
     allowed_test_commands: list[list[str]] = Field(default_factory=list)
     allow_network: bool = False
+    provider_trust_policy: dict[TrustZone, ProviderUseRuleAction] = Field(default_factory=dict)
     max_context_bytes: int = Field(default=20000, ge=1024)
     sensitivity_rules: list[SensitivityRule] = Field(default_factory=list)
     redaction_patterns: list[str] = Field(default_factory=list)
@@ -176,7 +257,7 @@ class ApprovalRecord(StrictModel):
     approval_id: str
     run_id: str
     action_id: str
-    tool_name: ToolName
+    tool_name: ApprovalSubjectName
     arguments_hash: str
     policy_profile: str
     checkpoint_hash: str

@@ -89,6 +89,7 @@ def build_parser() -> argparse.ArgumentParser:
     run = sub.add_parser("run")
     run.add_argument("task_path")
     run.add_argument("--profile")
+    run.add_argument("--provider")
     run.add_argument("--auto-approve", action="store_true")
     run.add_argument("--dry-run", action="store_true")
     run.set_defaults(func=cmd_run)
@@ -194,6 +195,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     summary = HarnessRuntime(Path.cwd()).run_task(
         Path(args.task_path),
         profile_name=args.profile,
+        provider_name=args.provider,
         auto_approve=args.auto_approve,
         dry_run=args.dry_run,
     )
@@ -217,15 +219,15 @@ def cmd_approve(args: argparse.Namespace) -> int:
 def cmd_inspect_run(args: argparse.Namespace) -> int:
     config = load_config(Path.cwd())
     store = RunStore.open_existing(Path.cwd() / config.artifact_root, args.run_id)
+    payload = {
+        "events": store.events(),
+        "summary": store.read_data("summary.json"),
+        "artifact_index": store.read_data("artifact-index.json"),
+    }
+    if (store.run_dir / "provider.json").exists():
+        payload["provider"] = store.read_data("provider.json")
     print(
-        json.dumps(
-            {
-                "events": store.events(),
-                "summary": store.read_data("summary.json"),
-                "artifact_index": store.read_data("artifact-index.json"),
-            },
-            indent=2,
-        )
+        json.dumps(payload, indent=2)
     )
     return 0
 

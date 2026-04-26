@@ -24,6 +24,13 @@ DEFAULT_POLICY = {
         ["python", "-m", "compileall", "tests"],
     ],
     "allow_network": False,
+    "provider_trust_policy": {
+        "mock": "allow",
+        "local_process": "allow",
+        "local_endpoint": "approval_required",
+        "private_network": "approval_required",
+        "hosted_provider": "approval_required",
+    },
     "max_context_bytes": 20000,
     "sensitivity_rules": [
         {"pattern": "**/.env", "classification": "secret"},
