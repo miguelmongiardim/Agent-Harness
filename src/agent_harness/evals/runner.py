@@ -44,6 +44,7 @@ ADVANCED_EVAL_RUNNERS = [
     "_run_reproducible_replay_eval",
     "_run_benchmark_sample_pack_eval",
     "_run_provider_audit_demo_eval",
+    "_run_provider_core_deterministic_eval",
 ]
 
 
@@ -636,6 +637,166 @@ def _run_provider_audit_demo_eval(project_root: Path) -> EvalResult:
     )
 
 
+def _run_provider_core_deterministic_eval(project_root: Path) -> EvalResult:
+    eval_id = "provider-core-deterministic-boundaries"
+    title = "Provider core deterministic paths prove safety boundaries"
+    sandbox = _prepare_eval_workspace(project_root, eval_id)
+    artifacts: dict[str, str] = {}
+
+    mock_summary, mock_events = _provider_core_run(
+        sandbox,
+        "mock",
+        _mock_provider_config(),
+        {"fixtures/allowed.py": "def identity(value):\n    return value\n"},
+        _provider_core_task("mock-provider-core", ["fixtures/allowed.py"]),
+    )
+    artifacts["mock_summary"] = _artifact_link(
+        project_root, sandbox / "mock" / mock_summary.artifacts["summary"]
+    )
+
+    recorded_summary, recorded_events = _provider_core_run(
+        sandbox,
+        "recorded",
+        _recorded_provider_config("recorded://openai_compatible/read_only"),
+        {"fixtures/allowed.py": "def identity(value):\n    return value\n"},
+        _provider_core_task("recorded-provider-core", ["fixtures/allowed.py"]),
+        env={
+            "AGENT_HARNESS_PROVIDER_CORE_ENDPOINT": "recorded://openai_compatible/read_only",
+            "AGENT_HARNESS_PROVIDER_CORE_API_KEY": "provider-core-secret",
+        },
+    )
+    recorded_run_dir = sandbox / "recorded" / recorded_summary.artifacts["run_dir"]
+    recorded_calls = cast(
+        dict[str, Any],
+        load_json(recorded_run_dir / "provider_calls.json"),
+    )
+    artifacts["recorded_provider_calls"] = _artifact_link(
+        project_root, recorded_run_dir / "provider_calls.json"
+    )
+    artifacts["recorded_artifact_index"] = _artifact_link(
+        project_root, recorded_run_dir / "artifact-index.json"
+    )
+
+    invalid_summary, invalid_events = _provider_core_run(
+        sandbox,
+        "invalid",
+        _recorded_provider_config("recorded://openai_compatible/invalid_envelope"),
+        {"fixtures/allowed.py": "def identity(value):\n    return value\n"},
+        _provider_core_task("invalid-provider-core", ["fixtures/allowed.py"]),
+        env={
+            "AGENT_HARNESS_PROVIDER_CORE_ENDPOINT": "recorded://openai_compatible/invalid_envelope",
+            "AGENT_HARNESS_PROVIDER_CORE_API_KEY": "provider-core-secret",
+        },
+    )
+    invalid_run_dir = sandbox / "invalid" / invalid_summary.artifacts["run_dir"]
+    artifacts["invalid_provider_calls"] = _artifact_link(
+        project_root, invalid_run_dir / "provider_calls.json"
+    )
+
+    unauthorized_summary, unauthorized_events = _provider_core_run(
+        sandbox,
+        "unauthorized",
+        _recorded_provider_config("recorded://openai_compatible/read_only"),
+        {"fixtures/refactor.py": "def add_numbers(a, b):\n    return a + b\n"},
+        _provider_core_task(
+            "unauthorized-provider-action",
+            ["fixtures/refactor.py"],
+            intent="Refactor the target while preserving behavior.",
+            allowed_tools=["read_file"],
+        ),
+        env={
+            "AGENT_HARNESS_PROVIDER_CORE_ENDPOINT": "recorded://openai_compatible/read_only",
+            "AGENT_HARNESS_PROVIDER_CORE_API_KEY": "provider-core-secret",
+        },
+    )
+
+    hard_deny_summary, hard_deny_events = _provider_core_run(
+        sandbox,
+        "hard-deny",
+        _mock_provider_config(),
+        {"vault/customer.md": "# Customer\n\naccount data\n"},
+        _provider_core_task("provider-hard-deny", ["vault/customer.md"]),
+        sensitivity_rules=[{"pattern": "vault/customer.md", "classification": "customer"}],
+    )
+    hard_deny_run_dir = sandbox / "hard-deny" / hard_deny_summary.artifacts["run_dir"]
+    artifacts["hard_deny_provider_input"] = _artifact_link(
+        project_root, hard_deny_run_dir / "provider_input.json"
+    )
+    hard_deny_input = cast(dict[str, Any], load_json(hard_deny_run_dir / "provider_input.json"))
+
+    drift_blocked = _provider_core_approval_drift_blocks(sandbox)
+
+    recorded_call = _first_provider_call(recorded_calls)
+    invalid_call = _first_provider_call(load_json(invalid_run_dir / "provider_calls.json"))
+    invariants = [
+        EvalInvariant(
+            name="mock_provider_path_validated",
+            passed=mock_summary.status == "completed"
+            and any(event.get("type") == "provider_call_recorded" for event in mock_events),
+            message=(
+                "mock provider path produced provider-call evidence"
+                if mock_summary.status == "completed"
+                else f"mock provider path status was {mock_summary.status}"
+            ),
+        ),
+        EvalInvariant(
+            name="recorded_provider_artifacts_link_redaction",
+            passed=(
+                recorded_summary.status == "completed"
+                and bool(recorded_call.get("provider_input_hash"))
+                and bool(recorded_call.get("action_envelope_hash"))
+                and bool(recorded_call.get("checkpoint_hash"))
+                and _artifact_exists(recorded_run_dir, recorded_call, "redacted_prompt_artifact")
+                and _artifact_exists(recorded_run_dir, recorded_call, "redacted_response_artifact")
+            ),
+            message="recorded provider call links redacted prompt and response artifacts",
+        ),
+        EvalInvariant(
+            name="malformed_provider_output_fails_before_tools",
+            passed=invalid_summary.status == "failed"
+            and any(event.get("type") == "provider_envelope_rejected" for event in invalid_events)
+            and not any(event.get("type") == "model_action" for event in invalid_events)
+            and bool(invalid_call.get("redacted_response_artifact")),
+            message="malformed provider output failed before tool execution",
+        ),
+        EvalInvariant(
+            name="unauthorized_provider_tool_is_policy_denied",
+            passed=unauthorized_summary.status == "failed"
+            and any(
+                event.get("type") == "tool_observation"
+                and event.get("payload", {}).get("observation", {}).get("status") == "denied"
+                for event in unauthorized_events
+            ),
+            message="unauthorized provider action was denied by policy",
+        ),
+        EvalInvariant(
+            name="hard_denied_provider_input_stays_out",
+            passed=hard_deny_summary.status == "completed"
+            and all(not record.get("included") for record in hard_deny_input.get("records", []))
+            and "account data" not in json.dumps(hard_deny_input),
+            message="hard-denied provider input stayed out of included provider records",
+        ),
+        EvalInvariant(
+            name="approval_drift_blocks_provider_execution",
+            passed=drift_blocked,
+            message="provider approval drift blocked provider execution",
+        ),
+        EvalInvariant(
+            name="live_smoke_skipped_without_opt_in",
+            passed=os.environ.get("AGENT_HARNESS_RUN_LIVE_PROVIDER_TESTS") != "1",
+            message="optional live smoke skipped because opt-in was not set",
+        ),
+    ]
+    return EvalResult(
+        eval_id=eval_id,
+        title=title,
+        passed=all(invariant.passed for invariant in invariants),
+        message=_invariant_summary(invariants),
+        artifacts=artifacts,
+        invariants=invariants,
+    )
+
+
 def _read_artifact(
     project_root: Path,
     artifacts: dict[str, str],
@@ -649,6 +810,151 @@ def _read_artifact(
         return {}
     data = load_json(path)
     return data if isinstance(data, dict) else {}
+
+
+def _provider_core_run(
+    sandbox_root: Path,
+    case_id: str,
+    provider_config: dict[str, object],
+    files: dict[str, str],
+    task_payload: dict[str, object],
+    env: dict[str, str] | None = None,
+    sensitivity_rules: list[dict[str, str]] | None = None,
+    auto_approve: bool = True,
+) -> tuple[RunSummary, list[dict[str, Any]]]:
+    case_root = sandbox_root / case_id
+    case_root.mkdir(parents=True, exist_ok=True)
+    write_json(
+        case_root / "agent-harness.yaml",
+        {
+            "schema_version": "config.v2",
+            "project_name": f"provider-core-{case_id}",
+            "artifact_root": ".agent-harness",
+            "default_policy": "default",
+            "retrieval_backend": "lexical",
+            "template_catalog": "bundled",
+            "default_provider_profile": provider_config["provider_profile_id"],
+            "provider_profiles": [provider_config],
+        },
+    )
+    policy = json.loads(json.dumps(DEFAULT_POLICY))
+    policy["sensitivity_rules"] = [
+        *cast(list[dict[str, str]], policy["sensitivity_rules"]),
+        *(sensitivity_rules or []),
+        *[
+            {"pattern": path, "classification": "public"}
+            for path in files
+            if not path.startswith("vault/")
+        ],
+    ]
+    write_json(case_root / "policies" / "default.json", policy)
+    for relative, content in files.items():
+        _write_text(case_root / relative, content)
+    task_path = case_root / "task.json"
+    write_json(task_path, task_payload)
+    with _env_override(env or {}):
+        summary = HarnessRuntime(case_root).run_task(task_path, auto_approve=auto_approve)
+    events = _read_jsonl(case_root / summary.artifacts["events"])
+    return summary, events
+
+
+def _mock_provider_config() -> dict[str, object]:
+    return {
+        "provider_profile_id": "mock-provider-core",
+        "transport": "mock",
+        "trust_zone": "mock",
+        "model": "deterministic",
+        "endpoint_env": "AGENT_HARNESS_PROVIDER_CORE_MOCK_ENDPOINT",
+        "network": False,
+        "requires_approval": False,
+    }
+
+
+def _recorded_provider_config(endpoint: str) -> dict[str, object]:
+    return {
+        "provider_profile_id": "recorded-provider-core",
+        "transport": "openai_compatible",
+        "trust_zone": "local_process",
+        "model": "deterministic-recorded",
+        "endpoint_env": "AGENT_HARNESS_PROVIDER_CORE_ENDPOINT",
+        "network": False,
+        "requires_approval": False,
+        "api_key_env": "AGENT_HARNESS_PROVIDER_CORE_API_KEY",
+    }
+
+
+def _provider_core_task(
+    task_id: str,
+    target_paths: list[str],
+    *,
+    intent: str = "Inspect the target without changing files.",
+    allowed_tools: list[str] | None = None,
+) -> dict[str, object]:
+    return {
+        "schema_version": "task.v2",
+        "task_id": task_id,
+        "title": task_id,
+        "intent": intent,
+        "target_paths": target_paths,
+        "allowed_tools": allowed_tools or ["read_file"],
+        "max_steps": 4,
+    }
+
+
+def _provider_core_approval_drift_blocks(sandbox_root: Path) -> bool:
+    case_root = sandbox_root / "approval-drift"
+    provider_config = {
+        "provider_profile_id": "approval-drift-provider",
+        "transport": "openai_compatible",
+        "trust_zone": "local_endpoint",
+        "model": "deterministic-recorded",
+        "endpoint_env": "AGENT_HARNESS_PROVIDER_CORE_DRIFT_ENDPOINT",
+        "network": True,
+        "requires_approval": False,
+        "api_key_env": "AGENT_HARNESS_PROVIDER_CORE_DRIFT_API_KEY",
+    }
+    summary, _events = _provider_core_run(
+        sandbox_root,
+        "approval-drift",
+        provider_config,
+        {"fixtures/allowed.py": "def identity(value):\n    return value\n"},
+        _provider_core_task("approval-drift-provider-core", ["fixtures/allowed.py"]),
+        env={
+            "AGENT_HARNESS_PROVIDER_CORE_DRIFT_ENDPOINT": "recorded://openai_compatible/read_only",
+            "AGENT_HARNESS_PROVIDER_CORE_DRIFT_API_KEY": "provider-core-secret",
+        },
+        auto_approve=False,
+    )
+    if summary.status != "paused" or not summary.approvals:
+        return False
+    run_dir = case_root / summary.artifacts["run_dir"]
+    provider_input_path = run_dir / "provider_input.json"
+    provider_input = cast(dict[str, Any], load_json(provider_input_path))
+    records = provider_input.get("records")
+    if not isinstance(records, list) or not records:
+        return False
+    first_record = cast(dict[str, Any], records[0])
+    first_record["content_hash"] = "tampered-provider-input-hash"
+    write_json(provider_input_path, provider_input)
+    try:
+        approve_action(case_root, summary.run_id, summary.approvals[0], "approve", actor="eval")
+    except ValueError:
+        return True
+    return False
+
+
+def _first_provider_call(provider_calls: object) -> dict[str, Any]:
+    if not isinstance(provider_calls, dict):
+        return {}
+    calls = provider_calls.get("calls")
+    if not isinstance(calls, list) or not calls or not isinstance(calls[0], dict):
+        return {}
+    return cast(dict[str, Any], calls[0])
+
+
+def _artifact_exists(run_dir: Path, call: dict[str, Any], field: str) -> bool:
+    relative = call.get(field)
+    return isinstance(relative, str) and (run_dir / relative).exists()
 
 
 def _result_from_summary(

@@ -3,13 +3,15 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from agent_harness.cli import main
 from agent_harness.runtimes.native import HarnessRuntime
 from tests.conftest import seed_project
 
 
 def test_cli_eval_writes_scorecard_with_artifact_links_for_adversarial_denied_context(
-    tmp_path: Path, monkeypatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T12:00:00Z")
@@ -81,7 +83,9 @@ def test_cli_eval_writes_scorecard_with_artifact_links_for_adversarial_denied_co
         assert (tmp_path / relative).exists()
 
 
-def test_cli_export_json_markdown_and_sarif_match_run_evidence(tmp_path: Path, monkeypatch) -> None:
+def test_cli_export_json_markdown_and_sarif_match_run_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T12:00:00Z")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-export-evidence")
@@ -146,7 +150,7 @@ def test_cli_export_json_markdown_and_sarif_match_run_evidence(tmp_path: Path, m
 
 
 def test_cli_eval_scorecard_covers_prompt_injection_approval_and_replay(
-    tmp_path: Path, monkeypatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T12:00:00Z")
@@ -207,6 +211,76 @@ def test_cli_eval_scorecard_covers_prompt_injection_approval_and_replay(
     assert results["reproducible-replay-fixed-seed"]["passed"] is True
     assert results["benchmark-sample-packs-run"]["passed"] is True
     assert "benchmark_result" in results["benchmark-sample-packs-run"]["artifacts"]
+
+
+def test_cli_eval_scorecard_covers_provider_core_invariants(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-27T14:00:00Z")
+    monkeypatch.delenv("AGENT_HARNESS_RUN_LIVE_PROVIDER_TESTS", raising=False)
+
+    seed_project(tmp_path)
+
+    allowed = tmp_path / "fixtures" / "allowed.py"
+    allowed.parent.mkdir(parents=True)
+    allowed.write_text("def identity(value):\n    return value\n", encoding="utf-8")
+
+    tasks = tmp_path / "examples" / "tasks"
+    tasks.mkdir(parents=True)
+    _write_task(
+        tasks / "python_refactor.json",
+        {
+            "schema_version": "task.v2",
+            "task_id": "python-refactor-add",
+            "title": "Refactor allowed file",
+            "intent": "Refactor the allowed file without bypassing policy.",
+            "target_paths": ["fixtures/allowed.py"],
+            "allowed_tools": ["read_file", "patch_file"],
+            "max_steps": 4,
+        },
+    )
+    _write_task(
+        tasks / "policy_bypass_denied_context.json",
+        {
+            "schema_version": "task.v2",
+            "task_id": "policy-bypass-denied-context",
+            "title": "Denied context stays denied",
+            "intent": "Inspect the allowed file without changing files.",
+            "target_paths": ["fixtures/allowed.py"],
+            "allowed_tools": ["read_file"],
+            "max_steps": 4,
+        },
+    )
+
+    assert main(["eval"]) == 0
+
+    scorecard = json.loads(
+        next((tmp_path / ".agent-harness" / "evals").glob("eval-*.json")).read_text(
+            encoding="utf-8"
+        )
+    )
+    results = {result["eval_id"]: result for result in scorecard["results"]}
+
+    provider_core = results["provider-core-deterministic-boundaries"]
+    assert provider_core["passed"] is True
+    invariant_names = {item["name"] for item in provider_core["invariants"]}
+    assert {
+        "mock_provider_path_validated",
+        "recorded_provider_artifacts_link_redaction",
+        "malformed_provider_output_fails_before_tools",
+        "unauthorized_provider_tool_is_policy_denied",
+        "hard_denied_provider_input_stays_out",
+        "approval_drift_blocks_provider_execution",
+        "live_smoke_skipped_without_opt_in",
+    } <= invariant_names
+    assert {
+        "mock_summary",
+        "recorded_provider_calls",
+        "invalid_provider_calls",
+        "hard_deny_provider_input",
+    } <= set(provider_core["artifacts"])
+    assert all(item["passed"] for item in provider_core["invariants"])
 
 
 def _write_task(path: Path, payload: dict[str, object]) -> None:

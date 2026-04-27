@@ -103,13 +103,13 @@ tools.
 
 ### Acceptance criteria
 
-- [ ] `provider_action_envelope.v1` validates action lists, refusals, and
+- [x] `provider_action_envelope.v1` validates action lists, refusals, and
       unsupported responses strictly.
-- [ ] Unknown tool names and invalid tool arguments fail before policy/tool
+- [x] Unknown tool names and invalid tool arguments fail before policy/tool
       execution.
-- [ ] Mock and recorded-fixture provider paths both return validated envelopes.
-- [ ] Provider adapters cannot return direct tool calls to the runtime.
-- [ ] Invalid provider output writes an event and provider artifact explaining
+- [x] Mock and recorded-fixture provider paths both return validated envelopes.
+- [x] Provider adapters cannot return direct tool calls to the runtime.
+- [x] Invalid provider output writes an event and provider artifact explaining
       the sanitized failure.
 
 ### Out of scope
@@ -150,11 +150,11 @@ can enter artifacts.
 
 ### Acceptance criteria
 
-- [ ] Profile validation covers endpoint env, API-key env, transport, trust
+- [x] Profile validation covers endpoint env, API-key env, transport, trust
       zone, network flag, and live opt-in requirements.
-- [ ] Diagnostics mention env var names and never include env var values.
-- [ ] OpenAI-compatible live profiles require approval-compatible policy.
-- [ ] Provider-input and provider-use policy checks still run and cannot be
+- [x] Diagnostics mention env var names and never include env var values.
+- [x] OpenAI-compatible live profiles require approval-compatible policy.
+- [x] Provider-input and provider-use policy checks still run and cannot be
       widened by profile settings.
 
 ### Out of scope
@@ -193,13 +193,13 @@ provider-input, approval, and artifact boundaries as deterministic paths.
 
 ### Acceptance criteria
 
-- [ ] Live smoke requires explicit env opt-in.
-- [ ] Missing live credentials skip live tests.
-- [ ] Provider use pauses for approval unless explicitly auto-approved in a
+- [x] Live smoke requires explicit env opt-in.
+- [x] Missing live credentials skip live tests.
+- [x] Provider use pauses for approval unless explicitly auto-approved in a
       controlled test/demo path.
-- [ ] Smoke task uses only public or synthetic context.
-- [ ] Normal CI does not run live calls.
-- [ ] Raw credentials and raw provider payloads are absent from artifacts.
+- [x] Smoke task uses only public or synthetic context.
+- [x] Normal CI does not run live calls.
+- [x] Raw credentials and raw provider payloads are absent from artifacts.
 
 ### Out of scope
 
@@ -242,15 +242,15 @@ validated envelopes or sanitized provider errors.
 
 ### Acceptance criteria
 
-- [ ] Provider-call artifacts include approval ids, provider-input hash,
+- [x] Provider-call artifacts include approval ids, provider-input hash,
       action-envelope hash, checkpoint hash, mode, latency, and token metrics
       when available.
-- [ ] Redacted prompt artifact contains only allowed or redacted provider-input
+- [x] Redacted prompt artifact contains only allowed or redacted provider-input
       records.
-- [ ] Redacted response artifact contains the validated envelope or sanitized
+- [x] Redacted response artifact contains the validated envelope or sanitized
       error evidence.
-- [ ] Artifact index references provider-call evidence and redacted artifacts.
-- [ ] Secret values, raw credentials, private data, hard-denied data, and
+- [x] Artifact index references provider-call evidence and redacted artifacts.
+- [x] Secret values, raw credentials, private data, hard-denied data, and
       sensitive payloads are absent from artifacts.
 
 ### Out of scope
@@ -291,15 +291,15 @@ approval drift.
 
 ### Acceptance criteria
 
-- [ ] Eval scenarios cover mock and recorded-fixture provider paths.
-- [ ] Integration coverage proves recorded OpenAI-compatible provider run,
+- [x] Eval scenarios cover mock and recorded-fixture provider paths.
+- [x] Integration coverage proves recorded OpenAI-compatible provider run,
       inspect output, provider evidence, and redacted artifacts.
-- [ ] Adversarial coverage proves malformed provider output, unauthorized tool
+- [x] Adversarial coverage proves malformed provider output, unauthorized tool
       action, provider-input hard-deny leakage, and approval drift fail safely.
-- [ ] Optional live OpenAI-compatible smoke skips unless env opt-in and
+- [x] Optional live OpenAI-compatible smoke skips unless env opt-in and
       credentials exist.
-- [ ] Provider setup and safety-boundary docs pass `agent-harness docs check`.
-- [ ] Docs state that fixture capture, API/UI, MCP, multi-agent workflows,
+- [x] Provider setup and safety-boundary docs pass `agent-harness docs check`.
+- [x] Docs state that fixture capture, API/UI, MCP, multi-agent workflows,
       retention profiles, retrieval redesign, Anthropic live support, and
       enterprise claims are outside V4.
 

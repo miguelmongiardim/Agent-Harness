@@ -20,9 +20,20 @@ The security model is built around explicit policy mediation:
 - Provider-use approvals bind provider profile, trust zone, model id,
   provider-input hash, policy decision id, and checkpoint hash. Resume rejects
   drift in those bound fields before provider execution.
-- Provider-call artifacts record approval ids, prompt/response hashes, redacted
-  summaries, latency/token metrics, and policy decision references. Raw
-  provider request and response payloads are not stored by default.
+- Provider output is untrusted until it validates as
+  `provider_action_envelope.v1`. Refusals, unsupported responses, malformed
+  JSON, unknown tool names, and invalid tool arguments fail before runtime tool
+  execution.
+- Provider-call artifacts record approval ids, provider-input hashes,
+  action-envelope hashes, checkpoint hashes, redacted prompt/response artifact
+  references, redacted summaries, latency/token metrics, and policy decision
+  references. Raw provider request and response payloads are not stored by
+  default.
+- Recorded provider fixtures are the normal deterministic test path. Optional
+  OpenAI-compatible live smoke requires explicit
+  `AGENT_HARNESS_RUN_LIVE_PROVIDER_TESTS=1`, a configured provider profile,
+  endpoint/API-key environment variables, network/trust-zone policy allowance,
+  and provider-use approval.
 - Write operations require approval records that bind the run id, action id,
   tool name, arguments hash, policy profile, checkpoint hash, and proposed
   effect hash.
@@ -37,5 +48,7 @@ The security model is built around explicit policy mediation:
 
 The current implementation intentionally excludes production identity, remote
 provider controls, centralized secrets management, hardened sandbox isolation,
-enterprise DLP, MCP support, multi-agent execution, compliance readiness, and
-multi-tenant guarantees. Those belong in future roadmap work.
+enterprise DLP, fixture capture tooling, API/UI surfaces, MCP support,
+multi-agent execution, retention profiles, retrieval redesign, Anthropic live
+support, compliance readiness, enterprise claims, and multi-tenant guarantees.
+Those belong in future roadmap work.

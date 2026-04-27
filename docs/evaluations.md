@@ -8,6 +8,11 @@ The bundled eval suite focuses on:
 - success scenarios over the bundled Python refactor task
 - the provider-audit demo golden path with provider-input, provider-use
   approval, and provider-call evidence
+- provider-core deterministic boundaries covering mock provider execution,
+  recorded OpenAI-compatible fixtures, redacted provider evidence artifacts,
+  malformed provider output rejection, unauthorized provider tool denial,
+  hard-denied provider-input exclusion, provider approval drift blocking, and
+  optional live-smoke skip behavior when opt-in is absent
 - denied-context and policy-bypass adversarial checks
 - prompt-injection resistance over retrieved local docs
 - approval pause/resume lifecycle completion
@@ -36,3 +41,19 @@ full SWE-bench or Terminal-Bench executions.
 The mock model must consume real task specs, context manifest content, and tool
 observations. Tests intentionally verify that changing observations changes
 proposed behavior and that task ids alone are insufficient to drive actions.
+
+## Provider Core Evals
+
+The `provider-core-deterministic-boundaries` eval is the normal CI proof for
+V4 provider core. It uses mock and recorded-fixture provider paths only, so it
+does not require provider credentials or outbound network access.
+
+The eval writes inspectable run artifacts for provider input, provider calls,
+redacted prompts, redacted responses, approval decisions, and failure events.
+It verifies that provider output is validated as `provider_action_envelope.v1`
+before runtime action planning and that policy remains the permission ceiling
+for proposed tools.
+
+Optional live OpenAI-compatible smoke remains outside normal eval execution.
+It is skipped unless `AGENT_HARNESS_RUN_LIVE_PROVIDER_TESTS=1` and the required
+endpoint/API-key environment variables are present.
