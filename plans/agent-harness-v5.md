@@ -208,17 +208,17 @@ retrieval CLI and shared manifest shapes.
 
 ### Acceptance criteria
 
-- [ ] Deterministic dense backend is stable across runs.
-- [ ] Deterministic dense backend requires no network.
-- [ ] Deterministic dense backend requires no model download.
-- [ ] Dense index build works with `--dense-backend deterministic`.
-- [ ] Dense query works with `--mode dense`.
-- [ ] Hybrid query works with `--mode hybrid`.
-- [ ] Duplicate lexical/dense results are merged.
-- [ ] Per-method scores and provenance are visible.
-- [ ] `retrieval_backend.v2` records deterministic backend evidence and
+- [x] Deterministic dense backend is stable across runs.
+- [x] Deterministic dense backend requires no network.
+- [x] Deterministic dense backend requires no model download.
+- [x] Dense index build works with `--dense-backend deterministic`.
+- [x] Dense query works with `--mode dense`.
+- [x] Hybrid query works with `--mode hybrid`.
+- [x] Duplicate lexical/dense results are merged.
+- [x] Per-method scores and provenance are visible.
+- [x] `retrieval_backend.v2` records deterministic backend evidence and
       `remote_embeddings: false`.
-- [ ] Docs mark the deterministic dense backend as test/fixture-only.
+- [x] Docs mark the deterministic dense backend as test/fixture-only.
 
 ### Out of scope
 

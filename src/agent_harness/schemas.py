@@ -558,10 +558,11 @@ class RetrievalBackendManifest(StrictModel):
     schema_version: Literal["retrieval_backend.v1", "retrieval_backend.v2"] = (
         "retrieval_backend.v2"
     )
-    requested_backend: Literal["fake", "lexical", "qdrant"]
+    requested_backend: Literal["fake", "lexical", "qdrant", "dense", "hybrid"]
     active_backend: str
     backend: str
     embedding_model: str | None = None
+    embedding_model_version: str | None = None
     index_id: str | None = None
     fallback_status: Literal["not_required", "used"] = "not_required"
     fallback_reason: str | None = None
@@ -598,7 +599,7 @@ class RetrievalIndexManifest(StrictModel):
     schema_version: Literal["retrieval_index.v1"] = "retrieval_index.v1"
     index_id: str
     index_path: str
-    backend: Literal["lexical"]
+    backend: Literal["lexical", "dense", "hybrid"]
     source_paths: list[str] = Field(default_factory=list)
     source_hashes: dict[str, str] = Field(default_factory=dict)
     sources: list[RetrievalIndexSource] = Field(default_factory=list)

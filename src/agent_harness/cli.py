@@ -31,11 +31,12 @@ from agent_harness.release import (
     build_release_readiness_report,
 )
 from agent_harness.retrieval_indexes import (
-    build_lexical_index,
+    build_retrieval_index,
     delete_index,
     list_indexes,
     load_index,
     manifest_path,
+    query_index,
 )
 from agent_harness.schemas import TaskSpec
 from agent_harness.storage import RunStore
@@ -174,7 +175,12 @@ def build_parser() -> argparse.ArgumentParser:
     retrieval_index_build = retrieval_index_sub.add_parser("build")
     retrieval_index_build.add_argument("--index-id", required=True)
     retrieval_index_build.add_argument("--paths", nargs="+", required=True)
-    retrieval_index_build.add_argument("--mode", choices=["lexical"], default="lexical")
+    retrieval_index_build.add_argument(
+        "--mode",
+        choices=["lexical", "dense", "hybrid"],
+        default="lexical",
+    )
+    retrieval_index_build.add_argument("--dense-backend", choices=["deterministic"])
     retrieval_index_build.add_argument("--profile", default="default")
     retrieval_index_build.add_argument("--overwrite", action="store_true")
     retrieval_index_build.set_defaults(func=cmd_retrieval_index_build)
@@ -186,6 +192,16 @@ def build_parser() -> argparse.ArgumentParser:
     retrieval_index_delete = retrieval_index_sub.add_parser("delete")
     retrieval_index_delete.add_argument("index_id")
     retrieval_index_delete.set_defaults(func=cmd_retrieval_index_delete)
+    retrieval_query = retrieval_sub.add_parser("query")
+    retrieval_query.add_argument("index_id")
+    retrieval_query.add_argument("--query", required=True)
+    retrieval_query.add_argument(
+        "--mode",
+        choices=["lexical", "dense", "hybrid"],
+        default="lexical",
+    )
+    retrieval_query.add_argument("--k", type=int, default=5)
+    retrieval_query.set_defaults(func=cmd_retrieval_query)
 
     inspect = sub.add_parser("inspect")
     inspect_sub = inspect.add_subparsers(required=True)
@@ -395,12 +411,14 @@ def cmd_retrieval_index_build(args: argparse.Namespace) -> int:
     root = Path.cwd()
     config = load_config(root)
     policy = PolicyEngine(root, load_policy(root, args.profile))
-    manifest = build_lexical_index(
+    manifest = build_retrieval_index(
         root,
         config,
         policy,
         args.index_id,
         args.paths,
+        mode=args.mode,
+        dense_backend=args.dense_backend,
         overwrite=args.overwrite,
     )
     payload = manifest.model_dump(mode="json")
@@ -432,6 +450,21 @@ def cmd_retrieval_index_delete(args: argparse.Namespace) -> int:
     config = load_config(root)
     delete_index(root, config, args.index_id)
     print(json.dumps({"deleted": args.index_id}, indent=2))
+    return 0
+
+
+def cmd_retrieval_query(args: argparse.Namespace) -> int:
+    root = Path.cwd()
+    config = load_config(root)
+    result = query_index(
+        root,
+        config,
+        args.index_id,
+        args.query,
+        mode=args.mode,
+        limit=args.k,
+    )
+    print(json.dumps(result, indent=2))
     return 0
 
 

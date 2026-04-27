@@ -28,6 +28,13 @@ write local `retrieval_index.v1` manifests with stable source hashes, chunk
 hashes, chunking config, retrieval config hash, and index paths; list, show,
 and delete expose or remove those local artifacts.
 
+Deterministic dense indexing and dense/hybrid query are available for fixture
+and CI evidence through `--dense-backend deterministic`. The deterministic
+backend uses local token-set scoring, requires no network access, requires no
+model download, and records `retrieval_backend.v2` evidence with
+`remote_embeddings: false`. It is test/fixture behavior, not a production
+embedding backend.
+
 Local dense fixture behavior is opt-in with `retrieval_backend: qdrant`.
 Qdrant/FastEmbed dependency checks are used as the local optional-dependency
 gate, but V2 does not expose production Qdrant server mode and does not use
