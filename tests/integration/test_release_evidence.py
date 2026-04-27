@@ -5,13 +5,15 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 from agent_harness import __version__, release
 from agent_harness.cli import main
 from tests.conftest import seed_project
 
 
 def test_release_readiness_report_requires_docs_checks_ci_advisories_and_changelog(
-    capsys,  # type: ignore[no-untyped-def]
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     assert main(["release", "readiness", "--version", "0.3.0"]) == 0
     report = json.loads(capsys.readouterr().out)
@@ -54,8 +56,8 @@ def test_release_readiness_report_requires_docs_checks_ci_advisories_and_changel
 
 def test_release_readiness_defaults_to_project_version_and_reports_missing_evidence(
     tmp_path: Path,
-    monkeypatch,  # type: ignore[no-untyped-def]
-    capsys,  # type: ignore[no-untyped-def]
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     monkeypatch.chdir(tmp_path)
     _write_release_project_without_evidence(tmp_path, "0.3.0")
@@ -93,8 +95,8 @@ def test_release_readiness_defaults_to_project_version_and_reports_missing_evide
 
 def test_release_readiness_reports_ready_when_required_evidence_is_present(
     tmp_path: Path,
-    monkeypatch,  # type: ignore[no-untyped-def]
-    capsys,  # type: ignore[no-untyped-def]
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     monkeypatch.chdir(tmp_path)
     _write_release_ready_project(tmp_path, "9.9.9")
@@ -132,8 +134,8 @@ def test_release_readiness_reports_ready_when_required_evidence_is_present(
 
 def test_release_readiness_requires_v1_release_closure_docs(
     tmp_path: Path,
-    monkeypatch,  # type: ignore[no-untyped-def]
-    capsys,  # type: ignore[no-untyped-def]
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     monkeypatch.chdir(tmp_path)
     _write_release_ready_project(tmp_path, "1.0.0")
@@ -168,12 +170,13 @@ def test_release_readiness_requires_v1_release_closure_docs(
     assert {"docs.migration_notes", "docs.release_process"} <= diagnostic_gates
 
 
-def test_v1_release_closure_metadata_and_docs_are_complete() -> None:
+def test_current_release_metadata_and_v1_closure_docs_are_complete() -> None:
     pyproject = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
-    assert pyproject["project"]["version"] == "1.0.0"
-    assert __version__ == "1.0.0"
+    assert pyproject["project"]["version"] == "1.1.0"
+    assert __version__ == "1.1.0"
 
     changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+    assert "## [1.1.0]" in changelog
     assert "## [1.0.0]" in changelog
 
     migration = Path("docs/migration.md").read_text(encoding="utf-8")
@@ -188,8 +191,8 @@ def test_v1_release_closure_metadata_and_docs_are_complete() -> None:
 
 def test_release_package_check_builds_installs_and_records_evidence(
     tmp_path: Path,
-    monkeypatch,  # type: ignore[no-untyped-def]
-    capsys,  # type: ignore[no-untyped-def]
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     monkeypatch.chdir(tmp_path)
     _write_release_ready_project(tmp_path, "9.9.9")
@@ -266,8 +269,8 @@ def test_demo_docs_cover_provider_audit_and_secondary_python_refactor_paths() ->
 
 def test_template_validation_satisfies_release_readiness_template_gate(
     tmp_path: Path,
-    monkeypatch,  # type: ignore[no-untyped-def]
-    capsys,  # type: ignore[no-untyped-def]
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     monkeypatch.chdir(tmp_path)
     seed_project(tmp_path)

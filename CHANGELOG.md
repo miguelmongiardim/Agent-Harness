@@ -6,6 +6,29 @@ All notable changes to this project will be documented in this file.
 
 - No changes yet.
 
+## [1.1.0] - 2026-04-27
+
+V4 Provider Core release.
+
+- Added strict `provider_action_envelope.v1` validation before runtime action
+  planning, so malformed provider output, refusals, unsupported responses,
+  unknown tools, and invalid tool arguments fail before tool execution.
+- Added pre-provider-use profile validation for endpoint env vars, API-key env
+  vars, transport, trust zone, network flags, live opt-in, and
+  approval-compatible policy without storing credential values.
+- Added a narrow opt-in OpenAI-compatible live smoke path behind existing
+  provider-use approval, provider-input, action-envelope, and artifact
+  boundaries.
+- Added provider-call evidence binding approval ids, provider-input hash,
+  action-envelope hash, checkpoint hash, mode, latency, token metrics when
+  available, and redacted prompt/response artifact references.
+- Added deterministic provider-core eval coverage for mock and recorded-fixture
+  paths, malformed output rejection, unauthorized tool denial, hard-deny
+  provider-input exclusion, approval drift blocking, redacted evidence, and
+  live-smoke skip behavior.
+- Documented Provider Core setup, safety boundaries, recorded fixture
+  expectations, live smoke behavior, and V4 out-of-scope work.
+
 ## [1.0.0] - 2026-04-27
 
 V3 maturity release.

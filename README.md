@@ -130,15 +130,21 @@ agent-harness doctor
   provider transport, a non-mock local endpoint trust zone, `network: false`,
   required provider-use approval, inspectable provider-input evidence, redacted
   provider-call artifacts, and JSON/Markdown/SARIF exports.
+- Provider Core validates provider output as `provider_action_envelope.v1`
+  before runtime action planning. Mock and recorded-fixture paths use the same
+  boundary, and a narrow OpenAI-compatible live smoke path is available only
+  with explicit env opt-in, configured credentials, network/trust-zone policy,
+  and provider-use approval.
 
 ## Roadmap / Not Enabled By Init
 
-Agent Harness does not claim enterprise readiness, live provider execution,
-production Qdrant server operation, a web API/UI, MCP workflows, multi-agent
-orchestration, external template catalogs, deployment hardening, or compliance
-assurance. The v1.0.0 release establishes stable CLI expectations, schema
-compatibility policy, packaging checks, reproducible demos, Docker demo
-packaging, pre-commit discipline, and clear Implemented vs Roadmap boundaries.
+Agent Harness does not claim enterprise readiness, general live provider
+operation, production Qdrant server operation, a web API/UI, MCP workflows,
+multi-agent orchestration, external template catalogs, deployment hardening, or
+compliance assurance. The v1.1.0 release establishes Provider Core: strict
+provider action envelopes, profile validation, opt-in OpenAI-compatible live
+smoke, provider-call evidence, redacted prompt/response artifacts, and
+deterministic provider-core evals.
 
 ## Documentation
 
@@ -147,6 +153,7 @@ packaging, pre-commit discipline, and clear Implemented vs Roadmap boundaries.
 - [Security model](docs/security-model.md)
 - [Context packs and retrieval](docs/context-packs.md)
 - [Evaluation strategy](docs/evaluations.md)
+- [Provider Core](docs/provider-core.md)
 - [Template catalog](docs/templates.md)
 - [Schema migration](docs/migration.md)
 - [Release readiness](docs/release-readiness.md)

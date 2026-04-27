@@ -9,7 +9,7 @@ The command defaults to `[project].version` from `pyproject.toml`. Release
 managers can still bind the report to an explicit version and CI run:
 
 ```powershell
-agent-harness release readiness --version 1.0.0 --ci-run-id <run-id>
+agent-harness release readiness --version 1.1.0 --ci-run-id <run-id>
 ```
 
 When GitHub CLI is authenticated, the command attempts to discover the latest
@@ -99,7 +99,7 @@ template, artifact, tag, and remote CI evidence is present and passing.
 
 ## Release Checklist
 
-Before tagging v1.0.0:
+Before tagging the current release:
 
 1. Run `uv sync --extra dev`.
 2. Run `python -m pre_commit run --all-files`.
@@ -109,7 +109,7 @@ Before tagging v1.0.0:
 6. Run `agent-harness run examples/tasks/python_refactor.json --dry-run`.
 7. Run `agent-harness template validate --all`.
 8. Run `agent-harness eval`.
-9. Run `agent-harness release readiness --version 1.0.0`.
+9. Run `agent-harness release readiness --version 1.1.0`.
 10. Confirm CI passes for the release commit.
 
 ## Tag Process
@@ -118,9 +118,9 @@ Create the release tag only after the release commit is pushed and required CI
 has passed for that exact commit:
 
 ```powershell
-git tag -a v1.0.0 -m "v1.0.0"
-git push origin v1.0.0
-agent-harness release readiness --version 1.0.0 --ci-run-id <run-id>
+git tag -a v1.1.0 -m "v1.1.0"
+git push origin v1.1.0
+agent-harness release readiness --version 1.1.0 --ci-run-id <run-id>
 ```
 
 The readiness report binds the tag target commit to the recorded GitHub Actions
@@ -133,12 +133,12 @@ different commit.
 hashes in `.agent-harness/release/package-check.json` and supporting evidence
 files under `.agent-harness/release/evidence/`. Reviewers should verify that:
 
-- `dist/agent_harness-1.0.0-*.whl` exists.
-- `dist/agent_harness-1.0.0.tar.gz` exists.
+- `dist/agent_harness-1.1.0-*.whl` exists.
+- `dist/agent_harness-1.1.0.tar.gz` exists.
 - package-check evidence reports `status: passed`.
 - clean-install evidence reports `status: passed`.
 - console-script evidence reports `status: passed`.
-- the final readiness report is generated for `version: 1.0.0`.
+- the final readiness report is generated for `version: 1.1.0`.
 
 ## Roadmap
 

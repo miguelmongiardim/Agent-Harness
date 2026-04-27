@@ -224,9 +224,7 @@ def test_recorded_provider_invalid_envelope_fails_before_tool_execution(
     env = os.environ.copy()
     env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-invalid-provider-envelope"
     env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-26T16:30:00Z"
-    env["AGENT_HARNESS_RECORDED_OPENAI_ENDPOINT"] = (
-        "recorded://openai_compatible/invalid_envelope"
-    )
+    env["AGENT_HARNESS_RECORDED_OPENAI_ENDPOINT"] = "recorded://openai_compatible/invalid_envelope"
     env["AGENT_HARNESS_RECORDED_OPENAI_API_KEY"] = "gateway-test-secret"
 
     run = subprocess.run(
@@ -590,7 +588,7 @@ def _gateway_read_observation() -> ToolObservation:
             "path": "sample.py",
             "content": "def add_numbers(a, b):\n    return a + b\n",
         },
-        )
+    )
 
 
 @pytest.mark.parametrize(

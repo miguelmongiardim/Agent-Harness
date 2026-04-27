@@ -270,8 +270,7 @@ def test_live_openai_compatible_profile_requires_explicit_opt_in_before_provider
     assert "provider_profile_invalid" in event_types
     assert "provider_selected" not in event_types
     assert not any(
-        event["type"] == "policy_decision"
-        and event["payload"].get("operation") == "provider_use"
+        event["type"] == "policy_decision" and event["payload"].get("operation") == "provider_use"
         for event in inspected["events"]
     )
     validation_event = next(
@@ -295,11 +294,7 @@ def test_live_openai_compatible_profile_requires_explicit_opt_in_before_provider
             "missing required env var: AGENT_HARNESS_LIVE_ENDPOINT",
         ),
         (
-            {
-                key: value
-                for key, value in _live_openai_profile().items()
-                if key != "api_key_env"
-            },
+            {key: value for key, value in _live_openai_profile().items() if key != "api_key_env"},
             {"AGENT_HARNESS_LIVE_ENDPOINT": "https://provider.example.test"},
             "requires api_key_env",
         ),

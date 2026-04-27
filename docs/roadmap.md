@@ -4,11 +4,12 @@
 
 Agent Harness currently provides a controlled local software-engineering workflow
 using V2 config, task, policy, and template inputs; a deterministic mock agent;
-configured provider profiles; provider-input policy gates; local lexical and
-local dense fixture retrieval evidence; approval-bound template application;
-separate `git_commit` approval; packaged benchmark adapters; provider audit
-demos; release-readiness reports; audit logs; evals; an optional LangGraph
-boundary proof; and reproducible artifacts.
+configured provider profiles; provider-input policy gates; strict provider
+action envelopes; opt-in OpenAI-compatible live smoke; redacted provider-call
+evidence; local lexical and local dense fixture retrieval evidence;
+approval-bound template application; separate `git_commit` approval; packaged
+benchmark adapters; provider audit demos; release-readiness reports; audit
+logs; evals; an optional LangGraph boundary proof; and reproducible artifacts.
 
 ## v1.0.0 Status
 
@@ -24,21 +25,18 @@ The current conception alignment review lives in
 original `deep-research-report.md` vision with the v1.0.0 implementation and
 defines the remaining drift.
 
-## Recommended V4 Direction
+## v1.1.0 Status
 
-The recommended next track is
+v1.1.0 closes the V4 Provider Core track:
 [docs/prd-agent-harness-v4.md](prd-agent-harness-v4.md) and
-[plans/agent-harness-v4.md](../plans/agent-harness-v4.md): Provider Core. This
-is the most direct next step toward the original conception because v1.0.0
-proves the control plane, but still relies on deterministic mock behavior and
-recorded fixtures by default.
+[plans/agent-harness-v4.md](../plans/agent-harness-v4.md). It adds strict
+provider action envelopes, profile validation, opt-in OpenAI-compatible live
+smoke, provider-call evidence, redacted prompt/response artifacts,
+provider-core evals, and setup/safety docs.
 
-V4 should add structured provider action envelopes, provider profile
-validation, opt-in OpenAI-compatible smoke, provider-call evidence, redacted
-prompt/response artifacts, provider evals, and setup/safety docs. It should not
-promote fixture capture tooling, retention profiles, web UI, MCP execution,
-multi-agent orchestration, production Qdrant server mode, or enterprise
-readiness.
+V4 does not promote fixture capture tooling, retention profiles, web UI, MCP
+execution, multi-agent orchestration, production Qdrant server mode, Anthropic
+live support, or enterprise readiness.
 
 ## Release Maintenance Priorities
 
