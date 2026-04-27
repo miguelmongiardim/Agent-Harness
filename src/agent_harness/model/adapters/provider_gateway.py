@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 from typing import Any, Literal
 
@@ -97,7 +100,15 @@ class ProviderGateway:
     ) -> _BaseTransport:
         if provider.transport == "mock":
             return _MockTransport(provider, provider_config)
-        if provider.transport in {"openai_compatible", "anthropic"}:
+        if provider.transport == "openai_compatible":
+            endpoint = _required_env(provider_config.endpoint_env)
+            if (
+                not endpoint.startswith("recorded://")
+                and os.environ.get("AGENT_HARNESS_RUN_LIVE_PROVIDER_TESTS") == "1"
+            ):
+                return _OpenAICompatibleLiveTransport(provider, provider_config, endpoint)
+            return _RecordedTransport(provider, provider_config, self.project_root)
+        if provider.transport == "anthropic":
             return _RecordedTransport(provider, provider_config, self.project_root)
         raise ValueError(f"unsupported provider transport: {provider.transport}")
 
@@ -111,6 +122,8 @@ class _BaseTransport:
         self.provider = provider
         self.provider_config = provider_config
         self.model = DeterministicMockModel()
+        self.latency_ms = 0
+        self.token_metrics: dict[str, int] = {}
 
     def initial_actions(self, task: TaskSpec, manifest: ContextManifest) -> list[ToolCall]:
         return self._actions_from_envelope(
@@ -294,6 +307,152 @@ class _RecordedTransport(_BaseTransport):
         return _RecordedFixture.model_validate(json.loads(fixture_path.read_text(encoding="utf-8")))
 
 
+class _OpenAICompatibleLiveTransport(_BaseTransport):
+    def __init__(
+        self,
+        provider: RunProviderRecord,
+        provider_config: ProviderProfileConfig,
+        endpoint: str,
+    ) -> None:
+        super().__init__(provider, provider_config)
+        self.endpoint = endpoint.rstrip("/")
+        if provider_config.api_key_env is None:
+            raise ValueError("live provider profile requires api_key_env")
+        self.api_key = _required_env(provider_config.api_key_env)
+
+    def initial_actions(self, task: TaskSpec, manifest: ContextManifest) -> list[ToolCall]:
+        return self._actions_from_envelope(
+            "initial_actions",
+            self._request_envelope("initial_actions", task, manifest, []),
+            task,
+            manifest,
+        )
+
+    def next_actions(
+        self,
+        task: TaskSpec,
+        manifest: ContextManifest,
+        observations: list[ToolObservation],
+    ) -> list[ToolCall]:
+        return self._actions_from_envelope(
+            "next_actions",
+            self._request_envelope("next_actions", task, manifest, observations),
+            task,
+            manifest,
+        )
+
+    def audit(
+        self,
+        run_id: str,
+        task_id: str,
+        phase: ProviderCallPhase,
+        actions: list[ToolCall],
+        approval_ids: list[str],
+        provider_input: ProviderInputManifest | None,
+    ) -> ProviderCallAudit:
+        return _build_provider_audit(
+            run_id,
+            task_id,
+            self.provider,
+            phase,
+            actions,
+            approval_ids,
+            provider_input,
+            mode="live_smoke",
+            latency_ms=self.latency_ms,
+            token_metrics=self.token_metrics,
+        )
+
+    def _request_envelope(
+        self,
+        phase: ProviderCallPhase,
+        task: TaskSpec,
+        manifest: ContextManifest,
+        observations: list[ToolObservation],
+    ) -> dict[str, Any]:
+        payload = {
+            "model": self.provider_config.model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "Return only JSON matching provider_action_envelope.v1. "
+                        "Use only allowed tool names and public or synthetic context."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        {
+                            "phase": phase,
+                            "task": {
+                                "task_id": task.task_id,
+                                "title": task.title,
+                                "intent": task.intent,
+                                "target_paths": task.target_paths,
+                                "allowed_tools": task.allowed_tools,
+                                "max_steps": task.max_steps,
+                            },
+                            "manifest": {
+                                "manifest_id": manifest.manifest_id,
+                                "public_item_count": sum(
+                                    1
+                                    for item in manifest.items
+                                    if item.sensitivity in {"public", "generated"}
+                                ),
+                            },
+                            "observations": [
+                                {
+                                    "tool_name": observation.tool_name,
+                                    "success": observation.success,
+                                    "status": observation.status,
+                                }
+                                for observation in observations
+                            ],
+                        },
+                        sort_keys=True,
+                    ),
+                },
+            ],
+            "temperature": 0,
+        }
+        request = urllib.request.Request(
+            _chat_completions_url(self.endpoint),
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        started = time.perf_counter()
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                response_body = response.read().decode("utf-8")
+        except urllib.error.URLError as exc:
+            raise ValueError(f"live provider request failed: {exc.reason}") from exc
+        self.latency_ms = max(0, int((time.perf_counter() - started) * 1000))
+        try:
+            decoded = json.loads(response_body)
+            usage = decoded.get("usage", {})
+            if isinstance(usage, dict):
+                self.token_metrics = {
+                    key: int(value)
+                    for key, value in usage.items()
+                    if key in {"prompt_tokens", "completion_tokens", "total_tokens"}
+                    and isinstance(value, int)
+                }
+            content = decoded["choices"][0]["message"]["content"]
+            if not isinstance(content, str):
+                raise ValueError("provider response content must be a string")
+            envelope = json.loads(content)
+            if not isinstance(envelope, dict):
+                raise ValueError("provider response content must decode to an object")
+            return envelope
+        except (KeyError, IndexError, TypeError, json.JSONDecodeError, ValueError) as exc:
+            raise ValueError("live provider response did not contain a valid envelope") from exc
+
+
 def _required_env(name: str) -> str:
     value = os.environ.get(name)
     if value is None or not value.strip():
@@ -311,10 +470,22 @@ def _build_provider_audit(
     provider_input: ProviderInputManifest | None,
     mode: Literal["mock", "recorded_fixture", "live_smoke"],
     fixture_id: str | None = None,
+    latency_ms: int = 0,
+    token_metrics: dict[str, int] | None = None,
 ) -> ProviderCallAudit:
     response_payload = [action.model_dump(mode="json") for action in actions]
     prompt_payload = _provider_prompt_payload(provider_input)
     unique_approval_ids = list(dict.fromkeys(approval_ids))
+    metrics = {
+        "prompt_records": len(provider_input.records) if provider_input is not None else 0,
+        "included_prompt_records": (
+            sum(1 for record in provider_input.records if record.included)
+            if provider_input is not None
+            else 0
+        ),
+        "response_actions": len(actions),
+        **(token_metrics or {}),
+    }
     return ProviderCallAudit(
         audit_id=stable_id(
             "provider-call",
@@ -347,18 +518,18 @@ def _build_provider_audit(
             "kind": "tool_calls",
             "tool_calls": len(actions),
         },
-        latency_ms=0,
-        token_metrics={
-            "prompt_records": len(provider_input.records) if provider_input is not None else 0,
-            "included_prompt_records": (
-                sum(1 for record in provider_input.records if record.included)
-                if provider_input is not None
-                else 0
-            ),
-            "response_actions": len(actions),
-        },
+        latency_ms=latency_ms,
+        token_metrics=metrics,
         policy_decision_ids=_policy_decision_ids(provider_input),
     )
+
+
+def _chat_completions_url(endpoint: str) -> str:
+    if endpoint.endswith("/chat/completions"):
+        return endpoint
+    if endpoint.endswith("/v1"):
+        return f"{endpoint}/chat/completions"
+    return f"{endpoint}/v1/chat/completions"
 
 
 def _build_provider_validation_failure_audit(

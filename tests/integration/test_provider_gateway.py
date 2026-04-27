@@ -4,7 +4,10 @@ import json
 import os
 import subprocess
 import sys
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 
@@ -317,14 +320,134 @@ def test_live_provider_transport_uses_documented_opt_in_env_var(
         )
 
     monkeypatch.setenv("AGENT_HARNESS_RUN_LIVE_PROVIDER_TESTS", "1")
-    with pytest.raises(ValueError, match="live provider smoke is not implemented"):
-        gateway.initial_actions(
+    with _openai_compatible_server(
+        [
+            {
+                "schema_version": "provider_action_envelope.v1",
+                "kind": "actions",
+                "actions": [
+                    {
+                        "schema_version": "tool_call.v1",
+                        "action_id": "live-read-sample",
+                        "tool_name": "read_file",
+                        "arguments": {"path": "sample.py"},
+                        "reason": "inspect target file",
+                    }
+                ],
+            }
+        ]
+    ) as endpoint:
+        monkeypatch.setenv(endpoint_env, endpoint)
+        actions, audit = gateway.initial_actions(
             "run-live-provider-opted-in",
             _gateway_task(),
             _gateway_manifest(),
             provider,
             provider_config,
         )
+
+    assert actions[0].tool_name == "read_file"
+    assert audit.mode == "live_smoke"
+    assert audit.fixture_id is None
+
+
+def test_live_openai_compatible_smoke_completes_with_auto_approval(
+    tmp_path: Path,
+) -> None:
+    _seed_project_with_live_openai_provider(tmp_path)
+    target = tmp_path / "sample.py"
+    target.write_text("def identity(value):\n    return value\n", encoding="utf-8")
+    task_path = tmp_path / "task.json"
+    task_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "task.v2",
+                "task_id": "live-openai-smoke",
+                "title": "Inspect target",
+                "intent": "Inspect the target without changing files.",
+                "target_paths": ["sample.py"],
+                "allowed_tools": ["read_file"],
+                "max_steps": 3,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with _openai_compatible_server(
+        [
+            {
+                "schema_version": "provider_action_envelope.v1",
+                "kind": "actions",
+                "actions": [
+                    {
+                        "schema_version": "tool_call.v1",
+                        "action_id": "live-read-sample",
+                        "tool_name": "read_file",
+                        "arguments": {"path": "sample.py"},
+                        "reason": "inspect target file",
+                    }
+                ],
+            },
+            {
+                "schema_version": "provider_action_envelope.v1",
+                "kind": "actions",
+                "actions": [],
+            },
+        ]
+    ) as endpoint:
+        env = os.environ.copy()
+        env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-live-openai-smoke"
+        env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-27T13:00:00Z"
+        env["AGENT_HARNESS_RUN_LIVE_PROVIDER_TESTS"] = "1"
+        env["AGENT_HARNESS_LIVE_OPENAI_ENDPOINT"] = endpoint
+        env["AGENT_HARNESS_LIVE_OPENAI_API_KEY"] = "live-smoke-secret"
+
+        run = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "agent_harness",
+                "run",
+                str(task_path),
+                "--auto-approve",
+            ],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert run.returncode == 0, run.stderr
+        assert _OpenAICompatibleHandler.request_count == 2
+
+    summary = json.loads(run.stdout)
+    assert summary["status"] == "completed"
+    assert summary["approvals"]
+
+    inspect = subprocess.run(
+        [sys.executable, "-m", "agent_harness", "inspect", "run", "run-live-openai-smoke"],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert inspect.returncode == 0, inspect.stderr
+    inspected = json.loads(inspect.stdout)
+    provider_calls = inspected["provider_calls"]["calls"]
+    assert provider_calls
+    assert {call["mode"] for call in provider_calls} == {"live_smoke"}
+    assert provider_calls[0]["approval_ids"] == summary["approvals"]
+    assert provider_calls[0]["redacted_response_summary"]["kind"] == "tool_calls"
+    assert any(event["type"] == "model_action" for event in inspected["events"])
+    serialized_artifacts = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in (tmp_path / ".agent-harness" / "runs" / "run-live-openai-smoke").rglob("*")
+        if path.is_file() and path.suffix in {".json", ".jsonl"}
+    )
+    assert "live-smoke-secret" not in serialized_artifacts
 
 
 def _gateway_task() -> TaskSpec:
@@ -339,6 +462,97 @@ def _gateway_task() -> TaskSpec:
             "max_steps": 4,
         }
     )
+
+
+def _seed_project_with_live_openai_provider(root: Path) -> None:
+    config = {
+        "schema_version": "config.v2",
+        "project_name": "test-project",
+        "artifact_root": ".agent-harness",
+        "default_policy": "default",
+        "retrieval_backend": "lexical",
+        "template_catalog": "bundled",
+        "default_provider_profile": "live-openai",
+        "provider_profiles": [
+            {
+                "provider_profile_id": "live-openai",
+                "transport": "openai_compatible",
+                "trust_zone": "hosted_provider",
+                "model": "live-model",
+                "endpoint_env": "AGENT_HARNESS_LIVE_OPENAI_ENDPOINT",
+                "network": True,
+                "requires_approval": True,
+                "api_key_env": "AGENT_HARNESS_LIVE_OPENAI_API_KEY",
+            }
+        ],
+    }
+    policy = json.loads(json.dumps(DEFAULT_POLICY))
+    policy["sensitivity_rules"] = [
+        *policy["sensitivity_rules"],
+        {"pattern": "sample.py", "classification": "public"},
+    ]
+    (root / "agent-harness.yaml").write_text(json.dumps(config, indent=2), encoding="utf-8")
+    (root / "policies").mkdir()
+    (root / "policies" / "default.json").write_text(
+        json.dumps(policy, indent=2),
+        encoding="utf-8",
+    )
+
+
+class _OpenAICompatibleHandler(BaseHTTPRequestHandler):
+    response_payloads: list[dict[str, Any]] = []
+    request_count = 0
+
+    def do_POST(self) -> None:
+        type(self).request_count += 1
+        payload = type(self).response_payloads.pop(0)
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(
+            json.dumps(
+                {
+                    "choices": [
+                        {
+                            "message": {
+                                "content": json.dumps(payload),
+                            }
+                        }
+                    ],
+                    "usage": {
+                        "prompt_tokens": 5,
+                        "completion_tokens": 7,
+                        "total_tokens": 12,
+                    },
+                }
+            ).encode("utf-8")
+        )
+
+    def log_message(self, format: str, *args: object) -> None:
+        return
+
+
+class _openai_compatible_server:
+    def __init__(self, responses: list[dict[str, Any]]) -> None:
+        self.responses = responses
+        self.server: ThreadingHTTPServer | None = None
+        self.thread: threading.Thread | None = None
+
+    def __enter__(self) -> str:
+        _OpenAICompatibleHandler.response_payloads = list(self.responses)
+        _OpenAICompatibleHandler.request_count = 0
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), _OpenAICompatibleHandler)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        host, port = cast(tuple[str, int], self.server.server_address)
+        return f"http://{host}:{port}"
+
+    def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+        assert self.server is not None
+        self.server.shutdown()
+        self.server.server_close()
+        if self.thread is not None:
+            self.thread.join(timeout=5)
 
 
 def _gateway_manifest() -> ContextManifest:
