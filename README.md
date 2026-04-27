@@ -146,6 +146,12 @@ provider action envelopes, profile validation, opt-in OpenAI-compatible live
 smoke, provider-call evidence, redacted prompt/response artifacts, and
 deterministic provider-core evals.
 
+The V5 plan targets local-first retrieval hardening for v1.2.0. The planned
+retrieval quality demo is tracked under
+[examples/retrieval_quality/](examples/retrieval_quality/), with the runnable
+golden path landing after the retrieval CLI, local index, and scorecard slices
+are implemented.
+
 ## Documentation
 
 - [Architecture](docs/architecture.md)
@@ -159,6 +165,8 @@ deterministic provider-core evals.
 - [Release readiness](docs/release-readiness.md)
 - [Conception alignment](docs/conception-alignment.md)
 - [V4 Provider Core PRD](docs/prd-agent-harness-v4.md)
+- [V5 Local-First Retrieval Hardening PRD](docs/prd-agent-harness-v5.md)
+- [V5 implementation plan](plans/agent-harness-v5.md)
 - [Roadmap](docs/roadmap.md)
 
 ## License

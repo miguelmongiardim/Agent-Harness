@@ -8,6 +8,9 @@ from agent_harness.utils import now_utc, write_json
 
 DOC_SUBJECT_PATTERN = r"(?:Agent Harness|This repo|The current implementation)"
 DOC_CAPABILITY_VERB_PATTERN = r"(?:provides|supports|includes|ships|offers)"
+RETRIEVAL_DOC_SUBJECT_PATTERN = (
+    r"(?:Agent Harness|This repo|The current implementation|V5|The V5 implementation)"
+)
 
 
 def _unsupported_doc_pattern(claim: str, *, uses_is: bool = False) -> re.Pattern[str]:
@@ -29,6 +32,56 @@ UNSUPPORTED_DOC_CLAIMS = [
     ("multi-agent execution", _unsupported_doc_pattern("multi-agent execution")),
     ("MCP adapter", _unsupported_doc_pattern("MCP adapter")),
 ]
+UNSUPPORTED_RETRIEVAL_SCOPE_CLAIMS = [
+    (
+        "remote embeddings",
+        re.compile(
+            rf"\b{RETRIEVAL_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bremote embeddings?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "hosted embedding providers",
+        re.compile(
+            rf"\b{RETRIEVAL_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bhosted embedding providers?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "remote vector databases",
+        re.compile(
+            rf"\b{RETRIEVAL_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bremote vector databases?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "cloud Qdrant",
+        re.compile(
+            rf"\b{RETRIEVAL_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bcloud Qdrant\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "remote retrieval",
+        re.compile(
+            rf"\b{RETRIEVAL_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bremote retrieval\b",
+            re.IGNORECASE,
+        ),
+    ),
+]
+RETRIEVAL_ROADMAP_HEADINGS = (
+    "roadmap",
+    "out of scope",
+    "not implemented",
+    "not enabled",
+    "later possibilities",
+    "future",
+)
 
 IMPLEMENTED_SECTION_MARKERS = (
     "## What This Repo Proves",
@@ -82,6 +135,7 @@ def run_docs_check(project_root: Path) -> dict[str, Any]:
         text = path.read_text(encoding="utf-8")
         lines = text.splitlines()
         findings.extend(_unsupported_claim_findings(relative, lines))
+        findings.extend(_unsupported_retrieval_scope_findings(relative, lines))
         findings.extend(_required_section_findings(relative, text))
         findings.extend(_internal_link_findings(project_root, path, relative, lines))
         findings.extend(_citation_placeholder_findings(relative, lines))
@@ -195,6 +249,44 @@ def _unsupported_claim_findings(relative: str, lines: list[str]) -> list[dict[st
                     )
                 )
     return findings
+
+
+def _unsupported_retrieval_scope_findings(
+    relative: str, lines: list[str]
+) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    in_roadmap_scope = False
+    for line_number, line in enumerate(lines, start=1):
+        heading = re.match(r"^#{1,6}\s+(.+?)\s*$", line)
+        if heading is not None:
+            heading_text = heading.group(1).lower()
+            in_roadmap_scope = any(marker in heading_text for marker in RETRIEVAL_ROADMAP_HEADINGS)
+        if in_roadmap_scope:
+            continue
+        for label, pattern in UNSUPPORTED_RETRIEVAL_SCOPE_CLAIMS:
+            if pattern.search(line) and not _denies_unsupported_retrieval_scope(line, label):
+                findings.append(
+                    _finding(
+                        "unsupported_retrieval_scope_claim",
+                        relative,
+                        line_number,
+                        f"Docs claim unsupported V5 retrieval behavior as available: {label}",
+                        line,
+                    )
+                )
+    return findings
+
+
+def _denies_unsupported_retrieval_scope(line: str, label: str) -> bool:
+    phrase = re.escape(label).replace(r"\ ", r"\s+")
+    return bool(
+        re.search(
+            rf"\b(?:without|no|not)\s+{phrase}\b"
+            rf"|\bdoes\s+not\s+(?:use|support|provide|include|ship|offer)\s+{phrase}\b",
+            line,
+            re.IGNORECASE,
+        )
+    )
 
 
 def _required_section_findings(relative: str, text: str) -> list[dict[str, object]]:

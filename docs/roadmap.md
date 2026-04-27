@@ -38,6 +38,22 @@ V4 does not promote fixture capture tooling, retention profiles, web UI, MCP
 execution, multi-agent orchestration, production Qdrant server mode, Anthropic
 live support, or enterprise readiness.
 
+## v1.2.0 V5 Direction
+
+V5 is planned as local-first retrieval hardening:
+[docs/prd-agent-harness-v5.md](prd-agent-harness-v5.md) and
+[plans/agent-harness-v5.md](../plans/agent-harness-v5.md). The track keeps
+base-install lexical retrieval available while adding local index lifecycle
+commands, deterministic dense test embeddings, local-only FastEmbed behavior,
+persistent local Qdrant storage, loopback-only Qdrant server developer support,
+hybrid retrieval, scorecards, and policy-filtered context manifest evidence.
+
+Cloud Qdrant, hosted embedding providers, remote embeddings, remote embedding
+APIs, remote vector databases, API-key-backed Qdrant endpoints, HTTPS remote
+Qdrant endpoints, production Qdrant server operation, MCP, API/UI surfaces,
+multi-agent workflows, enterprise retrieval claims, and compliance-ready
+retrieval claims remain future-only and are not V5 behavior.
+
 ## Release Maintenance Priorities
 
 - Preserve the v1.0.0 compatibility and deprecation contract.
@@ -57,7 +73,8 @@ live support, or enterprise readiness.
 - Add policy-mediated multi-agent support.
 - Add pluggable DLP and redaction backends.
 - Add OpenTelemetry dashboards.
-- Add production Qdrant server mode and deployment-scale retrieval tuning.
+- Add cloud or production Qdrant modes and deployment-scale retrieval tuning.
+- Add hosted or remote retrieval providers.
 - Add MCP resources, prompts, or tool execution behind explicit policy
   boundaries.
 - Add enterprise/compliance readiness work, including production identity,

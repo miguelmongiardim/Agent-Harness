@@ -85,6 +85,79 @@ def test_docs_check_reports_required_sections_links_placeholders_schema_and_mark
     } <= rule_ids
 
 
+def test_docs_check_rejects_remote_retrieval_claims_outside_roadmap(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    docs = tmp_path / "docs"
+    docs.mkdir(exist_ok=True)
+    (docs / "retrieval.md").write_text(
+        "\n".join(
+            [
+                "# Retrieval",
+                "",
+                "## Current Capabilities",
+                "",
+                "Agent Harness supports remote embeddings.",
+                "",
+                "## Roadmap",
+                "",
+                "Remote embeddings remain future-only.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["docs", "check"]) == 1
+    report = json.loads(capsys.readouterr().out)
+    retrieval_claims = [
+        finding
+        for finding in report["findings"]
+        if finding["rule_id"] == "unsupported_retrieval_scope_claim"
+    ]
+
+    assert retrieval_claims
+    assert retrieval_claims[0]["path"] == "docs/retrieval.md"
+    assert retrieval_claims[0]["line"] == 5
+    assert "remote embeddings" in retrieval_claims[0]["text"]
+
+
+def test_docs_check_allows_local_retrieval_scope_denials(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    docs = tmp_path / "docs"
+    docs.mkdir(exist_ok=True)
+    (docs / "retrieval.md").write_text(
+        "\n".join(
+            [
+                "# Retrieval",
+                "",
+                "## Current Capabilities",
+                "",
+                "Agent Harness supports local retrieval without remote embeddings.",
+                "",
+                "## Roadmap",
+                "",
+                "Remote embeddings remain future-only.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["docs", "check"]) == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["status"] == "passed"
+
+
 def test_ci_runs_docs_check() -> None:
     workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
     assert "python -m agent_harness docs check" in workflow
