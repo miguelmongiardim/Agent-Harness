@@ -49,12 +49,14 @@ def qdrant_collection_name(index_id: str) -> str:
 
 
 def fastembed_version() -> str:
+    module = importlib.import_module("fastembed")
+    version = getattr(module, "__version__", None)
+    if version:
+        return str(version)
     try:
         return importlib.metadata.version("fastembed")
     except importlib.metadata.PackageNotFoundError:
-        module = importlib.import_module("fastembed")
-        version = getattr(module, "__version__", None)
-        return str(version) if version else "unknown"
+        return "unknown"
 
 
 def build_qdrant_local_collection(

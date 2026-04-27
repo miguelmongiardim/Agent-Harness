@@ -83,9 +83,11 @@ profiles, approval requirements, or tool execution rules.
 expected relevant chunks, and allowed sensitivity classes. The command reuses
 the public retrieval query path to compare lexical, dense, and hybrid modes,
 then writes `retrieval_scorecard.v1` under
-`.agent-harness/retrieval-scorecards/` by default. Scorecards record
-Precision@k, Recall@k, backend comparison status, per-query hits, misses, and
-unexpected chunks. Retrieved result text is not copied into scorecard results.
+`.agent-harness/retrieval-scorecards/` by default. Scorecards apply policy
+sensitivity checks before metric scoring, record rejected chunks separately,
+and record Precision@k, Recall@k, backend comparison status, per-query hits,
+misses, and unexpected accepted chunks. Retrieved result text is not copied
+into scorecard results.
 
 A minimal JSON fixture looks like:
 

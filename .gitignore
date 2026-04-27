@@ -23,6 +23,7 @@ build/
 .agent-harness/exports/
 .agent-harness/benchmarks/
 .agent-harness/eval-work/
+.agent-harness/retrieval-scorecards/
 .agent-harness/template-validation/
 .agent-harness/local/
 .agent-harness/docs/

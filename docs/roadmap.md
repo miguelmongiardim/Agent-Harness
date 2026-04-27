@@ -6,10 +6,11 @@ Agent Harness currently provides a controlled local software-engineering workflo
 using V2 config, task, policy, and template inputs; a deterministic mock agent;
 configured provider profiles; provider-input policy gates; strict provider
 action envelopes; opt-in OpenAI-compatible live smoke; redacted provider-call
-evidence; local lexical and local dense fixture retrieval evidence;
-approval-bound template application; separate `git_commit` approval; packaged
-benchmark adapters; provider audit demos; release-readiness reports; audit
-logs; evals; an optional LangGraph boundary proof; and reproducible artifacts.
+evidence; local retrieval indexes, hybrid retrieval, qdrant-local evidence,
+retrieval scorecards, approval-bound template application, separate
+`git_commit` approval, packaged benchmark adapters, provider audit demos,
+release-readiness reports, audit logs, evals, an optional LangGraph boundary
+proof, and reproducible artifacts.
 
 ## v1.0.0 Status
 
@@ -38,9 +39,9 @@ V4 does not promote fixture capture tooling, retention profiles, web UI, MCP
 execution, multi-agent orchestration, production Qdrant server mode, Anthropic
 live support, or enterprise readiness.
 
-## v1.2.0 V5 Direction
+## v1.2.0 Status
 
-V5 is planned as local-first retrieval hardening:
+v1.2.0 closes the V5 local-first retrieval hardening track:
 [docs/prd-agent-harness-v5.md](prd-agent-harness-v5.md) and
 [plans/agent-harness-v5.md](../plans/agent-harness-v5.md). The track keeps
 base-install lexical retrieval available while adding local index lifecycle

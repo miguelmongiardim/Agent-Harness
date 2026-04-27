@@ -134,13 +134,16 @@ def _score_query_mode(
     allowed_sensitivities = set(query.allowed_sensitivities)
     hits: set[str] = set()
     unexpected_chunks: list[dict[str, Any]] = []
+    rejected_chunks: list[dict[str, Any]] = []
     scored_results = [_scorecard_result(policy, result) for result in _result_items(query_result)]
+    accepted_results: list[dict[str, Any]] = []
 
     for result in scored_results:
-        matched = _matching_expected_chunk(result, expected)
         if result["sensitivity"] not in allowed_sensitivities:
-            unexpected_chunks.append({**result, "reason": "sensitivity_not_allowed"})
+            rejected_chunks.append({**result, "reason": "sensitivity_not_allowed"})
             continue
+        accepted_results.append(result)
+        matched = _matching_expected_chunk(result, expected)
         if matched is None:
             unexpected_chunks.append({**result, "reason": "not_expected"})
         else:
@@ -157,7 +160,8 @@ def _score_query_mode(
         "hit_chunks": hit_chunks,
         "missed_chunks": missed_chunks,
         "unexpected_chunks": unexpected_chunks,
-        "results": scored_results,
+        "rejected_chunks": rejected_chunks,
+        "results": accepted_results,
         "retrieval": query_result["retrieval"],
     }
 
@@ -211,17 +215,10 @@ def _backend_metric_row(
     query_count = len(query_reports)
     precision_at_k = sum(float(report["precision_at_k"]) for report in query_reports) / query_count
     recall_at_k = sum(float(report["recall_at_k"]) for report in query_reports) / query_count
-    disallowed_results = sum(
-        1
-        for report in query_reports
-        for chunk in report["unexpected_chunks"]
-        if chunk["reason"] == "sensitivity_not_allowed"
-    )
+    disallowed_results = sum(len(report["rejected_chunks"]) for report in query_reports)
     status = (
         "passed"
-        if precision_at_k >= min_precision_at_k
-        and recall_at_k >= min_recall_at_k
-        and disallowed_results == 0
+        if precision_at_k >= min_precision_at_k and recall_at_k >= min_recall_at_k
         else "failed"
     )
     return {

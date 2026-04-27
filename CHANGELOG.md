@@ -6,6 +6,28 @@ All notable changes to this project will be documented in this file.
 
 - No changes yet.
 
+## [1.2.0] - 2026-04-27
+
+V5 Local-First Retrieval Hardening release.
+
+- Added local retrieval index lifecycle commands for lexical, deterministic
+  dense, hybrid, qdrant-local, and loopback-only qdrant-server indexes.
+- Added local FastEmbed/Qdrant retrieval evidence with model/cache metadata,
+  persistent local Qdrant storage, loopback-only server diagnostics, and
+  explicit `remote_embeddings: false` evidence.
+- Wired configured retrieval indexes into runtime context assembly so lexical,
+  dense, and both-provenance items flow through policy and sensitivity gates
+  before provider input.
+- Added retrieval scorecards with Precision@k, Recall@k, backend comparison,
+  per-query hits/misses/unexpected accepted chunks, policy-filtered rejected
+  chunks, and release-readiness evidence.
+- Added the `examples/retrieval_quality/` golden path with local-first config,
+  policy-filtered public/internal fixtures, qdrant-local hybrid query evidence,
+  scorecard output, and context-manifest rejection proof.
+- Hardened config validation so remote embeddings, hosted embedding providers,
+  cloud/API-key-backed/HTTPS/non-loopback Qdrant endpoints, and remote retrieval
+  defaults are rejected or kept out of executable examples.
+
 ## [1.1.0] - 2026-04-27
 
 V4 Provider Core release.

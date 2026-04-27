@@ -2,8 +2,8 @@
 
 > Source PRD: [docs/prd-agent-harness-v5.md](../docs/prd-agent-harness-v5.md)
 
-This plan is intentionally not implemented yet. Acceptance boxes are unchecked
-until a later TDD implementation session completes each behavior.
+This plan has been implemented through the V5 TDD sessions. Acceptance boxes
+remain checked only for behavior backed by tests, docs, or release evidence.
 
 ## Architectural Decisions
 

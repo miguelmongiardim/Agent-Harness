@@ -67,8 +67,8 @@ class LexicalRetriever:
 class QdrantFastEmbedRetriever:
     def __init__(self) -> None:
         try:
-            import fastembed  # type: ignore[import-not-found]  # noqa: F401
-            import qdrant_client  # type: ignore[import-not-found]  # noqa: F401
+            import fastembed  # type: ignore[import-not-found, unused-ignore]  # noqa: F401
+            import qdrant_client  # type: ignore[import-not-found, unused-ignore]  # noqa: F401
         except ImportError as exc:
             raise RuntimeError(
                 "qdrant-client and fastembed are optional retrieval dependencies"

@@ -117,6 +117,108 @@ def test_retrieval_scorecard_compares_lexical_dense_and_hybrid_modes(
     assert "text" not in lexical["results"][0]
 
 
+def test_retrieval_scorecard_filters_disallowed_sensitivities_before_scoring(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    _seed_project(tmp_path)
+    docs = tmp_path / "docs"
+    public_docs = docs / "public"
+    internal_docs = docs / "internal"
+    public_docs.mkdir(parents=True)
+    internal_docs.mkdir(parents=True)
+    (public_docs / "config.md").write_text(
+        "# Config\n\nconfig loader policy refactor guidance\n",
+        encoding="utf-8",
+    )
+    (internal_docs / "internal-config.md").write_text(
+        "# Internal Config\n\nconfig loader policy refactor guidance\n",
+        encoding="utf-8",
+    )
+    fixture_path = tmp_path / "scorecard.json"
+    fixture_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "retrieval_scorecard_fixture.v1",
+                "queries": [
+                    {
+                        "query_id": "config-policy",
+                        "query": "config loader policy",
+                        "expected_chunks": ["docs/public/config.md"],
+                        "allowed_sensitivities": ["public"],
+                    }
+                ],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    assert (
+        main(
+            [
+                "retrieval",
+                "index",
+                "build",
+                "--index-id",
+                "quality-demo",
+                "--paths",
+                "docs",
+                "--mode",
+                "hybrid",
+                "--dense-backend",
+                "deterministic",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    assert (
+        main(
+            [
+                "retrieval",
+                "scorecard",
+                str(fixture_path),
+                "--index-id",
+                "quality-demo",
+                "--k",
+                "2",
+            ]
+        )
+        == 0
+    )
+    scorecard = json.loads(capsys.readouterr().out)
+
+    assert scorecard["status"] == "passed"
+    hybrid = scorecard["queries"][0]["modes"]["hybrid"]
+    assert hybrid["hit_chunks"] == ["docs/public/config.md"]
+    assert hybrid["missed_chunks"] == []
+    assert hybrid["unexpected_chunks"] == []
+    assert hybrid["rejected_chunks"] == [
+        {
+            "chunk_id": hybrid["rejected_chunks"][0]["chunk_id"],
+            "path": "docs/internal/internal-config.md",
+            "start_line": 1,
+            "end_line": 3,
+            "sensitivity": "internal",
+            "retrieval_method": "both",
+            "scores": hybrid["rejected_chunks"][0]["scores"],
+            "reason": "sensitivity_not_allowed",
+        }
+    ]
+    assert {
+        row["mode"]: row["unexpected_disallowed_results"] for row in scorecard["backend_comparison"]
+    } == {"lexical": 1, "dense": 1, "hybrid": 1}
+    assert {row["mode"]: row["status"] for row in scorecard["backend_comparison"]} == {
+        "lexical": "passed",
+        "dense": "passed",
+        "hybrid": "passed",
+    }
+
+
 def test_release_readiness_reports_passing_retrieval_scorecard_evidence(
     tmp_path: Path,
     monkeypatch,
@@ -282,6 +384,7 @@ def _seed_project(root: Path) -> None:
         **DEFAULT_POLICY,
         "sensitivity_rules": [
             {"pattern": "docs/public/**", "classification": "public"},
+            {"pattern": "docs/internal/**", "classification": "internal"},
             *DEFAULT_POLICY["sensitivity_rules"],
         ],
     }
