@@ -413,21 +413,21 @@ backend comparison output, and release-readiness evidence hooks.
 
 ### Acceptance criteria
 
-- [ ] Fixture corpora define queries.
-- [ ] Fixture corpora define expected relevant chunks.
-- [ ] Fixture corpora define allowed sensitivity classes.
-- [ ] Scorecard computes Precision@k.
-- [ ] Scorecard computes Recall@k.
-- [ ] Scorecard compares lexical, dense, and hybrid modes.
-- [ ] Scorecard records per-query hits.
-- [ ] Scorecard records per-query misses.
-- [ ] Scorecard records unexpected results.
-- [ ] Scorecard output is written as `retrieval_scorecard.v1`.
-- [ ] Scorecard can run without remote services.
-- [ ] Scorecard works with deterministic dense backend in normal tests.
-- [ ] Optional FastEmbed/Qdrant scorecard runs only when retrieval extras are
+- [x] Fixture corpora define queries.
+- [x] Fixture corpora define expected relevant chunks.
+- [x] Fixture corpora define allowed sensitivity classes.
+- [x] Scorecard computes Precision@k.
+- [x] Scorecard computes Recall@k.
+- [x] Scorecard compares lexical, dense, and hybrid modes.
+- [x] Scorecard records per-query hits.
+- [x] Scorecard records per-query misses.
+- [x] Scorecard records unexpected results.
+- [x] Scorecard output is written as `retrieval_scorecard.v1`.
+- [x] Scorecard can run without remote services.
+- [x] Scorecard works with deterministic dense backend in normal tests.
+- [x] Optional FastEmbed/Qdrant scorecard runs only when retrieval extras are
       installed.
-- [ ] Release readiness verifies at least one retrieval scorecard exists and
+- [x] Release readiness verifies at least one retrieval scorecard exists and
       passes.
 
 ### Out of scope

@@ -392,6 +392,18 @@ def _write_release_ready_project(root: Path, version: str) -> None:
         "template-validation",
     ):
         (evidence / f"{name}.json").write_text(json.dumps({"status": "passed"}), encoding="utf-8")
+    retrieval_scorecards = root / ".agent-harness" / "retrieval-scorecards"
+    retrieval_scorecards.mkdir(parents=True)
+    (retrieval_scorecards / "quality-demo.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "retrieval_scorecard.v1",
+                "status": "passed",
+                "index_id": "quality-demo",
+            }
+        ),
+        encoding="utf-8",
+    )
 
 
 def _write_release_project_without_evidence(root: Path, version: str) -> None:

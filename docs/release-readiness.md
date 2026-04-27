@@ -73,6 +73,17 @@ and `.agent-harness/release/evidence/demo-python-refactor.json`. The
 provider-audit demo remains the main reproducible walkthrough; Python refactor
 remains the secondary dry-run demo.
 
+Retrieval scorecard evidence is generated with:
+
+```powershell
+agent-harness retrieval scorecard <fixture> --index-id <index-id> --k 5
+```
+
+The command records a passing `retrieval_scorecard.v1` artifact under
+`.agent-harness/retrieval-scorecards/`. Release readiness reports this as the
+retrieval scorecard gate and leaves the report pending when no passing
+scorecard exists.
+
 The report represents:
 
 - package build evidence
@@ -83,6 +94,7 @@ The report represents:
 - schema compatibility documentation presence
 - roadmap-claim docs status
 - bundled template validation evidence
+- retrieval scorecard evidence
 - release artifact presence
 - local check commands
 - remote CI run evidence for the target commit
@@ -95,7 +107,8 @@ The report represents:
 
 The command is evidence collection, not release automation. A report is `ready`
 only when required package, install, console script, demo, docs, changelog,
-template, artifact, tag, and remote CI evidence is present and passing.
+template, retrieval scorecard, artifact, tag, and remote CI evidence is present
+and passing.
 
 ## Release Checklist
 
@@ -108,9 +121,10 @@ Before tagging the current release:
 5. Run `agent-harness demo provider-audit`.
 6. Run `agent-harness run examples/tasks/python_refactor.json --dry-run`.
 7. Run `agent-harness template validate --all`.
-8. Run `agent-harness eval`.
-9. Run `agent-harness release readiness --version 1.1.0`.
-10. Confirm CI passes for the release commit.
+8. Run `agent-harness retrieval scorecard <fixture> --index-id <index-id> --k 5`.
+9. Run `agent-harness eval`.
+10. Run `agent-harness release readiness --version 1.1.0`.
+11. Confirm CI passes for the release commit.
 
 ## Tag Process
 

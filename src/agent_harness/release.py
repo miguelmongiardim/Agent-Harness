@@ -46,12 +46,14 @@ def build_release_readiness_report(
     demos = _demo_evidence(project_root)
     docs = _docs_evidence(project_root, docs_report)
     templates = _template_evidence(project_root)
+    retrieval = _retrieval_evidence(project_root)
     release_artifacts = _release_artifact_evidence(project_root, normalized_version)
     diagnostics = _diagnostics(
         package=package,
         demos=demos,
         docs=docs,
         templates=templates,
+        retrieval=retrieval,
         release_artifacts=release_artifacts,
         changelog_present=changelog_present,
         tag_exists=tag_exists,
@@ -94,6 +96,7 @@ def build_release_readiness_report(
         "demos": demos,
         "docs": docs,
         "templates": templates,
+        "retrieval": retrieval,
         "release_artifacts": release_artifacts,
         "local_checks": {
             name: {
@@ -375,6 +378,45 @@ def _template_evidence(project_root: Path) -> dict[str, Any]:
     }
 
 
+def _retrieval_evidence(project_root: Path) -> dict[str, Any]:
+    return {"scorecard": _retrieval_scorecard_evidence(project_root)}
+
+
+def _retrieval_scorecard_evidence(project_root: Path) -> dict[str, Any]:
+    scorecard_root = project_root / ".agent-harness" / "retrieval-scorecards"
+    scorecard_paths = sorted(scorecard_root.glob("*.json")) if scorecard_root.exists() else []
+    for path in scorecard_paths:
+        relative = _project_relative(project_root, path)
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        if (
+            isinstance(payload, dict)
+            and payload.get("schema_version") == "retrieval_scorecard.v1"
+            and payload.get("status") == "passed"
+        ):
+            return {
+                "command": "agent-harness retrieval scorecard <fixture> --index-id <index-id>",
+                "status": "passed",
+                "schema_version": "retrieval_scorecard.v1",
+                "index_id": str(payload.get("index_id") or ""),
+                "evidence": relative,
+                "action": "Keep at least one passing retrieval scorecard before release.",
+            }
+    return {
+        "command": "agent-harness retrieval scorecard <fixture> --index-id <index-id>",
+        "status": "missing_evidence",
+        "schema_version": "retrieval_scorecard.v1",
+        "evidence": None,
+        "checked_paths": [_project_relative(project_root, path) for path in scorecard_paths],
+        "action": (
+            "Run a local retrieval scorecard and keep the passing artifact under "
+            ".agent-harness/retrieval-scorecards/."
+        ),
+    }
+
+
 def _release_artifact_evidence(project_root: Path, version: str) -> dict[str, Any]:
     wheel_glob = f"dist/agent_harness-{version}-*.whl"
     sdist_glob = f"dist/agent_harness-{version}.tar.gz"
@@ -519,6 +561,7 @@ def _diagnostics(
     demos: dict[str, Any],
     docs: dict[str, Any],
     templates: dict[str, Any],
+    retrieval: dict[str, Any],
     release_artifacts: dict[str, Any],
     changelog_present: bool,
     tag_exists: bool,
@@ -530,6 +573,7 @@ def _diagnostics(
     _collect_status_diagnostics(diagnostics, "demos", demos)
     _collect_status_diagnostics(diagnostics, "docs", docs)
     _collect_status_diagnostics(diagnostics, "templates", templates)
+    _collect_status_diagnostics(diagnostics, "retrieval", retrieval)
     _collect_status_diagnostics(diagnostics, "release_artifacts", release_artifacts)
     if not changelog_present:
         diagnostics.append(

@@ -38,6 +38,7 @@ from agent_harness.retrieval_indexes import (
     manifest_path,
     query_index,
 )
+from agent_harness.retrieval_scorecards import run_retrieval_scorecard
 from agent_harness.schemas import TaskSpec
 from agent_harness.storage import RunStore
 from agent_harness.templates import list_templates, load_template
@@ -204,6 +205,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     retrieval_query.add_argument("--k", type=int, default=5)
     retrieval_query.set_defaults(func=cmd_retrieval_query)
+    retrieval_scorecard = retrieval_sub.add_parser("scorecard")
+    retrieval_scorecard.add_argument("fixture_path")
+    retrieval_scorecard.add_argument("--index-id", required=True)
+    retrieval_scorecard.add_argument("--k", type=int, default=5)
+    retrieval_scorecard.add_argument("--profile", default="default")
+    retrieval_scorecard.add_argument("--output")
+    retrieval_scorecard.set_defaults(func=cmd_retrieval_scorecard)
 
     inspect = sub.add_parser("inspect")
     inspect_sub = inspect.add_subparsers(required=True)
@@ -468,6 +476,24 @@ def cmd_retrieval_query(args: argparse.Namespace) -> int:
     )
     print(json.dumps(result, indent=2))
     return 0
+
+
+def cmd_retrieval_scorecard(args: argparse.Namespace) -> int:
+    root = Path.cwd()
+    config = load_config(root)
+    policy = PolicyEngine(root, load_policy(root, args.profile))
+    output = Path(args.output) if args.output else None
+    result = run_retrieval_scorecard(
+        root,
+        config,
+        policy,
+        Path(args.fixture_path),
+        args.index_id,
+        k=args.k,
+        output=output,
+    )
+    print(json.dumps(result, indent=2))
+    return 0 if result["status"] == "passed" else 1
 
 
 def cmd_inspect_run(args: argparse.Namespace) -> int:

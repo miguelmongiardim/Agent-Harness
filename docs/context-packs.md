@@ -78,6 +78,31 @@ run manifests fall back to lexical retrieval.
 Retrieved content is evidence only. It does not override task specs, policy
 profiles, approval requirements, or tool execution rules.
 
+`agent-harness retrieval scorecard` reads local
+`retrieval_scorecard_fixture.v1` fixtures that define query ids, query text,
+expected relevant chunks, and allowed sensitivity classes. The command reuses
+the public retrieval query path to compare lexical, dense, and hybrid modes,
+then writes `retrieval_scorecard.v1` under
+`.agent-harness/retrieval-scorecards/` by default. Scorecards record
+Precision@k, Recall@k, backend comparison status, per-query hits, misses, and
+unexpected chunks. Retrieved result text is not copied into scorecard results.
+
+A minimal JSON fixture looks like:
+
+```json
+{
+  "schema_version": "retrieval_scorecard_fixture.v1",
+  "queries": [
+    {
+      "query_id": "config-policy",
+      "query": "config loader policy",
+      "expected_chunks": ["docs/public/config.md"],
+      "allowed_sensitivities": ["public"]
+    }
+  ]
+}
+```
+
 ## V5 Local-First Retrieval Hardening
 
 The V5 implementation track is local-first retrieval hardening for v1.2.0. It

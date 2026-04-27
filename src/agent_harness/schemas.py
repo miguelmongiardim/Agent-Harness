@@ -634,6 +634,28 @@ class RetrievalIndexManifest(StrictModel):
         return [normalize_relative_path(value) for value in values]
 
 
+class RetrievalScorecardQuery(StrictModel):
+    query_id: str = Field(min_length=1)
+    query: str = Field(min_length=1)
+    expected_chunks: list[str] = Field(min_length=1)
+    allowed_sensitivities: list[Sensitivity] = Field(min_length=1)
+
+
+def _default_retrieval_scorecard_modes() -> list[Literal["lexical", "dense", "hybrid"]]:
+    return ["lexical", "dense", "hybrid"]
+
+
+class RetrievalScorecardFixture(StrictModel):
+    schema_version: Literal["retrieval_scorecard_fixture.v1"] = "retrieval_scorecard_fixture.v1"
+    queries: list[RetrievalScorecardQuery] = Field(min_length=1)
+    compared_modes: list[Literal["lexical", "dense", "hybrid"]] = Field(
+        default_factory=_default_retrieval_scorecard_modes,
+        min_length=1,
+    )
+    min_precision_at_k: float = Field(default=0.0, ge=0.0, le=1.0)
+    min_recall_at_k: float = Field(default=1.0, ge=0.0, le=1.0)
+
+
 class ContextManifestItem(StrictModel):
     item_id: str
     source_id: str

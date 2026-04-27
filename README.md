@@ -109,6 +109,7 @@ agent-harness retrieval index build --index-id qdrant-docs --paths docs --mode d
 agent-harness retrieval index build --index-id server-docs --paths docs --mode dense --dense-backend qdrant-server
 agent-harness retrieval query dense-docs --query "config loader policy" --mode dense --k 5
 agent-harness retrieval query dense-docs --query "config loader policy" --mode hybrid --k 5
+agent-harness retrieval scorecard scorecard.json --index-id dense-docs --k 5
 agent-harness retrieval index list
 agent-harness retrieval index show local-docs
 agent-harness retrieval index delete local-docs
@@ -156,6 +157,12 @@ agent-harness doctor
   index. Accepted and rejected context manifest items retain lexical/dense
   provenance, per-method scores, backend/index evidence, and rejected-text
   redaction before provider input is built.
+- `agent-harness retrieval scorecard` reads local labeled fixtures, compares
+  lexical, dense, and hybrid query modes, computes Precision@k and Recall@k,
+  records per-query hits, misses, and unexpected chunks without retrieved text,
+  and writes `retrieval_scorecard.v1` artifacts under
+  `.agent-harness/retrieval-scorecards/`. Release readiness reports at least
+  one passing retrieval scorecard as retrieval evidence.
 - `examples/provider_audit/` is the main V2 walkthrough. It uses recorded
   provider transport, a non-mock local endpoint trust zone, `network: false`,
   required provider-use approval, inspectable provider-input evidence, redacted
