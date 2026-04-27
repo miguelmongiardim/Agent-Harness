@@ -46,26 +46,50 @@ def _parse_scalar(value: str) -> Any:
 
 
 def parse_simple_yaml(text: str) -> dict[str, Any]:
-    data: dict[str, Any] = {}
-    current_key: str | None = None
+    records: list[tuple[int, str, str]] = []
     for raw_line in text.splitlines():
         line = raw_line.split("#", 1)[0].rstrip()
         if not line:
             continue
-        if line.startswith("  - ") and current_key:
-            data.setdefault(current_key, []).append(_parse_scalar(line[4:]))
+        records.append((len(line) - len(line.lstrip(" ")), line.lstrip(" "), raw_line))
+
+    data: dict[str, Any] = {}
+    stack: list[tuple[int, dict[str, Any] | list[Any]]] = [(-1, data)]
+    for index, (indent, line, raw_line) in enumerate(records):
+        while indent <= stack[-1][0]:
+            stack.pop()
+        parent = stack[-1][1]
+        if line.startswith("- "):
+            if not isinstance(parent, list):
+                raise ValueError(f"unsupported config list item: {raw_line}")
+            parent.append(_parse_scalar(line[2:]))
             continue
         if ":" not in line:
             raise ValueError(f"unsupported config line: {raw_line}")
         key, raw_value = line.split(":", 1)
         key = key.strip()
+        if not isinstance(parent, dict):
+            raise ValueError(f"unsupported config mapping entry: {raw_line}")
         if raw_value.strip():
-            data[key] = _parse_scalar(raw_value)
-            current_key = None
+            parent[key] = _parse_scalar(raw_value)
         else:
-            data[key] = []
-            current_key = key
+            child: dict[str, Any] | list[Any] = (
+                [] if _next_yaml_child_is_list(records, index, indent) else {}
+            )
+            parent[key] = child
+            stack.append((indent, child))
     return data
+
+
+def _next_yaml_child_is_list(
+    records: list[tuple[int, str, str]],
+    index: int,
+    indent: int,
+) -> bool:
+    if index + 1 >= len(records):
+        return False
+    next_indent, next_line, _ = records[index + 1]
+    return next_indent > indent and next_line.startswith("- ")
 
 
 def load_mapping(path: Path) -> dict[str, Any]:

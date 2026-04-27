@@ -70,4 +70,5 @@ pythonpath = ["src"]
 testpaths = ["tests"]
 markers = [
   "live_provider: opt-in live provider smoke tests; require AGENT_HARNESS_RUN_LIVE_PROVIDER_TESTS=1 and explicit pytest -m live_provider",
+  "retrieval_optional: opt-in retrieval tests requiring agent-harness[retrieval] optional dependencies such as fastembed and qdrant-client",
 ]

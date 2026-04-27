@@ -30,6 +30,7 @@ from agent_harness.schemas import (
     Checkpoint,
     ContextManifest,
     GitCommitPlan,
+    HarnessConfig,
     PolicyProfile,
     ProviderCallAudit,
     ProviderCallAuditManifest,
@@ -186,7 +187,7 @@ class HarnessRuntime:
         index_path = self.artifact_root / "indexes" / "documents.jsonl"
         lexical_retriever = LexicalRetriever(index_path)
         dense_retriever, retrieval = _select_retrieval_backend(
-            self.config.retrieval_backend,
+            _requested_retrieval_backend(self.config),
             index_path,
         )
         context = build_context_manifest(
@@ -1928,7 +1929,11 @@ def _select_retrieval_backend(
                 active_backend="lexical",
                 backend="lexical",
                 index_id=index_id,
+                fallback_status="used",
                 fallback_reason="missing_optional_dependencies",
+                diagnostics=[
+                    "qdrant-client and fastembed are unavailable; lexical fallback active"
+                ],
                 remote_embeddings=False,
             )
         dense = LocalDenseRetriever(index_path)
@@ -1948,3 +1953,11 @@ def _select_retrieval_backend(
         index_id=index_id,
         remote_embeddings=False,
     )
+
+
+def _requested_retrieval_backend(config: HarnessConfig) -> str:
+    if config.retrieval is None:
+        return config.retrieval_backend
+    if config.retrieval.default_mode in {"dense", "hybrid"}:
+        return "qdrant"
+    return "lexical"

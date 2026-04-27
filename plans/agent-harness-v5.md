@@ -110,17 +110,17 @@ enough to prove invalid config cannot be used.
 
 ### Acceptance criteria
 
-- [ ] Existing `config.v2` files remain valid.
-- [ ] Valid V5 local-first retrieval config validates.
-- [ ] `remote_embeddings: true` fails with a clear V5 validation error.
-- [ ] Hosted embedding providers fail validation.
-- [ ] Cloud Qdrant URLs fail validation.
-- [ ] API-key-backed Qdrant endpoints fail validation.
-- [ ] Remote HTTPS Qdrant endpoints fail validation.
-- [ ] Private LAN and public IP Qdrant endpoints fail unless they are explicit
+- [x] Existing `config.v2` files remain valid.
+- [x] Valid V5 local-first retrieval config validates.
+- [x] `remote_embeddings: true` fails with a clear V5 validation error.
+- [x] Hosted embedding providers fail validation.
+- [x] Cloud Qdrant URLs fail validation.
+- [x] API-key-backed Qdrant endpoints fail validation.
+- [x] Remote HTTPS Qdrant endpoints fail validation.
+- [x] Private LAN and public IP Qdrant endpoints fail unless they are explicit
       loopback addresses allowed by a later phase.
-- [ ] Missing optional retrieval dependencies produce actionable diagnostics.
-- [ ] Optional-dependency tests are marked and skipped unless dependencies are
+- [x] Missing optional retrieval dependencies produce actionable diagnostics.
+- [x] Optional-dependency tests are marked and skipped unless dependencies are
       installed.
 
 ### Out of scope
