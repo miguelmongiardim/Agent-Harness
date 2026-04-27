@@ -25,6 +25,17 @@ def test_ci_workflow_runs_release_maturity_gates() -> None:
     assert "dist/" in workflow
 
 
+def test_ci_workflow_uses_node24_ready_action_versions() -> None:
+    workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+    assert "actions/checkout@v6" in workflow
+    assert "actions/setup-python@v6" in workflow
+    assert "actions/upload-artifact@v6" in workflow
+    assert "actions/checkout@v4" not in workflow
+    assert "actions/setup-python@v5" not in workflow
+    assert "actions/upload-artifact@v4" not in workflow
+
+
 def test_pre_commit_config_is_local_practical_and_documented() -> None:
     config = Path(".pre-commit-config.yaml").read_text(encoding="utf-8")
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
