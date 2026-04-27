@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from agent_harness.defaults import DEFAULT_POLICY
-from agent_harness.model.adapters import ProviderGateway
+from agent_harness.model.adapters import ProviderEnvelopeValidationError, ProviderGateway
 from agent_harness.schemas import (
     ContextManifest,
     ProviderProfileConfig,
@@ -169,6 +169,86 @@ def test_recorded_openai_provider_missing_required_env_var_fails_clearly(
     assert "gateway-test-secret" not in run.stderr
 
 
+def test_recorded_provider_invalid_envelope_fails_before_tool_execution(
+    tmp_path: Path,
+) -> None:
+    _seed_project_with_recorded_openai_provider(tmp_path)
+    target = tmp_path / "sample.py"
+    target.write_text("def identity(value):\n    return value\n", encoding="utf-8")
+    task_path = tmp_path / "task.json"
+    task_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "task.v2",
+                "task_id": "invalid-provider-envelope",
+                "title": "Inspect target",
+                "intent": "Inspect the target without changing files.",
+                "target_paths": ["sample.py"],
+                "allowed_tools": ["read_file"],
+                "max_steps": 3,
+            }
+        ),
+        encoding="utf-8",
+    )
+    env = os.environ.copy()
+    env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-invalid-provider-envelope"
+    env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-26T16:30:00Z"
+    env["AGENT_HARNESS_RECORDED_OPENAI_ENDPOINT"] = (
+        "recorded://openai_compatible/invalid_envelope"
+    )
+    env["AGENT_HARNESS_RECORDED_OPENAI_API_KEY"] = "gateway-test-secret"
+
+    run = subprocess.run(
+        [sys.executable, "-m", "agent_harness", "run", str(task_path)],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert run.returncode == 0, run.stderr
+    summary = json.loads(run.stdout)
+    assert summary["status"] == "failed"
+    assert summary["message"] == "provider envelope validation failed"
+
+    inspect = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "agent_harness",
+            "inspect",
+            "run",
+            "run-invalid-provider-envelope",
+        ],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert inspect.returncode == 0, inspect.stderr
+    inspected = json.loads(inspect.stdout)
+    event_types = [event["type"] for event in inspected["events"]]
+    assert "provider_envelope_rejected" in event_types
+    assert "model_action" not in event_types
+    assert "tool_observation" not in event_types
+    provider_calls = inspected["provider_calls"]["calls"]
+    assert provider_calls[0]["redacted_response_summary"] == {
+        "kind": "provider_envelope_validation_error",
+        "schema_version": "provider_action_envelope.v1",
+    }
+    serialized_artifacts = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in (tmp_path / ".agent-harness" / "runs" / "run-invalid-provider-envelope").rglob(
+            "*"
+        )
+        if path.is_file() and path.suffix in {".json", ".jsonl"}
+    )
+    assert "gateway-test-secret" not in serialized_artifacts
+
+
 def test_live_provider_transport_uses_documented_opt_in_env_var(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -251,7 +331,60 @@ def _gateway_read_observation() -> ToolObservation:
             "path": "sample.py",
             "content": "def add_numbers(a, b):\n    return a + b\n",
         },
+        )
+
+
+@pytest.mark.parametrize(
+    ("fixture_name", "expected_kind"),
+    [
+        ("invalid_arguments", "provider_envelope_validation_error"),
+        ("refusal", "provider_envelope_validation_error"),
+        ("unsupported", "provider_envelope_validation_error"),
+    ],
+)
+def test_recorded_provider_rejects_invalid_refusal_and_unsupported_envelopes(
+    monkeypatch: pytest.MonkeyPatch,
+    fixture_name: str,
+    expected_kind: str,
+) -> None:
+    endpoint_env = "AGENT_HARNESS_GATEWAY_INVALID_ENVELOPE_ENDPOINT"
+    api_key_env = "AGENT_HARNESS_GATEWAY_INVALID_ENVELOPE_API_KEY"
+    monkeypatch.setenv(endpoint_env, f"recorded://openai_compatible/{fixture_name}")
+    monkeypatch.setenv(api_key_env, "transport-test-secret")
+
+    provider_config = ProviderProfileConfig(
+        provider_profile_id="invalid-envelope-contract",
+        transport="openai_compatible",
+        trust_zone="local_process",
+        model="openai_compatible-model",
+        endpoint_env=endpoint_env,
+        network=False,
+        requires_approval=False,
+        api_key_env=api_key_env,
     )
+    provider = RunProviderRecord(
+        provider_profile_id=provider_config.provider_profile_id,
+        transport=provider_config.transport,
+        trust_zone=provider_config.trust_zone,
+        model=provider_config.model,
+        endpoint_env=provider_config.endpoint_env,
+        endpoint_identity=f"env:{provider_config.endpoint_env}",
+        network=provider_config.network,
+        requires_approval=provider_config.requires_approval,
+    )
+    gateway = ProviderGateway(Path.cwd())
+
+    with pytest.raises(ProviderEnvelopeValidationError) as exc_info:
+        gateway.initial_actions(
+            "run-provider-gateway",
+            _gateway_task(),
+            _gateway_manifest(),
+            provider,
+            provider_config,
+        )
+
+    assert exc_info.value.audit.redacted_response_summary["kind"] == expected_kind
+    assert exc_info.value.audit.action_count == 0
 
 
 @pytest.mark.parametrize(
@@ -287,7 +420,7 @@ def _gateway_read_observation() -> ToolObservation:
     ],
 )
 def test_provider_gateway_contract_is_shared_across_transports(
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
     transport: str,
     trust_zone: str,
     endpoint_env: str,

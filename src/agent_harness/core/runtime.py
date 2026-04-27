@@ -17,7 +17,7 @@ from agent_harness.context.retrieval import (
     optional_dense_dependencies_available,
 )
 from agent_harness.core.models import DeterministicMockModel
-from agent_harness.model.adapters import ProviderGateway
+from agent_harness.model.adapters import ProviderEnvelopeValidationError, ProviderGateway
 from agent_harness.policy import PolicyEngine, load_policy, load_policy_with_schema_evidence
 from agent_harness.provider_input import build_provider_input_manifest
 from agent_harness.schemas import (
@@ -301,6 +301,7 @@ class HarnessRuntime:
 
         approvals: list[str] = []
         status = "dry_run" if dry_run else "completed"
+        run_message: str | None = None
         should_execute_model = True
         if provider is not None:
             provider_decision = policy.evaluate_provider_use(provider, checkpoint_hash)
@@ -437,6 +438,10 @@ class HarnessRuntime:
                 dry_run=dry_run,
             )
             approvals.extend(model_approvals)
+            if status == "failed" and any(
+                event["type"] == "provider_envelope_rejected" for event in store.events()
+            ):
+                run_message = "provider envelope validation failed"
 
         artifact_paths = {
             "run_dir": store.run_dir,
@@ -469,6 +474,7 @@ class HarnessRuntime:
             status,
             artifact_paths,
             approvals=approvals,
+            message=run_message,
         )
 
     def apply_template(
@@ -1047,15 +1053,25 @@ def _execute_model_actions(
     if gateway is not None:
         assert provider is not None
         assert provider_config is not None
-        initial_actions, provider_call = gateway.initial_actions(
-            store.run_id,
-            task,
-            manifest,
-            provider,
-            provider_config,
-            approval_ids=provider_approval_ids,
-            provider_input=provider_input_manifest,
-        )
+        try:
+            initial_actions, provider_call = gateway.initial_actions(
+                store.run_id,
+                task,
+                manifest,
+                provider,
+                provider_config,
+                approval_ids=provider_approval_ids,
+                provider_input=provider_input_manifest,
+            )
+        except ProviderEnvelopeValidationError as exc:
+            _record_provider_envelope_rejection(
+                store,
+                exc,
+                task,
+                provider_approval_ids or [],
+                provider_input_manifest,
+            )
+            return "failed", approvals
         _append_provider_call_audit(store, provider_call)
     else:
         initial_actions = model.initial_actions(task, manifest)
@@ -1090,16 +1106,26 @@ def _execute_model_actions(
     if gateway is not None:
         assert provider is not None
         assert provider_config is not None
-        next_actions, provider_call = gateway.next_actions(
-            store.run_id,
-            task,
-            manifest,
-            observations,
-            provider,
-            provider_config,
-            approval_ids=provider_approval_ids,
-            provider_input=provider_input_manifest,
-        )
+        try:
+            next_actions, provider_call = gateway.next_actions(
+                store.run_id,
+                task,
+                manifest,
+                observations,
+                provider,
+                provider_config,
+                approval_ids=provider_approval_ids,
+                provider_input=provider_input_manifest,
+            )
+        except ProviderEnvelopeValidationError as exc:
+            _record_provider_envelope_rejection(
+                store,
+                exc,
+                task,
+                provider_approval_ids or [],
+                provider_input_manifest,
+            )
+            return "failed", approvals
         _append_provider_call_audit(store, provider_call)
     else:
         next_actions = model.next_actions(task, manifest, observations)
@@ -1502,6 +1528,47 @@ def _bind_provider_input_approval(
 
 def _provider_input_hash(manifest: ProviderInputManifest) -> str:
     return sha256_json(manifest.model_dump(mode="json"))
+
+
+def _record_provider_envelope_rejection(
+    store: RunStore,
+    error: ProviderEnvelopeValidationError,
+    task: TaskSpec,
+    approval_ids: list[str],
+    provider_input: ProviderInputManifest | None,
+) -> None:
+    audit = error.audit.model_copy(
+        update={
+            "run_id": store.run_id,
+            "task_id": task.task_id,
+            "approval_ids": list(dict.fromkeys(approval_ids)),
+            "prompt_hash": sha256_json(
+                provider_input.model_dump(mode="json") if provider_input is not None else {}
+            ),
+            "redacted_prompt_summary": {
+                "kind": "provider_input",
+                "records": len(provider_input.records) if provider_input is not None else 0,
+                "included_records": (
+                    sum(1 for record in provider_input.records if record.included)
+                    if provider_input is not None
+                    else 0
+                ),
+            },
+        }
+    )
+    _append_provider_call_audit(store, audit)
+    store.append_event(
+        make_event(
+            store.run_id,
+            "provider_envelope_rejected",
+            {
+                "schema_version": "provider_action_envelope.v1",
+                "phase": audit.phase,
+                "provider_profile_id": audit.provider_profile_id,
+                "provider_call_audit_id": audit.audit_id,
+            },
+        )
+    )
 
 
 def _append_provider_call_audit(store: RunStore, audit: ProviderCallAudit) -> None:

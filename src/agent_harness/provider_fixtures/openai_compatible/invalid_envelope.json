@@ -1,0 +1,21 @@
+{
+  "fixture_id": "openai_compatible.invalid_envelope",
+  "transport": "openai_compatible",
+  "responses": {
+    "initial_actions": {
+      "schema_version": "provider_action_envelope.v1",
+      "kind": "actions",
+      "actions": [
+        {
+          "schema_version": "tool_call.v1",
+          "action_id": "provider-invalid-tool",
+          "tool_name": "delete_file",
+          "arguments": {
+            "path": "sample.py"
+          },
+          "reason": "attempt unsupported file deletion"
+        }
+      ]
+    }
+  }
+}

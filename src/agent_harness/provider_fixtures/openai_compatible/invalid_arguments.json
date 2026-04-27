@@ -1,0 +1,19 @@
+{
+  "fixture_id": "openai_compatible.invalid_arguments",
+  "transport": "openai_compatible",
+  "responses": {
+    "initial_actions": {
+      "schema_version": "provider_action_envelope.v1",
+      "kind": "actions",
+      "actions": [
+        {
+          "schema_version": "tool_call.v1",
+          "action_id": "provider-invalid-arguments",
+          "tool_name": "read_file",
+          "arguments": {},
+          "reason": "read without a path"
+        }
+      ]
+    }
+  }
+}

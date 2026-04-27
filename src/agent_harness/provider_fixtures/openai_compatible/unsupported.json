@@ -1,0 +1,11 @@
+{
+  "fixture_id": "openai_compatible.unsupported",
+  "transport": "openai_compatible",
+  "responses": {
+    "initial_actions": {
+      "schema_version": "provider_action_envelope.v1",
+      "kind": "unsupported",
+      "unsupported_reason": "provider requested an unsupported action mode"
+    }
+  }
+}

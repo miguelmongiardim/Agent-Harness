@@ -46,6 +46,7 @@ ProviderUseRuleAction = Literal["allow", "approval_required", "deny"]
 ProviderInputRuleAction = Literal["allow", "allow_untrusted", "approval_required", "redact", "deny"]
 ProviderCallPhase = Literal["initial_actions", "next_actions"]
 ProviderExecutionMode = Literal["mock", "recorded_fixture", "live_smoke"]
+ProviderActionEnvelopeKind = Literal["actions", "refusal", "unsupported"]
 RetrievalMethod = Literal["direct", "lexical", "dense", "both"]
 RetrievalEvidenceMethod = Literal["lexical", "dense"]
 BenchmarkKind = Literal["swe_bench_style", "terminal_task"]
@@ -407,6 +408,34 @@ class ToolObservation(StrictModel):
     error: str | None = None
     started_at: datetime = Field(default_factory=now_utc)
     ended_at: datetime = Field(default_factory=now_utc)
+
+
+class ProviderActionEnvelope(StrictModel):
+    schema_version: Literal["provider_action_envelope.v1"] = "provider_action_envelope.v1"
+    kind: ProviderActionEnvelopeKind
+    actions: list[ToolCall] = Field(default_factory=list)
+    refusal_reason: str | None = None
+    unsupported_reason: str | None = None
+
+    @model_validator(mode="after")
+    def validate_envelope(self) -> ProviderActionEnvelope:
+        if self.kind == "actions":
+            if self.refusal_reason is not None or self.unsupported_reason is not None:
+                raise ValueError("action envelopes cannot include refusal or unsupported reasons")
+            return self
+        if self.actions:
+            raise ValueError("refusal and unsupported envelopes cannot include actions")
+        if self.kind == "refusal":
+            if not self.refusal_reason:
+                raise ValueError("refusal envelopes require refusal_reason")
+            if self.unsupported_reason is not None:
+                raise ValueError("refusal envelopes cannot include unsupported_reason")
+            return self
+        if not self.unsupported_reason:
+            raise ValueError("unsupported envelopes require unsupported_reason")
+        if self.refusal_reason is not None:
+            raise ValueError("unsupported envelopes cannot include refusal_reason")
+        return self
 
 
 class ContextSource(StrictModel):

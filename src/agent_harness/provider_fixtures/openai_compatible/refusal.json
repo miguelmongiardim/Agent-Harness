@@ -1,0 +1,11 @@
+{
+  "fixture_id": "openai_compatible.refusal",
+  "transport": "openai_compatible",
+  "responses": {
+    "initial_actions": {
+      "schema_version": "provider_action_envelope.v1",
+      "kind": "refusal",
+      "refusal_reason": "provider declined the task"
+    }
+  }
+}

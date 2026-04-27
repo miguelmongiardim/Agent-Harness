@@ -3,13 +3,14 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from agent_harness.model.mock import DeterministicMockModel
 from agent_harness.schemas import (
     ContextManifest,
+    ProviderActionEnvelope,
     ProviderCallAudit,
     ProviderCallPhase,
     ProviderInputManifest,
@@ -20,6 +21,10 @@ from agent_harness.schemas import (
     ToolCall,
     ToolObservation,
 )
+from agent_harness.tools.patch_file import PatchFileArgs
+from agent_harness.tools.read_file import ReadFileArgs
+from agent_harness.tools.run_tests import RunTestsArgs
+from agent_harness.tools.search_code import SearchCodeArgs
 from agent_harness.utils import sha256_json, stable_id
 
 
@@ -29,6 +34,13 @@ class _RecordedFixture(BaseModel):
     fixture_id: str
     transport: ProviderTransport
     planner: Literal["deterministic_mock"] = "deterministic_mock"
+    responses: dict[ProviderCallPhase, dict[str, Any]] = Field(default_factory=dict)
+
+
+class ProviderEnvelopeValidationError(ValueError):
+    def __init__(self, message: str, audit: ProviderCallAudit) -> None:
+        super().__init__(message)
+        self.audit = audit
 
 
 class ProviderGateway:
@@ -101,7 +113,12 @@ class _BaseTransport:
         self.model = DeterministicMockModel()
 
     def initial_actions(self, task: TaskSpec, manifest: ContextManifest) -> list[ToolCall]:
-        return self.model.initial_actions(task, manifest)
+        return self._actions_from_envelope(
+            "initial_actions",
+            self._action_envelope(self.model.initial_actions(task, manifest)),
+            task,
+            manifest,
+        )
 
     def next_actions(
         self,
@@ -109,7 +126,49 @@ class _BaseTransport:
         manifest: ContextManifest,
         observations: list[ToolObservation],
     ) -> list[ToolCall]:
-        return self.model.next_actions(task, manifest, observations)
+        return self._actions_from_envelope(
+            "next_actions",
+            self._action_envelope(self.model.next_actions(task, manifest, observations)),
+            task,
+            manifest,
+        )
+
+    def _action_envelope(self, actions: list[ToolCall]) -> dict[str, Any]:
+        return {
+            "schema_version": "provider_action_envelope.v1",
+            "kind": "actions",
+            "actions": [action.model_dump(mode="python") for action in actions],
+        }
+
+    def _actions_from_envelope(
+        self,
+        phase: ProviderCallPhase,
+        payload: dict[str, Any],
+        task: TaskSpec,
+        manifest: ContextManifest,
+    ) -> list[ToolCall]:
+        del task
+        del manifest
+        try:
+            envelope = ProviderActionEnvelope.model_validate(payload)
+            if envelope.kind == "refusal":
+                raise ValueError("provider refused the requested task")
+            if envelope.kind == "unsupported":
+                raise ValueError("provider returned an unsupported action envelope")
+            for action in envelope.actions:
+                _validate_tool_arguments(action)
+            return envelope.actions
+        except (ValidationError, ValueError) as exc:
+            audit = _build_provider_validation_failure_audit(
+                self.provider,
+                phase,
+                payload,
+                str(exc),
+            )
+            raise ProviderEnvelopeValidationError(
+                "provider envelope validation failed",
+                audit,
+            ) from exc
 
     def audit(
         self,
@@ -178,6 +237,33 @@ class _RecordedTransport(_BaseTransport):
             provider_input,
             mode="recorded_fixture",
             fixture_id=self.fixture.fixture_id,
+        )
+
+    def initial_actions(self, task: TaskSpec, manifest: ContextManifest) -> list[ToolCall]:
+        return self._actions_from_envelope(
+            "initial_actions",
+            self.fixture.responses.get(
+                "initial_actions",
+                self._action_envelope(self.model.initial_actions(task, manifest)),
+            ),
+            task,
+            manifest,
+        )
+
+    def next_actions(
+        self,
+        task: TaskSpec,
+        manifest: ContextManifest,
+        observations: list[ToolObservation],
+    ) -> list[ToolCall]:
+        return self._actions_from_envelope(
+            "next_actions",
+            self.fixture.responses.get(
+                "next_actions",
+                self._action_envelope(self.model.next_actions(task, manifest, observations)),
+            ),
+            task,
+            manifest,
         )
 
     def _load_fixture(self) -> _RecordedFixture:
@@ -273,6 +359,73 @@ def _build_provider_audit(
         },
         policy_decision_ids=_policy_decision_ids(provider_input),
     )
+
+
+def _build_provider_validation_failure_audit(
+    provider: RunProviderRecord,
+    phase: ProviderCallPhase,
+    payload: dict[str, Any],
+    reason: str,
+) -> ProviderCallAudit:
+    sanitized_error = {
+        "schema_version": "provider_action_envelope.v1",
+        "kind": "provider_envelope_validation_error",
+        "reason": reason,
+    }
+    return ProviderCallAudit(
+        audit_id=stable_id(
+            "provider-call",
+            provider.provider_profile_id,
+            phase,
+            "provider_envelope_validation_error",
+            sha256_json(payload),
+        ),
+        run_id="",
+        task_id="",
+        provider_profile_id=provider.provider_profile_id,
+        transport=provider.transport,
+        trust_zone=provider.trust_zone,
+        model=provider.model,
+        endpoint_identity=provider.endpoint_identity,
+        network=provider.network,
+        phase=phase,
+        mode="recorded_fixture" if provider.transport != "mock" else "mock",
+        approval_ids=[],
+        action_count=0,
+        actions_hash=sha256_json(sanitized_error),
+        prompt_hash=sha256_json({"records": []}),
+        response_hash=sha256_json(sanitized_error),
+        redacted_prompt_summary={"kind": "provider_input", "records": 0, "included_records": 0},
+        redacted_response_summary={
+            "kind": "provider_envelope_validation_error",
+            "schema_version": "provider_action_envelope.v1",
+        },
+        latency_ms=0,
+        token_metrics={},
+        policy_decision_ids=[],
+    )
+
+
+def _validate_tool_arguments(action: ToolCall) -> None:
+    if action.tool_name == "read_file":
+        ReadFileArgs.model_validate(action.arguments)
+        return
+    if action.tool_name == "search_code":
+        SearchCodeArgs.model_validate(action.arguments)
+        return
+    if action.tool_name == "run_tests":
+        RunTestsArgs.model_validate(action.arguments)
+        return
+    if action.tool_name == "patch_file":
+        PatchFileArgs.model_validate(action.arguments)
+        return
+    if action.tool_name == "git_status":
+        if action.arguments:
+            raise ValueError("git_status does not accept arguments")
+        return
+    if action.tool_name == "git_commit":
+        raise ValueError("git_commit is not supported in provider action envelopes")
+    raise ValueError(f"unknown provider tool: {action.tool_name}")
 
 
 def _provider_prompt_payload(provider_input: ProviderInputManifest | None) -> dict[str, object]:
