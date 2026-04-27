@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
+from typing import Literal
 
 from agent_harness.config import (
     dump_model,
@@ -12,8 +13,11 @@ from agent_harness.config import (
 )
 from agent_harness.context.builder import build_context_manifest
 from agent_harness.context.retrieval import (
+    DenseRetriever,
+    FakeRetriever,
     LexicalRetriever,
     LocalDenseRetriever,
+    Retriever,
     optional_dense_dependencies_available,
 )
 from agent_harness.core.models import DeterministicMockModel
@@ -24,6 +28,7 @@ from agent_harness.model.profiles import (
 )
 from agent_harness.policy import PolicyEngine, load_policy, load_policy_with_schema_evidence
 from agent_harness.provider_input import build_provider_input_manifest
+from agent_harness.retrieval_indexes import load_index
 from agent_harness.schemas import (
     AppliedTemplateRecord,
     ApprovalRecord,
@@ -38,6 +43,7 @@ from agent_harness.schemas import (
     ProviderProfileConfig,
     ProviderUseApprovalBinding,
     RetrievalBackendManifest,
+    RetrievalIndexManifest,
     RunProviderRecord,
     RunStatus,
     RunSummary,
@@ -184,11 +190,10 @@ class HarnessRuntime:
                 message="run blocked by security findings",
             )
 
-        index_path = self.artifact_root / "indexes" / "documents.jsonl"
-        lexical_retriever = LexicalRetriever(index_path)
-        dense_retriever, retrieval = _select_retrieval_backend(
-            _requested_retrieval_backend(self.config),
-            index_path,
+        lexical_retriever, dense_retriever, retrieval = _select_retrieval_backend(
+            self.config,
+            self.project_root,
+            self.artifact_root,
         )
         context = build_context_manifest(
             self.project_root,
@@ -214,13 +219,13 @@ class HarnessRuntime:
                     },
                 )
             )
-        for source_path, decision in context.retrieval_decisions:
+        for operation, source_path, decision in context.retrieval_decisions:
             store.append_event(
                 make_event(
                     run_id,
                     "policy_decision",
                     {
-                        "operation": "retrieval_source",
+                        "operation": operation,
                         "path": source_path,
                         "decision": decision.model_dump(mode="json"),
                     },
@@ -1918,39 +1923,101 @@ def _coerce_provider_input_sensitivities(values: list[str]) -> list[Sensitivity]
 
 
 def _select_retrieval_backend(
-    requested_backend: str,
-    index_path: Path,
-) -> tuple[LocalDenseRetriever | None, RetrievalBackendManifest]:
+    config: HarnessConfig,
+    project_root: Path,
+    artifact_root: Path,
+) -> tuple[Retriever, DenseRetriever | None, RetrievalBackendManifest]:
+    configured = config.retrieval
+    if configured is not None and configured.index_id is not None:
+        manifest = load_index(project_root, config, configured.index_id)
+        mode = configured.default_mode
+        index_path = project_root / manifest.index_path
+        lexical: Retriever = (
+            LexicalRetriever(index_path) if mode in {"lexical", "hybrid"} else FakeRetriever()
+        )
+        dense: DenseRetriever | None = None
+        if mode in {"dense", "hybrid"}:
+            if manifest.embedding_backend != "deterministic":
+                raise ValueError("dense and hybrid context retrieval require a deterministic index")
+            dense = LocalDenseRetriever(
+                index_path,
+                backend=manifest.embedding_backend,
+                model=manifest.embedding_model or "token-set",
+                version=manifest.embedding_model_version or "baseline",
+            )
+        return lexical, dense, _configured_index_retrieval_backend(manifest, mode)
+
+    index_path = artifact_root / "indexes" / "documents.jsonl"
+    requested_backend = _requested_retrieval_backend(config)
+    lexical_retriever = LexicalRetriever(index_path)
     index_id = hash_file(index_path) if index_path.exists() else sha256_text("")
     if requested_backend == "qdrant":
         if not optional_dense_dependencies_available():
-            return None, RetrievalBackendManifest(
-                requested_backend="qdrant",
-                active_backend="lexical",
-                backend="lexical",
-                index_id=index_id,
-                fallback_status="used",
-                fallback_reason="missing_optional_dependencies",
-                diagnostics=[
-                    "qdrant-client and fastembed are unavailable; lexical fallback active"
-                ],
-                remote_embeddings=False,
+            return (
+                lexical_retriever,
+                None,
+                RetrievalBackendManifest(
+                    requested_backend="qdrant",
+                    active_backend="lexical",
+                    backend="lexical",
+                    index_id=index_id,
+                    fallback_status="used",
+                    fallback_reason="missing_optional_dependencies",
+                    diagnostics=[
+                        "qdrant-client and fastembed are unavailable; lexical fallback active"
+                    ],
+                    remote_embeddings=False,
+                ),
             )
         dense = LocalDenseRetriever(index_path)
         metadata = dense.metadata()
-        return dense, RetrievalBackendManifest(
-            requested_backend="qdrant",
-            active_backend="local_dense_fixture",
-            backend=metadata.backend,
-            embedding_model=metadata.model,
+        return (
+            lexical_retriever,
+            dense,
+            RetrievalBackendManifest(
+                requested_backend="qdrant",
+                active_backend="local_dense_fixture",
+                backend=metadata.backend,
+                embedding_model=metadata.model,
+                embedding_model_version=metadata.version,
+                index_id=index_id,
+                remote_embeddings=False,
+            ),
+        )
+    return (
+        lexical_retriever,
+        None,
+        RetrievalBackendManifest(
+            requested_backend="lexical" if requested_backend != "fake" else "fake",
+            active_backend="lexical",
+            backend="lexical",
             index_id=index_id,
             remote_embeddings=False,
+        ),
+    )
+
+
+def _configured_index_retrieval_backend(
+    manifest: RetrievalIndexManifest,
+    mode: Literal["lexical", "dense", "hybrid"],
+) -> RetrievalBackendManifest:
+    if mode == "lexical":
+        return RetrievalBackendManifest(
+            requested_backend="lexical",
+            active_backend="lexical",
+            backend="lexical",
+            index_id=manifest.index_id,
+            index_path=manifest.index_path,
+            remote_embeddings=False,
         )
-    return None, RetrievalBackendManifest(
-        requested_backend="lexical" if requested_backend != "fake" else "fake",
-        active_backend="lexical",
-        backend="lexical",
-        index_id=index_id,
+    return RetrievalBackendManifest(
+        requested_backend=mode,
+        active_backend=("deterministic_dense" if mode == "dense" else "deterministic_hybrid"),
+        backend=manifest.embedding_backend or "deterministic",
+        embedding_model=manifest.embedding_model,
+        embedding_model_version=manifest.embedding_model_version,
+        index_id=manifest.index_id,
+        index_path=manifest.index_path,
         remote_embeddings=False,
     )
 

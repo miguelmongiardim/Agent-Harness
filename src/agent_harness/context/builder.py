@@ -23,7 +23,7 @@ from agent_harness.utils import sha256_text, stable_id
 @dataclass(frozen=True)
 class ContextBuildResult:
     manifest: ContextManifest
-    retrieval_decisions: list[tuple[str, PolicyDecision]]
+    retrieval_decisions: list[tuple[str, str, PolicyDecision]]
 
 
 def build_context_manifest(
@@ -39,7 +39,7 @@ def build_context_manifest(
     chunks: list[ContextChunk] = []
     items: list[ContextManifestItem] = []
     rejected_items: list[ContextManifestItem] = []
-    retrieval_decisions: list[tuple[str, PolicyDecision]] = []
+    retrieval_decisions: list[tuple[str, str, PolicyDecision]] = []
     budget = policy.profile.max_context_bytes
     used = 0
 
@@ -116,15 +116,22 @@ def build_context_manifest(
         key=lambda candidate: (-candidate.rank_score, candidate.path, candidate.start_line),
     ):
         decision = policy.evaluate_context_source(merged.path)
-        retrieval_decisions.append((merged.path, decision))
+        retrieval_decisions.append(("retrieval_source", merged.path, decision))
         if not decision.allowed:
             rejected_items.append(merged_candidate_item(merged, policy, decision, text=None))
+            continue
+        sensitivity = policy.classify_path(merged.path)
+        sensitivity_decision = policy.evaluate_context_sensitivity(sensitivity, merged.path)
+        retrieval_decisions.append(("retrieval_sensitivity", merged.path, sensitivity_decision))
+        if not sensitivity_decision.allowed:
+            rejected_items.append(
+                merged_candidate_item(merged, policy, sensitivity_decision, text=None)
+            )
             continue
         redacted, _ = policy.redact_text(merged.text)
         if used + len(redacted) > budget:
             break
         source_id = merged.source_id
-        sensitivity = policy.classify_path(merged.path)
         sources.setdefault(
             source_id,
             ContextSource(

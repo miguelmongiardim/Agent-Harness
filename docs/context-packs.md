@@ -35,6 +35,13 @@ model download, and records `retrieval_backend.v2` evidence with
 `remote_embeddings: false`. It is test/fixture behavior, not a production
 embedding backend.
 
+A `config.v2` `retrieval.index_id` can route run-time context assembly through
+a built retrieval index. Lexical, deterministic dense, and hybrid modes preserve
+per-method scores, lexical/dense provenance, backend/index evidence, and
+included/rejected manifest items. Retrieved chunks are filtered by path policy
+and hard-deny sensitivity rules before accepted context or provider input is
+created; rejected items omit source text.
+
 Local dense fixture behavior is opt-in with `retrieval_backend: qdrant`.
 Qdrant/FastEmbed dependency checks are used as the local optional-dependency
 gate, but V2 does not expose production Qdrant server mode and does not use

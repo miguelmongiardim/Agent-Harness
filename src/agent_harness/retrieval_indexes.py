@@ -287,10 +287,7 @@ def _query_records(
         retrieval_method = (
             "both" if set(scores) == {"lexical", "dense"} else next(iter(scores.keys()))
         )
-        provenance = [
-            {"method": method, "score": score}
-            for method, score in scores.items()
-        ]
+        provenance = [{"method": method, "score": score} for method, score in scores.items()]
         result = {
             "chunk_id": str(record["chunk_id"]),
             "source_id": str(record["source_id"]),
@@ -329,6 +326,7 @@ def _query_retrieval_backend(
             active_backend="lexical",
             backend="lexical",
             index_id=manifest.index_id,
+            index_path=manifest.index_path,
             remote_embeddings=False,
         )
     return RetrievalBackendManifest(
@@ -338,6 +336,7 @@ def _query_retrieval_backend(
         embedding_model="token-set",
         embedding_model_version="baseline",
         index_id=manifest.index_id,
+        index_path=manifest.index_path,
         remote_embeddings=False,
     )
 

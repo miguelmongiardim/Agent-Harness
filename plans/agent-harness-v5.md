@@ -258,20 +258,20 @@ provider-input rules decide what can be included.
 
 ### Acceptance criteria
 
-- [ ] Hybrid retrieval runs through context assembly.
-- [ ] Context manifests record lexical provenance.
-- [ ] Context manifests record dense provenance.
-- [ ] Context manifests record both-provenance for merged duplicates.
-- [ ] Context manifests record per-method scores.
-- [ ] Context manifests record backend and index evidence.
-- [ ] Included and rejected items are both inspectable.
-- [ ] Rejected items include rejection reasons, sensitivity classes, and policy
+- [x] Hybrid retrieval runs through context assembly.
+- [x] Context manifests record lexical provenance.
+- [x] Context manifests record dense provenance.
+- [x] Context manifests record both-provenance for merged duplicates.
+- [x] Context manifests record per-method scores.
+- [x] Context manifests record backend and index evidence.
+- [x] Included and rejected items are both inspectable.
+- [x] Rejected items include rejection reasons, sensitivity classes, and policy
       decisions.
-- [ ] Denied chunks are rejected before context assembly acceptance.
-- [ ] Sensitive chunks that policy denies are rejected before context assembly
+- [x] Denied chunks are rejected before context assembly acceptance.
+- [x] Sensitive chunks that policy denies are rejected before context assembly
       acceptance.
-- [ ] Provider input receives only policy-accepted context.
-- [ ] Lexical fallback remains deterministic and inspectable.
+- [x] Provider input receives only policy-accepted context.
+- [x] Lexical fallback remains deterministic and inspectable.
 
 ### Out of scope
 

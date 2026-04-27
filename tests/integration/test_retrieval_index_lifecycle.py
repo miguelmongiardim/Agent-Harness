@@ -53,9 +53,10 @@ def test_retrieval_index_build_writes_lexical_manifest(
     assert set(manifest["source_hashes"]) == {"docs/guide.md"}
     assert manifest["chunking_config"] == {"max_chars": 1200}
     assert manifest["chunks"][0]["path"] == "docs/guide.md"
-    assert manifest["chunks"][0]["content_hash"] == manifest["chunk_hashes"][
-        manifest["chunks"][0]["chunk_id"]
-    ]
+    assert (
+        manifest["chunks"][0]["content_hash"]
+        == manifest["chunk_hashes"][manifest["chunks"][0]["chunk_id"]]
+    )
     assert (tmp_path / manifest["index_path"]).exists()
 
 

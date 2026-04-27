@@ -75,14 +75,24 @@ class QdrantFastEmbedRetriever:
 
 
 class LocalDenseRetriever:
-    def __init__(self, index_path: Path) -> None:
+    def __init__(
+        self,
+        index_path: Path,
+        *,
+        backend: str = "local_token_similarity",
+        model: str = "token-set",
+        version: str = "baseline",
+    ) -> None:
         self.index_path = index_path
+        self.backend = backend
+        self.model = model
+        self.version = version
 
     def metadata(self) -> DenseRetrievalMetadata:
         return DenseRetrievalMetadata(
-            backend="local_token_similarity",
-            model="token-set",
-            version="baseline",
+            backend=self.backend,
+            model=self.model,
+            version=self.version,
         )
 
     def retrieve(self, queries: list[str], limit: int = 5) -> list[RetrievedChunk]:

@@ -140,6 +140,11 @@ agent-harness doctor
   retrieval CLI for fixture and CI evidence. This backend uses local token-set
   scoring, requires no network or model download, records `retrieval_backend.v2`
   evidence, and is not a production embedding backend.
+- A `config.v2` retrieval `index_id` can route runtime context assembly through
+  a built lexical, deterministic dense, or hybrid index. Accepted and rejected
+  context manifest items retain lexical/dense provenance, per-method scores,
+  backend/index evidence, and rejected-text redaction before provider input is
+  built.
 - `examples/provider_audit/` is the main V2 walkthrough. It uses recorded
   provider transport, a non-mock local endpoint trust zone, `network: false`,
   required provider-use approval, inspectable provider-input evidence, redacted

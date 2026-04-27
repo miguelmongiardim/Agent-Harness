@@ -175,6 +175,7 @@ class RetrievalQdrantConfig(StrictModel):
 
 class RetrievalConfig(StrictModel):
     default_mode: Literal["lexical", "dense", "hybrid"] = "lexical"
+    index_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
     lexical: RetrievalLexicalConfig = Field(default_factory=RetrievalLexicalConfig)
     dense: RetrievalDenseConfig = Field(default_factory=RetrievalDenseConfig)
     qdrant: RetrievalQdrantConfig = Field(default_factory=RetrievalQdrantConfig)
@@ -555,15 +556,14 @@ class DenseRetrievalMetadata(StrictModel):
 
 
 class RetrievalBackendManifest(StrictModel):
-    schema_version: Literal["retrieval_backend.v1", "retrieval_backend.v2"] = (
-        "retrieval_backend.v2"
-    )
+    schema_version: Literal["retrieval_backend.v1", "retrieval_backend.v2"] = "retrieval_backend.v2"
     requested_backend: Literal["fake", "lexical", "qdrant", "dense", "hybrid"]
     active_backend: str
     backend: str
     embedding_model: str | None = None
     embedding_model_version: str | None = None
     index_id: str | None = None
+    index_path: str | None = None
     fallback_status: Literal["not_required", "used"] = "not_required"
     fallback_reason: str | None = None
     diagnostics: list[str] = Field(default_factory=list)

@@ -81,6 +81,23 @@ class PolicyEngine:
             }
         )
 
+    def evaluate_context_sensitivity(
+        self,
+        sensitivity: str,
+        path: str | None = None,
+    ) -> PolicyDecision:
+        matched = ["context_sensitivity", f"sensitivity:{sensitivity}"]
+        if path is not None:
+            matched.append(f"path:{path}")
+        if sensitivity in self.profile.hard_deny_sensitivities:
+            return self._decision(
+                False,
+                False,
+                f"{sensitivity} is hard-denied for context",
+                [*matched, "context_sensitivity:hard_deny"],
+            )
+        return self._decision(True, False, f"{sensitivity} allowed for context", matched)
+
     def evaluate_tool_call(
         self,
         call: ToolCall,
