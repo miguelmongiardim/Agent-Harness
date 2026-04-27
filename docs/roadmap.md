@@ -19,6 +19,27 @@ and CI hygiene, bundled template validation, and release-readiness evidence.
 
 The detailed V3 plan lives in [plans/agent-harness-v3.md](../plans/agent-harness-v3.md).
 
+The current conception alignment review lives in
+[docs/conception-alignment.md](conception-alignment.md). It compares the
+original `deep-research-report.md` vision with the v1.0.0 implementation and
+defines the remaining drift.
+
+## Recommended V4 Direction
+
+The recommended next track is
+[docs/prd-agent-harness-v4.md](prd-agent-harness-v4.md) and
+[plans/agent-harness-v4.md](../plans/agent-harness-v4.md): Provider Core. This
+is the most direct next step toward the original conception because v1.0.0
+proves the control plane, but still relies on deterministic mock behavior and
+recorded fixtures by default.
+
+V4 should add structured provider action envelopes, provider profile
+validation, opt-in OpenAI-compatible smoke, provider-call evidence, redacted
+prompt/response artifacts, provider evals, and setup/safety docs. It should not
+promote fixture capture tooling, retention profiles, web UI, MCP execution,
+multi-agent orchestration, production Qdrant server mode, or enterprise
+readiness.
+
 ## Release Maintenance Priorities
 
 - Preserve the v1.0.0 compatibility and deprecation contract.

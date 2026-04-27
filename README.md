@@ -150,6 +150,8 @@ packaging, pre-commit discipline, and clear Implemented vs Roadmap boundaries.
 - [Template catalog](docs/templates.md)
 - [Schema migration](docs/migration.md)
 - [Release readiness](docs/release-readiness.md)
+- [Conception alignment](docs/conception-alignment.md)
+- [V4 Provider Core PRD](docs/prd-agent-harness-v4.md)
 - [Roadmap](docs/roadmap.md)
 
 ## License
