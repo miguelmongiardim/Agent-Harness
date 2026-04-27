@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 
@@ -156,6 +157,11 @@ def test_provider_call_artifacts_record_redacted_evidence_without_raw_payloads(
     first_call = provider_calls["calls"][0]
 
     assert first_call["approval_ids"] == [action_id]
+    assert first_call["provider_input_hash"]
+    assert first_call["action_envelope_hash"]
+    assert first_call["checkpoint_hash"]
+    assert first_call["redacted_prompt_artifact"].startswith("provider/")
+    assert first_call["redacted_response_artifact"].startswith("provider/")
     assert first_call["prompt_hash"]
     assert first_call["response_hash"]
     assert first_call["redacted_prompt_summary"] == {
@@ -171,6 +177,26 @@ def test_provider_call_artifacts_record_redacted_evidence_without_raw_payloads(
     assert first_call["token_metrics"]["prompt_records"] == 1
     assert first_call["token_metrics"]["response_actions"] == first_call["action_count"]
     assert first_call["policy_decision_ids"]
+
+    redacted_prompt = json.loads(
+        (run_dir / first_call["redacted_prompt_artifact"]).read_text(encoding="utf-8")
+    )
+    redacted_response = json.loads(
+        (run_dir / first_call["redacted_response_artifact"]).read_text(encoding="utf-8")
+    )
+    assert redacted_prompt["schema_version"] == "provider_redacted_prompt.v1"
+    assert redacted_prompt["provider_input_hash"] == first_call["provider_input_hash"]
+    assert redacted_prompt["records"][0]["path"] == "sample.py"
+    assert redacted_prompt["records"][0]["text"] == "def identity(value):\n    return value"
+    assert redacted_response["schema_version"] == "provider_redacted_response.v1"
+    assert redacted_response["action_envelope_hash"] == first_call["action_envelope_hash"]
+    assert redacted_response["envelope"]["schema_version"] == "provider_action_envelope.v1"
+    assert redacted_response["envelope"]["kind"] == "actions"
+
+    artifact_index = json.loads((run_dir / "artifact-index.json").read_text(encoding="utf-8"))
+    artifacts = artifact_index["artifacts"]
+    assert artifacts["provider_redacted_prompts"].endswith("provider/redacted-prompts")
+    assert artifacts["provider_redacted_responses"].endswith("provider/redacted-responses")
 
     serialized_provider_calls = (run_dir / "provider_calls.json").read_text(encoding="utf-8")
     assert "def identity(value)" not in serialized_provider_calls
@@ -200,8 +226,9 @@ def _seed_project_with_local_endpoint_provider(root: Path) -> None:
         ],
     }
     policy = dict(DEFAULT_POLICY)
+    sensitivity_rules = cast(list[dict[str, Any]], DEFAULT_POLICY["sensitivity_rules"])
     policy["sensitivity_rules"] = [
-        *DEFAULT_POLICY["sensitivity_rules"],
+        *sensitivity_rules,
         {"pattern": "sample.py", "classification": "public"},
     ]
     (root / "agent-harness.yaml").write_text(json.dumps(config, indent=2), encoding="utf-8")

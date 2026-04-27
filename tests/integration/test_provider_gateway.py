@@ -270,6 +270,23 @@ def test_recorded_provider_invalid_envelope_fails_before_tool_execution(
         "kind": "provider_envelope_validation_error",
         "schema_version": "provider_action_envelope.v1",
     }
+    assert provider_calls[0]["action_envelope_hash"]
+    assert provider_calls[0]["checkpoint_hash"]
+    response_artifact = json.loads(
+        (
+            tmp_path
+            / ".agent-harness"
+            / "runs"
+            / "run-invalid-provider-envelope"
+            / provider_calls[0]["redacted_response_artifact"]
+        ).read_text(encoding="utf-8")
+    )
+    assert response_artifact["schema_version"] == "provider_redacted_response.v1"
+    assert response_artifact["kind"] == "provider_envelope_validation_error"
+    assert response_artifact["envelope"] == {
+        "schema_version": "provider_action_envelope.v1",
+        "kind": "provider_envelope_validation_error",
+    }
     serialized_artifacts = "\n".join(
         path.read_text(encoding="utf-8")
         for path in (tmp_path / ".agent-harness" / "runs" / "run-invalid-provider-envelope").rglob(

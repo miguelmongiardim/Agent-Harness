@@ -517,6 +517,12 @@ class HarnessRuntime:
             artifact_paths["provider_input"] = provider_input_path
         if provider_calls_path is not None:
             artifact_paths["provider_calls"] = provider_calls_path
+            artifact_paths["provider_redacted_prompts"] = (
+                store.run_dir / "provider/redacted-prompts"
+            )
+            artifact_paths["provider_redacted_responses"] = (
+                store.run_dir / "provider/redacted-responses"
+            )
         return self._finalize_task_run(
             store,
             task,
@@ -1118,11 +1124,18 @@ def _execute_model_actions(
                 store,
                 exc,
                 task,
+                checkpoint_hash,
                 provider_approval_ids or [],
                 provider_input_manifest,
             )
             return "failed", approvals
-        _append_provider_call_audit(store, provider_call)
+        _append_provider_call_audit(
+            store,
+            provider_call,
+            checkpoint_hash=checkpoint_hash,
+            provider_input=provider_input_manifest,
+            response_actions=initial_actions,
+        )
     else:
         initial_actions = model.initial_actions(task, manifest)
 
@@ -1172,11 +1185,18 @@ def _execute_model_actions(
                 store,
                 exc,
                 task,
+                checkpoint_hash,
                 provider_approval_ids or [],
                 provider_input_manifest,
             )
             return "failed", approvals
-        _append_provider_call_audit(store, provider_call)
+        _append_provider_call_audit(
+            store,
+            provider_call,
+            checkpoint_hash=checkpoint_hash,
+            provider_input=provider_input_manifest,
+            response_actions=next_actions,
+        )
     else:
         next_actions = model.next_actions(task, manifest, observations)
 
@@ -1584,6 +1604,7 @@ def _record_provider_envelope_rejection(
     store: RunStore,
     error: ProviderEnvelopeValidationError,
     task: TaskSpec,
+    checkpoint_hash: str,
     approval_ids: list[str],
     provider_input: ProviderInputManifest | None,
 ) -> None:
@@ -1606,7 +1627,13 @@ def _record_provider_envelope_rejection(
             },
         }
     )
-    _append_provider_call_audit(store, audit)
+    _append_provider_call_audit(
+        store,
+        audit,
+        checkpoint_hash=checkpoint_hash,
+        provider_input=provider_input,
+        error_kind="provider_envelope_validation_error",
+    )
     store.append_event(
         make_event(
             store.run_id,
@@ -1621,26 +1648,146 @@ def _record_provider_envelope_rejection(
     )
 
 
-def _append_provider_call_audit(store: RunStore, audit: ProviderCallAudit) -> None:
+def _append_provider_call_audit(
+    store: RunStore,
+    audit: ProviderCallAudit,
+    checkpoint_hash: str,
+    provider_input: ProviderInputManifest | None,
+    response_actions: list[ToolCall] | None = None,
+    error_kind: str | None = None,
+) -> None:
+    enriched = _enrich_provider_call_audit(
+        store,
+        audit,
+        checkpoint_hash,
+        provider_input,
+        response_actions=response_actions,
+        error_kind=error_kind,
+    )
     path = store.run_dir / "provider_calls.json"
     if path.exists():
         manifest = load_model(path, ProviderCallAuditManifest)
-        updated = manifest.model_copy(update={"calls": [*manifest.calls, audit]})
+        updated = manifest.model_copy(update={"calls": [*manifest.calls, enriched]})
     else:
         updated = ProviderCallAuditManifest(
-            run_id=audit.run_id,
-            task_id=audit.task_id,
-            provider_profile_id=audit.provider_profile_id,
-            calls=[audit],
+            run_id=enriched.run_id,
+            task_id=enriched.task_id,
+            provider_profile_id=enriched.provider_profile_id,
+            calls=[enriched],
         )
     store.write_model("provider_calls.json", updated)
     store.append_event(
         make_event(
             store.run_id,
             "provider_call_recorded",
-            {"provider_call": audit.model_dump(mode="json")},
+            {"provider_call": enriched.model_dump(mode="json")},
         )
     )
+
+
+def _enrich_provider_call_audit(
+    store: RunStore,
+    audit: ProviderCallAudit,
+    checkpoint_hash: str,
+    provider_input: ProviderInputManifest | None,
+    *,
+    response_actions: list[ToolCall] | None,
+    error_kind: str | None,
+) -> ProviderCallAudit:
+    prompt_artifact = f"provider/redacted-prompts/{audit.audit_id}.json"
+    response_artifact = f"provider/redacted-responses/{audit.audit_id}.json"
+    provider_input_hash = (
+        _provider_input_hash(provider_input) if provider_input is not None else sha256_json({})
+    )
+    response_payload = _redacted_provider_response_payload(audit, response_actions, error_kind)
+    action_envelope_hash = sha256_json(response_payload["envelope"])
+    store.write_data(
+        prompt_artifact,
+        {
+            "schema_version": "provider_redacted_prompt.v1",
+            "run_id": store.run_id,
+            "task_id": audit.task_id,
+            "provider_profile_id": audit.provider_profile_id,
+            "provider_input_hash": provider_input_hash,
+            "records": _redacted_provider_prompt_records(provider_input),
+        },
+    )
+    store.write_data(
+        response_artifact,
+        {
+            "schema_version": "provider_redacted_response.v1",
+            "run_id": store.run_id,
+            "task_id": audit.task_id,
+            "provider_profile_id": audit.provider_profile_id,
+            "action_envelope_hash": action_envelope_hash,
+            **response_payload,
+        },
+    )
+    return audit.model_copy(
+        update={
+            "provider_input_hash": provider_input_hash,
+            "action_envelope_hash": action_envelope_hash,
+            "checkpoint_hash": checkpoint_hash,
+            "redacted_prompt_artifact": prompt_artifact,
+            "redacted_response_artifact": response_artifact,
+        }
+    )
+
+
+def _redacted_provider_prompt_records(
+    provider_input: ProviderInputManifest | None,
+) -> list[dict[str, object]]:
+    if provider_input is None:
+        return []
+    return [
+        {
+            "record_id": record.record_id,
+            "manifest_item_id": record.manifest_item_id,
+            "source_id": record.source_id,
+            "chunk_id": record.chunk_id,
+            "path": record.path,
+            "sensitivity": record.sensitivity,
+            "effective_sensitivity": record.effective_sensitivity,
+            "policy_action": record.policy_action,
+            "included": record.included,
+            "untrusted": record.untrusted,
+            "redaction_status": record.redaction_status,
+            "redactions_applied": record.redactions_applied,
+            "approval_id": record.approval_id,
+            "policy_decision_id": record.policy_decision_id,
+            "content_hash": record.content_hash,
+            "text": record.text,
+        }
+        for record in provider_input.records
+        if record.included
+    ]
+
+
+def _redacted_provider_response_payload(
+    audit: ProviderCallAudit,
+    response_actions: list[ToolCall] | None,
+    error_kind: str | None,
+) -> dict[str, object]:
+    if error_kind is not None:
+        return {
+            "kind": error_kind,
+            "envelope": {
+                "schema_version": "provider_action_envelope.v1",
+                "kind": error_kind,
+            },
+        }
+    return {
+        "kind": "tool_calls",
+        "envelope": {
+            "schema_version": "provider_action_envelope.v1",
+            "kind": "actions",
+            "actions": [
+                action.model_dump(mode="json")
+                for action in (response_actions if response_actions is not None else [])
+            ],
+            "actions_hash": audit.actions_hash,
+        },
+    }
 
 
 def _has_pending_approvals(store: RunStore) -> bool:

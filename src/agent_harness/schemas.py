@@ -563,8 +563,13 @@ class ProviderCallAudit(StrictModel):
     approval_ids: list[str] = Field(default_factory=list)
     action_count: int = 0
     actions_hash: str
+    provider_input_hash: str = ""
+    action_envelope_hash: str = ""
+    checkpoint_hash: str = ""
     prompt_hash: str = ""
     response_hash: str = ""
+    redacted_prompt_artifact: str = ""
+    redacted_response_artifact: str = ""
     redacted_prompt_summary: dict[str, str | int] = Field(default_factory=dict)
     redacted_response_summary: dict[str, str | int] = Field(default_factory=dict)
     latency_ms: int = Field(default=0, ge=0)
