@@ -50,6 +50,17 @@ python -m pip install .
 agent-harness doctor
 ```
 
+The Docker path is local/demo reproducibility packaging, not production
+deployment:
+
+```powershell
+docker build -t agent-harness:local .
+docker run --rm agent-harness:local agent-harness demo provider-audit
+```
+
+CI runs the same Docker build and provider-audit demo command in a dedicated
+Docker demo job.
+
 Required demo evidence is generated with:
 
 ```powershell

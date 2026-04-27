@@ -97,6 +97,15 @@ jobs:
             .agent-harness/evals
             dist/
 
+  docker-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build local demo image
+        run: docker build -t agent-harness:local .
+      - name: Run provider audit Docker golden path
+        run: docker run --rm agent-harness:local agent-harness demo provider-audit
+
   advisory-evidence:
     runs-on: windows-latest
     continue-on-error: true

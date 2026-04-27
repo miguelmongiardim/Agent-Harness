@@ -1,0 +1,15 @@
+.git
+.agent-harness
+.venv
+.venv-win
+dist
+build
+*.egg-info
+__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+htmlcov
+.coverage
+deep-research-report.md

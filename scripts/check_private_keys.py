@@ -3,13 +3,14 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-PRIVATE_KEY_MARKERS = (
-    "-----BEGIN RSA PRIVATE KEY-----",
-    "-----BEGIN DSA PRIVATE KEY-----",
-    "-----BEGIN EC PRIVATE KEY-----",
-    "-----BEGIN OPENSSH PRIVATE KEY-----",
-    "-----BEGIN PRIVATE KEY-----",
-)
+PRIVATE_KEY_TYPES = ("RSA", "DSA", "EC", "OPENSSH", "")
+
+
+def private_key_markers() -> tuple[str, ...]:
+    return tuple(
+        f"-----BEGIN {key_type + ' ' if key_type else ''}PRIVATE KEY-----"
+        for key_type in PRIVATE_KEY_TYPES
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -22,7 +23,7 @@ def main(argv: list[str] | None = None) -> int:
             text = path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             continue
-        if any(marker in text for marker in PRIVATE_KEY_MARKERS):
+        if any(marker in text for marker in private_key_markers()):
             findings.append(path)
 
     for path in findings:

@@ -41,6 +41,13 @@ cd examples\provider_audit
 uv run agent-harness inspect run <run-id>
 ```
 
+The Docker image is for local/demo reproducibility, not production deployment:
+
+```powershell
+docker build -t agent-harness:local .
+docker run --rm agent-harness:local agent-harness demo provider-audit
+```
+
 Run the local checks with:
 
 ```powershell
