@@ -362,20 +362,20 @@ Keep tests optional unless an explicit environment flag and server are present.
 
 ### Acceptance criteria
 
-- [ ] `localhost` is accepted.
-- [ ] `127.0.0.1` is accepted.
-- [ ] `::1` is accepted.
-- [ ] Public IP endpoints are rejected.
-- [ ] Private LAN IP endpoints are rejected.
-- [ ] Cloud URLs are rejected.
-- [ ] API-key-backed endpoints are rejected.
-- [ ] Remote HTTPS endpoints are rejected.
-- [ ] Unreachable loopback server diagnostics are actionable.
-- [ ] Backend, endpoint identity, collection, model/version, and fallback
+- [x] `localhost` is accepted.
+- [x] `127.0.0.1` is accepted.
+- [x] `::1` is accepted.
+- [x] Public IP endpoints are rejected.
+- [x] Private LAN IP endpoints are rejected.
+- [x] Cloud URLs are rejected.
+- [x] API-key-backed endpoints are rejected.
+- [x] Remote HTTPS endpoints are rejected.
+- [x] Unreachable loopback server diagnostics are actionable.
+- [x] Backend, endpoint identity, collection, model/version, and fallback
       diagnostics are recorded.
-- [ ] Same policy and sensitivity filtering applies as every other backend.
-- [ ] Normal CI skips loopback server tests unless explicitly enabled.
-- [ ] Docs describe this as local developer infrastructure only.
+- [x] Same policy and sensitivity filtering applies as every other backend.
+- [x] Normal CI skips loopback server tests unless explicitly enabled.
+- [x] Docs describe this as local developer infrastructure only.
 
 ### Out of scope
 

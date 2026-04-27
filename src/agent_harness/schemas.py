@@ -567,6 +567,7 @@ class RetrievalBackendManifest(StrictModel):
     index_path: str | None = None
     qdrant_collection: str | None = None
     qdrant_storage_path: str | None = None
+    qdrant_endpoint: str | None = None
     fallback_status: Literal["not_required", "used"] = "not_required"
     fallback_reason: str | None = None
     diagnostics: list[str] = Field(default_factory=list)
@@ -619,6 +620,7 @@ class RetrievalIndexManifest(StrictModel):
     retrieval_config_hash: str
     qdrant_collection: str | None = None
     qdrant_storage_path: str | None = None
+    qdrant_endpoint: str | None = None
     remote_embeddings: bool = False
 
     @field_validator("index_path")

@@ -18,6 +18,7 @@ from agent_harness.context.retrieval import (
     LexicalRetriever,
     LocalDenseRetriever,
     QdrantLocalRetriever,
+    QdrantServerRetriever,
     Retriever,
     optional_dense_dependencies_available,
 )
@@ -1946,19 +1947,31 @@ def _select_retrieval_backend(
                     version=manifest.embedding_model_version or "baseline",
                 )
             elif manifest.embedding_backend == "fastembed":
-                if not manifest.qdrant_storage_path or not manifest.qdrant_collection:
-                    raise ValueError("qdrant-local index is missing storage evidence")
-                dense = QdrantLocalRetriever(
-                    project_root / manifest.qdrant_storage_path,
-                    manifest.qdrant_collection,
-                    model=manifest.embedding_model or "BAAI/bge-small-en-v1.5",
-                    version=manifest.embedding_model_version or "unknown",
-                    cache_dir=(
-                        project_root / manifest.embedding_model_cache_path
-                        if manifest.embedding_model_cache_path
-                        else None
-                    ),
+                if not manifest.qdrant_collection:
+                    raise ValueError("qdrant index is missing collection evidence")
+                cache_dir = (
+                    project_root / manifest.embedding_model_cache_path
+                    if manifest.embedding_model_cache_path
+                    else None
                 )
+                if manifest.qdrant_endpoint is not None:
+                    dense = QdrantServerRetriever(
+                        manifest.qdrant_endpoint,
+                        manifest.qdrant_collection,
+                        model=manifest.embedding_model or "BAAI/bge-small-en-v1.5",
+                        version=manifest.embedding_model_version or "unknown",
+                        cache_dir=cache_dir,
+                    )
+                else:
+                    if not manifest.qdrant_storage_path:
+                        raise ValueError("qdrant-local index is missing storage evidence")
+                    dense = QdrantLocalRetriever(
+                        project_root / manifest.qdrant_storage_path,
+                        manifest.qdrant_collection,
+                        model=manifest.embedding_model or "BAAI/bge-small-en-v1.5",
+                        version=manifest.embedding_model_version or "unknown",
+                        cache_dir=cache_dir,
+                    )
             else:
                 raise ValueError(
                     "dense and hybrid context retrieval require a deterministic or "
@@ -2030,10 +2043,14 @@ def _configured_index_retrieval_backend(
             remote_embeddings=False,
         )
     if manifest.embedding_backend == "fastembed":
+        is_server = manifest.qdrant_endpoint is not None
         return RetrievalBackendManifest(
             requested_backend=mode,
-            active_backend=("qdrant_local_dense" if mode == "dense" else "qdrant_local_hybrid"),
-            backend="qdrant-local",
+            active_backend=(
+                f"qdrant_{'server' if is_server else 'local'}_"
+                f"{'dense' if mode == 'dense' else 'hybrid'}"
+            ),
+            backend="qdrant-server" if is_server else "qdrant-local",
             embedding_model=manifest.embedding_model,
             embedding_model_version=manifest.embedding_model_version,
             embedding_model_cache_path=manifest.embedding_model_cache_path,
@@ -2041,6 +2058,7 @@ def _configured_index_retrieval_backend(
             index_path=manifest.index_path,
             qdrant_collection=manifest.qdrant_collection,
             qdrant_storage_path=manifest.qdrant_storage_path,
+            qdrant_endpoint=manifest.qdrant_endpoint,
             remote_embeddings=False,
         )
     return RetrievalBackendManifest(

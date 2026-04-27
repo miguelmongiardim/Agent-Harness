@@ -11,9 +11,11 @@ from agent_harness.context.chunking import chunk_text
 from agent_harness.context.qdrant_local import (
     FASTEMBED_DEFAULT_MODEL,
     build_qdrant_local_collection,
+    build_qdrant_server_collection,
     ensure_qdrant_local_dependencies,
     qdrant_collection_name,
     query_qdrant_local_collection,
+    query_qdrant_server_collection,
 )
 from agent_harness.policy import PolicyEngine
 from agent_harness.schemas import (
@@ -27,7 +29,7 @@ from agent_harness.utils import sha256_json, sha256_text, stable_id, write_json
 
 LEXICAL_CHUNK_MAX_CHARS = 1200
 RetrievalIndexMode = Literal["lexical", "dense", "hybrid"]
-DenseBackend = Literal["deterministic", "qdrant-local"]
+DenseBackend = Literal["deterministic", "qdrant-local", "qdrant-server"]
 
 
 def build_retrieval_index(
@@ -41,11 +43,16 @@ def build_retrieval_index(
     dense_backend: str | None = None,
     overwrite: bool = False,
 ) -> RetrievalIndexManifest:
-    if mode in {"dense", "hybrid"} and dense_backend not in {"deterministic", "qdrant-local"}:
+    if mode in {"dense", "hybrid"} and dense_backend not in {
+        "deterministic",
+        "qdrant-local",
+        "qdrant-server",
+    }:
         raise ValueError(
-            "dense and hybrid indexes require --dense-backend deterministic or qdrant-local"
+            "dense and hybrid indexes require --dense-backend deterministic, "
+            "qdrant-local, or qdrant-server"
         )
-    if mode in {"dense", "hybrid"} and dense_backend == "qdrant-local":
+    if mode in {"dense", "hybrid"} and dense_backend in {"qdrant-local", "qdrant-server"}:
         ensure_qdrant_local_dependencies()
     project_root = project_root.resolve()
     _validate_index_id(index_id)
@@ -111,26 +118,37 @@ def build_retrieval_index(
 
     qdrant_collection: str | None = None
     qdrant_storage_path: str | None = None
+    qdrant_endpoint: str | None = None
     embedding_model_cache_path: str | None = None
     embedding_model_version: str | None = None
-    if dense_backend == "qdrant-local" and mode in {"dense", "hybrid"}:
+    if dense_backend in {"qdrant-local", "qdrant-server"} and mode in {"dense", "hybrid"}:
         qdrant_collection = qdrant_collection_name(index_id)
-        qdrant_storage = index_dir / "qdrant"
         cache_dir = project_root / config.artifact_root / "models" / "fastembed"
         embedding_model_cache_path = cache_dir.relative_to(project_root).as_posix()
         try:
-            embedding_model_version = build_qdrant_local_collection(
-                storage_path=qdrant_storage,
-                collection_name=qdrant_collection,
-                records=records,
-                model_name=FASTEMBED_DEFAULT_MODEL,
-                cache_dir=cache_dir,
-            )
+            if dense_backend == "qdrant-local":
+                qdrant_storage = index_dir / "qdrant"
+                embedding_model_version = build_qdrant_local_collection(
+                    storage_path=qdrant_storage,
+                    collection_name=qdrant_collection,
+                    records=records,
+                    model_name=FASTEMBED_DEFAULT_MODEL,
+                    cache_dir=cache_dir,
+                )
+                qdrant_storage_path = qdrant_storage.relative_to(project_root).as_posix()
+            else:
+                qdrant_endpoint = _qdrant_server_endpoint(config)
+                embedding_model_version = build_qdrant_server_collection(
+                    endpoint=qdrant_endpoint,
+                    collection_name=qdrant_collection,
+                    records=records,
+                    model_name=FASTEMBED_DEFAULT_MODEL,
+                    cache_dir=cache_dir,
+                )
         except Exception:
             if index_dir.exists():
                 _remove_index_dir(artifact_root, index_dir)
             raise
-        qdrant_storage_path = qdrant_storage.relative_to(project_root).as_posix()
 
     manifest = RetrievalIndexManifest(
         index_id=index_id,
@@ -147,7 +165,7 @@ def build_retrieval_index(
         embedding_model=_embedding_model(mode, dense_backend),
         embedding_model_version=(
             embedding_model_version
-            if dense_backend == "qdrant-local"
+            if dense_backend in {"qdrant-local", "qdrant-server"}
             else ("baseline" if mode in {"dense", "hybrid"} else None)
         ),
         embedding_model_cache_path=embedding_model_cache_path,
@@ -165,6 +183,7 @@ def build_retrieval_index(
         ),
         qdrant_collection=qdrant_collection,
         qdrant_storage_path=qdrant_storage_path,
+        qdrant_endpoint=qdrant_endpoint,
         remote_embeddings=False,
     )
     write_json(index_dir / "retrieval_index.json", manifest.model_dump(mode="json"))
@@ -194,13 +213,23 @@ def build_lexical_index(
 def _embedding_backend(mode: RetrievalIndexMode, dense_backend: str | None) -> str | None:
     if mode not in {"dense", "hybrid"}:
         return None
-    return "fastembed" if dense_backend == "qdrant-local" else "deterministic"
+    return "fastembed" if dense_backend in {"qdrant-local", "qdrant-server"} else "deterministic"
 
 
 def _embedding_model(mode: RetrievalIndexMode, dense_backend: str | None) -> str | None:
     if mode not in {"dense", "hybrid"}:
         return None
-    return FASTEMBED_DEFAULT_MODEL if dense_backend == "qdrant-local" else "token-set"
+    return (
+        FASTEMBED_DEFAULT_MODEL
+        if dense_backend in {"qdrant-local", "qdrant-server"}
+        else "token-set"
+    )
+
+
+def _qdrant_server_endpoint(config: HarnessConfig) -> str:
+    if config.retrieval is None or config.retrieval.qdrant.url is None:
+        raise ValueError("qdrant-server retrieval requires retrieval.qdrant.url")
+    return config.retrieval.qdrant.url
 
 
 def _validate_index_id(index_id: str) -> None:
@@ -295,7 +324,7 @@ def query_index(
     manifest = load_index(project_root, config, index_id)
     records = _index_records(project_root / manifest.index_path)
     if mode in {"dense", "hybrid"} and manifest.embedding_backend == "fastembed":
-        results = _query_qdrant_local_index(project_root, manifest, records, query, mode, limit)
+        results = _query_qdrant_index(project_root, manifest, records, query, mode, limit)
     elif mode in {"dense", "hybrid"} and manifest.embedding_backend != "deterministic":
         raise ValueError("dense and hybrid query require a deterministic or qdrant-local index")
     else:
@@ -317,7 +346,7 @@ def _index_records(path: Path) -> list[dict[str, object]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
 
 
-def _query_qdrant_local_index(
+def _query_qdrant_index(
     project_root: Path,
     manifest: RetrievalIndexManifest,
     records: list[dict[str, object]],
@@ -325,20 +354,33 @@ def _query_qdrant_local_index(
     mode: RetrievalIndexMode,
     limit: int,
 ) -> list[dict[str, object]]:
-    if not manifest.qdrant_storage_path or not manifest.qdrant_collection:
-        raise ValueError("qdrant-local index is missing storage evidence")
-    qdrant_results = query_qdrant_local_collection(
-        storage_path=project_root / manifest.qdrant_storage_path,
-        collection_name=manifest.qdrant_collection,
-        query=query,
-        model_name=manifest.embedding_model or FASTEMBED_DEFAULT_MODEL,
-        cache_dir=(
-            project_root / manifest.embedding_model_cache_path
-            if manifest.embedding_model_cache_path
-            else None
-        ),
-        limit=limit,
+    if not manifest.qdrant_collection:
+        raise ValueError("qdrant index is missing collection evidence")
+    cache_dir = (
+        project_root / manifest.embedding_model_cache_path
+        if manifest.embedding_model_cache_path
+        else None
     )
+    if manifest.qdrant_endpoint is not None:
+        qdrant_results = query_qdrant_server_collection(
+            endpoint=manifest.qdrant_endpoint,
+            collection_name=manifest.qdrant_collection,
+            query=query,
+            model_name=manifest.embedding_model or FASTEMBED_DEFAULT_MODEL,
+            cache_dir=cache_dir,
+            limit=limit,
+        )
+    else:
+        if not manifest.qdrant_storage_path:
+            raise ValueError("qdrant-local index is missing storage evidence")
+        qdrant_results = query_qdrant_local_collection(
+            storage_path=project_root / manifest.qdrant_storage_path,
+            collection_name=manifest.qdrant_collection,
+            query=query,
+            model_name=manifest.embedding_model or FASTEMBED_DEFAULT_MODEL,
+            cache_dir=cache_dir,
+            limit=limit,
+        )
     dense_results = [
         _query_result(
             result,
@@ -521,10 +563,14 @@ def _query_retrieval_backend(
             remote_embeddings=False,
         )
     if manifest.embedding_backend == "fastembed":
+        is_server = manifest.qdrant_endpoint is not None
         return RetrievalBackendManifest(
             requested_backend=mode,
-            active_backend=("qdrant_local_dense" if mode == "dense" else "qdrant_local_hybrid"),
-            backend="qdrant-local",
+            active_backend=(
+                f"qdrant_{'server' if is_server else 'local'}_"
+                f"{'dense' if mode == 'dense' else 'hybrid'}"
+            ),
+            backend="qdrant-server" if is_server else "qdrant-local",
             embedding_model=manifest.embedding_model,
             embedding_model_version=manifest.embedding_model_version,
             embedding_model_cache_path=manifest.embedding_model_cache_path,
@@ -532,6 +578,7 @@ def _query_retrieval_backend(
             index_path=manifest.index_path,
             qdrant_collection=manifest.qdrant_collection,
             qdrant_storage_path=manifest.qdrant_storage_path,
+            qdrant_endpoint=manifest.qdrant_endpoint,
             remote_embeddings=False,
         )
     return RetrievalBackendManifest(

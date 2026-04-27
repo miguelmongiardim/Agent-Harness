@@ -10,6 +10,7 @@ from agent_harness.context.qdrant_local import (
     FASTEMBED_DEFAULT_MODEL,
     optional_qdrant_local_dependencies_available,
     query_qdrant_local_collection,
+    query_qdrant_server_collection,
 )
 from agent_harness.policy import PolicyEngine
 from agent_harness.schemas import DenseRetrievalMetadata
@@ -107,6 +108,58 @@ class QdrantLocalRetriever:
             return []
         results = query_qdrant_local_collection(
             storage_path=self.storage_path,
+            collection_name=self.collection_name,
+            query=query,
+            model_name=self.model,
+            cache_dir=self.cache_dir,
+            limit=limit,
+        )
+        chunks: list[RetrievedChunk] = []
+        for result in results:
+            if not result["path"]:
+                continue
+            chunks.append(
+                RetrievedChunk(
+                    source_id=str(result["source_id"]),
+                    path=str(result["path"]),
+                    text=str(result["text"]),
+                    score=_result_float(result, "score"),
+                    start_line=_result_int(result, "start_line"),
+                    end_line=_result_int(result, "end_line"),
+                )
+            )
+        return chunks
+
+
+class QdrantServerRetriever:
+    def __init__(
+        self,
+        endpoint: str,
+        collection_name: str,
+        *,
+        model: str = FASTEMBED_DEFAULT_MODEL,
+        version: str = "unknown",
+        cache_dir: Path | None = None,
+    ) -> None:
+        self.endpoint = endpoint
+        self.collection_name = collection_name
+        self.model = model
+        self.version = version
+        self.cache_dir = cache_dir
+
+    def metadata(self) -> DenseRetrievalMetadata:
+        return DenseRetrievalMetadata(
+            backend="qdrant-server",
+            model=self.model,
+            version=self.version,
+        )
+
+    def retrieve(self, queries: list[str], limit: int = 5) -> list[RetrievedChunk]:
+        query = " ".join(queries)
+        if not query:
+            return []
+        results = query_qdrant_server_collection(
+            endpoint=self.endpoint,
             collection_name=self.collection_name,
             query=query,
             model_name=self.model,
@@ -250,6 +303,7 @@ __all__ = [
     "LocalDenseRetriever",
     "QdrantFastEmbedRetriever",
     "QdrantLocalRetriever",
+    "QdrantServerRetriever",
     "RetrievedChunk",
     "Retriever",
     "chunk_text",

@@ -16,6 +16,10 @@ class RetrievalOptionalDependencyError(RuntimeError):
     pass
 
 
+class QdrantServerConnectionError(RuntimeError):
+    pass
+
+
 def optional_qdrant_local_dependencies_available() -> bool:
     return (
         importlib.util.find_spec("qdrant_client") is not None
@@ -86,6 +90,42 @@ def build_qdrant_local_collection(
     return fastembed_version()
 
 
+def build_qdrant_server_collection(
+    *,
+    endpoint: str,
+    collection_name: str,
+    records: list[dict[str, object]],
+    model_name: str = FASTEMBED_DEFAULT_MODEL,
+    cache_dir: Path | None = None,
+) -> str:
+    ensure_qdrant_local_dependencies()
+    texts = [str(record["text"]) for record in records]
+    vectors = [
+        _vector_to_floats(vector) for vector in _fastembed_model(model_name, cache_dir).embed(texts)
+    ]
+    vector_size = len(vectors[0]) if vectors else 1
+    qdrant_client = importlib.import_module("qdrant_client")
+    try:
+        client = qdrant_client.QdrantClient(url=endpoint)
+    except Exception as exc:
+        raise QdrantServerConnectionError(_unreachable_server_message(endpoint)) from exc
+    try:
+        _recreate_collection(qdrant_client, client, collection_name, vector_size)
+        points = [
+            qdrant_client.models.PointStruct(id=index + 1, vector=vector, payload=record)
+            for index, (record, vector) in enumerate(zip(records, vectors, strict=True))
+        ]
+        if points:
+            _upsert_points(client, collection_name, points)
+    except Exception as exc:
+        raise QdrantServerConnectionError(_unreachable_server_message(endpoint)) from exc
+    finally:
+        close = getattr(client, "close", None)
+        if callable(close):
+            close()
+    return fastembed_version()
+
+
 def query_qdrant_local_collection(
     *,
     storage_path: Path,
@@ -102,6 +142,33 @@ def query_qdrant_local_collection(
     try:
         points = _query_points(client, collection_name, vector, limit)
         return [_point_to_result(point) for point in points]
+    finally:
+        close = getattr(client, "close", None)
+        if callable(close):
+            close()
+
+
+def query_qdrant_server_collection(
+    *,
+    endpoint: str,
+    collection_name: str,
+    query: str,
+    model_name: str = FASTEMBED_DEFAULT_MODEL,
+    cache_dir: Path | None = None,
+    limit: int = 5,
+) -> list[dict[str, object]]:
+    ensure_qdrant_local_dependencies()
+    vector = _vector_to_floats(next(_fastembed_model(model_name, cache_dir).embed([query])))
+    qdrant_client = importlib.import_module("qdrant_client")
+    try:
+        client = qdrant_client.QdrantClient(url=endpoint)
+    except Exception as exc:
+        raise QdrantServerConnectionError(_unreachable_server_message(endpoint)) from exc
+    try:
+        points = _query_points(client, collection_name, vector, limit)
+        return [_point_to_result(point) for point in points]
+    except Exception as exc:
+        raise QdrantServerConnectionError(_unreachable_server_message(endpoint)) from exc
     finally:
         close = getattr(client, "close", None)
         if callable(close):
@@ -201,6 +268,13 @@ def _vector_to_floats(vector: Any) -> list[float]:
     if hasattr(vector, "tolist"):
         vector = vector.tolist()
     return [float(value) for value in vector]
+
+
+def _unreachable_server_message(endpoint: str) -> str:
+    return (
+        "qdrant-server endpoint is unreachable: "
+        f"{endpoint}; start a loopback Qdrant server and retry"
+    )
 
 
 def _write_storage_evidence(

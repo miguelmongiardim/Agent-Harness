@@ -106,6 +106,7 @@ agent-harness benchmark run local-samples swebench-python-refactor
 agent-harness retrieval index build --index-id local-docs --paths docs --mode lexical
 agent-harness retrieval index build --index-id dense-docs --paths docs --mode dense --dense-backend deterministic
 agent-harness retrieval index build --index-id qdrant-docs --paths docs --mode dense --dense-backend qdrant-local
+agent-harness retrieval index build --index-id server-docs --paths docs --mode dense --dense-backend qdrant-server
 agent-harness retrieval query dense-docs --query "config loader policy" --mode dense --k 5
 agent-harness retrieval query dense-docs --query "config loader policy" --mode hybrid --k 5
 agent-harness retrieval index list
@@ -146,11 +147,15 @@ agent-harness doctor
   using local FastEmbed embeddings. The manifest records the embedding model,
   model package version when available, collection name, storage path, and
   `remote_embeddings: false`.
+- `--dense-backend qdrant-server` is optional loopback-only developer
+  infrastructure. It accepts only `localhost`, `127.0.0.1`, and `::1` endpoints
+  from `config.v2`, records endpoint/collection/model evidence, and reports
+  unreachable loopback servers without enabling remote Qdrant.
 - A `config.v2` retrieval `index_id` can route runtime context assembly through
-  a built lexical, deterministic dense, qdrant-local dense, or hybrid index.
-  Accepted and rejected context manifest items retain lexical/dense provenance,
-  per-method scores, backend/index evidence, and rejected-text redaction before
-  provider input is built.
+  a built lexical, deterministic dense, qdrant-local, qdrant-server, or hybrid
+  index. Accepted and rejected context manifest items retain lexical/dense
+  provenance, per-method scores, backend/index evidence, and rejected-text
+  redaction before provider input is built.
 - `examples/provider_audit/` is the main V2 walkthrough. It uses recorded
   provider transport, a non-mock local endpoint trust zone, `network: false`,
   required provider-use approval, inspectable provider-input evidence, redacted

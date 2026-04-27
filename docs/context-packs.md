@@ -50,12 +50,24 @@ tests do not require this path; the real FastEmbed/Qdrant smoke test skips
 unless `agent-harness[retrieval]` is installed and
 `AGENT_HARNESS_RUN_RETRIEVAL_OPTIONAL_TESTS=1` is set.
 
+`--dense-backend qdrant-server` is available only as loopback developer
+infrastructure. Its `config.v2` endpoint must use `localhost`, `127.0.0.1`, or
+`::1`; cloud, HTTPS remote, API-key-backed, public IP, and private LAN Qdrant
+endpoints remain rejected before document content is indexed or queried.
+Loopback server manifests and query evidence record the endpoint, Qdrant
+collection, FastEmbed model/version, cache path, and `remote_embeddings: false`.
+If the loopback endpoint is unreachable, the CLI reports an actionable
+diagnostic telling the user to start a loopback Qdrant server. Real server
+smoke coverage skips unless `agent-harness[retrieval]` is installed and
+`AGENT_HARNESS_RUN_QDRANT_SERVER_TESTS=1` is set.
+
 A `config.v2` `retrieval.index_id` can route run-time context assembly through
-a built retrieval index. Lexical, deterministic dense, qdrant-local dense, and
-hybrid modes preserve per-method scores, lexical/dense provenance,
-backend/index evidence, and included/rejected manifest items. Retrieved chunks
-are filtered by path policy and hard-deny sensitivity rules before accepted
-context or provider input is created; rejected items omit source text.
+a built retrieval index. Lexical, deterministic dense, qdrant-local,
+qdrant-server, and hybrid modes preserve per-method scores, lexical/dense
+provenance, backend/index evidence, and included/rejected manifest items.
+Retrieved chunks are filtered by path policy and hard-deny sensitivity rules
+before accepted context or provider input is created; rejected items omit source
+text.
 
 Local dense fixture behavior is opt-in with `retrieval_backend: qdrant`.
 Qdrant/FastEmbed dependency checks are used as the local optional-dependency
