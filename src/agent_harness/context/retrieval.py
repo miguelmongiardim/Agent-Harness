@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-import importlib.util
 import json
 import re
 from pathlib import Path
 from typing import Protocol
 
 from agent_harness.context.chunking import RetrievedChunk, chunk_text
+from agent_harness.context.qdrant_local import (
+    FASTEMBED_DEFAULT_MODEL,
+    optional_qdrant_local_dependencies_available,
+    query_qdrant_local_collection,
+)
 from agent_harness.policy import PolicyEngine
 from agent_harness.schemas import DenseRetrievalMetadata
 from agent_harness.utils import sha256_text, stable_id
@@ -72,6 +76,72 @@ class QdrantFastEmbedRetriever:
     def retrieve(self, queries: list[str], limit: int = 5) -> list[RetrievedChunk]:
         del queries, limit
         raise RuntimeError("Qdrant/FastEmbed retrieval is smoke-only in the current repo")
+
+
+class QdrantLocalRetriever:
+    def __init__(
+        self,
+        storage_path: Path,
+        collection_name: str,
+        *,
+        model: str = FASTEMBED_DEFAULT_MODEL,
+        version: str = "unknown",
+        cache_dir: Path | None = None,
+    ) -> None:
+        self.storage_path = storage_path
+        self.collection_name = collection_name
+        self.model = model
+        self.version = version
+        self.cache_dir = cache_dir
+
+    def metadata(self) -> DenseRetrievalMetadata:
+        return DenseRetrievalMetadata(
+            backend="qdrant-local",
+            model=self.model,
+            version=self.version,
+        )
+
+    def retrieve(self, queries: list[str], limit: int = 5) -> list[RetrievedChunk]:
+        query = " ".join(queries)
+        if not query:
+            return []
+        results = query_qdrant_local_collection(
+            storage_path=self.storage_path,
+            collection_name=self.collection_name,
+            query=query,
+            model_name=self.model,
+            cache_dir=self.cache_dir,
+            limit=limit,
+        )
+        chunks: list[RetrievedChunk] = []
+        for result in results:
+            if not result["path"]:
+                continue
+            chunks.append(
+                RetrievedChunk(
+                    source_id=str(result["source_id"]),
+                    path=str(result["path"]),
+                    text=str(result["text"]),
+                    score=_result_float(result, "score"),
+                    start_line=_result_int(result, "start_line"),
+                    end_line=_result_int(result, "end_line"),
+                )
+            )
+        return chunks
+
+
+def _result_float(result: dict[str, object], key: str) -> float:
+    value = result[key]
+    if not isinstance(value, int | float | str):
+        raise ValueError(f"retrieval result field must be numeric: {key}")
+    return float(value)
+
+
+def _result_int(result: dict[str, object], key: str) -> int:
+    value = result[key]
+    if not isinstance(value, int | float | str):
+        raise ValueError(f"retrieval result field must be int: {key}")
+    return int(value)
 
 
 class LocalDenseRetriever:
@@ -160,10 +230,7 @@ def ingest_documents(
 
 
 def optional_dense_dependencies_available() -> bool:
-    return (
-        importlib.util.find_spec("qdrant_client") is not None
-        and importlib.util.find_spec("fastembed") is not None
-    )
+    return optional_qdrant_local_dependencies_available()
 
 
 def _dense_tokens(text: str) -> set[str]:
@@ -182,6 +249,7 @@ __all__ = [
     "LexicalRetriever",
     "LocalDenseRetriever",
     "QdrantFastEmbedRetriever",
+    "QdrantLocalRetriever",
     "RetrievedChunk",
     "Retriever",
     "chunk_text",

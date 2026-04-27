@@ -180,7 +180,7 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["lexical", "dense", "hybrid"],
         default="lexical",
     )
-    retrieval_index_build.add_argument("--dense-backend", choices=["deterministic"])
+    retrieval_index_build.add_argument("--dense-backend", choices=["deterministic", "qdrant-local"])
     retrieval_index_build.add_argument("--profile", default="default")
     retrieval_index_build.add_argument("--overwrite", action="store_true")
     retrieval_index_build.set_defaults(func=cmd_retrieval_index_build)

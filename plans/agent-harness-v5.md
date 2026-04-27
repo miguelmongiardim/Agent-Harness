@@ -312,18 +312,18 @@ diagnostics, and integration/smoke coverage.
 
 ### Acceptance criteria
 
-- [ ] Retrieval extra enables FastEmbed and Qdrant-backed retrieval.
-- [ ] FastEmbed runs locally.
-- [ ] Embedding model name is recorded.
-- [ ] Embedding model version is recorded where available.
-- [ ] First-run model acquisition behavior is documented.
-- [ ] Model cache location is documented.
-- [ ] Qdrant local storage defaults under `.agent-harness/indexes/`.
-- [ ] Qdrant collection name is recorded.
-- [ ] Rebuild and delete lifecycle work for local Qdrant indexes.
-- [ ] Missing dependency diagnostics are clear.
-- [ ] Lexical fallback works according to config.
-- [ ] Optional FastEmbed/Qdrant tests skip unless retrieval extras are
+- [x] Retrieval extra enables FastEmbed and Qdrant-backed retrieval.
+- [x] FastEmbed runs locally.
+- [x] Embedding model name is recorded.
+- [x] Embedding model version is recorded where available.
+- [x] First-run model acquisition behavior is documented.
+- [x] Model cache location is documented.
+- [x] Qdrant local storage defaults under `.agent-harness/indexes/`.
+- [x] Qdrant collection name is recorded.
+- [x] Rebuild and delete lifecycle work for local Qdrant indexes.
+- [x] Missing dependency diagnostics are clear.
+- [x] Lexical fallback works according to config.
+- [x] Optional FastEmbed/Qdrant tests skip unless retrieval extras are
       installed.
 
 ### Out of scope

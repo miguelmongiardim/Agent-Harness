@@ -17,6 +17,7 @@ from agent_harness.context.retrieval import (
     FakeRetriever,
     LexicalRetriever,
     LocalDenseRetriever,
+    QdrantLocalRetriever,
     Retriever,
     optional_dense_dependencies_available,
 )
@@ -1937,14 +1938,32 @@ def _select_retrieval_backend(
         )
         dense: DenseRetriever | None = None
         if mode in {"dense", "hybrid"}:
-            if manifest.embedding_backend != "deterministic":
-                raise ValueError("dense and hybrid context retrieval require a deterministic index")
-            dense = LocalDenseRetriever(
-                index_path,
-                backend=manifest.embedding_backend,
-                model=manifest.embedding_model or "token-set",
-                version=manifest.embedding_model_version or "baseline",
-            )
+            if manifest.embedding_backend == "deterministic":
+                dense = LocalDenseRetriever(
+                    index_path,
+                    backend=manifest.embedding_backend,
+                    model=manifest.embedding_model or "token-set",
+                    version=manifest.embedding_model_version or "baseline",
+                )
+            elif manifest.embedding_backend == "fastembed":
+                if not manifest.qdrant_storage_path or not manifest.qdrant_collection:
+                    raise ValueError("qdrant-local index is missing storage evidence")
+                dense = QdrantLocalRetriever(
+                    project_root / manifest.qdrant_storage_path,
+                    manifest.qdrant_collection,
+                    model=manifest.embedding_model or "BAAI/bge-small-en-v1.5",
+                    version=manifest.embedding_model_version or "unknown",
+                    cache_dir=(
+                        project_root / manifest.embedding_model_cache_path
+                        if manifest.embedding_model_cache_path
+                        else None
+                    ),
+                )
+            else:
+                raise ValueError(
+                    "dense and hybrid context retrieval require a deterministic or "
+                    "qdrant-local index"
+                )
         return lexical, dense, _configured_index_retrieval_backend(manifest, mode)
 
     index_path = artifact_root / "indexes" / "documents.jsonl"
@@ -2008,6 +2027,20 @@ def _configured_index_retrieval_backend(
             backend="lexical",
             index_id=manifest.index_id,
             index_path=manifest.index_path,
+            remote_embeddings=False,
+        )
+    if manifest.embedding_backend == "fastembed":
+        return RetrievalBackendManifest(
+            requested_backend=mode,
+            active_backend=("qdrant_local_dense" if mode == "dense" else "qdrant_local_hybrid"),
+            backend="qdrant-local",
+            embedding_model=manifest.embedding_model,
+            embedding_model_version=manifest.embedding_model_version,
+            embedding_model_cache_path=manifest.embedding_model_cache_path,
+            index_id=manifest.index_id,
+            index_path=manifest.index_path,
+            qdrant_collection=manifest.qdrant_collection,
+            qdrant_storage_path=manifest.qdrant_storage_path,
             remote_embeddings=False,
         )
     return RetrievalBackendManifest(

@@ -8,6 +8,13 @@ from typing import Literal
 
 from agent_harness import __version__
 from agent_harness.context.chunking import chunk_text
+from agent_harness.context.qdrant_local import (
+    FASTEMBED_DEFAULT_MODEL,
+    build_qdrant_local_collection,
+    ensure_qdrant_local_dependencies,
+    qdrant_collection_name,
+    query_qdrant_local_collection,
+)
 from agent_harness.policy import PolicyEngine
 from agent_harness.schemas import (
     HarnessConfig,
@@ -20,6 +27,7 @@ from agent_harness.utils import sha256_json, sha256_text, stable_id, write_json
 
 LEXICAL_CHUNK_MAX_CHARS = 1200
 RetrievalIndexMode = Literal["lexical", "dense", "hybrid"]
+DenseBackend = Literal["deterministic", "qdrant-local"]
 
 
 def build_retrieval_index(
@@ -33,8 +41,12 @@ def build_retrieval_index(
     dense_backend: str | None = None,
     overwrite: bool = False,
 ) -> RetrievalIndexManifest:
-    if mode in {"dense", "hybrid"} and dense_backend != "deterministic":
-        raise ValueError("dense and hybrid indexes require --dense-backend deterministic")
+    if mode in {"dense", "hybrid"} and dense_backend not in {"deterministic", "qdrant-local"}:
+        raise ValueError(
+            "dense and hybrid indexes require --dense-backend deterministic or qdrant-local"
+        )
+    if mode in {"dense", "hybrid"} and dense_backend == "qdrant-local":
+        ensure_qdrant_local_dependencies()
     project_root = project_root.resolve()
     _validate_index_id(index_id)
     artifact_root = project_root / config.artifact_root
@@ -97,6 +109,29 @@ def build_retrieval_index(
         for record in records:
             handle.write(json.dumps(record, sort_keys=True) + "\n")
 
+    qdrant_collection: str | None = None
+    qdrant_storage_path: str | None = None
+    embedding_model_cache_path: str | None = None
+    embedding_model_version: str | None = None
+    if dense_backend == "qdrant-local" and mode in {"dense", "hybrid"}:
+        qdrant_collection = qdrant_collection_name(index_id)
+        qdrant_storage = index_dir / "qdrant"
+        cache_dir = project_root / config.artifact_root / "models" / "fastembed"
+        embedding_model_cache_path = cache_dir.relative_to(project_root).as_posix()
+        try:
+            embedding_model_version = build_qdrant_local_collection(
+                storage_path=qdrant_storage,
+                collection_name=qdrant_collection,
+                records=records,
+                model_name=FASTEMBED_DEFAULT_MODEL,
+                cache_dir=cache_dir,
+            )
+        except Exception:
+            if index_dir.exists():
+                _remove_index_dir(artifact_root, index_dir)
+            raise
+        qdrant_storage_path = qdrant_storage.relative_to(project_root).as_posix()
+
     manifest = RetrievalIndexManifest(
         index_id=index_id,
         index_path=documents_path.relative_to(project_root).as_posix(),
@@ -108,9 +143,14 @@ def build_retrieval_index(
         chunks=chunks,
         chunk_ids=[chunk.chunk_id for chunk in chunks],
         chunk_hashes=chunk_hashes,
-        embedding_backend=("deterministic" if mode in {"dense", "hybrid"} else None),
-        embedding_model=("token-set" if mode in {"dense", "hybrid"} else None),
-        embedding_model_version=("baseline" if mode in {"dense", "hybrid"} else None),
+        embedding_backend=_embedding_backend(mode, dense_backend),
+        embedding_model=_embedding_model(mode, dense_backend),
+        embedding_model_version=(
+            embedding_model_version
+            if dense_backend == "qdrant-local"
+            else ("baseline" if mode in {"dense", "hybrid"} else None)
+        ),
+        embedding_model_cache_path=embedding_model_cache_path,
         agent_harness_version=__version__,
         retrieval_config_hash=sha256_json(
             {
@@ -123,6 +163,8 @@ def build_retrieval_index(
                 "retrieval_backend": config.retrieval_backend,
             }
         ),
+        qdrant_collection=qdrant_collection,
+        qdrant_storage_path=qdrant_storage_path,
         remote_embeddings=False,
     )
     write_json(index_dir / "retrieval_index.json", manifest.model_dump(mode="json"))
@@ -147,6 +189,18 @@ def build_lexical_index(
         mode="lexical",
         overwrite=overwrite,
     )
+
+
+def _embedding_backend(mode: RetrievalIndexMode, dense_backend: str | None) -> str | None:
+    if mode not in {"dense", "hybrid"}:
+        return None
+    return "fastembed" if dense_backend == "qdrant-local" else "deterministic"
+
+
+def _embedding_model(mode: RetrievalIndexMode, dense_backend: str | None) -> str | None:
+    if mode not in {"dense", "hybrid"}:
+        return None
+    return FASTEMBED_DEFAULT_MODEL if dense_backend == "qdrant-local" else "token-set"
 
 
 def _validate_index_id(index_id: str) -> None:
@@ -239,10 +293,13 @@ def query_index(
     limit: int,
 ) -> dict[str, object]:
     manifest = load_index(project_root, config, index_id)
-    if mode in {"dense", "hybrid"} and manifest.embedding_backend != "deterministic":
-        raise ValueError("dense and hybrid query require a deterministic dense index")
     records = _index_records(project_root / manifest.index_path)
-    results = _query_records(records, query, mode=mode, limit=limit)
+    if mode in {"dense", "hybrid"} and manifest.embedding_backend == "fastembed":
+        results = _query_qdrant_local_index(project_root, manifest, records, query, mode, limit)
+    elif mode in {"dense", "hybrid"} and manifest.embedding_backend != "deterministic":
+        raise ValueError("dense and hybrid query require a deterministic or qdrant-local index")
+    else:
+        results = _query_records(records, query, mode=mode, limit=limit)
     return {
         "schema_version": "retrieval_query.v1",
         "index_id": index_id,
@@ -258,6 +315,43 @@ def _index_records(path: Path) -> list[dict[str, object]]:
     if not path.exists():
         return []
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
+
+
+def _query_qdrant_local_index(
+    project_root: Path,
+    manifest: RetrievalIndexManifest,
+    records: list[dict[str, object]],
+    query: str,
+    mode: RetrievalIndexMode,
+    limit: int,
+) -> list[dict[str, object]]:
+    if not manifest.qdrant_storage_path or not manifest.qdrant_collection:
+        raise ValueError("qdrant-local index is missing storage evidence")
+    qdrant_results = query_qdrant_local_collection(
+        storage_path=project_root / manifest.qdrant_storage_path,
+        collection_name=manifest.qdrant_collection,
+        query=query,
+        model_name=manifest.embedding_model or FASTEMBED_DEFAULT_MODEL,
+        cache_dir=(
+            project_root / manifest.embedding_model_cache_path
+            if manifest.embedding_model_cache_path
+            else None
+        ),
+        limit=limit,
+    )
+    dense_results = [
+        _query_result(
+            result,
+            "dense",
+            _result_float(result, "score"),
+        )
+        for result in qdrant_results
+        if _result_float(result, "score") > 0.0
+    ]
+    if mode == "dense":
+        return dense_results[:limit]
+    lexical_results = _query_records(records, query, mode="lexical", limit=limit)
+    return _merge_query_results([*lexical_results, *dense_results], limit)
 
 
 def _query_records(
@@ -316,6 +410,103 @@ def _query_records(
     ]
 
 
+def _query_result(
+    result: dict[str, object],
+    method: Literal["lexical", "dense"],
+    score: float,
+) -> dict[str, object]:
+    return {
+        "chunk_id": str(result["chunk_id"]),
+        "source_id": str(result["source_id"]),
+        "path": str(result["path"]),
+        "text": str(result["text"]),
+        "start_line": _result_int(result, "start_line"),
+        "end_line": _result_int(result, "end_line"),
+        "retrieval_method": method,
+        "scores": {method: score},
+        "provenance": [{"method": method, "score": score}],
+    }
+
+
+def _merge_query_results(
+    results: list[dict[str, object]],
+    limit: int,
+) -> list[dict[str, object]]:
+    merged: dict[tuple[str, int, int], dict[str, object]] = {}
+    for result in results:
+        key = (
+            str(result["path"]),
+            _result_int(result, "start_line"),
+            _result_int(result, "end_line"),
+        )
+        existing = merged.get(key)
+        result_scores = _result_scores(result)
+        if existing is None:
+            merged[key] = {
+                **result,
+                "scores": result_scores,
+                "provenance": _result_provenance(result),
+            }
+            continue
+        existing_scores = _result_scores(existing)
+        for method, score in result_scores.items():
+            existing_scores[str(method)] = max(
+                float(existing_scores.get(str(method), 0.0)),
+                float(score),
+            )
+        existing["scores"] = existing_scores
+        existing["retrieval_method"] = (
+            "both" if set(existing_scores) == {"lexical", "dense"} else next(iter(existing_scores))
+        )
+        existing["provenance"] = [
+            {"method": method, "score": existing_scores[method]}
+            for method in ("lexical", "dense")
+            if method in existing_scores
+        ]
+    return sorted(
+        merged.values(),
+        key=lambda item: (
+            -sum(_result_scores(item).values()),
+            str(item["path"]),
+            _result_int(item, "start_line"),
+        ),
+    )[:limit]
+
+
+def _result_float(result: dict[str, object], key: str) -> float:
+    value = result[key]
+    if not isinstance(value, int | float | str):
+        raise ValueError(f"retrieval result field must be numeric: {key}")
+    return float(value)
+
+
+def _result_int(result: dict[str, object], key: str) -> int:
+    value = result[key]
+    if not isinstance(value, int | float | str):
+        raise ValueError(f"retrieval result field must be int: {key}")
+    return int(value)
+
+
+def _result_scores(result: dict[str, object]) -> dict[str, float]:
+    value = result["scores"]
+    if not isinstance(value, dict):
+        raise ValueError("retrieval query scores must be a dictionary")
+    return {str(method): _score_value(score) for method, score in value.items()}
+
+
+def _score_value(value: object) -> float:
+    if not isinstance(value, int | float | str):
+        raise ValueError("retrieval query score must be numeric")
+    return float(value)
+
+
+def _result_provenance(result: dict[str, object]) -> list[object]:
+    value = result["provenance"]
+    if not isinstance(value, list):
+        raise ValueError("retrieval query provenance must be a list")
+    return list(value)
+
+
 def _query_retrieval_backend(
     manifest: RetrievalIndexManifest,
     mode: RetrievalIndexMode,
@@ -327,6 +518,20 @@ def _query_retrieval_backend(
             backend="lexical",
             index_id=manifest.index_id,
             index_path=manifest.index_path,
+            remote_embeddings=False,
+        )
+    if manifest.embedding_backend == "fastembed":
+        return RetrievalBackendManifest(
+            requested_backend=mode,
+            active_backend=("qdrant_local_dense" if mode == "dense" else "qdrant_local_hybrid"),
+            backend="qdrant-local",
+            embedding_model=manifest.embedding_model,
+            embedding_model_version=manifest.embedding_model_version,
+            embedding_model_cache_path=manifest.embedding_model_cache_path,
+            index_id=manifest.index_id,
+            index_path=manifest.index_path,
+            qdrant_collection=manifest.qdrant_collection,
+            qdrant_storage_path=manifest.qdrant_storage_path,
             remote_embeddings=False,
         )
     return RetrievalBackendManifest(

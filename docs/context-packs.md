@@ -35,12 +35,27 @@ model download, and records `retrieval_backend.v2` evidence with
 `remote_embeddings: false`. It is test/fixture behavior, not a production
 embedding backend.
 
+When `agent-harness[retrieval]` is installed, dense and hybrid indexes can use
+`--dense-backend qdrant-local`. This path executes FastEmbed locally and stores
+persistent Qdrant local data under
+`.agent-harness/indexes/<index-id>/qdrant` by default. The
+`retrieval_index.v1` and `retrieval_backend.v2` evidence records the FastEmbed
+model name, FastEmbed package version when available, model cache path, Qdrant
+collection, Qdrant storage path, and `remote_embeddings: false`.
+
+FastEmbed model initialization may acquire model files on the first local run.
+Agent Harness passes `.agent-harness/models/fastembed` as the cache directory
+for this optional path, so later runs can reuse the local model cache. Normal
+tests do not require this path; the real FastEmbed/Qdrant smoke test skips
+unless `agent-harness[retrieval]` is installed and
+`AGENT_HARNESS_RUN_RETRIEVAL_OPTIONAL_TESTS=1` is set.
+
 A `config.v2` `retrieval.index_id` can route run-time context assembly through
-a built retrieval index. Lexical, deterministic dense, and hybrid modes preserve
-per-method scores, lexical/dense provenance, backend/index evidence, and
-included/rejected manifest items. Retrieved chunks are filtered by path policy
-and hard-deny sensitivity rules before accepted context or provider input is
-created; rejected items omit source text.
+a built retrieval index. Lexical, deterministic dense, qdrant-local dense, and
+hybrid modes preserve per-method scores, lexical/dense provenance,
+backend/index evidence, and included/rejected manifest items. Retrieved chunks
+are filtered by path policy and hard-deny sensitivity rules before accepted
+context or provider input is created; rejected items omit source text.
 
 Local dense fixture behavior is opt-in with `retrieval_backend: qdrant`.
 Qdrant/FastEmbed dependency checks are used as the local optional-dependency

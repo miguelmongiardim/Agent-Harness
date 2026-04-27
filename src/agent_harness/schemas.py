@@ -562,8 +562,11 @@ class RetrievalBackendManifest(StrictModel):
     backend: str
     embedding_model: str | None = None
     embedding_model_version: str | None = None
+    embedding_model_cache_path: str | None = None
     index_id: str | None = None
     index_path: str | None = None
+    qdrant_collection: str | None = None
+    qdrant_storage_path: str | None = None
     fallback_status: Literal["not_required", "used"] = "not_required"
     fallback_reason: str | None = None
     diagnostics: list[str] = Field(default_factory=list)
@@ -610,10 +613,12 @@ class RetrievalIndexManifest(StrictModel):
     embedding_backend: str | None = None
     embedding_model: str | None = None
     embedding_model_version: str | None = None
+    embedding_model_cache_path: str | None = None
     agent_harness_version: str
     created_at: datetime = Field(default_factory=now_utc)
     retrieval_config_hash: str
     qdrant_collection: str | None = None
+    qdrant_storage_path: str | None = None
     remote_embeddings: bool = False
 
     @field_validator("index_path")
