@@ -1,0 +1,9 @@
+{
+  "schema_version": "retrieval_index.v1",
+  "index_id": "demo-retrieval",
+  "backend": "hybrid",
+  "embedding_backend": "fastembed",
+  "qdrant_collection": "agent_harness_demo_retrieval",
+  "qdrant_storage_path": ".agent-harness/indexes/demo-retrieval/qdrant",
+  "remote_embeddings": false
+}

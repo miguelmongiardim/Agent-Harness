@@ -470,20 +470,20 @@ example enables remote embeddings or cloud Qdrant.
 
 ### Acceptance criteria
 
-- [ ] `examples/retrieval_quality/README.md` exists.
-- [ ] `examples/retrieval_quality/config.v2.yaml` uses local-first retrieval.
-- [ ] `examples/retrieval_quality/policy.v2.yaml` demonstrates policy filtering.
-- [ ] Demo docs include architecture, coding rules, public notes, and sensitive
+- [x] `examples/retrieval_quality/README.md` exists.
+- [x] `examples/retrieval_quality/config.v2.yaml` uses local-first retrieval.
+- [x] `examples/retrieval_quality/policy.v2.yaml` demonstrates policy filtering.
+- [x] Demo docs include architecture, coding rules, public notes, and sensitive
       or denied internal notes.
-- [ ] Demo expected artifacts include retrieval index and scorecard examples.
-- [ ] Demo scorecard fixture exists.
-- [ ] Lexical index build is demonstrated.
-- [ ] Dense local index build is demonstrated when retrieval extra is installed.
-- [ ] Hybrid query is demonstrated.
-- [ ] Context manifest shows lexical, dense, and both provenance.
-- [ ] Denied or sensitive chunks are rejected before context assembly.
-- [ ] Precision@k and Recall@k scorecard comparison is visible.
-- [ ] V5 golden path works:
+- [x] Demo expected artifacts include retrieval index and scorecard examples.
+- [x] Demo scorecard fixture exists.
+- [x] Lexical index build is demonstrated.
+- [x] Dense local index build is demonstrated when retrieval extra is installed.
+- [x] Hybrid query is demonstrated.
+- [x] Context manifest shows lexical, dense, and both provenance.
+- [x] Denied or sensitive chunks are rejected before context assembly.
+- [x] Precision@k and Recall@k scorecard comparison is visible.
+- [x] V5 golden path works:
 
       ```powershell
       uv sync --extra retrieval
@@ -493,11 +493,11 @@ example enables remote embeddings or cloud Qdrant.
       uv run agent-harness release readiness
       ```
 
-- [ ] Release readiness includes retrieval checks.
-- [ ] README links to the retrieval demo.
-- [ ] Roadmap accurately marks cloud and remote retrieval as future.
-- [ ] No docs claim production Qdrant server mode.
-- [ ] No executable default config uses remote embeddings.
+- [x] Release readiness includes retrieval checks.
+- [x] README links to the retrieval demo.
+- [x] Roadmap accurately marks cloud and remote retrieval as future.
+- [x] No docs claim production Qdrant server mode.
+- [x] No executable default config uses remote embeddings.
 
 ### Out of scope
 

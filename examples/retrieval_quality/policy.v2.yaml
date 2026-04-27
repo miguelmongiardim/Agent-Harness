@@ -1,0 +1,13 @@
+schema_version: policy.v2
+name: retrieval-quality-demo
+description: Local-first retrieval demo policy split.
+profiles:
+  default:
+    purpose: Build the local fixture index from public, internal, and sensitive sample notes.
+    remote_embeddings: false
+  demo-runtime:
+    purpose: Demonstrate context filtering after retrieval.
+    denied_paths:
+      - examples/retrieval_quality/docs/internal/denied-internal.md
+    hard_denied_sensitivity_paths:
+      - examples/retrieval_quality/docs/internal/secret-internal.md

@@ -6,9 +6,12 @@ import subprocess
 import sys
 import tempfile
 import tomllib
+from ipaddress import ip_address
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
+from agent_harness.config import load_mapping
 from agent_harness.docs_check import run_docs_check
 from agent_harness.utils import hash_file, now_utc, write_json
 
@@ -379,7 +382,11 @@ def _template_evidence(project_root: Path) -> dict[str, Any]:
 
 
 def _retrieval_evidence(project_root: Path) -> dict[str, Any]:
-    return {"scorecard": _retrieval_scorecard_evidence(project_root)}
+    return {
+        "scorecard": _retrieval_scorecard_evidence(project_root),
+        "demo": _retrieval_demo_evidence(project_root),
+        "configuration": _retrieval_configuration_evidence(project_root),
+    }
 
 
 def _retrieval_scorecard_evidence(project_root: Path) -> dict[str, Any]:
@@ -415,6 +422,155 @@ def _retrieval_scorecard_evidence(project_root: Path) -> dict[str, Any]:
             ".agent-harness/retrieval-scorecards/."
         ),
     }
+
+
+def _retrieval_demo_evidence(project_root: Path) -> dict[str, Any]:
+    demo_root = project_root / "examples" / "retrieval_quality"
+    required_files = [
+        "README.md",
+        "config.v2.yaml",
+        "policy.v2.yaml",
+        "scorecard.yaml",
+        "task.json",
+        "expected/retrieval_index.json",
+        "expected/retrieval_scorecard.json",
+    ]
+    required_doc_names = {
+        "architecture.md",
+        "coding-rules.md",
+        "public-notes.md",
+        "semantic-note.md",
+        "denied-internal.md",
+        "secret-internal.md",
+    }
+    missing_files = [relative for relative in required_files if not (demo_root / relative).exists()]
+    doc_names = (
+        {path.name for path in (demo_root / "docs").rglob("*.md")}
+        if (demo_root / "docs").exists()
+        else set()
+    )
+    missing_docs = sorted(required_doc_names - doc_names)
+    status = (
+        "passed"
+        if demo_root.exists() and not missing_files and not missing_docs
+        else "missing_evidence"
+    )
+    return {
+        "path": "examples/retrieval_quality",
+        "status": status,
+        "missing_files": missing_files,
+        "missing_docs": missing_docs,
+        "action": (
+            "Add the retrieval quality demo README, local config, policy, documents, "
+            "scorecard fixture, task, and expected artifact examples."
+        ),
+    }
+
+
+def _retrieval_configuration_evidence(project_root: Path) -> dict[str, Any]:
+    config_paths = _retrieval_config_paths(project_root)
+    remote_defaults: list[dict[str, object]] = []
+    for path in config_paths:
+        try:
+            config = load_mapping(path)
+        except Exception as exc:
+            remote_defaults.append(
+                {
+                    "path": _project_relative(project_root, path),
+                    "setting": "parse_error",
+                    "value": str(exc),
+                }
+            )
+            continue
+        remote_defaults.extend(_remote_retrieval_defaults(project_root, path, config))
+    return {
+        "status": "failed" if remote_defaults else "passed",
+        "checked_paths": [_project_relative(project_root, path) for path in config_paths],
+        "remote_defaults": remote_defaults,
+        "action": (
+            "Remove remote embeddings, hosted embedding providers, API-key-backed "
+            "Qdrant, cloud Qdrant, HTTPS Qdrant, or non-loopback Qdrant defaults "
+            "from executable configs."
+        ),
+    }
+
+
+def _retrieval_config_paths(project_root: Path) -> list[Path]:
+    paths: list[Path] = []
+    root_config = project_root / "agent-harness.yaml"
+    if root_config.exists():
+        paths.append(root_config)
+    examples = project_root / "examples"
+    if examples.exists():
+        paths.extend(sorted(examples.rglob("agent-harness.yaml")))
+        paths.extend(sorted(examples.rglob("config.v2.yaml")))
+    return sorted(dict.fromkeys(paths))
+
+
+def _remote_retrieval_defaults(
+    project_root: Path,
+    path: Path,
+    config: dict[str, Any],
+) -> list[dict[str, object]]:
+    retrieval = config.get("retrieval")
+    if not isinstance(retrieval, dict):
+        return []
+    relative = _project_relative(project_root, path)
+    findings: list[dict[str, object]] = []
+    dense = retrieval.get("dense")
+    if isinstance(dense, dict):
+        if dense.get("remote_embeddings") is True:
+            findings.append(
+                {
+                    "path": relative,
+                    "setting": "retrieval.dense.remote_embeddings",
+                    "value": True,
+                }
+            )
+        provider = dense.get("embedding_provider")
+        if provider not in {None, "deterministic", "fastembed"}:
+            findings.append(
+                {
+                    "path": relative,
+                    "setting": "retrieval.dense.embedding_provider",
+                    "value": str(provider),
+                }
+            )
+    qdrant = retrieval.get("qdrant")
+    if isinstance(qdrant, dict):
+        if qdrant.get("api_key_env") is not None:
+            findings.append(
+                {
+                    "path": relative,
+                    "setting": "retrieval.qdrant.api_key_env",
+                    "value": str(qdrant["api_key_env"]),
+                }
+            )
+        url = qdrant.get("url")
+        if isinstance(url, str) and _remote_qdrant_url(url):
+            findings.append(
+                {
+                    "path": relative,
+                    "setting": "retrieval.qdrant.url",
+                    "value": url,
+                }
+            )
+    return findings
+
+
+def _remote_qdrant_url(value: str) -> bool:
+    parsed = urlparse(value)
+    hostname = (parsed.hostname or "").lower()
+    if parsed.scheme.lower() == "https":
+        return True
+    if hostname.endswith("cloud.qdrant.io"):
+        return True
+    if hostname == "localhost":
+        return False
+    try:
+        return not ip_address(hostname).is_loopback
+    except ValueError:
+        return bool(hostname)
 
 
 def _release_artifact_evidence(project_root: Path, version: str) -> dict[str, Any]:

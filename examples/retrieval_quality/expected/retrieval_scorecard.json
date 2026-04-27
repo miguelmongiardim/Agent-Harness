@@ -1,0 +1,8 @@
+{
+  "schema_version": "retrieval_scorecard.v1",
+  "status": "passed",
+  "index_id": "demo-retrieval",
+  "k": 5,
+  "compared_modes": ["lexical", "dense", "hybrid"],
+  "remote_embeddings": false
+}

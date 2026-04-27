@@ -84,6 +84,14 @@ The command records a passing `retrieval_scorecard.v1` artifact under
 retrieval scorecard gate and leaves the report pending when no passing
 scorecard exists.
 
+Release readiness also verifies that `examples/retrieval_quality/` includes
+the runnable demo files and scans executable configs such as
+`agent-harness.yaml`, example `agent-harness.yaml` files, and example
+`config.v2.yaml` files for remote retrieval defaults. A report remains pending
+when those configs enable remote embeddings, hosted embedding providers,
+API-key-backed Qdrant, cloud Qdrant, HTTPS Qdrant, or non-loopback Qdrant
+endpoints.
+
 The report represents:
 
 - package build evidence
@@ -95,6 +103,7 @@ The report represents:
 - roadmap-claim docs status
 - bundled template validation evidence
 - retrieval scorecard evidence
+- retrieval demo and local-first config evidence
 - release artifact presence
 - local check commands
 - remote CI run evidence for the target commit
@@ -107,8 +116,8 @@ The report represents:
 
 The command is evidence collection, not release automation. A report is `ready`
 only when required package, install, console script, demo, docs, changelog,
-template, retrieval scorecard, artifact, tag, and remote CI evidence is present
-and passing.
+template, retrieval scorecard, retrieval demo/config, artifact, tag, and remote
+CI evidence is present and passing.
 
 ## Release Checklist
 

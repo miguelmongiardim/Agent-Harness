@@ -163,6 +163,11 @@ agent-harness doctor
   and writes `retrieval_scorecard.v1` artifacts under
   `.agent-harness/retrieval-scorecards/`. Release readiness reports at least
   one passing retrieval scorecard as retrieval evidence.
+- [examples/retrieval_quality/](examples/retrieval_quality/) is the V5
+  local-first retrieval demo. It includes runnable local config/policy files,
+  public and internal sample documents, expected retrieval artifacts, a
+  scorecard fixture, and commands for lexical build, qdrant-local hybrid build,
+  hybrid query, scorecard comparison, and policy-filtered context assembly.
 - `examples/provider_audit/` is the main V2 walkthrough. It uses recorded
   provider transport, a non-mock local endpoint trust zone, `network: false`,
   required provider-use approval, inspectable provider-input evidence, redacted
@@ -183,11 +188,11 @@ provider action envelopes, profile validation, opt-in OpenAI-compatible live
 smoke, provider-call evidence, redacted prompt/response artifacts, and
 deterministic provider-core evals.
 
-The V5 plan targets local-first retrieval hardening for v1.2.0. The planned
-retrieval quality demo is tracked under
-[examples/retrieval_quality/](examples/retrieval_quality/), with the runnable
-golden path landing after the retrieval CLI, local index, and scorecard slices
-are implemented.
+The V5 plan targets local-first retrieval hardening for v1.2.0. The retrieval
+quality demo is runnable under
+[examples/retrieval_quality/](examples/retrieval_quality/). Cloud Qdrant,
+remote embeddings, hosted embedding providers, and production Qdrant server
+operation remain roadmap scope, not default behavior.
 
 ## Documentation
 

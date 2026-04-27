@@ -1,0 +1,15 @@
+{
+  "schema_version": "retrieval_scorecard_fixture.v1",
+  "min_precision_at_k": 0.2,
+  "min_recall_at_k": 1.0,
+  "queries": [
+    {
+      "query_id": "retrieval-architecture",
+      "query": "canonical architecture",
+      "expected_chunks": [
+        "examples/retrieval_quality/docs/public/architecture.md"
+      ],
+      "allowed_sensitivities": ["public"]
+    }
+  ]
+}

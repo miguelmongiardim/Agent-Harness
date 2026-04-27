@@ -404,6 +404,50 @@ def _write_release_ready_project(root: Path, version: str) -> None:
         ),
         encoding="utf-8",
     )
+    demo = root / "examples" / "retrieval_quality"
+    (demo / "docs" / "public").mkdir(parents=True)
+    (demo / "docs" / "internal").mkdir(parents=True)
+    (demo / "expected").mkdir()
+    for relative in (
+        "README.md",
+        "config.v2.yaml",
+        "policy.v2.yaml",
+        "scorecard.yaml",
+        "task.json",
+        "expected/retrieval_index.json",
+        "expected/retrieval_scorecard.json",
+        "docs/public/architecture.md",
+        "docs/public/coding-rules.md",
+        "docs/public/public-notes.md",
+        "docs/public/semantic-note.md",
+        "docs/internal/denied-internal.md",
+        "docs/internal/secret-internal.md",
+    ):
+        path = demo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if relative == "config.v2.yaml":
+            path.write_text(
+                "\n".join(
+                    [
+                        "schema_version: config.v2",
+                        "project_name: retrieval-quality-demo",
+                        "artifact_root: .agent-harness",
+                        "default_policy: default",
+                        "retrieval_backend: lexical",
+                        "template_catalog: bundled",
+                        "retrieval:",
+                        "  dense:",
+                        "    embedding_backend: fastembed",
+                        "    remote_embeddings: false",
+                        "  qdrant:",
+                        "    backend: qdrant-local",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+        else:
+            path.write_text("demo\n", encoding="utf-8")
 
 
 def _write_release_project_without_evidence(root: Path, version: str) -> None:

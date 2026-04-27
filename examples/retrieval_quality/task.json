@@ -1,0 +1,10 @@
+{
+  "schema_version": "task.v2",
+  "task_id": "retrieval-quality-demo",
+  "title": "Retrieval Quality Demo",
+  "intent": "Assemble local retrieval evidence without changing files.",
+  "policy_profile": "demo-runtime",
+  "context_queries": ["refactor config loader policy"],
+  "allowed_tools": [],
+  "max_steps": 2
+}

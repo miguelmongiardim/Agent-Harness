@@ -46,7 +46,8 @@ V5 is planned as local-first retrieval hardening:
 base-install lexical retrieval available while adding local index lifecycle
 commands, deterministic dense test embeddings, local-only FastEmbed behavior,
 persistent local Qdrant storage, loopback-only Qdrant server developer support,
-hybrid retrieval, scorecards, and policy-filtered context manifest evidence.
+hybrid retrieval, scorecards, a local retrieval quality demo, and
+policy-filtered context manifest evidence.
 
 Cloud Qdrant, hosted embedding providers, remote embeddings, remote embedding
 APIs, remote vector databases, API-key-backed Qdrant endpoints, HTTPS remote

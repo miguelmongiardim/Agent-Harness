@@ -1,0 +1,19 @@
+schema_version: config.v2
+project_name: retrieval-quality-demo
+artifact_root: .agent-harness
+default_policy: default
+retrieval_backend: lexical
+template_catalog: bundled
+retrieval:
+  index_id: demo-retrieval
+  default_mode: hybrid
+  lexical:
+    enabled: true
+  dense:
+    embedding_backend: fastembed
+    embedding_provider: fastembed
+    remote_embeddings: false
+  qdrant:
+    backend: qdrant-local
+  fallback:
+    allow_lexical: true
