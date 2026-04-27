@@ -14,7 +14,8 @@
       "model": "deterministic-audit",
       "endpoint_env": "AGENT_HARNESS_PROVIDER_AUDIT_ENDPOINT",
       "network": false,
-      "requires_approval": true
+      "requires_approval": true,
+      "api_key_env": "AGENT_HARNESS_PROVIDER_AUDIT_API_KEY"
     }
   ]
 }

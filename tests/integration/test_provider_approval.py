@@ -65,6 +65,8 @@ def test_local_endpoint_provider_pauses_before_model_actions_and_records_pending
     env = os.environ.copy()
     env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-provider-use-approval"
     env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-26T12:00:00Z"
+    env["AGENT_HARNESS_LOCAL_ENDPOINT"] = "recorded://openai_compatible/read_only"
+    env["AGENT_HARNESS_API_KEY"] = "approval-test-secret"
 
     run = subprocess.run(
         [sys.executable, "-m", "agent_harness", "run", str(task_path)],

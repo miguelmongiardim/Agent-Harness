@@ -163,8 +163,36 @@ def test_recorded_openai_provider_missing_required_env_var_fails_clearly(
         check=False,
     )
 
-    assert run.returncode == 1
-    assert "missing required env var: AGENT_HARNESS_RECORDED_OPENAI_API_KEY" in run.stderr
+    assert run.returncode == 0, run.stderr
+    summary = json.loads(run.stdout)
+    assert summary["status"] == "failed"
+    assert summary["message"] == "provider profile validation failed"
+
+    inspect = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "agent_harness",
+            "inspect",
+            "run",
+            "run-missing-provider-env",
+        ],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert inspect.returncode == 0, inspect.stderr
+    inspected = json.loads(inspect.stdout)
+    validation_event = next(
+        event for event in inspected["events"] if event["type"] == "provider_profile_invalid"
+    )
+    assert (
+        "missing required env var: AGENT_HARNESS_RECORDED_OPENAI_API_KEY"
+        in validation_event["payload"]["reason"]
+    )
     assert "gateway-test-secret" not in run.stdout
     assert "gateway-test-secret" not in run.stderr
 

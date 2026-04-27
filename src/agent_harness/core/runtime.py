@@ -18,6 +18,10 @@ from agent_harness.context.retrieval import (
 )
 from agent_harness.core.models import DeterministicMockModel
 from agent_harness.model.adapters import ProviderEnvelopeValidationError, ProviderGateway
+from agent_harness.model.profiles import (
+    ProviderProfileValidationError,
+    validate_provider_profile_for_use,
+)
 from agent_harness.policy import PolicyEngine, load_policy, load_policy_with_schema_evidence
 from agent_harness.provider_input import build_provider_input_manifest
 from agent_harness.schemas import (
@@ -261,6 +265,52 @@ class HarnessRuntime:
         }
         provider_call_approval_ids: list[str] = []
         if provider is not None:
+            provider_config = self._configured_provider(provider.provider_profile_id)
+            try:
+                validate_provider_profile_for_use(provider_config, profile)
+            except ProviderProfileValidationError as exc:
+                store.append_event(
+                    make_event(
+                        run_id,
+                        "provider_profile_invalid",
+                        {
+                            "provider_profile_id": provider.provider_profile_id,
+                            "transport": provider.transport,
+                            "trust_zone": provider.trust_zone,
+                            "network": provider.network,
+                            "reason": str(exc),
+                        },
+                    )
+                )
+                artifact_paths = {
+                    "run_dir": store.run_dir,
+                    "state": store.db_path,
+                    "task": store.run_dir / "task.json",
+                    "policy": store.run_dir / "policy.json",
+                    "events": store.events_path,
+                    "schema_versions": schema_versions_path,
+                    "security_findings": security_path,
+                    "context_manifest": store.run_dir / "context_manifest.json",
+                    "checkpoint": (
+                        store.run_dir / "checkpoints" / f"{checkpoint.checkpoint_id}.json"
+                    ),
+                    "checkpoint_index": store.run_dir / "checkpoint-index.json",
+                    "summary": store.run_dir / "summary.json",
+                    "artifact_index": store.run_dir / "artifact-index.json",
+                }
+                if advisory_reports_path is not None:
+                    artifact_paths["advisory_reports"] = advisory_reports_path
+                if runtime_adapter_path is not None:
+                    artifact_paths["runtime_adapter"] = runtime_adapter_path
+                return self._finalize_task_run(
+                    store,
+                    task,
+                    started_at,
+                    "failed",
+                    artifact_paths,
+                    approvals=[],
+                    message="provider profile validation failed",
+                )
             provider_path = store.write_model("provider.json", provider)
             store.append_event(
                 make_event(

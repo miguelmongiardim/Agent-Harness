@@ -62,6 +62,7 @@ def _seed_project_with_local_endpoint_provider(root: Path) -> None:
                 "endpoint_env": "AGENT_HARNESS_LOCAL_ENDPOINT",
                 "network": True,
                 "requires_approval": False,
+                "api_key_env": "AGENT_HARNESS_LOCAL_ENDPOINT_API_KEY",
             }
         ],
     }
@@ -416,6 +417,7 @@ def test_provider_use_approval_cannot_override_hard_denied_provider_input(
     env["AGENT_HARNESS_FIXED_RUN_ID"] = "run-provider-hard-deny"
     env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-26T15:30:00Z"
     env["AGENT_HARNESS_LOCAL_ENDPOINT"] = "recorded://openai_compatible/read_only"
+    env["AGENT_HARNESS_LOCAL_ENDPOINT_API_KEY"] = "provider-hard-deny-secret"
 
     run = subprocess.run(
         [sys.executable, "-m", "agent_harness", "run", str(task_path)],

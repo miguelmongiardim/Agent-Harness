@@ -13,6 +13,7 @@ def test_provider_audit_demo_command_returns_inspectable_run_id() -> None:
     env = os.environ.copy()
     env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-27T10:00:00Z"
     env.pop("AGENT_HARNESS_PROVIDER_AUDIT_ENDPOINT", None)
+    env.pop("AGENT_HARNESS_PROVIDER_AUDIT_API_KEY", None)
 
     demo = _run_cli(repo_root, env, "demo", "provider-audit")
     payload = json.loads(demo.stdout)
@@ -45,6 +46,7 @@ def test_provider_audit_demo_golden_path_is_covered_by_eval() -> None:
     env = os.environ.copy()
     env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-27T10:05:00Z"
     env.pop("AGENT_HARNESS_PROVIDER_AUDIT_ENDPOINT", None)
+    env.pop("AGENT_HARNESS_PROVIDER_AUDIT_API_KEY", None)
 
     eval_run = _run_cli(repo_root, env, "eval")
     report = json.loads(Path(json.loads(eval_run.stdout)["report"]).read_text(encoding="utf-8"))
@@ -98,6 +100,7 @@ def test_provider_audit_demo_pauses_resumes_and_exports_all_evidence(
     env["AGENT_HARNESS_FIXED_RUN_ID"] = "provider-audit-demo-run"
     env["AGENT_HARNESS_FIXED_TIME"] = "2026-04-26T19:00:00Z"
     env["AGENT_HARNESS_PROVIDER_AUDIT_ENDPOINT"] = "recorded://openai_compatible/read_only"
+    env["AGENT_HARNESS_PROVIDER_AUDIT_API_KEY"] = "provider-audit-test-secret"
 
     run = _run_cli(workspace, env, "run", "task.json")
     summary = json.loads(run.stdout)

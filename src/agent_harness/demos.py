@@ -15,7 +15,9 @@ PROVIDER_AUDIT_DEMO_ID = "provider-audit"
 PROVIDER_AUDIT_COMMAND = "agent-harness demo provider-audit"
 PROVIDER_AUDIT_WORKSPACE = Path("examples") / "provider_audit"
 PROVIDER_AUDIT_ENDPOINT_ENV = "AGENT_HARNESS_PROVIDER_AUDIT_ENDPOINT"
+PROVIDER_AUDIT_API_KEY_ENV = "AGENT_HARNESS_PROVIDER_AUDIT_API_KEY"
 RECORDED_PROVIDER_AUDIT_ENDPOINT = "recorded://openai_compatible/read_only"
+RECORDED_PROVIDER_AUDIT_API_KEY = "recorded-provider-audit"
 PYTHON_REFACTOR_DEMO_ID = "python-refactor"
 PYTHON_REFACTOR_TASK = Path("examples") / "tasks" / "python_refactor.json"
 PYTHON_REFACTOR_COMMAND = "agent-harness run examples/tasks/python_refactor.json --dry-run"
@@ -27,7 +29,10 @@ def run_provider_audit_demo(project_root: Path) -> dict[str, Any]:
     if not task_path.exists():
         raise FileNotFoundError("provider-audit demo requires examples/provider_audit/task.json")
 
-    with _default_env(PROVIDER_AUDIT_ENDPOINT_ENV, RECORDED_PROVIDER_AUDIT_ENDPOINT):
+    with (
+        _default_env(PROVIDER_AUDIT_ENDPOINT_ENV, RECORDED_PROVIDER_AUDIT_ENDPOINT),
+        _default_env(PROVIDER_AUDIT_API_KEY_ENV, RECORDED_PROVIDER_AUDIT_API_KEY),
+    ):
         summary = HarnessRuntime(workspace).run_task(task_path, auto_approve=True)
 
     artifacts = _rebase_artifacts(project_root, workspace, summary.artifacts)
