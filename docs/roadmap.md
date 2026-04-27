@@ -10,24 +10,24 @@ separate `git_commit` approval; packaged benchmark adapters; provider audit
 demos; release-readiness reports; audit logs; evals; an optional LangGraph
 boundary proof; and reproducible artifacts.
 
-## V3 Direction
+## v1.0.0 Status
 
-V3 is planned as the v1.0.0 release-maturity track. The scope is stable core
-CLI behavior, public schema compatibility policy, package and clean-install
-evidence, reproducible demos, Docker demo packaging, pre-commit and CI hygiene,
-bundled template validation, and release-readiness evidence.
+v1.0.0 closes the V3 release-maturity track. The stable local OSS scope covers
+core CLI behavior, public schema compatibility policy, package and
+clean-install evidence, reproducible demos, Docker demo packaging, pre-commit
+and CI hygiene, bundled template validation, and release-readiness evidence.
 
 The detailed V3 plan lives in [plans/agent-harness-v3.md](../plans/agent-harness-v3.md).
 
-## V3 Priorities
+## Release Maintenance Priorities
 
-- Document and enforce the v1.0.0 compatibility and deprecation contract.
-- Make release readiness the control surface for package, docs, demos,
+- Preserve the v1.0.0 compatibility and deprecation contract.
+- Keep release readiness as the control surface for package, docs, demos,
   templates, changelog, CI, and release artifacts.
-- Prove local and Docker provider-audit golden paths.
-- Validate every bundled template and allow clean empty-destination scaffolding
+- Maintain local and Docker provider-audit golden paths.
+- Keep every bundled template validated and allow clean empty-destination scaffolding
   without weakening overwrite protections.
-- Add pre-commit and CI gates that keep routine changes reviewable.
+- Keep pre-commit and CI gates stable for routine changes.
 
 ## Later Possibilities
 

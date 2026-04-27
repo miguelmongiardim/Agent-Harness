@@ -4,15 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-harness"
-version = "0.3.0"
-description = "Policy-gated deterministic agent workflow harness for Python refactor scenarios."
+version = "1.0.0"
+description = "Policy-gated deterministic agent workflow harness for controlled local software-engineering workflows."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Agent Harness Contributors" }]
 keywords = ["agents", "cli", "policy", "audit", "evals"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 5 - Production/Stable",
   "Environment :: Console",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: Apache Software License",

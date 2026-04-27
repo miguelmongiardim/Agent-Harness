@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import json
+import tomllib
 from pathlib import Path
 from typing import Any
 
-from agent_harness import release
+from agent_harness import __version__, release
 from agent_harness.cli import main
 from tests.conftest import seed_project
 
@@ -127,6 +128,62 @@ def test_release_readiness_reports_ready_when_required_evidence_is_present(
     assert report["package"]["console_script"]["status"] == "passed"
     assert report["demos"]["provider-audit"]["status"] == "passed"
     assert report["templates"]["validation"]["status"] == "passed"
+
+
+def test_release_readiness_requires_v1_release_closure_docs(
+    tmp_path: Path,
+    monkeypatch,  # type: ignore[no-untyped-def]
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    _write_release_ready_project(tmp_path, "1.0.0")
+    for path in (tmp_path / "docs" / "migration.md", tmp_path / "docs" / "release-readiness.md"):
+        path.unlink(missing_ok=True)
+    monkeypatch.setattr(release, "_tag_exists", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_pushed", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_target_commit", lambda project_root, tag_name: "abc123")
+    monkeypatch.setattr(
+        release,
+        "_remote_ci_evidence",
+        lambda project_root, target_commit, ci_run_id: {
+            "run": {
+                "source": "github_actions",
+                "status": "completed",
+                "conclusion": "success",
+                "matches_target_commit": True,
+            },
+            "python_3_11": {"required": True, "status": "passed"},
+            "python_3_12": {"required": True, "status": "passed"},
+            "python_3_13": {"allowed_failure": True, "status": "failed_allowed"},
+        },
+    )
+
+    assert main(["release", "readiness"]) == 0
+    report = json.loads(capsys.readouterr().out)
+
+    assert report["status"] == "pending"
+    assert report["docs"]["migration_notes"]["status"] == "missing_evidence"
+    assert report["docs"]["release_process"]["status"] == "missing_evidence"
+    diagnostic_gates = {entry["gate"] for entry in report["diagnostics"]}
+    assert {"docs.migration_notes", "docs.release_process"} <= diagnostic_gates
+
+
+def test_v1_release_closure_metadata_and_docs_are_complete() -> None:
+    pyproject = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+    assert pyproject["project"]["version"] == "1.0.0"
+    assert __version__ == "1.0.0"
+
+    changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+    assert "## [1.0.0]" in changelog
+
+    migration = Path("docs/migration.md").read_text(encoding="utf-8")
+    assert "v0.3.0" in migration
+    assert "v1.0.0" in migration
+    assert "public compatibility baseline" in migration
+
+    release_docs = Path("docs/release-readiness.md").read_text(encoding="utf-8")
+    for marker in ("Release Checklist", "Tag Process", "Artifact Verification"):
+        assert marker in release_docs
 
 
 def test_release_package_check_builds_installs_and_records_evidence(
@@ -274,6 +331,40 @@ def _write_release_ready_project(root: Path, version: str) -> None:
                 "## Implemented vs Roadmap",
                 "",
                 "Implemented capabilities are separate from roadmap scope.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (docs / "migration.md").write_text(
+        "\n".join(
+            [
+                "# Schema Migration",
+                "",
+                "## Migration Notes From v0.3.0 To v1.0.0",
+                "",
+                "v1.0.0 keeps the v0.3.0 V2 schemas as the public baseline.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (docs / "release-readiness.md").write_text(
+        "\n".join(
+            [
+                "# Release Readiness",
+                "",
+                "## Release Checklist",
+                "",
+                "Run package, demo, template, docs, artifact, tag, and CI checks.",
+                "",
+                "## Tag Process",
+                "",
+                "Create and push the release tag only after final verification.",
+                "",
+                "## Artifact Verification",
+                "",
+                "Verify wheel and source distribution hashes before release.",
                 "",
             ]
         ),

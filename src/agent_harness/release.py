@@ -322,6 +322,44 @@ def _docs_evidence(project_root: Path, docs_report: dict[str, Any]) -> dict[str,
             "status": docs_report["status"],
             "action": "Resolve docs-check findings before release.",
         },
+        "migration_notes": _required_doc_markers(
+            project_root,
+            "docs/migration.md",
+            ("v0.3.0", "v1.0.0"),
+            "Document the migration notes from v0.3.0 to v1.0.0.",
+        ),
+        "release_process": _required_doc_markers(
+            project_root,
+            "docs/release-readiness.md",
+            ("Release Checklist", "Tag Process", "Artifact Verification"),
+            "Document the release checklist, tag process, and artifact verification steps.",
+        ),
+    }
+
+
+def _required_doc_markers(
+    project_root: Path,
+    relative_path: str,
+    required_markers: tuple[str, ...],
+    action: str,
+) -> dict[str, Any]:
+    path = project_root / relative_path
+    if not path.exists():
+        return {
+            "path": relative_path,
+            "present": False,
+            "status": "missing_evidence",
+            "missing_markers": list(required_markers),
+            "action": action,
+        }
+    text = path.read_text(encoding="utf-8")
+    missing_markers = [marker for marker in required_markers if marker not in text]
+    return {
+        "path": relative_path,
+        "present": True,
+        "status": "passed" if not missing_markers else "missing_evidence",
+        "missing_markers": missing_markers,
+        "action": action,
     }
 
 

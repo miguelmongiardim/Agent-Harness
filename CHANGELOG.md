@@ -4,16 +4,29 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
-- Tightened release readiness reporting so GitHub Actions CI evidence can be
-  bound to the target commit through `--ci-run-id` or discovered with the
-  GitHub CLI.
-- Closed V2 planning cleanup and added the V3 planning direction from the
-  deep-research gap comparison.
-- Started V3 Phase 1 by expanding release readiness with default version
-  inference, required evidence gates, and actionable missing-evidence
-  diagnostics.
-- Added V3 Phase 2 package-check evidence for wheel/sdist build, clean wheel
-  install, installed console-script doctor, and artifact hashes.
+- No changes yet.
+
+## [1.0.0] - 2026-04-27
+
+V3 maturity release.
+
+- Added the v1.0.0 public compatibility and deprecation policy for core CLI
+  commands, public schemas, run artifacts, and bundled template manifests.
+- Expanded `agent-harness release readiness` into the release control surface
+  for package, clean-install, console-script, demo, docs, template, changelog,
+  artifact, tag, and GitHub Actions CI evidence.
+- Added `agent-harness release package-check` for wheel/sdist build evidence,
+  clean wheel installation, installed console-script `doctor`, and artifact
+  hashes.
+- Added the stable `agent-harness demo provider-audit` golden path and kept the
+  deterministic Python refactor dry-run as the secondary demo.
+- Added bundled template validation with `agent-harness template validate --all`
+  and clean empty-destination scaffolding without weakening overwrite and
+  policy protections.
+- Added local pre-commit discipline, required CI release gates, optional
+  advisory scanner evidence, and Docker local/demo reproducibility packaging.
+- Documented migration from v0.3.0 to v1.0.0, release checklist, tag process,
+  artifact verification, and clear Implemented vs Roadmap boundaries.
 
 ## [0.3.0] - 2026-04-26
 

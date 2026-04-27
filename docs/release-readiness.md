@@ -9,7 +9,7 @@ The command defaults to `[project].version` from `pyproject.toml`. Release
 managers can still bind the report to an explicit version and CI run:
 
 ```powershell
-agent-harness release readiness --version 0.3.0 --ci-run-id 24962697751
+agent-harness release readiness --version 1.0.0 --ci-run-id <run-id>
 ```
 
 When GitHub CLI is authenticated, the command attempts to discover the latest
@@ -97,9 +97,50 @@ The command is evidence collection, not release automation. A report is `ready`
 only when required package, install, console script, demo, docs, changelog,
 template, artifact, tag, and remote CI evidence is present and passing.
 
+## Release Checklist
+
+Before tagging v1.0.0:
+
+1. Run `uv sync --extra dev`.
+2. Run `python -m pre_commit run --all-files`.
+3. Run `python -m pytest -q`.
+4. Run `agent-harness release package-check`.
+5. Run `agent-harness demo provider-audit`.
+6. Run `agent-harness run examples/tasks/python_refactor.json --dry-run`.
+7. Run `agent-harness template validate --all`.
+8. Run `agent-harness eval`.
+9. Run `agent-harness release readiness --version 1.0.0`.
+10. Confirm CI passes for the release commit.
+
+## Tag Process
+
+Create the release tag only after the release commit is pushed and required CI
+has passed for that exact commit:
+
+```powershell
+git tag -a v1.0.0 -m "v1.0.0"
+git push origin v1.0.0
+agent-harness release readiness --version 1.0.0 --ci-run-id <run-id>
+```
+
+The readiness report binds the tag target commit to the recorded GitHub Actions
+run. A report is not ready when the run is missing, failed, or points at a
+different commit.
+
+## Artifact Verification
+
+`agent-harness release package-check` records wheel and source distribution
+hashes in `.agent-harness/release/package-check.json` and supporting evidence
+files under `.agent-harness/release/evidence/`. Reviewers should verify that:
+
+- `dist/agent_harness-1.0.0-*.whl` exists.
+- `dist/agent_harness-1.0.0.tar.gz` exists.
+- package-check evidence reports `status: passed`.
+- clean-install evidence reports `status: passed`.
+- console-script evidence reports `status: passed`.
+- the final readiness report is generated for `version: 1.0.0`.
+
 ## Roadmap
 
-The V3/v1.0.0 plan expands release readiness toward package, clean-install,
-console script, demo, template, changelog, CI, and release-artifact evidence.
 Automated release publishing, production deployment artifacts, and compliance
 attestation are outside the current release workflow.
