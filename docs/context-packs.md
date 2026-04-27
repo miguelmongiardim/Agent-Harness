@@ -22,6 +22,12 @@ Context manifests record:
 The default retriever is deterministic lexical retrieval over locally ingested
 documents. A fake retriever is available for tests.
 
+Lexical retrieval indexes can also be built explicitly with
+`agent-harness retrieval index build --mode lexical`. The lifecycle commands
+write local `retrieval_index.v1` manifests with stable source hashes, chunk
+hashes, chunking config, retrieval config hash, and index paths; list, show,
+and delete expose or remove those local artifacts.
+
 Local dense fixture behavior is opt-in with `retrieval_backend: qdrant`.
 Qdrant/FastEmbed dependency checks are used as the local optional-dependency
 gate, but V2 does not expose production Qdrant server mode and does not use

@@ -103,6 +103,10 @@ agent-harness approve <run-id> <action-id> --decision approve
 agent-harness commit propose <run-id> --message "refactor: update approved files"
 agent-harness benchmark list
 agent-harness benchmark run local-samples swebench-python-refactor
+agent-harness retrieval index build --index-id local-docs --paths docs --mode lexical
+agent-harness retrieval index list
+agent-harness retrieval index show local-docs
+agent-harness retrieval index delete local-docs
 agent-harness inspect run <run-id>
 agent-harness inspect context <run-id>
 agent-harness inspect policy default
@@ -126,6 +130,9 @@ agent-harness doctor
 - The default retrieval backend is deterministic lexical retrieval. Local dense
   fixture behavior is opt-in through `retrieval_backend: qdrant`; missing
   Qdrant/FastEmbed dependencies fall back to lexical evidence.
+- Lexical retrieval indexes can be built, listed, inspected, and deleted through
+  `agent-harness retrieval index ...`; manifests record stable source and chunk
+  evidence as `retrieval_index.v1`.
 - `examples/provider_audit/` is the main V2 walkthrough. It uses recorded
   provider transport, a non-mock local endpoint trust zone, `network: false`,
   required provider-use approval, inspectable provider-input evidence, redacted

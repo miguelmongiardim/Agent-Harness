@@ -159,17 +159,17 @@ shape compatible with later dense and Qdrant backends.
 
 ### Acceptance criteria
 
-- [ ] `agent-harness retrieval index build --mode lexical` builds a local index.
-- [ ] `agent-harness retrieval index list` shows the created index.
-- [ ] `agent-harness retrieval index show <index-id>` displays source hashes,
+- [x] `agent-harness retrieval index build --mode lexical` builds a local index.
+- [x] `agent-harness retrieval index list` shows the created index.
+- [x] `agent-harness retrieval index show <index-id>` displays source hashes,
       backend, chunking config, config hash, index path, and chunk metadata.
-- [ ] `agent-harness retrieval index delete <index-id>` removes lexical index
+- [x] `agent-harness retrieval index delete <index-id>` removes lexical index
       metadata and safe local storage.
-- [ ] `retrieval_index.v1` records required reproducibility fields.
-- [ ] Index id collision fails unless `--overwrite` is provided.
-- [ ] `--overwrite` replaces old lexical index state cleanly.
-- [ ] Rebuild from unchanged sources produces stable source and chunk metadata.
-- [ ] Base install needs no Qdrant or FastEmbed.
+- [x] `retrieval_index.v1` records required reproducibility fields.
+- [x] Index id collision fails unless `--overwrite` is provided.
+- [x] `--overwrite` replaces old lexical index state cleanly.
+- [x] Rebuild from unchanged sources produces stable source and chunk metadata.
+- [x] Base install needs no Qdrant or FastEmbed.
 
 ### Out of scope
 

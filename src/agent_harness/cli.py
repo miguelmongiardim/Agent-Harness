@@ -30,6 +30,13 @@ from agent_harness.release import (
     build_release_package_check_report,
     build_release_readiness_report,
 )
+from agent_harness.retrieval_indexes import (
+    build_lexical_index,
+    delete_index,
+    list_indexes,
+    load_index,
+    manifest_path,
+)
 from agent_harness.schemas import TaskSpec
 from agent_harness.storage import RunStore
 from agent_harness.templates import list_templates, load_template
@@ -159,6 +166,26 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_run.add_argument("pack_id")
     benchmark_run.add_argument("case_id")
     benchmark_run.set_defaults(func=cmd_benchmark_run)
+
+    retrieval = sub.add_parser("retrieval")
+    retrieval_sub = retrieval.add_subparsers(required=True)
+    retrieval_index = retrieval_sub.add_parser("index")
+    retrieval_index_sub = retrieval_index.add_subparsers(required=True)
+    retrieval_index_build = retrieval_index_sub.add_parser("build")
+    retrieval_index_build.add_argument("--index-id", required=True)
+    retrieval_index_build.add_argument("--paths", nargs="+", required=True)
+    retrieval_index_build.add_argument("--mode", choices=["lexical"], default="lexical")
+    retrieval_index_build.add_argument("--profile", default="default")
+    retrieval_index_build.add_argument("--overwrite", action="store_true")
+    retrieval_index_build.set_defaults(func=cmd_retrieval_index_build)
+    retrieval_index_list = retrieval_index_sub.add_parser("list")
+    retrieval_index_list.set_defaults(func=cmd_retrieval_index_list)
+    retrieval_index_show = retrieval_index_sub.add_parser("show")
+    retrieval_index_show.add_argument("index_id")
+    retrieval_index_show.set_defaults(func=cmd_retrieval_index_show)
+    retrieval_index_delete = retrieval_index_sub.add_parser("delete")
+    retrieval_index_delete.add_argument("index_id")
+    retrieval_index_delete.set_defaults(func=cmd_retrieval_index_delete)
 
     inspect = sub.add_parser("inspect")
     inspect_sub = inspect.add_subparsers(required=True)
@@ -361,6 +388,50 @@ def cmd_benchmark_show(args: argparse.Namespace) -> int:
 def cmd_benchmark_run(args: argparse.Namespace) -> int:
     result = run_benchmark_case(Path.cwd(), args.pack_id, args.case_id)
     print(result.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_retrieval_index_build(args: argparse.Namespace) -> int:
+    root = Path.cwd()
+    config = load_config(root)
+    policy = PolicyEngine(root, load_policy(root, args.profile))
+    manifest = build_lexical_index(
+        root,
+        config,
+        policy,
+        args.index_id,
+        args.paths,
+        overwrite=args.overwrite,
+    )
+    payload = manifest.model_dump(mode="json")
+    payload["manifest_path"] = (
+        manifest_path(root, config, args.index_id).relative_to(root).as_posix()
+    )
+    print(json.dumps(payload, indent=2))
+    return 0
+
+
+def cmd_retrieval_index_list(args: argparse.Namespace) -> int:
+    del args
+    root = Path.cwd()
+    config = load_config(root)
+    print(json.dumps({"indexes": list_indexes(root, config)}, indent=2))
+    return 0
+
+
+def cmd_retrieval_index_show(args: argparse.Namespace) -> int:
+    root = Path.cwd()
+    config = load_config(root)
+    manifest = load_index(root, config, args.index_id)
+    print(manifest.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_retrieval_index_delete(args: argparse.Namespace) -> int:
+    root = Path.cwd()
+    config = load_config(root)
+    delete_index(root, config, args.index_id)
+    print(json.dumps({"deleted": args.index_id}, indent=2))
     return 0
 
 

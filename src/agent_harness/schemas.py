@@ -569,6 +569,63 @@ class RetrievalBackendManifest(StrictModel):
     remote_embeddings: bool = False
 
 
+class RetrievalIndexSource(StrictModel):
+    path: str
+    content_hash: str
+    chunk_ids: list[str] = Field(default_factory=list)
+
+    @field_validator("path")
+    @classmethod
+    def validate_path(cls, value: str) -> str:
+        return normalize_relative_path(value)
+
+
+class RetrievalIndexChunk(StrictModel):
+    chunk_id: str
+    source_id: str
+    path: str
+    content_hash: str
+    start_line: int = Field(ge=1)
+    end_line: int = Field(ge=1)
+
+    @field_validator("path")
+    @classmethod
+    def validate_path(cls, value: str) -> str:
+        return normalize_relative_path(value)
+
+
+class RetrievalIndexManifest(StrictModel):
+    schema_version: Literal["retrieval_index.v1"] = "retrieval_index.v1"
+    index_id: str
+    index_path: str
+    backend: Literal["lexical"]
+    source_paths: list[str] = Field(default_factory=list)
+    source_hashes: dict[str, str] = Field(default_factory=dict)
+    sources: list[RetrievalIndexSource] = Field(default_factory=list)
+    chunking_config: dict[str, int] = Field(default_factory=dict)
+    chunks: list[RetrievalIndexChunk] = Field(default_factory=list)
+    chunk_ids: list[str] = Field(default_factory=list)
+    chunk_hashes: dict[str, str] = Field(default_factory=dict)
+    embedding_backend: str | None = None
+    embedding_model: str | None = None
+    embedding_model_version: str | None = None
+    agent_harness_version: str
+    created_at: datetime = Field(default_factory=now_utc)
+    retrieval_config_hash: str
+    qdrant_collection: str | None = None
+    remote_embeddings: bool = False
+
+    @field_validator("index_path")
+    @classmethod
+    def validate_index_path(cls, value: str) -> str:
+        return normalize_relative_path(value)
+
+    @field_validator("source_paths")
+    @classmethod
+    def validate_source_paths(cls, values: list[str]) -> list[str]:
+        return [normalize_relative_path(value) for value in values]
+
+
 class ContextManifestItem(StrictModel):
     item_id: str
     source_id: str
