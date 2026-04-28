@@ -43,7 +43,13 @@ from agent_harness.retrieval_indexes import (
 )
 from agent_harness.retrieval_scorecards import run_retrieval_scorecard
 from agent_harness.schemas import TaskSpec, TemplateDetail
-from agent_harness.skills import validate_skill
+from agent_harness.skills import (
+    list_skills,
+    load_skill_detail,
+    render_skill,
+    validate_skill,
+    validate_skill_pack_path,
+)
 from agent_harness.storage import RunStore
 from agent_harness.templates import list_templates, load_template
 from agent_harness.templates.apply import (
@@ -127,9 +133,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     skill = sub.add_parser("skill")
     skill_sub = skill.add_subparsers(required=True)
+    skill_list = skill_sub.add_parser("list")
+    skill_list.set_defaults(func=cmd_skill_list)
+    skill_show = skill_sub.add_parser("show")
+    skill_show.add_argument("skill_id")
+    skill_show.set_defaults(func=cmd_skill_show)
+    skill_render = skill_sub.add_parser("render")
+    skill_render.add_argument("skill_id")
+    skill_render.set_defaults(func=cmd_skill_render)
     skill_validate = skill_sub.add_parser("validate")
     skill_validate.add_argument("skill_id")
     skill_validate.set_defaults(func=cmd_skill_validate)
+    skill_pack = skill_sub.add_parser("pack")
+    skill_pack_sub = skill_pack.add_subparsers(required=True)
+    skill_pack_validate = skill_pack_sub.add_parser("validate")
+    skill_pack_validate.add_argument("path")
+    skill_pack_validate.set_defaults(func=cmd_skill_pack_validate)
 
     ingest = sub.add_parser("ingest")
     ingest_sub = ingest.add_subparsers(required=True)
@@ -411,6 +430,32 @@ def cmd_skill_validate(args: argparse.Namespace) -> int:
     report = validate_skill(args.skill_id)
     print(report.model_dump_json(indent=2))
     return 0 if report.status == "passed" else 1
+
+
+def cmd_skill_list(args: argparse.Namespace) -> int:
+    del args
+    for skill in list_skills():
+        print(
+            f"{skill.skill_id}\t{skill.version}\t{skill.name}\t{skill.source_type}"
+            f"\t{skill.compatibility_status}\t{skill.validation_status}\t{skill.description}"
+        )
+    return 0
+
+
+def cmd_skill_show(args: argparse.Namespace) -> int:
+    print(load_skill_detail(args.skill_id).model_dump_json(indent=2))
+    return 0
+
+
+def cmd_skill_render(args: argparse.Namespace) -> int:
+    print(render_skill(args.skill_id), end="")
+    return 0
+
+
+def cmd_skill_pack_validate(args: argparse.Namespace) -> int:
+    report = validate_skill_pack_path(Path(args.path))
+    print(json.dumps(report, indent=2))
+    return 0 if report["status"] == "passed" else 1
 
 
 def _template_parameters(template: TemplateDetail, values: list[str]) -> dict[str, str]:

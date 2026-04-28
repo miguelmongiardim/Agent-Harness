@@ -100,7 +100,11 @@ uv run agent-harness run examples/tasks/python_refactor.json --runtime langgraph
 
 ```text
 agent-harness init
+agent-harness skill list
+agent-harness skill show prd-plan-tdd-workflow
 agent-harness skill validate write-a-prd
+agent-harness skill render prd-plan-tdd-workflow
+agent-harness skill pack validate ./local-skills
 agent-harness template list
 agent-harness template show python-lib
 agent-harness template validate --all

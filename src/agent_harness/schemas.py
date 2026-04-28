@@ -976,6 +976,42 @@ class SkillValidationReport(StrictModel):
     diagnostics: list[dict[str, Any]] = Field(default_factory=list)
 
 
+class SkillRegistryRecord(StrictModel):
+    schema_version: Literal["skill_registry_record.v1"] = "skill_registry_record.v1"
+    skill_id: str
+    version: str
+    name: str
+    description: str
+    source_type: SkillSourceType
+    source: str
+    compatibility_status: SkillCompatibilityStatus = "compatible"
+    validation_status: Literal["passed", "failed"]
+
+
+class SkillDetail(StrictModel):
+    schema_version: Literal["skill_detail.v1"] = "skill_detail.v1"
+    skill_id: str
+    name: str
+    version: str
+    description: str
+    category: str
+    compatible_agent_harness_versions: str
+    required_capabilities: list[str] = Field(default_factory=list)
+    allowed_context_classes: list[str] = Field(default_factory=list)
+    default_policy_profile: str | None = None
+    related_skills: list[str] = Field(default_factory=list)
+    output_artifacts: list[str] = Field(default_factory=list)
+    validation_commands: list[str] = Field(default_factory=list)
+    examples: list[str] = Field(default_factory=list)
+    source_type: SkillSourceType
+    source: str
+    compatibility_status: SkillCompatibilityStatus = "compatible"
+    validation_status: Literal["passed", "failed"]
+    skill_hash: str | None = None
+    diagnostics: list[dict[str, Any]] = Field(default_factory=list)
+    body_summary: str
+
+
 class TemplateSpec(StrictModel):
     schema_version: Literal["template.v1", "template.v2"]
     name: str

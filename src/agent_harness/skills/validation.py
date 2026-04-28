@@ -8,7 +8,12 @@ from typing import Any, Literal
 from pydantic import ValidationError
 
 from agent_harness import __version__
-from agent_harness.schemas import SkillSpec, SkillValidationReport
+from agent_harness.schemas import (
+    SkillDetail,
+    SkillRegistryRecord,
+    SkillSpec,
+    SkillValidationReport,
+)
 from agent_harness.utils import sha256_json
 
 _BUNDLED_SKILLS = resources.files("agent_harness").joinpath("bundled_skills")
@@ -38,6 +43,100 @@ _METADATA_AUTHORITY_PATTERN = re.compile(
     r"|\bexecute(?:s|d)? code\b|\bcommands?\b|\bnetwork calls?\b|https?://",
     re.I,
 )
+
+
+def list_skills() -> list[SkillRegistryRecord]:
+    return [_skill_registry_record(skill_id) for skill_id in _iter_bundled_skill_ids()]
+
+
+def load_skill_detail(skill_id: str) -> SkillDetail:
+    text = _read_bundled_skill_text(skill_id)
+    source = f"bundled_skills/{skill_id}/SKILL.md"
+    diagnostics: list[dict[str, object]] = []
+    metadata, body = _parse_frontmatter(text, diagnostics)
+    spec = SkillSpec.model_validate(metadata or {})
+    report = validate_skill(skill_id)
+    return SkillDetail(
+        skill_id=spec.skill_id,
+        name=spec.name,
+        version=spec.version,
+        description=spec.description,
+        category=spec.category,
+        compatible_agent_harness_versions=spec.compatible_agent_harness_versions,
+        required_capabilities=spec.required_capabilities,
+        allowed_context_classes=spec.allowed_context_classes,
+        default_policy_profile=spec.default_policy_profile,
+        related_skills=spec.related_skills,
+        output_artifacts=spec.output_artifacts,
+        validation_commands=spec.validation_commands,
+        examples=spec.examples,
+        source_type="bundled",
+        source=source,
+        compatibility_status=report.compatibility_status,
+        validation_status=report.status,
+        skill_hash=report.skill_hash,
+        diagnostics=report.diagnostics,
+        body_summary=_body_summary(body),
+    )
+
+
+def render_skill(skill_id: str) -> str:
+    detail = load_skill_detail(skill_id)
+    if detail.validation_status != "passed":
+        raise ValueError(f"skill validation failed: {skill_id}")
+    text = _read_bundled_skill_text(skill_id)
+    diagnostics: list[dict[str, object]] = []
+    _metadata, body = _parse_frontmatter(text, diagnostics)
+    return "\n".join(
+        [
+            f"# Skill: {detail.name}",
+            "",
+            f"skill_id: {detail.skill_id}",
+            f"version: {detail.version}",
+            f"source: {detail.source}",
+            f"source_type: {detail.source_type}",
+            f"compatibility_status: {detail.compatibility_status}",
+            f"validation_status: {detail.validation_status}",
+            f"skill_hash: {detail.skill_hash}",
+            "",
+            "---",
+            "",
+            body.strip(),
+            "",
+        ]
+    )
+
+
+def validate_skill_pack_path(path: Path) -> dict[str, object]:
+    pack_dir = path.resolve()
+    skill_paths = sorted(pack_dir.rglob("SKILL.md"))
+    skills = [validate_skill_path(skill_path).model_dump(mode="json") for skill_path in skill_paths]
+    diagnostics: list[dict[str, object]] = []
+    if not pack_dir.is_dir():
+        diagnostics.append(
+            _diagnostic("missing_skill_pack", "skill pack path must be a directory", str(pack_dir))
+        )
+    if not skill_paths:
+        diagnostics.append(
+            _diagnostic(
+                "empty_skill_pack",
+                "skill pack does not contain SKILL.md files",
+                str(pack_dir),
+            )
+        )
+    status = (
+        "passed"
+        if not diagnostics and all(skill["status"] == "passed" for skill in skills)
+        else "failed"
+    )
+    return {
+        "schema_version": "skill_pack_validation.v1",
+        "status": status,
+        "pack_path": str(pack_dir),
+        "skill_count": len(skills),
+        "skills": skills,
+        "diagnostics": diagnostics,
+    }
 
 
 def validate_skill(skill_id: str) -> SkillValidationReport:
@@ -78,6 +177,45 @@ def validate_skill_path(path: Path) -> SkillValidationReport:
             ],
         )
     return _validate_skill_text(text, source=str(skill_path), source_type="direct_path")
+
+
+def _iter_bundled_skill_ids() -> list[str]:
+    skill_ids = []
+    for child in _BUNDLED_SKILLS.iterdir():
+        if child.is_dir() and child.joinpath("SKILL.md").is_file():
+            skill_ids.append(child.name)
+    return sorted(skill_ids)
+
+
+def _skill_registry_record(skill_id: str) -> SkillRegistryRecord:
+    source = f"bundled_skills/{skill_id}/SKILL.md"
+    text = _read_bundled_skill_text(skill_id)
+    diagnostics: list[dict[str, object]] = []
+    metadata, _body = _parse_frontmatter(text, diagnostics)
+    spec = SkillSpec.model_validate(metadata or {})
+    report = validate_skill(skill_id)
+    return SkillRegistryRecord(
+        skill_id=spec.skill_id,
+        version=spec.version,
+        name=spec.name,
+        description=spec.description,
+        source_type="bundled",
+        source=source,
+        compatibility_status=report.compatibility_status,
+        validation_status=report.status,
+    )
+
+
+def _read_bundled_skill_text(skill_id: str) -> str:
+    skill_path = _BUNDLED_SKILLS.joinpath(skill_id).joinpath("SKILL.md")
+    if not skill_path.is_file():
+        raise FileNotFoundError(f"skill not found: {skill_id}")
+    return skill_path.read_text(encoding="utf-8")
+
+
+def _body_summary(body: str) -> str:
+    summary = re.sub(r"\s+", " ", body).strip()
+    return summary if len(summary) <= 320 else summary[:317].rstrip() + "..."
 
 
 def _validate_skill_text(

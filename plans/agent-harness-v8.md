@@ -176,20 +176,20 @@ Keep CLI output simple and consistent with the existing argparse style.
 
 ### Acceptance criteria
 
-- [ ] Bundled skills are available from a clean install.
-- [ ] Required bundled skills are `write-a-prd`, `prd-to-plan`, `tdd`, and
+- [x] Bundled skills are available from a clean install.
+- [x] Required bundled skills are `write-a-prd`, `prd-to-plan`, `tdd`, and
       `prd-plan-tdd-workflow`.
-- [ ] `skill list` reports id, version, name, source type, compatibility,
+- [x] `skill list` reports id, version, name, source type, compatibility,
       validation status, and description.
-- [ ] `skill show` reports metadata, source, hash, compatibility, validation
+- [x] `skill show` reports metadata, source, hash, compatibility, validation
       diagnostics, and body summary.
-- [ ] `skill render` outputs inspectable Markdown with metadata context.
-- [ ] `skill validate <skill-id>` validates a registry skill.
-- [ ] `skill validate <path>` validates a direct `SKILL.md` path.
-- [ ] `skill pack validate <path>` validates every skill in a local pack
+- [x] `skill render` outputs inspectable Markdown with metadata context.
+- [x] `skill validate <skill-id>` validates a registry skill.
+- [x] `skill validate <path>` validates a direct `SKILL.md` path.
+- [x] `skill pack validate <path>` validates every skill in a local pack
       directory.
-- [ ] Pack validation does not install, copy, execute, or mutate skills.
-- [ ] Invalid bundled skills fail release-oriented validation.
+- [x] Pack validation does not install, copy, execute, or mutate skills.
+- [x] Invalid bundled skills fail release-oriented validation.
 
 ### Out of scope
 

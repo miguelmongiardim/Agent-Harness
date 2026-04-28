@@ -6,9 +6,10 @@ V8 is the `v1.5.0` skills-system track. The durable source documents are the
 [V8 PRD](prd-agent-harness-v8.md) and
 [V8 implementation plan](../plans/agent-harness-v8.md).
 
-Phase 0 added documentation scope and docs-check guards. Phase 1 adds the first
-validation slice for `agent-harness skill validate write-a-prd` and direct
-`SKILL.md` validation. The full skill list/show/render registry, task
+Phase 0 added documentation scope and docs-check guards. Phase 1 added the
+first validation slice for `agent-harness skill validate write-a-prd` and
+direct `SKILL.md` validation. Phase 2 adds bundled skill discovery, skill
+inspection, rendered Markdown review, and local skill-pack validation. Task
 resolution, context inclusion, run artifacts, and release-readiness evidence are
 later V8 slices and should not be described as current behavior until their
 tests and implementation land.
@@ -17,9 +18,19 @@ tests and implementation land.
 
 The current implementation provides:
 
-- `agent-harness skill validate write-a-prd` for the first bundled skill
+- bundled skills for `write-a-prd`, `prd-to-plan`, `tdd`, and
+  `prd-plan-tdd-workflow`
+- `agent-harness skill list` with id, version, name, source type,
+  compatibility, validation status, and description
+- `agent-harness skill show <skill-id>` with metadata, source, hash,
+  compatibility, diagnostics, and body summary
+- `agent-harness skill render <skill-id>` with a Markdown metadata header and
+  skill body
+- `agent-harness skill validate write-a-prd` for bundled skill validation
 - direct `SKILL.md` validation through the same command when the argument is an
   existing path
+- `agent-harness skill pack validate <path>` for read-only validation of every
+  `SKILL.md` under a local directory
 - `skill.v1` frontmatter validation for required fields, optional fields,
   version format, skill id format, compatibility expressions, non-empty
   description, and non-empty Markdown body

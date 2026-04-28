@@ -9,6 +9,149 @@ import pytest
 from agent_harness.cli import main
 
 
+def test_skill_list_reports_required_bundled_skills(capsys) -> None:  # type: ignore[no-untyped-def]
+    assert main(["skill", "list"]) == 0
+    output = capsys.readouterr().out.strip().splitlines()
+
+    rows = [line.split("\t") for line in output]
+    by_id = {row[0]: row for row in rows}
+
+    assert {
+        "write-a-prd",
+        "prd-to-plan",
+        "tdd",
+        "prd-plan-tdd-workflow",
+    } <= set(by_id)
+    for skill_id in {
+        "write-a-prd",
+        "prd-to-plan",
+        "tdd",
+        "prd-plan-tdd-workflow",
+    }:
+        row = by_id[skill_id]
+        assert len(row) == 7
+        assert row[1] == "1.0.0"
+        assert row[2]
+        assert row[3] == "bundled"
+        assert row[4] == "compatible"
+        assert row[5] == "passed"
+        assert row[6]
+
+
+def test_skill_show_reports_metadata_hash_and_body_summary(capsys) -> None:  # type: ignore[no-untyped-def]
+    assert main(["skill", "show", "prd-plan-tdd-workflow"]) == 0
+    detail = json.loads(capsys.readouterr().out)
+
+    assert detail["schema_version"] == "skill_detail.v1"
+    assert detail["skill_id"] == "prd-plan-tdd-workflow"
+    assert detail["version"] == "1.0.0"
+    assert detail["name"] == "PRD Plan TDD Workflow"
+    assert detail["source_type"] == "bundled"
+    assert detail["source"] == "bundled_skills/prd-plan-tdd-workflow/SKILL.md"
+    assert detail["compatibility_status"] == "compatible"
+    assert detail["validation_status"] == "passed"
+    assert detail["diagnostics"] == []
+    assert re.fullmatch(r"[a-f0-9]{64}", detail["skill_hash"])
+    assert "requirements to vertical" in detail["body_summary"]
+    assert detail["related_skills"] == ["write-a-prd", "prd-to-plan", "tdd"]
+
+
+def test_skill_render_outputs_metadata_header_and_markdown_body(capsys) -> None:  # type: ignore[no-untyped-def]
+    assert main(["skill", "render", "prd-plan-tdd-workflow"]) == 0
+    rendered = capsys.readouterr().out
+
+    assert rendered.startswith("# Skill: PRD Plan TDD Workflow")
+    assert "skill_id: prd-plan-tdd-workflow" in rendered
+    assert "version: 1.0.0" in rendered
+    assert "source: bundled_skills/prd-plan-tdd-workflow/SKILL.md" in rendered
+    assert "skill_hash: " in rendered
+    assert "# PRD Plan TDD Workflow" in rendered
+    assert "move from requirements to vertical" in rendered
+
+
+def test_skill_pack_validate_reports_all_skills_without_mutation(
+    tmp_path: Path,
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    pack = tmp_path / "skill-pack"
+    valid = pack / "valid" / "SKILL.md"
+    invalid = pack / "invalid" / "SKILL.md"
+    valid.parent.mkdir(parents=True)
+    invalid.parent.mkdir(parents=True)
+    valid.write_text(
+        "\n".join(
+            [
+                "---",
+                "schema_version: skill.v1",
+                "skill_id: valid-local-skill",
+                "name: Valid Local Skill",
+                "version: 1.0.0",
+                "description: A valid local skill.",
+                "category: planning",
+                'compatible_agent_harness_versions: ">=1.4.0,<2.0.0"',
+                "required_capabilities: []",
+                "---",
+                "",
+                "# Valid Local Skill",
+                "",
+                "This skill is safe to validate.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    invalid.write_text(
+        "\n".join(
+            [
+                "---",
+                "schema_version: skill.v1",
+                "skill_id: invalid-local-skill",
+                "name: Invalid Local Skill",
+                "version: 1.0.0",
+                "description: \"\"",
+                "category: planning",
+                'compatible_agent_harness_versions: ">=1.4.0,<2.0.0"',
+                "required_capabilities: []",
+                "---",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    before = sorted(path.relative_to(pack).as_posix() for path in pack.rglob("*"))
+
+    assert main(["skill", "pack", "validate", str(pack)]) == 1
+    report = json.loads(capsys.readouterr().out)
+    after = sorted(path.relative_to(pack).as_posix() for path in pack.rglob("*"))
+
+    assert before == after
+    assert not (pack / ".agent-harness").exists()
+    assert report["schema_version"] == "skill_pack_validation.v1"
+    assert report["status"] == "failed"
+    assert report["skill_count"] == 2
+    by_id = {entry["skill_id"]: entry for entry in report["skills"]}
+    assert by_id["valid-local-skill"]["status"] == "passed"
+    assert by_id["invalid-local-skill"]["status"] == "failed"
+    rule_ids = {
+        diagnostic["rule_id"]
+        for diagnostic in by_id["invalid-local-skill"]["diagnostics"]
+    }
+    assert {"empty_skill_description", "missing_body"} <= rule_ids
+
+
+def test_skill_pack_validate_accepts_bundled_skills(capsys) -> None:  # type: ignore[no-untyped-def]
+    assert main(["skill", "pack", "validate", "src/agent_harness/bundled_skills"]) == 0
+    report = json.loads(capsys.readouterr().out)
+
+    assert report["status"] == "passed"
+    assert report["skill_count"] == 4
+    assert {
+        skill["skill_id"]
+        for skill in report["skills"]
+    } == {"write-a-prd", "prd-to-plan", "tdd", "prd-plan-tdd-workflow"}
+    assert all(skill["status"] == "passed" for skill in report["skills"])
+
+
 def test_skill_validate_accepts_bundled_write_a_prd(capsys) -> None:  # type: ignore[no-untyped-def]
     assert main(["skill", "validate", "write-a-prd"]) == 0
     first_report = json.loads(capsys.readouterr().out)
