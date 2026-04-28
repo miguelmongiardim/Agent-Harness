@@ -136,6 +136,17 @@ report also scans executable template config defaults and stays pending when a
 remote catalog, marketplace URL, cloud registry, or registry URL is configured
 as a default.
 
+## Planned V8 Skill Gates
+
+V8 release-readiness work will add gates for bundled skill validation, skill
+registry behavior, task-requested resolution, context manifest skill
+provenance, `skill_manifest.v1` emission, inspect output, skills-system docs,
+the `examples/skills_workflow/` demo, and docs-check guards for deferred skill
+distribution and governance claims.
+
+These are planned V8 gates. The current release report should not be described
+as ready for V8 skill evidence until those gates are implemented and tested.
+
 ## Release Checklist
 
 Before tagging the current release:

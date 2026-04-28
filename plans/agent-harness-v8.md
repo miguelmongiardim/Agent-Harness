@@ -73,17 +73,17 @@ features in the correct section.
 
 ### Acceptance criteria
 
-- [ ] `docs/prd-agent-harness-v8.md` exists and follows the PRD template.
-- [ ] `plans/agent-harness-v8.md` exists and uses vertical slices.
-- [ ] `docs/skills-system.md` describes V8 local skills.
-- [ ] README and roadmap describe V8 without claiming deferred features.
-- [ ] Architecture docs identify `agent_harness.skills` as the skill-system
+- [x] `docs/prd-agent-harness-v8.md` exists and follows the PRD template.
+- [x] `plans/agent-harness-v8.md` exists and uses vertical slices.
+- [x] `docs/skills-system.md` describes V8 local skills.
+- [x] README and roadmap describe V8 without claiming deferred features.
+- [x] Architecture docs identify `agent_harness.skills` as the skill-system
       boundary.
-- [ ] Security docs state that skills cannot grant tools, widen policy,
+- [x] Security docs state that skills cannot grant tools, widen policy,
       approve actions, execute code, or mutate files.
-- [ ] Release-readiness docs name the V8 skill gates.
-- [ ] Docs check rejects unsupported skill claims outside roadmap sections.
-- [ ] Docs check passes after docs are corrected.
+- [x] Release-readiness docs name the V8 skill gates.
+- [x] Docs check rejects unsupported skill claims outside roadmap sections.
+- [x] Docs check passes after docs are corrected.
 
 ### Out of scope
 

@@ -84,6 +84,11 @@ The V7 bundled template-pack golden path is documented in
 `template list`, `template show python-lib`, `template validate python-lib`,
 dry-run apply, preview-diff apply, clean apply, and release readiness.
 
+The V8 skills-system scope is documented in
+[`docs/skills-system.md`](docs/skills-system.md). Phase 0 establishes the local
+workflow-guidance boundary and docs-check guard; skill CLI and runtime behavior
+arrive in later V8 slices.
+
 The optional LangGraph boundary proof is isolated behind the `langgraph` extra:
 
 ```powershell
@@ -213,7 +218,7 @@ target remains a loopback-only inspection and approval UI over existing
 artifacts, not hosted API/UI operation, enterprise authentication, MCP, or
 multi-agent orchestration.
 
-V7 is planned as a local-first template-pack system:
+V7 is the local-first template-pack system:
 [docs/template-pack-system.md](docs/template-pack-system.md),
 [docs/prd-agent-harness-v7.md](docs/prd-agent-harness-v7.md), and
 [plans/agent-harness-v7.md](plans/agent-harness-v7.md). The target keeps
@@ -222,6 +227,17 @@ dry-run and preview evidence, clean empty-target apply evidence, and
 release-readiness gates. Remote template catalogs, marketplace behavior,
 template signing, organization catalogs, cloud registries, lifecycle hooks,
 script execution, enterprise governance, and conditional file inclusion remain
+future-only scope.
+
+V8 is planned as a local skills system:
+[docs/skills-system.md](docs/skills-system.md),
+[docs/prd-agent-harness-v8.md](docs/prd-agent-harness-v8.md), and
+[plans/agent-harness-v8.md](plans/agent-harness-v8.md). The target keeps skills
+local, inspectable, validated, and policy-mediated. Skills are workflow
+guidance, not tools, templates, policy, approvals, provider profiles, or
+executable code. Remote skill catalogs, marketplaces, signing, hosted skill
+services, enterprise registries, organization-wide governance, centralized
+governance, network installation, and automatic execution from skills remain
 future-only scope.
 
 ## Documentation
@@ -235,6 +251,7 @@ future-only scope.
 - [Provider Core](docs/provider-core.md)
 - [Template catalog](docs/templates.md)
 - [Template pack system](docs/template-pack-system.md)
+- [Skills system](docs/skills-system.md)
 - [Schema migration](docs/migration.md)
 - [Release readiness](docs/release-readiness.md)
 - [Conception alignment](docs/conception-alignment.md)
@@ -242,9 +259,11 @@ future-only scope.
 - [V5 Local-First Retrieval Hardening PRD](docs/prd-agent-harness-v5.md)
 - [V6 Local Operator Surface PRD](docs/prd-agent-harness-v6.md)
 - [V7 Template Pack System PRD](docs/prd-agent-harness-v7.md)
+- [V8 Skills System PRD](docs/prd-agent-harness-v8.md)
 - [V5 implementation plan](plans/agent-harness-v5.md)
 - [V6 implementation plan](plans/agent-harness-v6.md)
 - [V7 implementation plan](plans/agent-harness-v7.md)
+- [V8 implementation plan](plans/agent-harness-v8.md)
 - [Roadmap](docs/roadmap.md)
 
 ## License

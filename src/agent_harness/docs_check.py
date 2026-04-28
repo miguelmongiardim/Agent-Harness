@@ -17,6 +17,9 @@ OPERATOR_DOC_SUBJECT_PATTERN = (
 TEMPLATE_PACK_DOC_SUBJECT_PATTERN = (
     r"(?:Agent Harness|This repo|The current implementation|V7|The V7 implementation)"
 )
+SKILL_DOC_SUBJECT_PATTERN = (
+    r"(?:Agent Harness|This repo|The current implementation|V8|The V8 implementation)"
+)
 
 
 def _unsupported_doc_pattern(claim: str, *, uses_is: bool = False) -> re.Pattern[str]:
@@ -228,6 +231,72 @@ UNSUPPORTED_TEMPLATE_PACK_SCOPE_CLAIMS = [
         ),
     ),
 ]
+UNSUPPORTED_SKILL_SCOPE_CLAIMS = [
+    (
+        "remote skill catalogs",
+        re.compile(
+            rf"\b{SKILL_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bremote skill catalogs?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "skill marketplace",
+        re.compile(
+            rf"\b{SKILL_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bskill marketplaces?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "skill signing",
+        re.compile(
+            rf"\b{SKILL_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bskill signing\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "hosted skill service",
+        re.compile(
+            rf"\b{SKILL_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bhosted skill services?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "enterprise skill registry",
+        re.compile(
+            rf"\b{SKILL_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\benterprise skill registr(?:y|ies)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "organization-wide skill governance",
+        re.compile(
+            rf"\b{SKILL_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\borganization-wide skill governance\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "centralized skill governance",
+        re.compile(
+            rf"\b{SKILL_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bcentralized skill governance(?: policy)?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "network skill installation",
+        re.compile(
+            rf"\b{SKILL_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\b(?:network skill installation|skill installation from network locations)\b",
+            re.IGNORECASE,
+        ),
+    ),
+]
 RETRIEVAL_ROADMAP_HEADINGS = (
     "roadmap",
     "out of scope",
@@ -238,6 +307,7 @@ RETRIEVAL_ROADMAP_HEADINGS = (
 )
 OPERATOR_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 TEMPLATE_PACK_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
+SKILL_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 
 IMPLEMENTED_SECTION_MARKERS = (
     "## What This Repo Proves",
@@ -294,6 +364,7 @@ def run_docs_check(project_root: Path) -> dict[str, Any]:
         findings.extend(_unsupported_retrieval_scope_findings(relative, lines))
         findings.extend(_unsupported_operator_scope_findings(relative, lines))
         findings.extend(_unsupported_template_pack_scope_findings(relative, lines))
+        findings.extend(_unsupported_skill_scope_findings(relative, lines))
         findings.extend(_required_section_findings(relative, text))
         findings.extend(_internal_link_findings(project_root, path, relative, lines))
         findings.extend(_citation_placeholder_findings(relative, lines))
@@ -514,6 +585,42 @@ def _unsupported_template_pack_scope_findings(
 
 
 def _denies_unsupported_template_pack_scope(line: str, label: str) -> bool:
+    phrase = re.escape(label).replace(r"\ ", r"\s+")
+    return bool(
+        re.search(
+            rf"\b(?:without|no|not)\s+{phrase}\b"
+            rf"|\bdoes\s+not\s+(?:use|support|provide|include|ship|offer)\s+{phrase}\b",
+            line,
+            re.IGNORECASE,
+        )
+    )
+
+
+def _unsupported_skill_scope_findings(relative: str, lines: list[str]) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    in_roadmap_scope = False
+    for line_number, line in enumerate(lines, start=1):
+        heading = re.match(r"^#{1,6}\s+(.+?)\s*$", line)
+        if heading is not None:
+            heading_text = heading.group(1).lower()
+            in_roadmap_scope = any(marker in heading_text for marker in SKILL_ROADMAP_HEADINGS)
+        if in_roadmap_scope:
+            continue
+        for label, pattern in UNSUPPORTED_SKILL_SCOPE_CLAIMS:
+            if pattern.search(line) and not _denies_unsupported_skill_scope(line, label):
+                findings.append(
+                    _finding(
+                        "unsupported_skill_scope_claim",
+                        relative,
+                        line_number,
+                        f"Docs claim unsupported V8 skill behavior as available: {label}",
+                        line,
+                    )
+                )
+    return findings
+
+
+def _denies_unsupported_skill_scope(line: str, label: str) -> bool:
     phrase = re.escape(label).replace(r"\ ", r"\s+")
     return bool(
         re.search(

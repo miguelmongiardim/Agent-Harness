@@ -91,6 +91,25 @@ organization template catalogs, cloud template registries, executable lifecycle
 hooks, script execution, enterprise template governance, and conditional file
 inclusion remain future-only and are not V7 behavior.
 
+## v1.5.0 Direction
+
+v1.5.0 is the V8 Skills System track:
+[docs/skills-system.md](skills-system.md),
+[docs/prd-agent-harness-v8.md](prd-agent-harness-v8.md), and
+[plans/agent-harness-v8.md](../plans/agent-harness-v8.md). The planned track
+adds local, versioned, validated Markdown workflow guidance with deterministic
+provenance. Skills are guidance for how work should be performed; they are not
+tools, templates, policy, approvals, provider profiles, or executable code.
+
+The V8 target is local-first: bundled skills, configured local skill
+directories, task-requested resolution, context-manifest provenance,
+`skill_manifest.v1` evidence, inspect output, and release-readiness gates.
+
+Remote skill catalogs, skill marketplace behavior, skill signing, hosted skill
+services, enterprise skill registries, organization-wide skill governance,
+centralized skill governance, skill installation from network locations, and
+automatic execution from skills remain future-only and are not V8 behavior.
+
 ## Release Maintenance Priorities
 
 - Preserve the v1.0.0 compatibility and deprecation contract.
