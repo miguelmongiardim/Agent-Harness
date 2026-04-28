@@ -100,6 +100,7 @@ def build_template_application_evidence(
         "rendered_hashes": plan.rendered_hashes,
         "generated_schema_versions": spec.generated_schema_versions,
         "required_capabilities": spec.required_capabilities,
+        "recommended_skills": spec.recommended_skills,
         "warnings": [],
         "policy_implications": [
             {
@@ -344,6 +345,7 @@ def _build_template_application_plan(
             destination=destination_path,
             proposed_writes=writes,
             force=force,
+            recommended_skills=spec.recommended_skills,
         ),
         skipped_files=skipped_files,
         conflicts=conflicts,

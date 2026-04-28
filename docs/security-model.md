@@ -22,7 +22,8 @@ The security model is built around explicit policy mediation:
   execute code, mutate files, read environment variables, fetch network
   content, or bypass context policy. Current validation rejects
   authority-expanding skill content before it can be rendered as usable
-  guidance.
+  guidance, and current resolution records empty tool, approval, policy, and
+  provider changes for task-requested and template-recommended skills.
 - Provider-use approvals bind provider profile, trust zone, model id,
   provider-input hash, policy decision id, and checkpoint hash. Resume rejects
   drift in those bound fields before provider execution.

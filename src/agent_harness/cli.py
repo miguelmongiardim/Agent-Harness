@@ -47,6 +47,7 @@ from agent_harness.skills import (
     list_skills,
     load_skill_detail,
     render_skill,
+    resolve_task_skills,
     skill_discovery_diagnostics,
     validate_skill,
     validate_skill_pack_path,
@@ -145,6 +146,9 @@ def build_parser() -> argparse.ArgumentParser:
     skill_validate = skill_sub.add_parser("validate")
     skill_validate.add_argument("skill_id")
     skill_validate.set_defaults(func=cmd_skill_validate)
+    skill_resolve = skill_sub.add_parser("resolve")
+    skill_resolve.add_argument("--task", required=True)
+    skill_resolve.set_defaults(func=cmd_skill_resolve)
     skill_pack = skill_sub.add_parser("pack")
     skill_pack_sub = skill_pack.add_subparsers(required=True)
     skill_pack_validate = skill_pack_sub.add_parser("validate")
@@ -453,6 +457,12 @@ def cmd_skill_show(args: argparse.Namespace) -> int:
 def cmd_skill_render(args: argparse.Namespace) -> int:
     print(render_skill(args.skill_id, Path.cwd()), end="")
     return 0
+
+
+def cmd_skill_resolve(args: argparse.Namespace) -> int:
+    report = resolve_task_skills(Path(args.task), Path.cwd())
+    print(report.model_dump_json(indent=2))
+    return 0 if report.status == "passed" else 1
 
 
 def cmd_skill_pack_validate(args: argparse.Namespace) -> int:

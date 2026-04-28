@@ -9,7 +9,8 @@ action envelopes; opt-in OpenAI-compatible live smoke; redacted provider-call
 evidence; local retrieval indexes, hybrid retrieval, qdrant-local evidence,
 retrieval scorecards, approval-bound template application, separate
 `git_commit` approval, packaged benchmark adapters, validated bundled and
-configured local skill discovery, provider audit demos, release-readiness
+configured local skill discovery, task-requested skill resolution,
+template-recommended skill evidence, provider audit demos, release-readiness
 reports, audit logs, evals, an optional LangGraph boundary proof, and
 reproducible artifacts.
 
@@ -99,13 +100,13 @@ v1.5.0 is the V8 Skills System track:
 [docs/prd-agent-harness-v8.md](prd-agent-harness-v8.md), and
 [plans/agent-harness-v8.md](../plans/agent-harness-v8.md). Implemented slices
 add local, versioned, validated Markdown workflow guidance with deterministic
-provenance for bundled and explicitly configured local skill sources. Skills
-are guidance for how work should be performed; they are not tools, templates,
-policy, approvals, provider profiles, or executable code.
+provenance for bundled and explicitly configured local skill sources,
+task-requested skill resolution, and template-recommended skill evidence.
+Skills are guidance for how work should be performed; they are not tools,
+templates, policy, approvals, provider profiles, or executable code.
 
-The remaining V8 target is local-first: task-requested resolution,
-context-manifest provenance, `skill_manifest.v1` evidence, inspect output, and
-release-readiness gates.
+The remaining V8 target is local-first: context-manifest provenance,
+`skill_manifest.v1` evidence, inspect output, and release-readiness gates.
 
 Remote skill catalogs, skill marketplace behavior, skill signing, hosted skill
 services, enterprise skill registries, organization-wide skill governance,

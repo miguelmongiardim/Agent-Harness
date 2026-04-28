@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import tempfile
+import time
 import tomllib
 from importlib import resources
 from pathlib import Path
@@ -68,7 +70,9 @@ def validate_templates(
 
     listed = {record.template_id: record for record in list_templates(project_root)}
     selected_ids = sorted(listed) if all_templates else [str(template_id)]
-    work_root = project_root / ".agent-harness" / "template-validation" / "work"
+    validation_root = project_root / ".agent-harness" / "template-validation"
+    validation_root.mkdir(parents=True, exist_ok=True)
+    work_root = Path(tempfile.mkdtemp(prefix="work-", dir=validation_root))
     results = [
         _validate_template(project_root, work_root, selected_id, selected_id in listed)
         for selected_id in selected_ids
@@ -513,10 +517,21 @@ def _reset_validation_sandbox(project_root: Path, sandbox: Path) -> None:
     except ValueError as exc:
         raise ValueError("template validation sandbox must stay under .agent-harness") from exc
     if sandbox.exists():
-        shutil.rmtree(sandbox)
+        _remove_tree_with_retries(sandbox)
     sandbox.mkdir(parents=True)
     write_default_config(sandbox, force=True)
     write_json(sandbox / "policies" / "default.json", DEFAULT_POLICY)
+
+
+def _remove_tree_with_retries(path: Path) -> None:
+    for attempt in range(6):
+        try:
+            shutil.rmtree(path)
+            return
+        except PermissionError:
+            if attempt == 5:
+                raise
+            time.sleep(0.1)
 
 
 def _copy_local_pack_for_validation(project_root: Path, sandbox: Path, bundle_path: str) -> None:

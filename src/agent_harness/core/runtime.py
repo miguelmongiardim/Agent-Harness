@@ -54,6 +54,7 @@ from agent_harness.schemas import (
     TaskSpec,
     TemplateApplyRecord,
     TemplateProposedWrite,
+    TemplateSkillRecommendationRecord,
     ToolCall,
     ToolObservation,
     WorkspaceMetadata,
@@ -1646,7 +1647,22 @@ def _apply_template_approval(
                     action_id=action_id,
                     evidence=template_application_path or "",
                 ),
-            ]
+            ],
+            "skill_recommendations": [
+                *workspace.skill_recommendations,
+                *[
+                    TemplateSkillRecommendationRecord(
+                        skill_id=skill_id,
+                        template_id=template_apply.template_id,
+                        template_version=template_apply.version,
+                        destination=template_apply.destination,
+                        run_id=store.run_id,
+                        action_id=action_id,
+                        evidence=template_application_path or "",
+                    )
+                    for skill_id in template_apply.recommended_skills
+                ],
+            ],
         }
     )
     dump_model(workspace_path, workspace)

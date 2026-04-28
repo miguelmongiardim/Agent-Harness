@@ -82,6 +82,7 @@ def _load_template_pack(manifest: Any, pack_dir: Any) -> TemplateSpec:
         "policy_requirements": raw.get("policy_requirements", {}),
         "retrieval_assumptions": raw.get("retrieval_assumptions", {}),
         "eval_or_demo_metadata": raw.get("eval_or_demo_metadata", {}),
+        "recommended_skills": raw.get("recommended_skills", []),
         "files": files,
     }
     return TemplateSpec.model_validate(payload)

@@ -10,8 +10,9 @@ Phase 0 added documentation scope and docs-check guards. Phase 1 added the
 first validation slice for `agent-harness skill validate write-a-prd` and
 direct `SKILL.md` validation. Phase 2 added bundled skill discovery, skill
 inspection, rendered Markdown review, and local skill-pack validation. Phase 3
-adds explicit configured local skill discovery through `config.v2`
-`skills.local_dirs`. Task resolution, context inclusion, run artifacts, and
+added explicit configured local skill discovery through `config.v2`
+`skills.local_dirs`. Phase 4 adds task-requested skill resolution and
+template-recommended skill evidence. Context inclusion, run artifacts, and
 release-readiness evidence are later V8 slices and should not be described as
 current behavior until their tests and implementation land.
 
@@ -30,10 +31,20 @@ The current implementation provides:
 - `agent-harness skill render <skill-id>` with a Markdown metadata header and
   skill body
 - `agent-harness skill validate write-a-prd` for bundled skill validation
+- `agent-harness skill resolve --task <task.yaml>` for resolving `task.v2`
+  requested skills and applied-template recommendations
 - direct `SKILL.md` validation through the same command when the argument is an
   existing path
 - `agent-harness skill pack validate <path>` for read-only validation of every
   `SKILL.md` under a local directory
+- `task.v2` `skills` requests; `task.v1` rejects skill requests explicitly
+- `template.v2` `recommended_skills` metadata visible through `template show`
+- template application evidence and workspace metadata recording recommended
+  skills from applied templates
+- resolution diagnostics for unknown or invalid task-requested skills
+- missing template-recommended skills reported as non-required diagnostics
+- resolution evidence for source, version, hash, requested-by records, and
+  unchanged task authority fields
 - missing configured local skill directories reported to stderr without
   crashing `skill list`
 - duplicate skill ids rejected clearly, including local-to-local duplicates and
@@ -60,8 +71,8 @@ A skill is an inspectable `SKILL.md` file with `skill.v1` YAML frontmatter and
 a Markdown body. Skills explain how to perform a workflow; they are not tools,
 templates, policies, approvals, provider profiles, or executable code.
 
-The `agent_harness.skills` boundary owns current registry and validation
-behavior and will own later runtime resolution behavior:
+The `agent_harness.skills` boundary owns current registry, validation, and
+task/template resolution behavior and will own later manifest behavior:
 
 - bundled and configured local skill discovery
 - frontmatter and body parsing
@@ -69,6 +80,7 @@ behavior and will own later runtime resolution behavior:
 - deterministic skill hashing
 - rendered Markdown inspection
 - task-requested skill resolution
+- template-recommended skill resolution diagnostics
 - skill manifest construction
 
 Runtime orchestration should coordinate resolved skill guidance with context
@@ -95,7 +107,8 @@ behaviors:
 - inspect skill metadata, source, compatibility, validation status, and hash
 - validate a bundled skill, direct `SKILL.md`, or local skill pack
 - render deterministic Markdown for review
-- resolve task-requested skills without widening task or policy authority
+- resolve task-requested skills and template recommendations without widening
+  task or policy authority
 - include accepted skill guidance in context manifests with policy provenance
 - emit `skill_manifest.v1` run evidence
 - show skill evidence through `inspect run`

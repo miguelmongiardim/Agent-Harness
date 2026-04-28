@@ -293,6 +293,15 @@ def _normalize_local_source_dir(value: str) -> str:
     return normalize_relative_path(normalized)
 
 
+def _validate_skill_id_list(values: list[str], field_name: str) -> list[str]:
+    for value in values:
+        if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", value):
+            raise ValueError(f"{field_name} must use lowercase kebab-case skill ids")
+    if len(values) != len(set(values)):
+        raise ValueError(f"{field_name} values must be unique")
+    return values
+
+
 def _is_loopback_qdrant_host(hostname: str) -> bool:
     if hostname == "localhost":
         return True
@@ -359,6 +368,7 @@ class TaskSpec(StrictModel):
     allowed_tools: list[ToolName] | None = None
     deny_provider_input_sensitivities: list[Sensitivity] = Field(default_factory=list)
     context_queries: list[str] = Field(default_factory=list)
+    skills: list[str] = Field(default_factory=list)
     test_commands: list[list[str]] = Field(default_factory=list)
     max_steps: int = Field(default=8, ge=1, le=50)
 
@@ -375,10 +385,17 @@ class TaskSpec(StrictModel):
                 raise ValueError("test commands must be non-empty argv arrays")
         return commands
 
+    @field_validator("skills")
+    @classmethod
+    def validate_task_skills(cls, values: list[str]) -> list[str]:
+        return _validate_skill_id_list(values, "task skills")
+
     @model_validator(mode="after")
     def validate_provider_profile_usage(self) -> TaskSpec:
         if self.schema_version == "task.v1" and self.provider_profile is not None:
             raise ValueError("task.v1 does not support provider_profile")
+        if self.schema_version == "task.v1" and self.skills:
+            raise ValueError("task.v1 does not support skills")
         return self
 
 
@@ -1035,6 +1052,37 @@ class SkillDetail(StrictModel):
     body_summary: str
 
 
+class SkillRequestedBy(StrictModel):
+    kind: Literal["task", "template"]
+    reference: str
+    field: str
+    required: bool
+
+
+class SkillResolutionRecord(StrictModel):
+    skill_id: str
+    resolution_status: Literal["resolved", "missing", "invalid"]
+    required: bool
+    requested_by: list[SkillRequestedBy]
+    version: str | None = None
+    source_type: SkillSourceType | None = None
+    source: str | None = None
+    compatibility_status: SkillCompatibilityStatus | None = None
+    validation_status: Literal["passed", "failed"] | None = None
+    skill_hash: str | None = None
+    diagnostics: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class SkillResolutionReport(StrictModel):
+    schema_version: Literal["skill_resolution.v1"] = "skill_resolution.v1"
+    status: Literal["passed", "failed"]
+    task_id: str
+    task_path: str
+    skills: list[SkillResolutionRecord] = Field(default_factory=list)
+    diagnostics: list[dict[str, Any]] = Field(default_factory=list)
+    authority: dict[str, Any]
+
+
 class TemplateSpec(StrictModel):
     schema_version: Literal["template.v1", "template.v2"]
     name: str
@@ -1050,7 +1098,13 @@ class TemplateSpec(StrictModel):
     policy_requirements: dict[str, Any] = Field(default_factory=dict)
     retrieval_assumptions: dict[str, Any] = Field(default_factory=dict)
     eval_or_demo_metadata: dict[str, Any] = Field(default_factory=dict)
+    recommended_skills: list[str] = Field(default_factory=list)
     files: list[TemplateFile]
+
+    @field_validator("recommended_skills")
+    @classmethod
+    def validate_recommended_skills(cls, values: list[str]) -> list[str]:
+        return _validate_skill_id_list(values, "recommended_skills")
 
     @model_validator(mode="after")
     def validate_template_contract(self) -> TemplateSpec:
@@ -1114,6 +1168,7 @@ class TemplateDetail(StrictModel):
     policy_requirements: dict[str, Any] = Field(default_factory=dict)
     retrieval_assumptions: dict[str, Any] = Field(default_factory=dict)
     eval_or_demo_metadata: dict[str, Any] = Field(default_factory=dict)
+    recommended_skills: list[str] = Field(default_factory=list)
     files: list[TemplateFile]
 
 
@@ -1141,6 +1196,7 @@ class TemplateApplyRecord(StrictModel):
     destination: str
     proposed_writes: list[TemplateProposedWrite]
     force: bool = False
+    recommended_skills: list[str] = Field(default_factory=list)
 
     @field_validator("destination")
     @classmethod
@@ -1168,9 +1224,28 @@ class AppliedTemplateRecord(StrictModel):
         return normalize_relative_path(value) if value else value
 
 
+class TemplateSkillRecommendationRecord(StrictModel):
+    skill_id: str
+    template_id: str
+    template_version: str
+    destination: str
+    run_id: str
+    action_id: str
+    evidence: str = ""
+    recorded_at: datetime = Field(default_factory=now_utc)
+
+    @field_validator("destination", "evidence")
+    @classmethod
+    def validate_relative_reference(cls, value: str) -> str:
+        return normalize_relative_path(value) if value else value
+
+
 class WorkspaceMetadata(StrictModel):
     schema_version: Literal["workspace_metadata.v1"] = "workspace_metadata.v1"
     applied_templates: list[AppliedTemplateRecord] = Field(default_factory=list)
+    skill_recommendations: list[TemplateSkillRecommendationRecord] = Field(
+        default_factory=list
+    )
 
 
 class GitCommitPlan(StrictModel):

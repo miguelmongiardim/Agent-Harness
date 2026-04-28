@@ -87,8 +87,9 @@ dry-run apply, preview-diff apply, clean apply, and release readiness.
 The V8 skills-system scope is documented in
 [`docs/skills-system.md`](docs/skills-system.md). Current slices provide
 bundled and configured local skill discovery, validation, inspection, rendered
-Markdown review, and read-only skill-pack validation. Task-requested skill
-resolution, context inclusion, and run artifacts arrive in later V8 slices.
+Markdown review, read-only skill-pack validation, task-requested skill
+resolution, and template-recommended skill evidence. Context inclusion and run
+artifacts arrive in later V8 slices.
 
 The optional LangGraph boundary proof is isolated behind the `langgraph` extra:
 
@@ -105,6 +106,7 @@ agent-harness skill list
 agent-harness skill show prd-plan-tdd-workflow
 agent-harness skill validate write-a-prd
 agent-harness skill render prd-plan-tdd-workflow
+agent-harness skill resolve --task <task.yaml>
 agent-harness skill pack validate ./local-skills
 agent-harness template list
 agent-harness template show python-lib

@@ -19,8 +19,8 @@ runtime around explicit ownership boundaries.
   validation, deterministic rendering, planning, application evidence, and
   policy-mediated template writes.
 - `agent_harness.skills` owns local skill discovery, frontmatter/body parsing,
-  validation, deterministic hashing, and rendering. Later V8 phases extend the
-  same boundary with task-requested resolution and `skill_manifest.v1` evidence
+  validation, deterministic hashing, rendering, and task/template resolution.
+  Later V8 phases extend the same boundary with `skill_manifest.v1` evidence
   construction.
 - `agent_harness.release` owns local release-readiness evidence collection.
 - `agent_harness.model`, `agent_harness.runtimes`, `agent_harness.storage`,
@@ -97,10 +97,12 @@ rendering rules.
 
 The V8 skills work keeps reusable workflow guidance inside
 `agent_harness.skills`. Skills are Markdown guidance artifacts, not tools,
-templates, policy, approvals, provider profiles, or executable code. Runtime
-should coordinate resolved skills with context assembly, checkpoints, summary
-artifacts, and inspect output; policy remains the gate for whether skill
-guidance may enter context and must never be loosened by skill content.
+templates, policy, approvals, provider profiles, or executable code. Skill
+resolution records task requests and template recommendations without changing
+the effective task authority. Runtime should coordinate resolved skills with
+context assembly, checkpoints, summary artifacts, and inspect output; policy
+remains the gate for whether skill guidance may enter context and must never be
+loosened by skill content.
 
 Schema migration stays outside runtime execution. The migration module reports
 original and proposed effective schema versions by default, and `--write` only

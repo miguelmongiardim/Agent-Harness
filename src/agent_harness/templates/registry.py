@@ -211,6 +211,7 @@ def load_template(name: str, project_root: Path | None = None) -> TemplateDetail
         policy_requirements=spec.policy_requirements,
         retrieval_assumptions=spec.retrieval_assumptions,
         eval_or_demo_metadata=spec.eval_or_demo_metadata,
+        recommended_skills=spec.recommended_skills,
         files=spec.files,
     )
 

@@ -25,6 +25,11 @@ Every bundled V7 pack includes `template.v2.toml`, README content, demo
 metadata, generated config/policy/task/eval examples, and at least one local
 validation or demo command where practical.
 
+The V8 skills track extends `template.v2` with optional `recommended_skills`.
+Those recommendations are recorded in template application evidence and
+workspace metadata, but they remain recommendations only; they do not force
+runtime skill usage by default.
+
 ## V7 Local Pack Boundary
 
 V7 keeps template ownership in `agent_harness.templates` and deepens that

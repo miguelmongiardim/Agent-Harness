@@ -280,19 +280,19 @@ evidence while treating only explicit task requests as required for runtime use.
 
 ### Acceptance criteria
 
-- [ ] `task.v2` accepts `skills`.
-- [ ] `task.v1` rejects or ignores `skills` only through an explicit
+- [x] `task.v2` accepts `skills`.
+- [x] `task.v1` rejects or ignores `skills` only through an explicit
       compatibility decision.
-- [ ] Unknown task-requested skill ids fail clearly.
-- [ ] Invalid task-requested skills fail clearly.
-- [ ] Resolution records source, version, hash, and requested-by evidence.
-- [ ] `template.v2` accepts optional `recommended_skills`.
-- [ ] `template show` displays recommended skills when present.
-- [ ] Template application evidence records recommended skills.
-- [ ] Workspace metadata records recommended skills from applied templates.
-- [ ] Missing template-recommended skills are reported as diagnostics.
-- [ ] Template recommendations do not force runtime skill usage by default.
-- [ ] Resolution cannot add tools, approvals, policy changes, or provider
+- [x] Unknown task-requested skill ids fail clearly.
+- [x] Invalid task-requested skills fail clearly.
+- [x] Resolution records source, version, hash, and requested-by evidence.
+- [x] `template.v2` accepts optional `recommended_skills`.
+- [x] `template show` displays recommended skills when present.
+- [x] Template application evidence records recommended skills.
+- [x] Workspace metadata records recommended skills from applied templates.
+- [x] Missing template-recommended skills are reported as diagnostics.
+- [x] Template recommendations do not force runtime skill usage by default.
+- [x] Resolution cannot add tools, approvals, policy changes, or provider
       changes to the effective task.
 
 ### Out of scope
