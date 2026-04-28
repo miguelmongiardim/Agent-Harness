@@ -91,7 +91,11 @@ Markdown review, read-only skill-pack validation, task-requested skill
 resolution, template-recommended skill evidence, and policy-gated skill
 guidance in run context manifests. Runs that use selected skills now emit
 `skill_manifest.json`, link it from summaries and artifact indexes, expose it
-through `inspect run`, and allow eval specs to assert expected skill ids.
+through `inspect run`, and allow eval specs to assert expected skill ids. The
+V8 golden path lives in
+[`examples/skills_workflow/`](examples/skills_workflow/) and release readiness
+verifies bundled skill validation, resolution, manifest evidence, inspect
+output, docs, and the demo.
 
 The optional LangGraph boundary proof is isolated behind the `langgraph` extra:
 
@@ -248,7 +252,8 @@ guidance, not tools, templates, policy, approvals, provider profiles, or
 executable code. Remote skill catalogs, marketplaces, signing, hosted skill
 services, enterprise registries, organization-wide governance, centralized
 governance, network installation, and automatic execution from skills remain
-future-only scope.
+future-only scope. The implemented V8 path includes the skills workflow demo
+and release-readiness gates for local skill evidence.
 
 ## Documentation
 

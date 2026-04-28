@@ -438,20 +438,20 @@ deferred-scope claim guards.
 
 ### Acceptance criteria
 
-- [ ] `examples/skills_workflow/README.md` documents the V8 golden path.
-- [ ] `examples/skills_workflow/task.yaml` references
+- [x] `examples/skills_workflow/README.md` documents the V8 golden path.
+- [x] `examples/skills_workflow/task.yaml` references
       `prd-plan-tdd-workflow`.
-- [ ] Expected example `skill_manifest` and `context_manifest` artifacts exist.
-- [ ] Demo workspace includes a feature brief for the skill-guided workflow.
-- [ ] Release readiness validates all bundled skills.
-- [ ] Release readiness verifies skill list/show/validate/resolve behavior.
-- [ ] Release readiness verifies dry-run skill manifest emission.
-- [ ] Release readiness verifies context manifest skill provenance.
-- [ ] Release readiness verifies inspect output includes skills.
-- [ ] Release readiness verifies skills docs exist.
-- [ ] Release readiness verifies docs keep deferred distribution and governance
+- [x] Expected example `skill_manifest` and `context_manifest` artifacts exist.
+- [x] Demo workspace includes a feature brief for the skill-guided workflow.
+- [x] Release readiness validates all bundled skills.
+- [x] Release readiness verifies skill list/show/validate/resolve behavior.
+- [x] Release readiness verifies dry-run skill manifest emission.
+- [x] Release readiness verifies context manifest skill provenance.
+- [x] Release readiness verifies inspect output includes skills.
+- [x] Release readiness verifies skills docs exist.
+- [x] Release readiness verifies docs keep deferred distribution and governance
       features out of implemented sections.
-- [ ] Final acceptance path works:
+- [x] Final acceptance path works:
       `uv sync`,
       `uv run agent-harness skill list`,
       `uv run agent-harness skill show prd-plan-tdd-workflow`,

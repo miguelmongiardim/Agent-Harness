@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import tomllib
 from pathlib import Path
 from typing import Any
@@ -9,6 +10,7 @@ import pytest
 
 from agent_harness import __version__, release
 from agent_harness.cli import main
+from agent_harness.defaults import DEFAULT_POLICY
 from tests.conftest import seed_project
 
 
@@ -213,6 +215,63 @@ def test_release_readiness_runs_v7_bundled_template_pack_acceptance(
         assert pack["docs"]["status"] == "passed"
 
 
+def test_release_readiness_requires_v8_skills_workflow_demo_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    _write_release_ready_project(tmp_path, "9.9.9", include_skills=False)
+    monkeypatch.setattr(release, "_tag_exists", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_pushed", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_target_commit", lambda project_root, tag_name: "abc123")
+    monkeypatch.setattr(release, "_remote_ci_evidence", _passing_remote_ci)
+
+    assert main(["release", "readiness"]) == 0
+    report = json.loads(capsys.readouterr().out)
+
+    assert report["status"] == "pending"
+    assert report["skills"]["workflow_demo"]["status"] == "missing_evidence"
+    assert "skills.workflow_demo" in {entry["gate"] for entry in report["diagnostics"]}
+
+
+def test_release_readiness_verifies_v8_skill_gates(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    _write_release_ready_project(tmp_path, "9.9.9")
+    monkeypatch.setattr(release, "_tag_exists", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_pushed", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_target_commit", lambda project_root, tag_name: "abc123")
+    monkeypatch.setattr(release, "_remote_ci_evidence", _passing_remote_ci)
+
+    assert main(["release", "readiness"]) == 0
+    report = json.loads(capsys.readouterr().out)
+
+    assert report["status"] == "ready"
+    assert report["diagnostics"] == []
+    skills = report["skills"]
+    assert skills["bundled_validation"]["status"] == "passed"
+    assert set(skills["bundled_validation"]["skill_ids"]) == {
+        "write-a-prd",
+        "prd-to-plan",
+        "tdd",
+        "prd-plan-tdd-workflow",
+    }
+    assert skills["registry_commands"]["status"] == "passed"
+    assert skills["workflow_demo"]["status"] == "passed"
+    assert skills["workflow_demo"]["resolution"]["status"] == "passed"
+    assert skills["workflow_demo"]["dry_run"]["status"] == "passed"
+    assert skills["workflow_demo"]["context_manifest"]["status"] == "passed"
+    assert skills["workflow_demo"]["skill_manifest"]["status"] == "passed"
+    assert skills["workflow_demo"]["inspect"]["status"] == "passed"
+    assert skills["docs"]["status"] == "passed"
+
+
 def test_v7_template_pack_golden_path_example_and_cli_sequence(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -256,10 +315,7 @@ def test_v7_template_pack_golden_path_example_and_cli_sequence(
     assert dry_run["status"] == "planned"
     assert not (target / "pyproject.toml").exists()
 
-    assert (
-        main(["template", "apply", "python-lib", "--target", str(target), "--preview-diff"])
-        == 0
-    )
+    assert main(["template", "apply", "python-lib", "--target", str(target), "--preview-diff"]) == 0
     preview = json.loads(capsys.readouterr().out)
     assert preview["mode"] == "preview_diff"
     assert preview["preview_diffs"]
@@ -274,6 +330,61 @@ def test_v7_template_pack_golden_path_example_and_cli_sequence(
     readiness = json.loads(capsys.readouterr().out)
     assert readiness["templates"]["bundled_pack_acceptance"]["status"] == "passed"
     assert readiness["templates"]["remote_catalog_defaults"]["status"] == "passed"
+
+
+def test_v8_skills_workflow_golden_path_example_and_cli_sequence(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    readme = repo_root / "examples" / "skills_workflow" / "README.md"
+    text = readme.read_text(encoding="utf-8")
+
+    for command in (
+        "uv sync",
+        "uv run agent-harness skill list",
+        "uv run agent-harness skill show prd-plan-tdd-workflow",
+        "uv run agent-harness skill validate prd-plan-tdd-workflow",
+        "uv run agent-harness skill resolve --task examples/skills_workflow/task.yaml",
+        "uv run agent-harness run examples/skills_workflow/task.yaml --dry-run",
+        "uv run agent-harness inspect run <run-id>",
+        "uv run agent-harness release readiness",
+    ):
+        assert command in text
+
+    monkeypatch.chdir(repo_root)
+    task_path = repo_root / "examples" / "skills_workflow" / "task.yaml"
+
+    assert main(["skill", "list"]) == 0
+    listed = capsys.readouterr().out
+    assert "prd-plan-tdd-workflow" in listed
+
+    assert main(["skill", "show", "prd-plan-tdd-workflow"]) == 0
+    shown = json.loads(capsys.readouterr().out)
+    assert shown["skill_id"] == "prd-plan-tdd-workflow"
+    assert shown["validation_status"] == "passed"
+
+    assert main(["skill", "validate", "prd-plan-tdd-workflow"]) == 0
+    validation = json.loads(capsys.readouterr().out)
+    assert validation["status"] == "passed"
+
+    assert main(["skill", "resolve", "--task", str(task_path)]) == 0
+    resolution = json.loads(capsys.readouterr().out)
+    assert resolution["status"] == "passed"
+    assert resolution["skills"][0]["skill_id"] == "prd-plan-tdd-workflow"
+
+    assert main(["run", str(task_path), "--dry-run"]) == 0
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["status"] == "dry_run"
+    assert summary["artifacts"]["skill_manifest"].endswith("skill_manifest.json")
+    run_dir = repo_root / ".agent-harness" / "runs" / summary["run_id"]
+    skill_manifest = json.loads((run_dir / "skill_manifest.json").read_text(encoding="utf-8"))
+    assert skill_manifest["skills"][0]["skill_id"] == "prd-plan-tdd-workflow"
+    assert skill_manifest["skills"][0]["inclusion_status"] == "included"
+
+    assert main(["inspect", "run", summary["run_id"]]) == 0
+    inspected = json.loads(capsys.readouterr().out)
+    assert inspected["skill_manifest"] == skill_manifest
 
 
 def test_release_readiness_rejects_remote_template_catalog_defaults(
@@ -311,9 +422,7 @@ def test_release_readiness_rejects_remote_template_catalog_defaults(
             "value": "https://templates.example.invalid/catalog.json",
         }
     ]
-    assert "templates.remote_catalog_defaults" in {
-        entry["gate"] for entry in report["diagnostics"]
-    }
+    assert "templates.remote_catalog_defaults" in {entry["gate"] for entry in report["diagnostics"]}
 
 
 def test_release_readiness_requires_v1_release_closure_docs(
@@ -507,7 +616,32 @@ def test_template_validation_satisfies_release_readiness_template_gate(
     )
 
 
-def _write_release_ready_project(root: Path, version: str) -> None:
+def _write_release_ready_project(
+    root: Path,
+    version: str,
+    *,
+    include_skills: bool = True,
+) -> None:
+    if not (root / "agent-harness.yaml").exists():
+        (root / "agent-harness.yaml").write_text(
+            "\n".join(
+                [
+                    "schema_version: config.v1",
+                    "project_name: release-ready",
+                    "artifact_root: .agent-harness",
+                    "default_policy: default",
+                    "retrieval_backend: lexical",
+                    "template_catalog: bundled",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+    (root / "policies").mkdir(exist_ok=True)
+    (root / "policies" / "default.json").write_text(
+        json.dumps(DEFAULT_POLICY, indent=2),
+        encoding="utf-8",
+    )
     (root / "pyproject.toml").write_text(
         "\n".join(
             [
@@ -673,6 +807,57 @@ def _write_release_ready_project(root: Path, version: str) -> None:
             )
         else:
             path.write_text("demo\n", encoding="utf-8")
+    if include_skills:
+        _write_skills_workflow_demo(root)
+
+
+def _passing_remote_ci(
+    project_root: Path,
+    target_commit: str,
+    ci_run_id: str | None,
+) -> dict[str, Any]:
+    del project_root, target_commit, ci_run_id
+    return {
+        "run": {
+            "source": "github_actions",
+            "status": "completed",
+            "conclusion": "success",
+            "matches_target_commit": True,
+        },
+        "python_3_11": {"required": True, "status": "passed"},
+        "python_3_12": {"required": True, "status": "passed"},
+        "python_3_13": {"allowed_failure": True, "status": "failed_allowed"},
+    }
+
+
+def _write_skills_workflow_demo(root: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    source = repo_root / "examples" / "skills_workflow"
+    target = root / "examples" / "skills_workflow"
+    shutil.copytree(source, target, dirs_exist_ok=True)
+    docs = root / "docs"
+    docs.mkdir(exist_ok=True)
+    (docs / "skills-system.md").write_text(
+        "\n".join(
+            [
+                "# Skills System",
+                "",
+                "## Current Capabilities",
+                "",
+                "V8 local skills are bundled or explicitly configured local guidance.",
+                "Runs with skills emit skill_manifest.v1 evidence.",
+                "",
+                "## Roadmap / Not Implemented Yet",
+                "",
+                "Remote skill catalogs, skill marketplace behavior, skill signing,",
+                "hosted skill services, enterprise skill registries, organization-wide",
+                "skill governance, centralized skill governance, and skill installation",
+                "from network locations remain future-only.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
 
 
 def _write_release_project_without_evidence(root: Path, version: str) -> None:

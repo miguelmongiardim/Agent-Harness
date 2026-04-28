@@ -1,0 +1,56 @@
+{
+  "schema_version": "context_manifest.v2",
+  "manifest_id": "context-manifest-example",
+  "run_id": "run-skills-workflow-example",
+  "task_id": "skills-workflow-demo",
+  "sources": [
+    {
+      "source_id": "source-skill-example",
+      "kind": "skill",
+      "path": "bundled_skills/prd-plan-tdd-workflow/SKILL.md",
+      "content_hash": "d74b79be3778966d425babdebadee380f57585460c2ccfe53d5f421e173f0471",
+      "sensitivity": "public",
+      "policy_decision_id": "decision-skill-example",
+      "skill_id": "prd-plan-tdd-workflow",
+      "skill_version": "1.0.0",
+      "skill_source": "bundled_skills/prd-plan-tdd-workflow/SKILL.md",
+      "skill_hash": "d74b79be3778966d425babdebadee380f57585460c2ccfe53d5f421e173f0471"
+    }
+  ],
+  "chunks": [
+    {
+      "chunk_id": "chunk-skill-example",
+      "source_id": "source-skill-example",
+      "text": "Rendered prd-plan-tdd-workflow guidance enters context as policy-mediated evidence.",
+      "content_hash": "d74b79be3778966d425babdebadee380f57585460c2ccfe53d5f421e173f0471",
+      "start_line": 1,
+      "end_line": 1,
+      "score": 1.0,
+      "sensitivity": "public"
+    }
+  ],
+  "items": [
+    {
+      "item_id": "item-skill-example",
+      "source_id": "source-skill-example",
+      "chunk_id": "chunk-skill-example",
+      "source_kind": "skill",
+      "path": "bundled_skills/prd-plan-tdd-workflow/SKILL.md",
+      "content_hash": "d74b79be3778966d425babdebadee380f57585460c2ccfe53d5f421e173f0471",
+      "text": "Rendered prd-plan-tdd-workflow guidance enters context as policy-mediated evidence.",
+      "start_line": 1,
+      "end_line": 1,
+      "sensitivity": "public",
+      "retrieval_method": "direct",
+      "policy_allowed": true,
+      "policy_decision_id": "decision-skill-example",
+      "policy_reason": "skill guidance accepted by policy",
+      "skill_id": "prd-plan-tdd-workflow",
+      "skill_version": "1.0.0",
+      "skill_source": "bundled_skills/prd-plan-tdd-workflow/SKILL.md",
+      "skill_hash": "d74b79be3778966d425babdebadee380f57585460c2ccfe53d5f421e173f0471",
+      "inclusion_mode": "task_required"
+    }
+  ],
+  "rejected_items": []
+}

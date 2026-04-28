@@ -1,0 +1,11 @@
+schema_version: task.v2
+task_id: skills-workflow-demo
+title: Skill-guided workflow demo
+intent: Use selected workflow guidance while inspecting the local feature brief.
+skills:
+  - prd-plan-tdd-workflow
+target_paths:
+  - examples/skills_workflow/feature_brief.md
+allowed_tools:
+  - read_file
+max_steps: 1

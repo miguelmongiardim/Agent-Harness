@@ -139,7 +139,7 @@ def load_model(path: Path, model_type: type[T]) -> T:
 
 
 def load_public_model(path: Path, model_type: type[T]) -> T:
-    return _normalize_public_schema(load_model(path, model_type))
+    return _normalize_public_schema(model_type.model_validate(load_mapping(path)))
 
 
 def load_public_model_with_schema_evidence(

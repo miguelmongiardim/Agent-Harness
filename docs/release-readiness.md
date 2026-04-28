@@ -111,6 +111,8 @@ The report represents:
 - retrieval demo and local-first config evidence
 - operator app factory, API smoke, token requirement, loopback host rejection,
   approval binding, and static UI packaging evidence
+- V8 skill validation, registry command, workflow demo, manifest, inspect, and
+  skills docs evidence
 - release artifact presence
 - local check commands
 - remote CI run evidence for the target commit
@@ -136,16 +138,18 @@ report also scans executable template config defaults and stays pending when a
 remote catalog, marketplace URL, cloud registry, or registry URL is configured
 as a default.
 
-## Planned V8 Skill Gates
+## V8 Skill Gates
 
-V8 release-readiness work will add gates for bundled skill validation, skill
-registry behavior, task-requested resolution, context manifest skill
-provenance, `skill_manifest.v1` emission, inspect output, skills-system docs,
-the `examples/skills_workflow/` demo, and docs-check guards for deferred skill
-distribution and governance claims.
+For V8 skills, release readiness validates all required bundled skills:
+`write-a-prd`, `prd-to-plan`, `tdd`, and `prd-plan-tdd-workflow`. It verifies
+skill list/show/validate behavior, resolves
+`examples/skills_workflow/task.yaml`, runs that task as a dry run, checks
+`context_manifest.json` skill provenance, checks `skill_manifest.v1` evidence,
+and verifies `inspect run` includes the skill manifest.
 
-These are planned V8 gates. The current release report should not be described
-as ready for V8 skill evidence until those gates are implemented and tested.
+Release readiness also verifies `docs/skills-system.md` exists, docs check is
+passing, and deferred skill distribution and governance features remain outside
+implemented scope.
 
 ## Release Checklist
 
@@ -164,9 +168,10 @@ Before tagging the current release:
 11. Run `uv run agent-harness demo provider-audit`.
 12. Run `uv run agent-harness serve --host 127.0.0.1 --port 8765` and verify
     the local UI with the generated token.
-13. Run `agent-harness eval`.
-14. Run `agent-harness release readiness --version 1.4.0`.
-15. Confirm CI passes for the release commit.
+13. Run the skills workflow golden path in `examples/skills_workflow/`.
+14. Run `agent-harness eval`.
+15. Run `agent-harness release readiness --version 1.4.0`.
+16. Confirm CI passes for the release commit.
 
 ## Tag Process
 

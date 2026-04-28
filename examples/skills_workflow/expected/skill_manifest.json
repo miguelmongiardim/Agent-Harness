@@ -1,0 +1,30 @@
+{
+  "schema_version": "skill_manifest.v1",
+  "run_id": "run-skills-workflow-example",
+  "task_id": "skills-workflow-demo",
+  "context_manifest_id": "context-manifest-example",
+  "skills": [
+    {
+      "skill_id": "prd-plan-tdd-workflow",
+      "version": "1.0.0",
+      "source_type": "bundled",
+      "source": "bundled_skills/prd-plan-tdd-workflow/SKILL.md",
+      "skill_hash": "d74b79be3778966d425babdebadee380f57585460c2ccfe53d5f421e173f0471",
+      "required": true,
+      "requested_by": [
+        {
+          "kind": "task",
+          "reference": "examples/skills_workflow/task.yaml",
+          "field": "skills",
+          "required": true
+        }
+      ],
+      "resolution_time": "2026-04-28T22:30:00Z",
+      "resolution_status": "resolved",
+      "inclusion_status": "included",
+      "policy_decision_id": "decision-skill-example",
+      "context_manifest_id": "context-manifest-example",
+      "context_manifest_item_id": "item-skill-example"
+    }
+  ]
+}

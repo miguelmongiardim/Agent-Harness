@@ -44,6 +44,19 @@ OPERATOR_FORBIDDEN_REMOTE_MARKERS = (
     "localStorage",
     "sessionStorage",
 )
+REQUIRED_BUNDLED_SKILLS = (
+    "write-a-prd",
+    "prd-to-plan",
+    "tdd",
+    "prd-plan-tdd-workflow",
+)
+SKILLS_WORKFLOW_REQUIRED_FILES = (
+    "README.md",
+    "task.yaml",
+    "feature_brief.md",
+    "expected/context_manifest.json",
+    "expected/skill_manifest.json",
+)
 
 
 def build_release_readiness_report(
@@ -69,6 +82,7 @@ def build_release_readiness_report(
     templates = _template_evidence(project_root)
     retrieval = _retrieval_evidence(project_root)
     operator = _operator_evidence(project_root)
+    skills = _skills_evidence(project_root, docs_report)
     release_artifacts = _release_artifact_evidence(project_root, normalized_version)
     diagnostics = _diagnostics(
         package=package,
@@ -77,6 +91,7 @@ def build_release_readiness_report(
         templates=templates,
         retrieval=retrieval,
         operator=operator,
+        skills=skills,
         release_artifacts=release_artifacts,
         changelog_present=changelog_present,
         tag_exists=tag_exists,
@@ -121,6 +136,7 @@ def build_release_readiness_report(
         "templates": templates,
         "retrieval": retrieval,
         "operator": operator,
+        "skills": skills,
         "release_artifacts": release_artifacts,
         "local_checks": {
             name: {
@@ -483,9 +499,7 @@ def _bundled_template_pack_acceptance(project_root: Path) -> dict[str, Any]:
                 "diagnostics": validation.get("diagnostics", []),
             },
             "dry_run": dry_run,
-            "clean_apply": {
-                key: value for key, value in clean_apply.items() if key != "summary"
-            },
+            "clean_apply": {key: value for key, value in clean_apply.items() if key != "summary"},
             "generated_examples": generated_examples,
             "application_evidence": application_evidence,
             "docs": docs,
@@ -718,11 +732,7 @@ def _template_docs_evidence(target: Path, detail: Any) -> dict[str, Any]:
 
 
 def _relative_files(root: Path) -> set[str]:
-    return {
-        path.relative_to(root).as_posix()
-        for path in root.rglob("*")
-        if path.is_file()
-    }
+    return {path.relative_to(root).as_posix() for path in root.rglob("*") if path.is_file()}
 
 
 def _template_remote_catalog_defaults(project_root: Path) -> dict[str, Any]:
@@ -743,8 +753,7 @@ def _template_remote_catalog_defaults(project_root: Path) -> dict[str, Any]:
     return {
         "status": "failed" if findings else "passed",
         "checked_paths": [
-            _project_relative(project_root, path)
-            for path in _template_config_paths(project_root)
+            _project_relative(project_root, path) for path in _template_config_paths(project_root)
         ],
         "remote_defaults": findings,
         "action": (
@@ -836,6 +845,481 @@ def _operator_evidence(project_root: Path) -> dict[str, Any]:
         "host_rejection": _operator_host_rejection_evidence(project_root),
         "approval_binding": _operator_approval_binding_evidence(),
         "static_ui": _operator_static_ui_evidence(project_root),
+    }
+
+
+def _skills_evidence(project_root: Path, docs_report: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "bundled_validation": _bundled_skill_validation_evidence(project_root),
+        "registry_commands": _skill_registry_command_evidence(project_root),
+        "workflow_demo": _skills_workflow_demo_evidence(project_root),
+        "docs": _skills_docs_evidence(project_root, docs_report),
+    }
+
+
+def _bundled_skill_validation_evidence(project_root: Path) -> dict[str, Any]:
+    try:
+        from agent_harness.skills import list_skills, validate_skill
+
+        records = [
+            record for record in list_skills(project_root) if record.source_type == "bundled"
+        ]
+        skill_ids = sorted(record.skill_id for record in records)
+        missing = sorted(set(REQUIRED_BUNDLED_SKILLS) - set(skill_ids))
+        reports = {
+            skill_id: validate_skill(skill_id, project_root).model_dump(mode="json")
+            for skill_id in REQUIRED_BUNDLED_SKILLS
+            if skill_id in skill_ids
+        }
+    except Exception as exc:
+        return {
+            "command": "agent-harness skill validate <bundled-skill>",
+            "status": "failed",
+            "skill_ids": [],
+            "missing_skills": list(REQUIRED_BUNDLED_SKILLS),
+            "detail": _safe_error(exc),
+            "action": "Keep all required bundled V8 skills valid and packaged.",
+        }
+    failed = sorted(
+        skill_id for skill_id, report in reports.items() if report.get("status") != "passed"
+    )
+    return {
+        "command": "agent-harness skill validate <bundled-skill>",
+        "status": "passed" if not missing and not failed else "failed",
+        "skill_ids": skill_ids,
+        "required_skill_ids": list(REQUIRED_BUNDLED_SKILLS),
+        "missing_skills": missing,
+        "failed_skills": failed,
+        "reports": reports,
+        "action": "Validate all required bundled skills before release.",
+    }
+
+
+def _skill_registry_command_evidence(project_root: Path) -> dict[str, Any]:
+    try:
+        from agent_harness.skills import list_skills, load_skill_detail, validate_skill
+
+        records = list_skills(project_root)
+        listed_ids = sorted(record.skill_id for record in records)
+        shown = load_skill_detail("prd-plan-tdd-workflow", project_root)
+        validation = validate_skill("prd-plan-tdd-workflow", project_root)
+    except Exception as exc:
+        return {
+            "command": ("agent-harness skill list/show/validate prd-plan-tdd-workflow"),
+            "status": "failed",
+            "detail": _safe_error(exc),
+            "action": "Keep skill list, show, and validate behavior working.",
+        }
+    missing = sorted(set(REQUIRED_BUNDLED_SKILLS) - set(listed_ids))
+    status = (
+        "passed"
+        if not missing
+        and shown.skill_id == "prd-plan-tdd-workflow"
+        and shown.validation_status == "passed"
+        and validation.status == "passed"
+        else "failed"
+    )
+    return {
+        "command": "agent-harness skill list/show/validate prd-plan-tdd-workflow",
+        "status": status,
+        "listed_skill_ids": listed_ids,
+        "missing_skill_ids": missing,
+        "shown_skill_id": shown.skill_id,
+        "show_validation_status": shown.validation_status,
+        "validate_status": validation.status,
+        "action": "Verify skill list, show, and validate behavior before release.",
+    }
+
+
+def _skills_workflow_demo_evidence(project_root: Path) -> dict[str, Any]:
+    demo_root = project_root / "examples" / "skills_workflow"
+    files = _skills_workflow_files_evidence(demo_root)
+    task = _skills_workflow_task_evidence(demo_root)
+    expected = _skills_workflow_expected_artifacts_evidence(demo_root)
+    resolution = _skills_workflow_resolution_evidence(project_root, demo_root)
+    dry_run, summary_payload = _skills_workflow_dry_run_evidence(project_root, demo_root)
+    context_manifest = _skills_workflow_context_manifest_evidence(
+        project_root,
+        summary_payload,
+    )
+    skill_manifest = _skills_workflow_skill_manifest_evidence(
+        project_root,
+        summary_payload,
+    )
+    inspect = _skills_workflow_inspect_evidence(project_root, summary_payload)
+    subgates = {
+        "files": files,
+        "task": task,
+        "expected_artifacts": expected,
+        "resolution": resolution,
+        "dry_run": dry_run,
+        "context_manifest": context_manifest,
+        "skill_manifest": skill_manifest,
+        "inspect": inspect,
+    }
+    return {
+        "path": "examples/skills_workflow",
+        "status": (
+            "passed"
+            if all(gate["status"] == "passed" for gate in subgates.values())
+            else "missing_evidence"
+        ),
+        **subgates,
+        "action": (
+            "Add the skills workflow demo README, task, feature brief, and expected "
+            "context/skill manifest artifacts, then verify resolution, dry-run, "
+            "context provenance, skill manifests, and inspect output."
+        ),
+    }
+
+
+def _skills_workflow_files_evidence(demo_root: Path) -> dict[str, Any]:
+    missing_files = [
+        relative
+        for relative in SKILLS_WORKFLOW_REQUIRED_FILES
+        if not (demo_root / relative).exists()
+    ]
+    return {
+        "status": "passed" if demo_root.exists() and not missing_files else "missing_evidence",
+        "required_files": list(SKILLS_WORKFLOW_REQUIRED_FILES),
+        "missing_files": missing_files,
+        "action": "Add all required skills workflow demo files.",
+    }
+
+
+def _skills_workflow_task_evidence(demo_root: Path) -> dict[str, Any]:
+    from agent_harness.schemas import TaskSpec
+
+    task_path = demo_root / "task.yaml"
+    if not task_path.exists():
+        return {
+            "status": "missing_evidence",
+            "path": "examples/skills_workflow/task.yaml",
+            "action": "Add a task.v2 skills workflow demo task.",
+        }
+    try:
+        task = TaskSpec.model_validate(load_mapping(task_path))
+    except Exception as exc:
+        return {
+            "status": "failed",
+            "path": "examples/skills_workflow/task.yaml",
+            "detail": _safe_error(exc),
+            "action": "Keep the skills workflow demo task schema-valid.",
+        }
+    status = (
+        "passed"
+        if task.schema_version == "task.v2" and "prd-plan-tdd-workflow" in task.skills
+        else "failed"
+    )
+    return {
+        "status": status,
+        "path": "examples/skills_workflow/task.yaml",
+        "task_id": task.task_id,
+        "skills": task.skills,
+        "action": "Reference prd-plan-tdd-workflow from the task.v2 skills field.",
+    }
+
+
+def _skills_workflow_expected_artifacts_evidence(demo_root: Path) -> dict[str, Any]:
+    from agent_harness.schemas import ContextManifest, SkillManifest
+
+    context_path = demo_root / "expected" / "context_manifest.json"
+    skill_path = demo_root / "expected" / "skill_manifest.json"
+    missing = [
+        relative
+        for relative, path in (
+            ("expected/context_manifest.json", context_path),
+            ("expected/skill_manifest.json", skill_path),
+        )
+        if not path.exists()
+    ]
+    if missing:
+        return {
+            "status": "missing_evidence",
+            "missing_files": missing,
+            "action": "Add expected context and skill manifest examples.",
+        }
+    diagnostics: list[str] = []
+    context_payload: dict[str, Any] = {}
+    skill_payload: dict[str, Any] = {}
+    try:
+        context = ContextManifest.model_validate_json(context_path.read_text(encoding="utf-8"))
+        context_payload = context.model_dump(mode="json")
+    except Exception as exc:
+        diagnostics.append(f"context_manifest: {_safe_error(exc)}")
+    try:
+        skill_manifest = SkillManifest.model_validate_json(skill_path.read_text(encoding="utf-8"))
+        skill_payload = skill_manifest.model_dump(mode="json")
+    except Exception as exc:
+        diagnostics.append(f"skill_manifest: {_safe_error(exc)}")
+    context_skill_ids = _skill_ids_from_context_manifest(context_payload)
+    manifest_skill_ids = _skill_ids_from_skill_manifest(skill_payload)
+    if "prd-plan-tdd-workflow" not in context_skill_ids:
+        diagnostics.append("expected context manifest lacks prd-plan-tdd-workflow")
+    if "prd-plan-tdd-workflow" not in manifest_skill_ids:
+        diagnostics.append("expected skill manifest lacks prd-plan-tdd-workflow")
+    return {
+        "status": "passed" if not diagnostics else "failed",
+        "files": [
+            "examples/skills_workflow/expected/context_manifest.json",
+            "examples/skills_workflow/expected/skill_manifest.json",
+        ],
+        "diagnostics": diagnostics,
+        "action": "Keep expected skill workflow artifacts schema-valid and skill-linked.",
+    }
+
+
+def _skills_workflow_resolution_evidence(
+    project_root: Path,
+    demo_root: Path,
+) -> dict[str, Any]:
+    task_path = demo_root / "task.yaml"
+    if not task_path.exists():
+        return {
+            "command": "agent-harness skill resolve --task examples/skills_workflow/task.yaml",
+            "status": "missing_evidence",
+            "action": "Add the skills workflow task before resolving skills.",
+        }
+    try:
+        from agent_harness.skills import resolve_task_skills
+
+        report = resolve_task_skills(task_path, project_root)
+    except Exception as exc:
+        return {
+            "command": "agent-harness skill resolve --task examples/skills_workflow/task.yaml",
+            "status": "failed",
+            "detail": _safe_error(exc),
+            "action": "Keep skill resolution working for the skills workflow task.",
+        }
+    resolved_ids = [
+        record.skill_id for record in report.skills if record.resolution_status == "resolved"
+    ]
+    return {
+        "command": "agent-harness skill resolve --task examples/skills_workflow/task.yaml",
+        "status": (
+            "passed"
+            if report.status == "passed" and "prd-plan-tdd-workflow" in resolved_ids
+            else "failed"
+        ),
+        "resolved_skill_ids": resolved_ids,
+        "diagnostics": report.diagnostics,
+        "action": "Resolve the task-requested prd-plan-tdd-workflow skill.",
+    }
+
+
+def _skills_workflow_dry_run_evidence(
+    project_root: Path,
+    demo_root: Path,
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    task_path = demo_root / "task.yaml"
+    if not task_path.exists():
+        return (
+            {
+                "command": "agent-harness run examples/skills_workflow/task.yaml --dry-run",
+                "status": "missing_evidence",
+                "action": "Add the skills workflow task before running the demo.",
+            },
+            None,
+        )
+    try:
+        from agent_harness.core.runtime import HarnessRuntime
+
+        summary = HarnessRuntime(project_root).run_task(task_path, dry_run=True)
+        payload = summary.model_dump(mode="json")
+    except Exception as exc:
+        return (
+            {
+                "command": "agent-harness run examples/skills_workflow/task.yaml --dry-run",
+                "status": "failed",
+                "detail": _safe_error(exc),
+                "action": "Keep the skills workflow dry run executable.",
+            },
+            None,
+        )
+    artifacts = payload.get("artifacts", {})
+    skill_manifest = artifacts.get("skill_manifest") if isinstance(artifacts, dict) else None
+    context_manifest = artifacts.get("context_manifest") if isinstance(artifacts, dict) else None
+    return (
+        {
+            "command": "agent-harness run examples/skills_workflow/task.yaml --dry-run",
+            "status": (
+                "passed"
+                if summary.status == "dry_run"
+                and isinstance(skill_manifest, str)
+                and isinstance(context_manifest, str)
+                else "failed"
+            ),
+            "run_id": summary.run_id,
+            "run_status": summary.status,
+            "skill_manifest": skill_manifest,
+            "context_manifest": context_manifest,
+            "action": "Run the skills workflow demo and record manifest artifacts.",
+        },
+        payload,
+    )
+
+
+def _skills_workflow_context_manifest_evidence(
+    project_root: Path,
+    summary: dict[str, Any] | None,
+) -> dict[str, Any]:
+    payload = _load_summary_artifact(project_root, summary, "context_manifest")
+    if payload is None:
+        return {
+            "status": "missing_evidence",
+            "action": "The skills workflow dry run must emit context_manifest.json.",
+        }
+    skill_ids = _skill_ids_from_context_manifest(payload)
+    return {
+        "status": "passed" if "prd-plan-tdd-workflow" in skill_ids else "failed",
+        "skill_ids": sorted(skill_ids),
+        "action": "Context manifest must include prd-plan-tdd-workflow skill provenance.",
+    }
+
+
+def _skills_workflow_skill_manifest_evidence(
+    project_root: Path,
+    summary: dict[str, Any] | None,
+) -> dict[str, Any]:
+    payload = _load_summary_artifact(project_root, summary, "skill_manifest")
+    if payload is None:
+        return {
+            "status": "missing_evidence",
+            "action": "The skills workflow dry run must emit skill_manifest.json.",
+        }
+    skill_ids = _skill_ids_from_skill_manifest(payload)
+    included_ids = {
+        str(record.get("skill_id"))
+        for record in payload.get("skills", [])
+        if isinstance(record, dict) and record.get("inclusion_status") == "included"
+    }
+    return {
+        "status": (
+            "passed"
+            if "prd-plan-tdd-workflow" in skill_ids and "prd-plan-tdd-workflow" in included_ids
+            else "failed"
+        ),
+        "skill_ids": sorted(skill_ids),
+        "included_skill_ids": sorted(included_ids),
+        "action": "Skill manifest must record included prd-plan-tdd-workflow usage.",
+    }
+
+
+def _skills_workflow_inspect_evidence(
+    project_root: Path,
+    summary: dict[str, Any] | None,
+) -> dict[str, Any]:
+    run_id = summary.get("run_id") if isinstance(summary, dict) else None
+    if not isinstance(run_id, str):
+        return {
+            "command": "agent-harness inspect run <run-id>",
+            "status": "missing_evidence",
+            "action": "Run the skills workflow demo before inspecting it.",
+        }
+    result = _run_command(
+        [sys.executable, "-m", "agent_harness", "inspect", "run", run_id],
+        cwd=project_root,
+        timeout_seconds=120,
+    )
+    if result["status"] != "passed":
+        return {
+            **result,
+            "status": "failed",
+            "action": "Inspect output must include skill manifest evidence.",
+        }
+    try:
+        payload = json.loads(str(result["stdout"]))
+    except json.JSONDecodeError as exc:
+        return {
+            **result,
+            "status": "failed",
+            "detail": _safe_error(exc),
+            "action": "Inspect output must be valid JSON with skill manifest evidence.",
+        }
+    skill_manifest = payload.get("skill_manifest")
+    skill_ids = (
+        _skill_ids_from_skill_manifest(skill_manifest)
+        if isinstance(skill_manifest, dict)
+        else set()
+    )
+    return {
+        "command": result["command"],
+        "status": "passed" if "prd-plan-tdd-workflow" in skill_ids else "failed",
+        "run_id": run_id,
+        "skill_ids": sorted(skill_ids),
+        "action": "Inspect output must include skill_manifest for the demo run.",
+    }
+
+
+def _skills_docs_evidence(
+    project_root: Path,
+    docs_report: dict[str, Any],
+) -> dict[str, Any]:
+    path = project_root / "docs" / "skills-system.md"
+    markers = (
+        "skill_manifest.v1",
+        "Remote skill catalogs",
+        "future",
+    )
+    if not path.exists():
+        return {
+            "status": "missing_evidence",
+            "path": "docs/skills-system.md",
+            "missing_markers": list(markers),
+            "docs_check_status": docs_report.get("status"),
+            "action": "Document the V8 local skills scope and deferred features.",
+        }
+    text = path.read_text(encoding="utf-8")
+    missing = [marker for marker in markers if marker not in text]
+    return {
+        "status": (
+            "passed"
+            if not missing and docs_report.get("status") == "passed"
+            else "missing_evidence"
+        ),
+        "path": "docs/skills-system.md",
+        "missing_markers": missing,
+        "docs_check_status": docs_report.get("status"),
+        "action": (
+            "Keep skills docs present and docs-check-clean, with deferred "
+            "distribution/governance features out of implemented scope."
+        ),
+    }
+
+
+def _load_summary_artifact(
+    project_root: Path,
+    summary: dict[str, Any] | None,
+    artifact_name: str,
+) -> dict[str, Any] | None:
+    artifacts = summary.get("artifacts") if isinstance(summary, dict) else None
+    if not isinstance(artifacts, dict):
+        return None
+    relative = artifacts.get(artifact_name)
+    if not isinstance(relative, str):
+        return None
+    try:
+        payload = json.loads((project_root / relative).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _skill_ids_from_context_manifest(payload: dict[str, Any]) -> set[str]:
+    return {
+        str(item.get("skill_id"))
+        for item in payload.get("items", [])
+        if isinstance(item, dict)
+        and item.get("source_kind") == "skill"
+        and item.get("policy_allowed") is True
+    }
+
+
+def _skill_ids_from_skill_manifest(payload: dict[str, Any]) -> set[str]:
+    return {
+        str(record.get("skill_id"))
+        for record in payload.get("skills", [])
+        if isinstance(record, dict)
     }
 
 
@@ -1458,6 +1942,7 @@ def _diagnostics(
     templates: dict[str, Any],
     retrieval: dict[str, Any],
     operator: dict[str, Any],
+    skills: dict[str, Any],
     release_artifacts: dict[str, Any],
     changelog_present: bool,
     tag_exists: bool,
@@ -1471,6 +1956,7 @@ def _diagnostics(
     _collect_status_diagnostics(diagnostics, "templates", templates)
     _collect_status_diagnostics(diagnostics, "retrieval", retrieval)
     _collect_status_diagnostics(diagnostics, "operator", operator)
+    _collect_status_diagnostics(diagnostics, "skills", skills)
     _collect_status_diagnostics(diagnostics, "release_artifacts", release_artifacts)
     if not changelog_present:
         diagnostics.append(

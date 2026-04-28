@@ -11,7 +11,7 @@ retrieval scorecards, approval-bound template application, separate
 `git_commit` approval, packaged benchmark adapters, validated bundled and
 configured local skill discovery, task-requested skill resolution,
 template-recommended skill evidence, policy-gated skill context evidence,
-skill manifest run evidence,
+skill manifest run evidence, a skills workflow demo, V8 skill release gates,
 provider audit demos, release-readiness reports, audit logs, evals, an
 optional LangGraph boundary proof, and reproducible artifacts.
 
@@ -106,11 +106,12 @@ task-requested skill resolution, template-recommended skill evidence, and
 context-manifest provenance for accepted or rejected task-requested guidance.
 Runs that use skills now emit `skill_manifest.v1` evidence and expose it
 through run summaries, artifact indexes, inspect output, operator run detail,
-and eval expected-skill assertions. Skills are guidance for how work should be
-performed; they are not tools, templates, policy, approvals, provider profiles,
-or executable code.
-
-The remaining V8 target is local-first release-readiness and demo evidence.
+and eval expected-skill assertions. The V8 golden path is implemented under
+`examples/skills_workflow/`, and release readiness verifies required bundled
+skill validation, registry behavior, task resolution, context provenance,
+`skill_manifest.v1`, inspect output, skills docs, and demo evidence. Skills are
+guidance for how work should be performed; they are not tools, templates,
+policy, approvals, provider profiles, or executable code.
 
 Remote skill catalogs, skill marketplace behavior, skill signing, hosted skill
 services, enterprise skill registries, organization-wide skill governance,

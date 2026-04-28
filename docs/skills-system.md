@@ -15,9 +15,10 @@ added explicit configured local skill discovery through `config.v2`
 template-recommended skill evidence. Phase 5 adds policy-gated skill guidance
 inside run context manifests. Phase 6 adds `skill_manifest.v1` run artifacts,
 summary and artifact-index links, inspect output, operator run-detail evidence,
-and eval assertions for expected skill usage. Release-readiness evidence is a
-later V8 slice and should not be described as current behavior until its tests
-and implementation land.
+and eval assertions for expected skill usage. Phase 7 adds the
+`examples/skills_workflow/` demo and release-readiness gates for bundled skill
+validation, registry commands, resolution, dry-run manifest evidence, inspect
+output, skills docs, and deferred-scope docs checks.
 
 ## Current Capabilities
 
@@ -91,6 +92,10 @@ The current implementation provides:
   and authority-expanding skill content or metadata
 - a docs-check guard that rejects implemented-scope claims for unsupported skill
   distribution and governance features
+- `examples/skills_workflow/` as the V8 skill-guided golden path
+- release readiness gates for required bundled skill validation, skill
+  list/show/validate behavior, task resolution, context manifest skill
+  provenance, `skill_manifest.v1`, inspect output, skills docs, and demo files
 
 ## V8 Local Skill Boundary
 
