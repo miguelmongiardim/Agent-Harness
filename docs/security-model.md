@@ -63,6 +63,7 @@ artifact status reporting. It also implements approval listing and approve/deny
 API decisions through the existing approval service, preserving binding,
 checkpoint, drift, policy re-check, approval artifact, and event behavior. It
 serves a packaged static UI from local package assets with no external CDN,
-remote font, analytics, or external API calls. It must not claim hosted
-operation, enterprise authentication, production web service readiness, or
-compliance readiness.
+remote font, analytics, or external API calls; its approval controls call the
+same local decision API and surface API errors without bypassing approval
+binding. It must not claim hosted operation, enterprise authentication,
+production web service readiness, or compliance readiness.

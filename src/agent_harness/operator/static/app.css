@@ -24,7 +24,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -77,12 +78,20 @@ h2 {
   color: var(--muted);
 }
 
-.token-form input {
+.token-form input,
+.approval-review input,
+.approval-review textarea {
   min-width: 18rem;
   min-height: 2.25rem;
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 0 0.5rem;
+}
+
+.approval-review textarea {
+  min-height: 4.5rem;
+  padding: 0.5rem;
+  resize: vertical;
 }
 
 .token-form button,
@@ -174,7 +183,87 @@ h2 {
   padding: 1rem;
   font-family: "Cascadia Mono", "Segoe UI Mono", monospace;
   font-size: 0.84rem;
+}
+
+.detail-output pre {
+  margin: 0;
   white-space: pre-wrap;
+}
+
+.approval-view {
+  display: grid;
+  gap: 1rem;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.approval-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  color: #cbd5e1;
+}
+
+.approval-review {
+  display: grid;
+  grid-template-columns: minmax(12rem, 18rem) minmax(16rem, 1fr);
+  gap: 0.75rem;
+}
+
+.approval-review label {
+  display: grid;
+  gap: 0.3rem;
+  color: #cbd5e1;
+}
+
+.approval-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.approval-item {
+  display: grid;
+  gap: 0.6rem;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background: #17212b;
+  padding: 0.75rem;
+}
+
+.approval-item-header,
+.approval-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.approval-status {
+  border-radius: 999px;
+  background: #334155;
+  color: #f8fafc;
+  padding: 0.15rem 0.5rem;
+}
+
+.approval-actions button:first-child {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.approval-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  color: #cbd5e1;
+}
+
+.approval-note {
+  color: #cbd5e1;
+}
+
+.approval-raw {
+  border-top: 1px solid #334155;
+  padding-top: 0.6rem;
 }
 
 @media (max-width: 760px) {
@@ -184,12 +273,18 @@ h2 {
     flex-direction: column;
   }
 
-  .token-form input {
+  .token-form input,
+  .approval-review input,
+  .approval-review textarea {
     min-width: 0;
     width: 100%;
   }
 
   .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .approval-review {
     grid-template-columns: 1fr;
   }
 }

@@ -203,9 +203,11 @@ run list/detail APIs, context manifest inspection, policy inspection, and safe
 artifact-status reporting for denied, missing, and malformed run evidence. It
 also adds token-gated approval listing plus approve/deny decisions routed
 through the existing approval service, plus a packaged static UI served from the
-local operator app with no external assets. The target remains a loopback-only
-inspection and approval UI over existing artifacts, not hosted API/UI operation,
-enterprise authentication, MCP, or multi-agent orchestration.
+local operator app with no external assets. The UI approval panel uses the same
+local decision API for approve/deny actions and keeps CLI inspect aligned with
+the approval artifacts. The target remains a loopback-only inspection and
+approval UI over existing artifacts, not hosted API/UI operation, enterprise
+authentication, MCP, or multi-agent orchestration.
 
 ## Documentation
 

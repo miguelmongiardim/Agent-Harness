@@ -2,7 +2,7 @@
 
 > Source PRD: [docs/prd-agent-harness-v6.md](../docs/prd-agent-harness-v6.md)
 
-Phases 0, 1, 2, 3, 4, 5, and 6 have been implemented. Remaining acceptance boxes
+Phases 0, 1, 2, 3, 4, 5, 6, and 7 have been implemented. Remaining acceptance boxes
 should be checked only after behavior is backed by tests, docs, or release
 evidence.
 
@@ -410,16 +410,16 @@ state.
 
 ### Acceptance criteria
 
-- [ ] UI displays pending approvals.
-- [ ] UI displays decided approvals.
-- [ ] UI approve control calls the decision API with `decision: approve`.
-- [ ] UI deny control calls the decision API with `decision: deny`.
-- [ ] UI can send optional actor and reason.
-- [ ] UI shows already-decided conflict responses.
-- [ ] UI shows failed binding/drift errors.
-- [ ] UI refreshes approval state after a decision.
-- [ ] CLI inspect sees the same approval state after UI decision.
-- [ ] Decision remains auditable in existing artifacts and events.
+- [x] UI displays pending approvals.
+- [x] UI displays decided approvals.
+- [x] UI approve control calls the decision API with `decision: approve`.
+- [x] UI deny control calls the decision API with `decision: deny`.
+- [x] UI can send optional actor and reason.
+- [x] UI shows already-decided conflict responses.
+- [x] UI shows failed binding/drift errors.
+- [x] UI refreshes approval state after a decision.
+- [x] CLI inspect sees the same approval state after UI decision.
+- [x] Decision remains auditable in existing artifacts and events.
 
 ### Out of scope
 

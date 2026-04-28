@@ -51,7 +51,7 @@ def test_operator_root_serves_packaged_local_only_ui_shell(tmp_path: Path) -> No
     assert _remote_markers(script.text) == []
 
 
-def test_operator_ui_script_uses_only_local_read_api_routes(tmp_path: Path) -> None:
+def test_operator_ui_script_uses_only_local_api_routes(tmp_path: Path) -> None:
     seed_project(tmp_path)
     app = create_operator_app(
         project_root=tmp_path,
@@ -65,9 +65,35 @@ def test_operator_ui_script_uses_only_local_read_api_routes(tmp_path: Path) -> N
     assert "/context" in script
     assert "/approvals" in script
     assert "/api/v1/policy/" in script
-    assert "fetch(path, {headers:" in script
-    assert "method:" not in script
-    assert "POST" not in script
+    assert "fetch(path, " in script
+    assert _remote_markers(script) == []
+
+
+def test_operator_ui_approval_panel_posts_decisions_to_existing_local_api(
+    tmp_path: Path,
+) -> None:
+    seed_project(tmp_path)
+    app = create_operator_app(
+        project_root=tmp_path,
+        token="operator-secret",
+        profile="default",
+    )
+
+    script = TestClient(app).get("/operator/static/app.js").text
+
+    assert "/approvals/${encodeURIComponent(actionId)}/decision" in script
+    assert 'method: "POST"' in script
+    assert '"Content-Type": "application/json"' in script
+    assert 'decision: "approve"' in script
+    assert 'decision: "deny"' in script
+    assert "Pending" in script
+    assert "Approved" in script
+    assert "Denied" in script
+    assert "Already decided as" in script
+    assert "approval-actor" in script
+    assert "approval-reason" in script
+    assert "refreshSelectedRun" in script
+    assert "setStatus(elements.detailStatus, error.message, true)" in script
     assert _remote_markers(script) == []
 
 

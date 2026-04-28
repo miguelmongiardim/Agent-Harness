@@ -12,7 +12,7 @@ current until tests and release evidence exist.
 
 ## Implemented in V6
 
-Phases 1 through 6 have added the safe `agent-harness serve` shell and the
+Phases 1 through 7 have added the safe `agent-harness serve` shell and the
 first local operator run-inspection APIs:
 
 - the `operator` optional dependency extra is declared
@@ -61,6 +61,12 @@ first local operator run-inspection APIs:
 - the UI can list runs, open run detail, and show timeline, context, artifacts,
   provider evidence, security/policy evidence, eval/scorecard evidence, and
   approvals
+- the UI approval panel displays pending and decided approvals, accepts optional
+  actor and reason text, and posts approve/deny decisions to the existing V6
+  approval decision API
+- UI approval errors are shown from the API response, including already-decided,
+  binding, and drift failures, while the approval artifact remains the source of
+  truth
 
 The operator surface is not a new runtime. The CLI and existing runtime remain
 responsible for task execution, provider setup, template application, patch
@@ -68,9 +74,9 @@ planning, and git commit planning.
 
 ## Roadmap / Not implemented yet
 
-These remain unimplemented after Phase 6:
+These remain unimplemented after Phase 7:
 
-- approve or deny through the UI
+- final release-readiness operator evidence and CI gates
 
 These remain outside the V6 local operator scope:
 
