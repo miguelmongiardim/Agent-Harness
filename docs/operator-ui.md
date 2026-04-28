@@ -2,17 +2,17 @@
 
 ## Status
 
-The local operator surface is the planned V6 track for v1.3.0. It is described
-by [the V6 PRD](prd-agent-harness-v6.md) and
+The local operator surface is the implemented V6 track for the v1.3.0 release
+target. It is described by [the V6 PRD](prd-agent-harness-v6.md) and
 [the V6 plan](../plans/agent-harness-v6.md).
 
-This page records the intended boundary as V6 is implemented. It must be
-updated as each V6 phase lands, and it must not describe later behavior as
-current until tests and release evidence exist.
+This page records the implemented local boundary. It must not describe later
+hosted, enterprise, MCP, or multi-agent behavior as current until tests and
+release evidence exist.
 
 ## Implemented in V6
 
-Phases 1 through 7 have added the safe `agent-harness serve` shell and the
+Phases 1 through 8 have added the safe `agent-harness serve` shell and the
 first local operator run-inspection APIs:
 
 - the `operator` optional dependency extra is declared
@@ -67,6 +67,10 @@ first local operator run-inspection APIs:
 - UI approval errors are shown from the API response, including already-decided,
   binding, and drift failures, while the approval artifact remains the source of
   truth
+- release readiness reports operator evidence for app import, API smoke, token
+  enforcement, host rejection, approval binding, and packaged static UI assets
+- CI installs the operator extra for Python checks and runs focused operator
+  release gates before the release-readiness report
 
 The operator surface is not a new runtime. The CLI and existing runtime remain
 responsible for task execution, provider setup, template application, patch
@@ -74,9 +78,9 @@ planning, and git commit planning.
 
 ## Roadmap / Not implemented yet
 
-These remain unimplemented after Phase 7:
+These remain outside the completed V6 local operator implementation:
 
-- final release-readiness operator evidence and CI gates
+- release tagging and package publishing for v1.3.0
 
 These remain outside the V6 local operator scope:
 
@@ -109,3 +113,33 @@ The planned V6 security model is intentionally local and modest:
 
 V6 must not present the in-memory token as enterprise authentication or the
 local server as a hosted platform.
+
+## Golden Path
+
+From a clean checkout with the operator extra installed:
+
+```powershell
+uv sync --extra operator
+uv run agent-harness demo provider-audit
+uv run agent-harness serve --host 127.0.0.1 --port 8765
+```
+
+The serve command prints a generated in-memory operator token when `--token` is
+omitted. Open the local URL, enter that token in the UI, inspect the
+provider-audit run, and use the approvals panel only for existing pending
+approvals.
+
+## Release Evidence
+
+`agent-harness release readiness` reports the operator gate under:
+
+- `operator.app_factory`
+- `operator.api_smoke`
+- `operator.token_required`
+- `operator.host_rejection`
+- `operator.approval_binding`
+- `operator.static_ui`
+
+The CI release-evidence job installs `agent-harness[operator]` and runs focused
+operator CLI, API, UI, and release-readiness tests before recording the final
+readiness report.

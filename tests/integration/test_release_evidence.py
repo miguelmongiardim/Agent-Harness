@@ -93,6 +93,34 @@ def test_release_readiness_defaults_to_project_version_and_reports_missing_evide
     assert all(entry["action"] for entry in missing)
 
 
+def test_release_readiness_reports_operator_evidence_and_requires_packaged_ui(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    _write_release_project_without_evidence(tmp_path, "1.3.0")
+
+    assert main(["release", "readiness"]) == 0
+    report = json.loads(capsys.readouterr().out)
+
+    assert report["status"] == "pending"
+    operator = report["operator"]
+    assert operator["app_factory"]["status"] == "passed"
+    assert operator["api_smoke"]["status"] == "passed"
+    assert operator["token_required"]["status"] == "passed"
+    assert operator["host_rejection"]["status"] == "passed"
+    assert operator["approval_binding"]["status"] == "passed"
+    assert operator["static_ui"]["status"] == "missing_evidence"
+    assert operator["static_ui"]["missing_package_data"] == [
+        "operator/static/*.html",
+        "operator/static/*.css",
+        "operator/static/*.js",
+    ]
+    assert operator["static_ui"]["remote_markers"] == []
+    assert "operator.static_ui" in {entry["gate"] for entry in report["diagnostics"]}
+
+
 def test_release_readiness_reports_ready_when_required_evidence_is_present(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -130,6 +158,7 @@ def test_release_readiness_reports_ready_when_required_evidence_is_present(
     assert report["package"]["console_script"]["status"] == "passed"
     assert report["demos"]["provider-audit"]["status"] == "passed"
     assert report["templates"]["validation"]["status"] == "passed"
+    assert all(entry["status"] == "passed" for entry in report["operator"].values())
 
 
 def test_release_readiness_requires_v1_release_closure_docs(
@@ -188,6 +217,31 @@ def test_current_release_metadata_and_v1_closure_docs_are_complete() -> None:
     release_docs = Path("docs/release-readiness.md").read_text(encoding="utf-8")
     for marker in ("Release Checklist", "Tag Process", "Artifact Verification"):
         assert marker in release_docs
+
+
+def test_ci_installs_operator_extra_and_runs_operator_release_gates() -> None:
+    workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+    assert "python -m pip install -e .[dev,operator]" in workflow
+    assert "tests/integration/test_operator_cli.py" in workflow
+    assert "tests/integration/test_operator_api.py" in workflow
+    assert "tests/integration/test_operator_ui.py" in workflow
+    assert "tests/integration/test_release_evidence.py" in workflow
+
+
+def test_operator_release_docs_cover_v6_golden_path_and_evidence() -> None:
+    operator_docs = Path("docs/operator-ui.md").read_text(encoding="utf-8")
+    release_docs = Path("docs/release-readiness.md").read_text(encoding="utf-8")
+    combined = f"{operator_docs}\n{release_docs}"
+
+    assert "uv sync --extra operator" in combined
+    assert "uv run agent-harness demo provider-audit" in combined
+    assert "uv run agent-harness serve --host 127.0.0.1 --port 8765" in combined
+    assert "operator.app_factory" in combined
+    assert "operator.static_ui" in combined
+    assert "operator.approval_binding" in combined
+    assert "hosted API" in operator_docs
+    assert "Roadmap / Not implemented yet" in operator_docs
 
 
 def test_release_package_check_builds_installs_and_records_evidence(
@@ -297,6 +351,13 @@ def _write_release_ready_project(root: Path, version: str) -> None:
                 "[project]",
                 'name = "agent-harness"',
                 f'version = "{version}"',
+                "",
+                "[tool.setuptools.package-data]",
+                "agent_harness = [",
+                '  "operator/static/*.html",',
+                '  "operator/static/*.css",',
+                '  "operator/static/*.js",',
+                "]",
                 "",
             ]
         ),

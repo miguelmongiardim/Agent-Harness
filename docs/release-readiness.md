@@ -104,6 +104,8 @@ The report represents:
 - bundled template validation evidence
 - retrieval scorecard evidence
 - retrieval demo and local-first config evidence
+- operator app factory, API smoke, token requirement, loopback host rejection,
+  approval binding, and static UI packaging evidence
 - release artifact presence
 - local check commands
 - remote CI run evidence for the target commit
@@ -131,9 +133,13 @@ Before tagging the current release:
 6. Run `agent-harness run examples/tasks/python_refactor.json --dry-run`.
 7. Run `agent-harness template validate --all`.
 8. Run `agent-harness retrieval scorecard <fixture> --index-id <index-id> --k 5`.
-9. Run `agent-harness eval`.
-10. Run `agent-harness release readiness --version 1.2.0`.
-11. Confirm CI passes for the release commit.
+9. Run `uv sync --extra operator`.
+10. Run `uv run agent-harness demo provider-audit`.
+11. Run `uv run agent-harness serve --host 127.0.0.1 --port 8765` and verify
+    the local UI with the generated token.
+12. Run `agent-harness eval`.
+13. Run `agent-harness release readiness --version 1.2.0`.
+14. Confirm CI passes for the release commit.
 
 ## Tag Process
 
@@ -168,10 +174,12 @@ files under `.agent-harness/release/evidence/`. Reviewers should verify that:
 Automated release publishing, production deployment artifacts, and compliance
 attestation are outside the current release workflow.
 
-For the planned V6 local operator surface, release readiness should add
-operator evidence only after the feature is implemented: operator extra install,
-app factory import, API smoke, token enforcement, loopback host rejection,
-approval binding protection, static UI packaging, and no external UI asset
-references. Hosted API behavior, remote web UI operation, enterprise control
-plane evidence, and compliance attestation remain outside the V6 release
-readiness target.
+For the V6 local operator surface, release readiness now records operator
+evidence under `operator.app_factory`, `operator.api_smoke`,
+`operator.token_required`, `operator.host_rejection`,
+`operator.approval_binding`, and `operator.static_ui`. Those gates verify the
+optional operator import path, local health route, token enforcement,
+loopback-only serve behavior, approval binding protection, packaged static UI
+metadata, and absence of external UI references. Hosted API behavior, remote web
+UI operation, enterprise control plane evidence, and compliance attestation
+remain outside the V6 release readiness target.

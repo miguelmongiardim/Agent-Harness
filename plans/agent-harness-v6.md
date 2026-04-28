@@ -2,9 +2,8 @@
 
 > Source PRD: [docs/prd-agent-harness-v6.md](../docs/prd-agent-harness-v6.md)
 
-Phases 0, 1, 2, 3, 4, 5, 6, and 7 have been implemented. Remaining acceptance boxes
-should be checked only after behavior is backed by tests, docs, or release
-evidence.
+Phases 0, 1, 2, 3, 4, 5, 6, 7, and 8 have been implemented. Release tagging and
+package publishing remain outside this implementation plan.
 
 ## Architectural Decisions
 
@@ -458,7 +457,7 @@ the golden-path documentation. Keep V6 scoped to local operator behavior.
 
 ### Acceptance criteria
 
-- [ ] V6 golden path works:
+- [x] V6 golden path works:
 
       ```powershell
       uv sync --extra operator
@@ -466,29 +465,29 @@ the golden-path documentation. Keep V6 scoped to local operator behavior.
       uv run agent-harness serve --host 127.0.0.1 --port 8765
       ```
 
-- [ ] Reviewer can open the local UI.
-- [ ] Reviewer can inspect run list.
-- [ ] Reviewer can inspect run details.
-- [ ] Reviewer can inspect timeline.
-- [ ] Reviewer can inspect context manifest.
-- [ ] Reviewer can inspect provider evidence.
-- [ ] Reviewer can inspect security and policy findings.
-- [ ] Reviewer can inspect eval and retrieval scorecard evidence.
-- [ ] Reviewer can review pending approvals.
-- [ ] Reviewer can approve or deny through the UI.
-- [ ] Approval decision is reflected in run artifacts.
-- [ ] CLI inspect shows the same approval state.
-- [ ] API is token-protected.
-- [ ] Server rejects non-loopback bind.
-- [ ] UI has no external CDN or remote dependencies.
-- [ ] Release readiness verifies operator evidence.
-- [ ] CI validates packaged static UI.
-- [ ] CI validates token requirements.
-- [ ] CI validates host rejection.
-- [ ] CI validates approval binding cannot be bypassed.
-- [ ] Docs do not claim hosted, enterprise, MCP, multi-agent, cloud,
+- [x] Reviewer can open the local UI.
+- [x] Reviewer can inspect run list.
+- [x] Reviewer can inspect run details.
+- [x] Reviewer can inspect timeline.
+- [x] Reviewer can inspect context manifest.
+- [x] Reviewer can inspect provider evidence.
+- [x] Reviewer can inspect security and policy findings.
+- [x] Reviewer can inspect eval and retrieval scorecard evidence.
+- [x] Reviewer can review pending approvals.
+- [x] Reviewer can approve or deny through the UI.
+- [x] Approval decision is reflected in run artifacts.
+- [x] CLI inspect shows the same approval state.
+- [x] API is token-protected.
+- [x] Server rejects non-loopback bind.
+- [x] UI has no external CDN or remote dependencies.
+- [x] Release readiness verifies operator evidence.
+- [x] CI validates packaged static UI.
+- [x] CI validates token requirements.
+- [x] CI validates host rejection.
+- [x] CI validates approval binding cannot be bypassed.
+- [x] Docs do not claim hosted, enterprise, MCP, multi-agent, cloud,
       production web service, or compliance capabilities.
-- [ ] Docs check passes.
+- [x] Docs check passes.
 
 ### Out of scope
 

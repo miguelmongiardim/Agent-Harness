@@ -56,14 +56,16 @@ Qdrant endpoints, production Qdrant server operation, MCP, API/UI surfaces,
 multi-agent workflows, enterprise retrieval claims, and compliance-ready
 retrieval claims remain future-only and are not V5 behavior.
 
-## v1.3.0 Planned
+## v1.3.0 Status
 
-v1.3.0 is planned as the V6 local operator surface track:
+v1.3.0 is the V6 local operator surface target:
 [docs/prd-agent-harness-v6.md](prd-agent-harness-v6.md) and
-[plans/agent-harness-v6.md](../plans/agent-harness-v6.md). The target is a
-loopback-only API and packaged static UI for inspecting existing run artifacts
-and approving or denying existing pending approvals through the same approval
-service as the CLI.
+[plans/agent-harness-v6.md](../plans/agent-harness-v6.md). The implemented
+track adds a loopback-only API and packaged static UI for inspecting existing
+run artifacts and approving or denying existing pending approvals through the
+same approval service as the CLI. Release readiness records operator evidence
+for app import, API smoke, token enforcement, host rejection, approval binding,
+and static UI packaging.
 
 V6 does not target hosted API behavior, remote web UI operation, multi-user
 authentication, an enterprise control plane, cloud deployment, production web

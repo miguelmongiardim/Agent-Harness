@@ -6,12 +6,14 @@ import subprocess
 import sys
 import tempfile
 import tomllib
+from importlib import resources
 from ipaddress import ip_address
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
 from agent_harness.config import load_mapping
+from agent_harness.defaults import DEFAULT_POLICY
 from agent_harness.docs_check import run_docs_check
 from agent_harness.utils import hash_file, now_utc, write_json
 
@@ -26,6 +28,22 @@ LOCAL_RELEASE_CHECKS = {
 }
 
 RELEASE_EVIDENCE_DIR = Path(".agent-harness") / "release" / "evidence"
+OPERATOR_STATIC_PACKAGE_DATA = [
+    "operator/static/*.html",
+    "operator/static/*.css",
+    "operator/static/*.js",
+]
+OPERATOR_STATIC_ASSETS = ["index.html", "app.css", "app.js"]
+OPERATOR_FORBIDDEN_REMOTE_MARKERS = (
+    "http://",
+    "https://",
+    "//cdn",
+    "googleapis",
+    "gstatic",
+    "analytics",
+    "localStorage",
+    "sessionStorage",
+)
 
 
 def build_release_readiness_report(
@@ -50,6 +68,7 @@ def build_release_readiness_report(
     docs = _docs_evidence(project_root, docs_report)
     templates = _template_evidence(project_root)
     retrieval = _retrieval_evidence(project_root)
+    operator = _operator_evidence(project_root)
     release_artifacts = _release_artifact_evidence(project_root, normalized_version)
     diagnostics = _diagnostics(
         package=package,
@@ -57,6 +76,7 @@ def build_release_readiness_report(
         docs=docs,
         templates=templates,
         retrieval=retrieval,
+        operator=operator,
         release_artifacts=release_artifacts,
         changelog_present=changelog_present,
         tag_exists=tag_exists,
@@ -100,6 +120,7 @@ def build_release_readiness_report(
         "docs": docs,
         "templates": templates,
         "retrieval": retrieval,
+        "operator": operator,
         "release_artifacts": release_artifacts,
         "local_checks": {
             name: {
@@ -387,6 +408,306 @@ def _retrieval_evidence(project_root: Path) -> dict[str, Any]:
         "demo": _retrieval_demo_evidence(project_root),
         "configuration": _retrieval_configuration_evidence(project_root),
     }
+
+
+def _operator_evidence(project_root: Path) -> dict[str, Any]:
+    return {
+        "app_factory": _operator_app_factory_evidence(project_root),
+        "api_smoke": _operator_api_smoke_evidence(project_root),
+        "token_required": _operator_token_required_evidence(project_root),
+        "host_rejection": _operator_host_rejection_evidence(project_root),
+        "approval_binding": _operator_approval_binding_evidence(),
+        "static_ui": _operator_static_ui_evidence(project_root),
+    }
+
+
+def _operator_app_factory_evidence(project_root: Path) -> dict[str, Any]:
+    try:
+        from agent_harness.operator import create_operator_app
+
+        create_operator_app(project_root=project_root, token="readiness-token", profile="default")
+    except Exception as exc:
+        action = "Install agent-harness[operator] and ensure the operator app factory imports."
+        return {
+            "command": "import agent_harness.operator.create_operator_app",
+            "status": "failed",
+            "detail": _safe_error(exc),
+            "action": action,
+        }
+    return {
+        "command": "import agent_harness.operator.create_operator_app",
+        "status": "passed",
+        "action": "Keep the operator app factory importable with operator extras installed.",
+    }
+
+
+def _operator_api_smoke_evidence(project_root: Path) -> dict[str, Any]:
+    try:
+        from fastapi.testclient import TestClient
+
+        from agent_harness.operator import create_operator_app
+
+        response = TestClient(
+            create_operator_app(
+                project_root=project_root,
+                token="readiness-token",
+                profile="default",
+            )
+        ).get("/health")
+        payload = response.json()
+    except Exception as exc:
+        return {
+            "command": "GET /health",
+            "status": "failed",
+            "detail": _safe_error(exc),
+            "action": "Install operator test dependencies and verify GET /health.",
+        }
+    status = (
+        "passed"
+        if response.status_code == 200 and payload.get("schema_version") == "operator_health.v1"
+        else "failed"
+    )
+    return {
+        "command": "GET /health",
+        "status": status,
+        "schema_version": payload.get("schema_version"),
+        "action": "Verify the local operator health route before release.",
+    }
+
+
+def _operator_token_required_evidence(project_root: Path) -> dict[str, Any]:
+    token = "readiness-token"
+    try:
+        from fastapi.testclient import TestClient
+
+        from agent_harness.operator import create_operator_app
+
+        response = TestClient(
+            create_operator_app(project_root=project_root, token=token, profile="default")
+        ).get("/api/v1/runs")
+    except Exception as exc:
+        return {
+            "command": "GET /api/v1/runs without token",
+            "status": "failed",
+            "detail": _safe_error(exc),
+            "action": "Verify /api/v1 routes reject missing operator tokens.",
+        }
+    status = "passed" if response.status_code == 401 and token not in response.text else "failed"
+    return {
+        "command": "GET /api/v1/runs without token",
+        "status": status,
+        "status_code": response.status_code,
+        "action": "Keep all /api/v1 operator routes token-protected.",
+    }
+
+
+def _operator_host_rejection_evidence(project_root: Path) -> dict[str, Any]:
+    token = "readiness-token"
+    command = [
+        sys.executable,
+        "-m",
+        "agent_harness",
+        "serve",
+        "--host",
+        "0.0.0.0",
+        "--token",
+        token,
+    ]
+    try:
+        result = subprocess.run(
+            command,
+            cwd=project_root,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=30,
+        )
+    except Exception as exc:
+        return {
+            "command": "python -m agent_harness serve --host 0.0.0.0",
+            "status": "failed",
+            "detail": _safe_error(exc),
+            "action": "Verify serve rejects non-loopback hosts before startup.",
+        }
+    combined_output = f"{result.stdout}\n{result.stderr}"
+    status = (
+        "passed"
+        if result.returncode != 0 and "loopback" in combined_output and token not in combined_output
+        else "failed"
+    )
+    return {
+        "command": "python -m agent_harness serve --host 0.0.0.0",
+        "status": status,
+        "returncode": result.returncode,
+        "action": "Keep the operator server loopback-only.",
+    }
+
+
+def _operator_approval_binding_evidence() -> dict[str, Any]:
+    try:
+        from fastapi.testclient import TestClient
+
+        from agent_harness.core.runtime import HarnessRuntime
+        from agent_harness.operator import create_operator_app
+    except Exception as exc:
+        return {
+            "command": "operator approval binding smoke",
+            "status": "failed",
+            "detail": _safe_error(exc),
+            "action": "Install operator dependencies and verify approval binding enforcement.",
+        }
+
+    root = Path(tempfile.mkdtemp(prefix="operator-approval-binding-"))
+    _write_operator_smoke_project(root)
+    task_path = _write_operator_smoke_task(root)
+    try:
+        summary = HarnessRuntime(root).run_task(task_path)
+        action_id = summary.approvals[0]
+        run_dir = root / ".agent-harness" / "runs" / summary.run_id
+        action_path = run_dir / "actions" / f"{action_id}.json"
+        action = json.loads(action_path.read_text(encoding="utf-8"))
+        action["call"]["arguments"]["proposed_content"] = "tampered\n"
+        action_path.write_text(json.dumps(action), encoding="utf-8")
+        response = TestClient(
+            create_operator_app(
+                project_root=root,
+                token="readiness-token",
+                profile="default",
+            )
+        ).post(
+            f"/api/v1/runs/{summary.run_id}/approvals/{action_id}/decision",
+            headers={"X-Agent-Harness-Operator-Token": "readiness-token"},
+            json={"decision": "approve", "actor": "release-readiness"},
+        )
+        approval = json.loads(
+            (run_dir / "approvals" / f"{action_id}.json").read_text(encoding="utf-8")
+        )
+    except Exception as exc:
+        return {
+            "command": "operator approval binding smoke",
+            "status": "failed",
+            "detail": _safe_error(exc),
+            "action": "Verify operator approval decisions cannot bypass binding checks.",
+        }
+    status = (
+        "passed"
+        if response.status_code == 422
+        and "approval binding" in response.text
+        and approval.get("status") == "pending"
+        else "failed"
+    )
+    return {
+        "command": "operator approval binding smoke",
+        "status": status,
+        "status_code": response.status_code,
+        "action": "Keep operator approval decisions routed through approval binding checks.",
+    }
+
+
+def _write_operator_smoke_project(root: Path) -> None:
+    (root / "agent-harness.yaml").write_text(
+        "\n".join(
+            [
+                "schema_version: config.v1",
+                "project_name: operator-release-smoke",
+                "artifact_root: .agent-harness",
+                "default_policy: default",
+                "retrieval_backend: lexical",
+                "template_catalog: bundled",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (root / "policies").mkdir()
+    (root / "policies" / "default.json").write_text(
+        json.dumps(DEFAULT_POLICY, indent=2),
+        encoding="utf-8",
+    )
+
+
+def _write_operator_smoke_task(root: Path) -> Path:
+    (root / "fixture.py").write_text(
+        "def add_numbers(a, b):\n    return a + b\n",
+        encoding="utf-8",
+    )
+    task_path = root / "task.json"
+    task_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "task.v1",
+                "task_id": "operator-release-smoke",
+                "title": "Refactor",
+                "intent": "Refactor add_numbers",
+                "target_paths": ["fixture.py"],
+                "allowed_tools": ["read_file", "patch_file"],
+                "max_steps": 4,
+            }
+        ),
+        encoding="utf-8",
+    )
+    return task_path
+
+
+def _operator_static_ui_evidence(project_root: Path) -> dict[str, Any]:
+    missing_package_data = _missing_operator_static_package_data(project_root)
+    missing_assets: list[str] = []
+    remote_markers: list[dict[str, str]] = []
+    try:
+        static_files = resources.files("agent_harness.operator.static")
+        for asset in OPERATOR_STATIC_ASSETS:
+            asset_path = static_files.joinpath(asset)
+            if not asset_path.is_file():
+                missing_assets.append(asset)
+                continue
+            text = asset_path.read_text(encoding="utf-8")
+            for marker in OPERATOR_FORBIDDEN_REMOTE_MARKERS:
+                if marker.lower() in text.lower():
+                    remote_markers.append({"asset": asset, "marker": marker})
+    except Exception as exc:
+        return {
+            "status": "failed",
+            "missing_package_data": missing_package_data,
+            "missing_assets": OPERATOR_STATIC_ASSETS,
+            "remote_markers": [],
+            "detail": _safe_error(exc),
+            "action": "Package local operator UI assets with no external references.",
+        }
+    status = (
+        "passed"
+        if not missing_package_data and not missing_assets and not remote_markers
+        else "missing_evidence"
+    )
+    if remote_markers:
+        status = "failed"
+    return {
+        "status": status,
+        "package_data": OPERATOR_STATIC_PACKAGE_DATA,
+        "missing_package_data": missing_package_data,
+        "missing_assets": missing_assets,
+        "remote_markers": remote_markers,
+        "action": "Package local operator UI assets and keep them free of external references.",
+    }
+
+
+def _missing_operator_static_package_data(project_root: Path) -> list[str]:
+    pyproject = project_root / "pyproject.toml"
+    if not pyproject.exists():
+        return list(OPERATOR_STATIC_PACKAGE_DATA)
+    try:
+        data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+    except tomllib.TOMLDecodeError:
+        return list(OPERATOR_STATIC_PACKAGE_DATA)
+    package_data = (
+        data.get("tool", {}).get("setuptools", {}).get("package-data", {}).get("agent_harness", [])
+    )
+    if not isinstance(package_data, list):
+        return list(OPERATOR_STATIC_PACKAGE_DATA)
+    return [entry for entry in OPERATOR_STATIC_PACKAGE_DATA if entry not in package_data]
+
+
+def _safe_error(exc: Exception) -> str:
+    return f"{type(exc).__name__}: {exc}"
 
 
 def _retrieval_scorecard_evidence(project_root: Path) -> dict[str, Any]:
@@ -718,6 +1039,7 @@ def _diagnostics(
     docs: dict[str, Any],
     templates: dict[str, Any],
     retrieval: dict[str, Any],
+    operator: dict[str, Any],
     release_artifacts: dict[str, Any],
     changelog_present: bool,
     tag_exists: bool,
@@ -730,6 +1052,7 @@ def _diagnostics(
     _collect_status_diagnostics(diagnostics, "docs", docs)
     _collect_status_diagnostics(diagnostics, "templates", templates)
     _collect_status_diagnostics(diagnostics, "retrieval", retrieval)
+    _collect_status_diagnostics(diagnostics, "operator", operator)
     _collect_status_diagnostics(diagnostics, "release_artifacts", release_artifacts)
     if not changelog_present:
         diagnostics.append(
