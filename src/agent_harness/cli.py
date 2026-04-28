@@ -378,23 +378,39 @@ def cmd_template_apply(args: argparse.Namespace) -> int:
         print(json.dumps(evidence, indent=2))
         return 0
 
+    template = load_template(args.name)
+    apply_diagnostics: list[dict[str, object]] = []
+    if template.source_type == "bundled_pack":
+        report = validate_bundled_template_pack(template.template_id)
+        apply_diagnostics = list(report["diagnostics"])
+        if report["status"] != "passed":
+            raise ValueError("template pack validation failed")
     summary = HarnessRuntime(Path.cwd()).apply_template(
         args.name,
         destination,
         profile_name=args.profile,
         force=args.force,
+        parameters=_template_parameters(template, args.param),
+        diagnostics=apply_diagnostics,
     )
     print(summary.model_dump_json(indent=2))
     return 0
 
 
 def _template_parameters(template: TemplateDetail, values: list[str]) -> dict[str, str]:
+    overrides = _parse_template_parameters(values)
+    declared = set(template.parameters)
+    for name in sorted(overrides):
+        if name not in declared:
+            raise ValueError(f"undeclared template parameter: {name}")
     parameters: dict[str, str] = {}
     for name, metadata in template.parameters.items():
         default = metadata.get("default")
         if default is not None:
             parameters[name] = str(default)
-    parameters.update(_parse_template_parameters(values))
+        elif metadata.get("required") is True and name not in overrides:
+            raise ValueError(f"missing required template parameter: {name}")
+    parameters.update(overrides)
     return parameters
 
 

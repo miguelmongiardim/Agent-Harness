@@ -30,6 +30,8 @@ def build_template_application_evidence(
     *,
     parameters: dict[str, str],
     mode: str,
+    status: str = "planned",
+    created_files: list[str] | None = None,
     diagnostics: list[dict[str, object]] | None = None,
 ) -> dict[str, Any]:
     plan = _build_template_application_plan(
@@ -64,7 +66,7 @@ def build_template_application_evidence(
     approval_required = bool(plan.conflicts)
     evidence = {
         "schema_version": "template_application.v1",
-        "status": "planned",
+        "status": status,
         "mode": mode,
         "template_id": spec.template_id,
         "template_version": spec.version,
@@ -79,7 +81,7 @@ def build_template_application_evidence(
         "planned_creates": [
             path for path, operation in operation_types.items() if operation == "create"
         ],
-        "created_files": [],
+        "created_files": created_files or [],
         "skipped_files": plan.skipped_files,
         "conflicts": plan.conflicts,
         "operation_types": operation_types,

@@ -72,6 +72,10 @@ def test_template_show_reads_python_lib_pack_manifest_metadata(
     assert detail["required_capabilities"] == ["python.library"]
     assert detail["eval_or_demo_metadata"]["commands"] == ["python -m pytest"]
     assert {file["path"] for file in detail["files"]} == {
+        "examples/agent-harness.config.json",
+        "examples/default.policy.json",
+        "examples/python-lib.eval.json",
+        "examples/python-lib.task.json",
         "pyproject.toml",
         "src/example_python_lib/__init__.py",
         "src/example_python_lib/core.py",

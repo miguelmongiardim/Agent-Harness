@@ -49,3 +49,19 @@ source = "files/src/example_python_lib/core.py.template"
 [[files]]
 path = "tests/test_core.py"
 source = "files/tests/test_core.py.template"
+
+[[files]]
+path = "examples/agent-harness.config.json"
+source = "files/examples/agent-harness.config.json"
+
+[[files]]
+path = "examples/default.policy.json"
+source = "files/examples/default.policy.json"
+
+[[files]]
+path = "examples/python-lib.task.json"
+source = "files/examples/python-lib.task.json"
+
+[[files]]
+path = "examples/python-lib.eval.json"
+source = "files/examples/python-lib.eval.json"

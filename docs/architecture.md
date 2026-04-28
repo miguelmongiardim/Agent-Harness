@@ -78,8 +78,10 @@ evidence boundary for run artifacts, approvals, checkpoints, and event logs.
 
 Template loading is a schema and catalog boundary. `template.v2` manifests carry
 compatibility, capability, generated-schema, provider, policy, retrieval, and
-demo metadata. Template application remains approval-bound and records applied
-template id and version in workspace metadata.
+demo metadata. Clean template application writes declared files only, persists
+`template_application.v1` evidence, and records the applied template id, version,
+target, and evidence path in workspace metadata. Non-empty targets and
+overwrites remain approval-bound.
 
 The V7 template-pack plan keeps local pack behavior inside
 `agent_harness.templates`: `template.v2.toml` loading, configured local

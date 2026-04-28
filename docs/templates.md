@@ -34,8 +34,14 @@ validation workspace. The command records
 readiness.
 
 Clean empty-destination scaffolding does not require approval. A normal apply
-to a new destination completes immediately and records the template id and
-version in workspace metadata.
+to a new destination completes immediately, writes declared template files only,
+persists `template_application.v1` evidence under
+`.agent-harness/template_applications/`, and records the template id, version,
+target, and evidence path in workspace metadata.
+
+The bundled `python-lib` pack includes generated JSON examples for config,
+policy, task, and eval schemas. Template validation and clean apply exercise
+those examples as local files; no remote catalog or hook execution is involved.
 
 Approval remains required for a non-empty destination, `--force` overwrite
 planning, or higher-risk mutations. Incompatible required capabilities are

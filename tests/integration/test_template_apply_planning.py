@@ -48,6 +48,10 @@ def test_template_apply_dry_run_reports_plan_without_mutation(
         "scaffold/src/example_python_lib/__init__.py",
         "scaffold/src/example_python_lib/core.py",
         "scaffold/tests/test_core.py",
+        "scaffold/examples/agent-harness.config.json",
+        "scaffold/examples/default.policy.json",
+        "scaffold/examples/python-lib.task.json",
+        "scaffold/examples/python-lib.eval.json",
     ]
     assert evidence["skipped_files"] == []
     assert evidence["conflicts"] == []
@@ -58,6 +62,10 @@ def test_template_apply_dry_run_reports_plan_without_mutation(
         "src/example_python_lib/__init__.py",
         "src/example_python_lib/core.py",
         "tests/test_core.py",
+        "examples/agent-harness.config.json",
+        "examples/default.policy.json",
+        "examples/python-lib.task.json",
+        "examples/python-lib.eval.json",
     ]
     assert evidence["plan_hash"]
     assert evidence["approval_required"] is False
@@ -104,6 +112,10 @@ def test_template_apply_preview_diff_reports_relative_diffs_without_mutation(
         "scaffold/src/example_python_lib/__init__.py",
         "scaffold/src/example_python_lib/core.py",
         "scaffold/tests/test_core.py",
+        "scaffold/examples/agent-harness.config.json",
+        "scaffold/examples/default.policy.json",
+        "scaffold/examples/python-lib.task.json",
+        "scaffold/examples/python-lib.eval.json",
     ]
     first_diff = evidence["preview_diffs"][0]["diff"]
     assert "--- a/scaffold/pyproject.toml" in first_diff
@@ -147,6 +159,10 @@ def test_template_apply_dry_run_reports_conflicts_without_artifacts(
         "scaffold/src/example_python_lib/__init__.py",
         "scaffold/src/example_python_lib/core.py",
         "scaffold/tests/test_core.py",
+        "scaffold/examples/agent-harness.config.json",
+        "scaffold/examples/default.policy.json",
+        "scaffold/examples/python-lib.task.json",
+        "scaffold/examples/python-lib.eval.json",
     ]
     assert [conflict["path"] for conflict in evidence["conflicts"]] == [
         "scaffold/pyproject.toml"

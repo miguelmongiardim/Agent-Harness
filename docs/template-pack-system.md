@@ -13,14 +13,15 @@ behavior changes land.
 ## Current Capabilities
 
 The current implementation provides a bundled local template catalog. It can
-list, show, validate, and apply packaged templates through the existing
-`agent-harness template` commands. The stable template IDs are `python-lib`,
-`cli-tool`, and `fastapi-service`, and legacy bundled JSON inputs remain
-readable through the current compatibility path.
+list, show, validate, dry-run, preview, and apply packaged templates through the
+existing `agent-harness template` commands. The stable template IDs are
+`python-lib`, `cli-tool`, and `fastapi-service`, and legacy bundled JSON inputs
+remain readable through the current compatibility path.
 
-Clean empty-destination scaffolding is local. Non-empty targets, overwrites,
-and unsupported template capabilities remain guarded by policy and approval
-planning.
+Clean empty-destination scaffolding is local and records
+`template_application.v1` evidence plus workspace metadata. Non-empty targets,
+overwrites, unsupported template capabilities, invalid packs, target escapes,
+and undeclared parameters remain guarded before writing.
 
 ## V7 Local Pack Boundary
 

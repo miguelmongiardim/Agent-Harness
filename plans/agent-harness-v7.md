@@ -277,20 +277,20 @@ rolled back.
 
 ### Acceptance criteria
 
-- [ ] Clean empty-target apply succeeds without approval.
-- [ ] Apply validates the pack and parameters before writing.
-- [ ] Apply writes only declared files.
-- [ ] All writes stay inside the target.
-- [ ] Symlink escapes and parent symlink traversal are denied.
-- [ ] Generated config, task, policy, and eval examples validate.
-- [ ] `template_application.v1` is persisted under
+- [x] Clean empty-target apply succeeds without approval.
+- [x] Apply validates the pack and parameters before writing.
+- [x] Apply writes only declared files.
+- [x] All writes stay inside the target.
+- [x] Symlink escapes and parent symlink traversal are denied.
+- [x] Generated config, task, policy, and eval examples validate.
+- [x] `template_application.v1` is persisted under
       `.agent-harness/template_applications/`.
-- [ ] Workspace metadata records the template ID, version, target, and evidence.
-- [ ] Evidence includes parameters, planned files, created files, operation
+- [x] Workspace metadata records the template ID, version, target, and evidence.
+- [x] Evidence includes parameters, planned files, created files, operation
       types, rendered hashes, plan hash, diagnostics, policy profile, and
       status.
-- [ ] Failed writes rollback files created by the operation where safe.
-- [ ] Failure evidence does not claim success.
+- [x] Failed writes rollback files created by the operation where safe.
+- [x] Failure evidence does not claim success.
 
 ### Out of scope
 

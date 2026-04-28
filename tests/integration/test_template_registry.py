@@ -110,8 +110,12 @@ def test_template_apply_to_non_empty_destination_is_approval_bound_and_records_v
     assert action["kind"] == "template_apply"
     assert action["template"]["template_id"] == "python-lib"
     assert action["template"]["version"] == "1.0.0"
-    assert len(action["proposed_writes"]) == 4
+    assert len(action["proposed_writes"]) == 8
     assert {entry["path"] for entry in action["proposed_writes"]} == {
+        "scaffold/examples/agent-harness.config.json",
+        "scaffold/examples/default.policy.json",
+        "scaffold/examples/python-lib.eval.json",
+        "scaffold/examples/python-lib.task.json",
         "scaffold/pyproject.toml",
         "scaffold/src/example_python_lib/__init__.py",
         "scaffold/src/example_python_lib/core.py",
@@ -144,6 +148,7 @@ def test_template_apply_to_non_empty_destination_is_approval_bound_and_records_v
             "destination": "scaffold",
             "run_id": "template-apply-run",
             "action_id": action_id,
+            "evidence": "",
             "applied_at": "2026-04-26T14:00:00Z",
         }
     ]

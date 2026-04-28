@@ -1,0 +1,136 @@
+{
+  "allow_network": false,
+  "allowed_test_commands": [
+    [
+      "python",
+      "-m",
+      "pytest"
+    ]
+  ],
+  "allowed_tools": [
+    "read_file",
+    "search_code",
+    "run_tests",
+    "patch_file"
+  ],
+  "approval_required_tools": [
+    "patch_file"
+  ],
+  "approvals": {
+    "required_tools": [
+      "patch_file"
+    ]
+  },
+  "deny_globs": [
+    ".git/**",
+    ".venv/**",
+    "**/.env",
+    "**/*.key",
+    "**/*secret*"
+  ],
+  "description": "Generated local policy example for the python-lib template.",
+  "documented": true,
+  "hard_deny_sensitivities": [
+    "secret",
+    "credential",
+    "pii",
+    "customer"
+  ],
+  "max_context_bytes": 20000,
+  "migration": {
+    "allow_loose_rewrites": false,
+    "preserve_or_tighten": true,
+    "safe_writes": true
+  },
+  "name": "default",
+  "profile_kind": "default",
+  "provider_input": {
+    "hard_deny_sensitivities": [
+      "secret",
+      "credential",
+      "pii",
+      "customer"
+    ],
+    "redact_reclassify": {},
+    "rules": {
+      "confidential": "deny",
+      "credential": "deny",
+      "customer": "deny",
+      "generated": "allow_untrusted",
+      "internal": "approval_required",
+      "pii": "deny",
+      "public": "allow",
+      "restricted": "deny",
+      "secret": "deny",
+      "unknown": "deny"
+    }
+  },
+  "provider_input_policy": {
+    "confidential": "deny",
+    "credential": "deny",
+    "customer": "deny",
+    "generated": "allow_untrusted",
+    "internal": "approval_required",
+    "pii": "deny",
+    "public": "allow",
+    "restricted": "deny",
+    "secret": "deny",
+    "unknown": "deny"
+  },
+  "provider_input_redact_reclassify": {},
+  "provider_trust_policy": {
+    "hosted_provider": "approval_required",
+    "local_endpoint": "approval_required",
+    "local_process": "allow",
+    "mock": "allow",
+    "private_network": "approval_required"
+  },
+  "read_roots": [
+    "."
+  ],
+  "redaction_patterns": [
+    "(?i)(api[_-]?key|token|secret|password)\\s*[:=]\\s*[^\\s]+"
+  ],
+  "scanner": {
+    "external_reports": "advisory",
+    "fail_threshold": "high"
+  },
+  "schema_version": "policy.v2",
+  "security_fail_threshold": "high",
+  "sensitivity_rules": [
+    {
+      "classification": "secret",
+      "pattern": "**/.env"
+    },
+    {
+      "classification": "secret",
+      "pattern": "**/*secret*"
+    },
+    {
+      "classification": "secret",
+      "pattern": "**/*.key"
+    },
+    {
+      "classification": "internal",
+      "pattern": ".git/**"
+    }
+  ],
+  "template_capabilities": {
+    "allowed_capabilities": [
+      "python.library"
+    ],
+    "default_action": "deny"
+  },
+  "trust_zones": {
+    "rules": {
+      "hosted_provider": "approval_required",
+      "local_endpoint": "approval_required",
+      "local_process": "allow",
+      "mock": "allow",
+      "private_network": "approval_required"
+    }
+  },
+  "write_roots": [
+    "."
+  ]
+}

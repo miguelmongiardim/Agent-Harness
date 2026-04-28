@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from agent_harness.config import (
     dump_model,
@@ -53,6 +53,7 @@ from agent_harness.schemas import (
     Sensitivity,
     TaskSpec,
     TemplateApplyRecord,
+    TemplateProposedWrite,
     ToolCall,
     ToolObservation,
     WorkspaceMetadata,
@@ -60,6 +61,7 @@ from agent_harness.schemas import (
 from agent_harness.security import collect_advisory_reports, scan_task_security
 from agent_harness.storage import RunStore, make_event
 from agent_harness.templates import load_template, plan_template_apply
+from agent_harness.templates.apply import build_template_application_evidence
 from agent_harness.tools.executor import ToolExecutor
 from agent_harness.tools.git_commit import (
     bind_committed_hash,
@@ -74,6 +76,7 @@ from agent_harness.utils import (
     sha256_json,
     sha256_text,
     stable_id,
+    write_json,
 )
 
 
@@ -547,12 +550,15 @@ class HarnessRuntime:
         destination: Path,
         profile_name: str | None = None,
         force: bool = False,
+        parameters: dict[str, str] | None = None,
+        diagnostics: list[dict[str, object]] | None = None,
     ) -> RunSummary:
         selected_profile = profile_name or self.config.default_policy
         profile = load_policy(self.project_root, selected_profile)
         policy = PolicyEngine(self.project_root, profile)
         template = load_template(template_name)
         template_apply = plan_template_apply(template, destination, policy, force=force)
+        template_parameters = parameters or _template_parameter_defaults(template.parameters)
 
         task_id = f"template-apply:{template.template_id}"
         run_id = new_run_id(task_id)
@@ -611,6 +617,19 @@ class HarnessRuntime:
         workspace_metadata_relative = (
             Path(self.config.artifact_root) / "workspace.json"
         ).as_posix()
+        template_application_relative = (
+            Path(self.config.artifact_root) / "template_applications" / f"{run_id}.json"
+        ).as_posix()
+        template_application = build_template_application_evidence(
+            template,
+            destination,
+            policy,
+            parameters=template_parameters,
+            mode="apply",
+            status="completed",
+            created_files=[write.path for write in template_apply.proposed_writes],
+            diagnostics=diagnostics or [],
+        )
         artifact_paths = {
             "run_dir": store.run_dir,
             "state": store.db_path,
@@ -692,6 +711,11 @@ class HarnessRuntime:
                 template_apply,
                 action_id,
                 workspace_metadata_path=workspace_metadata_relative,
+                template_application=template_application,
+                template_application_path=template_application_relative,
+            )
+            artifact_paths["template_application"] = (
+                self.project_root / template_application_relative
             )
 
         artifacts = {name: self._project_relative(path) for name, path in artifact_paths.items()}
@@ -1406,6 +1430,15 @@ def _template_apply_effect_payload(template_apply: TemplateApplyRecord) -> dict[
     }
 
 
+def _template_parameter_defaults(parameters: dict[str, dict[str, Any]]) -> dict[str, str]:
+    defaults: dict[str, str] = {}
+    for name, metadata in parameters.items():
+        default = metadata.get("default")
+        if default is not None:
+            defaults[name] = str(default)
+    return defaults
+
+
 def _template_apply_requires_approval(
     project_root: Path,
     destination: Path,
@@ -1467,6 +1500,8 @@ def _apply_template_approval(
     template_apply: TemplateApplyRecord,
     action_id: str,
     workspace_metadata_path: str,
+    template_application: dict[str, Any] | None = None,
+    template_application_path: str | None = None,
 ) -> None:
     for write in template_apply.proposed_writes:
         path = project_root / write.path
@@ -1474,18 +1509,70 @@ def _apply_template_approval(
         if current_hash != write.before_hash:
             raise ValueError(f"template apply target changed before approval: {write.path}")
 
-    for write in template_apply.proposed_writes:
-        path = project_root / write.path
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(write.proposed_content, encoding="utf-8")
+    created_writes: list[tuple[Path, TemplateProposedWrite]] = []
+    current_write: TemplateProposedWrite | None = None
+    try:
+        for write in template_apply.proposed_writes:
+            current_write = write
+            path = project_root / write.path
+            existed = path.exists()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(write.proposed_content, encoding="utf-8")
+            if not existed:
+                created_writes.append((path, write))
+            store.append_event(
+                make_event(
+                    store.run_id,
+                    "template_write_applied",
+                    {
+                        "path": write.path,
+                        "template_id": template_apply.template_id,
+                        "version": template_apply.version,
+                    },
+                )
+            )
+    except Exception as exc:
+        rolled_back_files = _rollback_created_template_files(created_writes)
+        if template_application is not None and template_application_path is not None:
+            failed_application = dict(template_application)
+            failed_application.update(
+                {
+                    "status": "failed",
+                    "created_files": [],
+                    "rolled_back_files": rolled_back_files,
+                    "failure": {
+                        "path": current_write.path if current_write is not None else "",
+                        "error": str(exc),
+                    },
+                }
+            )
+            write_json(project_root / template_application_path, failed_application)
         store.append_event(
             make_event(
                 store.run_id,
-                "template_write_applied",
+                "template_apply_failed",
                 {
-                    "path": write.path,
                     "template_id": template_apply.template_id,
                     "version": template_apply.version,
+                    "path": current_write.path if current_write is not None else "",
+                    "rolled_back_files": rolled_back_files,
+                },
+            )
+        )
+        raise
+
+    if template_application is not None and template_application_path is not None:
+        template_application = dict(template_application)
+        template_application["created_files"] = [write.path for _, write in created_writes]
+        write_json(project_root / template_application_path, template_application)
+        store.append_event(
+            make_event(
+                store.run_id,
+                "template_application_recorded",
+                {
+                    "template_id": template_apply.template_id,
+                    "version": template_apply.version,
+                    "template_application": template_application_path,
                 },
             )
         )
@@ -1507,6 +1594,7 @@ def _apply_template_approval(
                     destination=template_apply.destination,
                     run_id=store.run_id,
                     action_id=action_id,
+                    evidence=template_application_path or "",
                 ),
             ]
         }
@@ -1524,6 +1612,20 @@ def _apply_template_approval(
             },
         )
     )
+
+
+def _rollback_created_template_files(
+    created_writes: list[tuple[Path, TemplateProposedWrite]],
+) -> list[str]:
+    rolled_back: list[str] = []
+    for path, write in reversed(created_writes):
+        if not path.is_file():
+            continue
+        if hash_file(path) != write.after_hash:
+            continue
+        path.unlink()
+        rolled_back.append(write.path)
+    return list(reversed(rolled_back))
 
 
 def _provider_input_approval_record(

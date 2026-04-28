@@ -1032,12 +1032,18 @@ class AppliedTemplateRecord(StrictModel):
     destination: str
     run_id: str
     action_id: str
+    evidence: str = ""
     applied_at: datetime = Field(default_factory=now_utc)
 
     @field_validator("destination")
     @classmethod
     def validate_destination(cls, value: str) -> str:
         return normalize_relative_path(value)
+
+    @field_validator("evidence")
+    @classmethod
+    def validate_evidence(cls, value: str) -> str:
+        return normalize_relative_path(value) if value else value
 
 
 class WorkspaceMetadata(StrictModel):
