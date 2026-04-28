@@ -18,9 +18,10 @@ runtime around explicit ownership boundaries.
   the V7 boundary for local pack source discovery, manifest loading,
   validation, deterministic rendering, planning, application evidence, and
   policy-mediated template writes.
-- The V8 plan reserves `agent_harness.skills` for local skill discovery,
-  frontmatter/body parsing, validation, deterministic hashing, rendering,
-  task-requested resolution, and `skill_manifest.v1` evidence construction.
+- `agent_harness.skills` owns local skill discovery, frontmatter/body parsing,
+  validation, deterministic hashing, and rendering. Later V8 phases extend the
+  same boundary with task-requested resolution and `skill_manifest.v1` evidence
+  construction.
 - `agent_harness.release` owns local release-readiness evidence collection.
 - `agent_harness.model`, `agent_harness.runtimes`, `agent_harness.storage`,
   `agent_harness.telemetry`, `agent_harness.evals`, and
@@ -94,7 +95,7 @@ dry-run and preview planning, clean apply evidence, and
 coordinate approvals and write permissions without absorbing pack parsing or
 rendering rules.
 
-The V8 skills plan keeps reusable workflow guidance inside
+The V8 skills work keeps reusable workflow guidance inside
 `agent_harness.skills`. Skills are Markdown guidance artifacts, not tools,
 templates, policy, approvals, provider profiles, or executable code. Runtime
 should coordinate resolved skills with context assembly, checkpoints, summary

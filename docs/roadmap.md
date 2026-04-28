@@ -8,9 +8,10 @@ configured provider profiles; provider-input policy gates; strict provider
 action envelopes; opt-in OpenAI-compatible live smoke; redacted provider-call
 evidence; local retrieval indexes, hybrid retrieval, qdrant-local evidence,
 retrieval scorecards, approval-bound template application, separate
-`git_commit` approval, packaged benchmark adapters, provider audit demos,
-release-readiness reports, audit logs, evals, an optional LangGraph boundary
-proof, and reproducible artifacts.
+`git_commit` approval, packaged benchmark adapters, validated bundled and
+configured local skill discovery, provider audit demos, release-readiness
+reports, audit logs, evals, an optional LangGraph boundary proof, and
+reproducible artifacts.
 
 ## v1.0.0 Status
 
@@ -96,14 +97,15 @@ inclusion remain future-only and are not V7 behavior.
 v1.5.0 is the V8 Skills System track:
 [docs/skills-system.md](skills-system.md),
 [docs/prd-agent-harness-v8.md](prd-agent-harness-v8.md), and
-[plans/agent-harness-v8.md](../plans/agent-harness-v8.md). The planned track
-adds local, versioned, validated Markdown workflow guidance with deterministic
-provenance. Skills are guidance for how work should be performed; they are not
-tools, templates, policy, approvals, provider profiles, or executable code.
+[plans/agent-harness-v8.md](../plans/agent-harness-v8.md). Implemented slices
+add local, versioned, validated Markdown workflow guidance with deterministic
+provenance for bundled and explicitly configured local skill sources. Skills
+are guidance for how work should be performed; they are not tools, templates,
+policy, approvals, provider profiles, or executable code.
 
-The V8 target is local-first: bundled skills, configured local skill
-directories, task-requested resolution, context-manifest provenance,
-`skill_manifest.v1` evidence, inspect output, and release-readiness gates.
+The remaining V8 target is local-first: task-requested resolution,
+context-manifest provenance, `skill_manifest.v1` evidence, inspect output, and
+release-readiness gates.
 
 Remote skill catalogs, skill marketplace behavior, skill signing, hosted skill
 services, enterprise skill registries, organization-wide skill governance,

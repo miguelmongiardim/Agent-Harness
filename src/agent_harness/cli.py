@@ -47,6 +47,7 @@ from agent_harness.skills import (
     list_skills,
     load_skill_detail,
     render_skill,
+    skill_discovery_diagnostics,
     validate_skill,
     validate_skill_pack_path,
 )
@@ -427,14 +428,16 @@ def cmd_template_apply(args: argparse.Namespace) -> int:
 
 
 def cmd_skill_validate(args: argparse.Namespace) -> int:
-    report = validate_skill(args.skill_id)
+    report = validate_skill(args.skill_id, Path.cwd())
     print(report.model_dump_json(indent=2))
     return 0 if report.status == "passed" else 1
 
 
 def cmd_skill_list(args: argparse.Namespace) -> int:
     del args
-    for skill in list_skills():
+    for diagnostic in skill_discovery_diagnostics(Path.cwd()):
+        print(diagnostic["message"], file=sys.stderr)
+    for skill in list_skills(Path.cwd()):
         print(
             f"{skill.skill_id}\t{skill.version}\t{skill.name}\t{skill.source_type}"
             f"\t{skill.compatibility_status}\t{skill.validation_status}\t{skill.description}"
@@ -443,12 +446,12 @@ def cmd_skill_list(args: argparse.Namespace) -> int:
 
 
 def cmd_skill_show(args: argparse.Namespace) -> int:
-    print(load_skill_detail(args.skill_id).model_dump_json(indent=2))
+    print(load_skill_detail(args.skill_id, Path.cwd()).model_dump_json(indent=2))
     return 0
 
 
 def cmd_skill_render(args: argparse.Namespace) -> int:
-    print(render_skill(args.skill_id), end="")
+    print(render_skill(args.skill_id, Path.cwd()), end="")
     return 0
 
 

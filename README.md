@@ -85,9 +85,10 @@ The V7 bundled template-pack golden path is documented in
 dry-run apply, preview-diff apply, clean apply, and release readiness.
 
 The V8 skills-system scope is documented in
-[`docs/skills-system.md`](docs/skills-system.md). Phase 0 establishes the local
-workflow-guidance boundary and docs-check guard; skill CLI and runtime behavior
-arrive in later V8 slices.
+[`docs/skills-system.md`](docs/skills-system.md). Current slices provide
+bundled and configured local skill discovery, validation, inspection, rendered
+Markdown review, and read-only skill-pack validation. Task-requested skill
+resolution, context inclusion, and run artifacts arrive in later V8 slices.
 
 The optional LangGraph boundary proof is isolated behind the `langgraph` extra:
 

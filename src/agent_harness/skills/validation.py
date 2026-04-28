@@ -8,6 +8,7 @@ from typing import Any, Literal
 from pydantic import ValidationError
 
 from agent_harness import __version__
+from agent_harness.config import load_config
 from agent_harness.schemas import (
     SkillDetail,
     SkillRegistryRecord,
@@ -45,17 +46,66 @@ _METADATA_AUTHORITY_PATTERN = re.compile(
 )
 
 
-def list_skills() -> list[SkillRegistryRecord]:
-    return [_skill_registry_record(skill_id) for skill_id in _iter_bundled_skill_ids()]
+def list_skills(project_root: Path | None = None) -> list[SkillRegistryRecord]:
+    root = project_root or Path.cwd()
+    records = [_bundled_skill_registry_record(skill_id) for skill_id in _iter_bundled_skill_ids()]
+    records.extend(_local_skill_records(root))
+    _ensure_unique_skill_ids(records)
+    return records
 
 
-def load_skill_detail(skill_id: str) -> SkillDetail:
-    text = _read_bundled_skill_text(skill_id)
-    source = f"bundled_skills/{skill_id}/SKILL.md"
+def skill_discovery_diagnostics(project_root: Path | None = None) -> list[dict[str, object]]:
+    root = project_root or Path.cwd()
     diagnostics: list[dict[str, object]] = []
-    metadata, body = _parse_frontmatter(text, diagnostics)
-    spec = SkillSpec.model_validate(metadata or {})
-    report = validate_skill(skill_id)
+    config = load_config(root)
+    for configured_dir in config.skills.local_dirs:
+        local_dir = _resolve_local_skill_dir(root, configured_dir)
+        if not local_dir.is_dir():
+            diagnostics.append(
+                _diagnostic(
+                    "missing_skill_directory",
+                    f"missing skill directory: {configured_dir}",
+                    configured_dir,
+                )
+            )
+    return diagnostics
+
+
+def load_skill_detail(skill_id: str, project_root: Path | None = None) -> SkillDetail:
+    root = project_root or Path.cwd()
+    record = _skill_record(skill_id, root)
+    report = _validate_skill_record(record, root)
+    text = _try_read_skill_record_text(record, root)
+    metadata, body = _parse_frontmatter(text, []) if text is not None else (None, "")
+    try:
+        spec = SkillSpec.model_validate(metadata or {})
+    except ValidationError:
+        return SkillDetail(
+            skill_id=record.skill_id,
+            name=_metadata_string(metadata, "name", record.name),
+            version=_metadata_string(metadata, "version", record.version),
+            description=_metadata_string(metadata, "description", record.description),
+            category=_metadata_string(metadata, "category", ""),
+            compatible_agent_harness_versions=_metadata_string(
+                metadata,
+                "compatible_agent_harness_versions",
+                "",
+            ),
+            required_capabilities=_metadata_list(metadata, "required_capabilities"),
+            allowed_context_classes=_metadata_list(metadata, "allowed_context_classes"),
+            default_policy_profile=_metadata_optional_string(metadata, "default_policy_profile"),
+            related_skills=_metadata_list(metadata, "related_skills"),
+            output_artifacts=_metadata_list(metadata, "output_artifacts"),
+            validation_commands=_metadata_list(metadata, "validation_commands"),
+            examples=_metadata_list(metadata, "examples"),
+            source_type=record.source_type,
+            source=record.source,
+            compatibility_status=report.compatibility_status,
+            validation_status=report.status,
+            skill_hash=report.skill_hash,
+            diagnostics=report.diagnostics,
+            body_summary=_body_summary(body),
+        )
     return SkillDetail(
         skill_id=spec.skill_id,
         name=spec.name,
@@ -70,8 +120,8 @@ def load_skill_detail(skill_id: str) -> SkillDetail:
         output_artifacts=spec.output_artifacts,
         validation_commands=spec.validation_commands,
         examples=spec.examples,
-        source_type="bundled",
-        source=source,
+        source_type=record.source_type,
+        source=record.source,
         compatibility_status=report.compatibility_status,
         validation_status=report.status,
         skill_hash=report.skill_hash,
@@ -80,13 +130,14 @@ def load_skill_detail(skill_id: str) -> SkillDetail:
     )
 
 
-def render_skill(skill_id: str) -> str:
-    detail = load_skill_detail(skill_id)
+def render_skill(skill_id: str, project_root: Path | None = None) -> str:
+    root = project_root or Path.cwd()
+    detail = load_skill_detail(skill_id, root)
     if detail.validation_status != "passed":
         raise ValueError(f"skill validation failed: {skill_id}")
-    text = _read_bundled_skill_text(skill_id)
-    diagnostics: list[dict[str, object]] = []
-    _metadata, body = _parse_frontmatter(text, diagnostics)
+    record = _skill_record(skill_id, root)
+    text = _read_skill_record_text(record, root)
+    _metadata, body = _parse_frontmatter(text, [])
     return "\n".join(
         [
             f"# Skill: {detail.name}",
@@ -139,44 +190,22 @@ def validate_skill_pack_path(path: Path) -> dict[str, object]:
     }
 
 
-def validate_skill(skill_id: str) -> SkillValidationReport:
+def validate_skill(
+    skill_id: str,
+    project_root: Path | None = None,
+) -> SkillValidationReport:
     target = Path(skill_id)
     if target.exists():
         return validate_skill_path(target)
 
-    skill_path = _BUNDLED_SKILLS.joinpath(skill_id).joinpath("SKILL.md")
-    if not skill_path.is_file():
-        raise FileNotFoundError(f"skill not found: {skill_id}")
-    source = f"bundled_skills/{skill_id}/SKILL.md"
-    try:
-        text = skill_path.read_text(encoding="utf-8")
-    except UnicodeDecodeError:
-        return SkillValidationReport(
-            status="failed",
-            skill_id=skill_id,
-            source_type="bundled",
-            source=source,
-            diagnostics=[
-                _diagnostic("non_utf8_skill", "SKILL.md must be UTF-8 text", "SKILL.md")
-            ],
-        )
-    return _validate_skill_text(text, source=source, source_type="bundled")
+    root = project_root or Path.cwd()
+    record = _skill_record(skill_id, root)
+    return _validate_skill_record(record, root)
 
 
 def validate_skill_path(path: Path) -> SkillValidationReport:
     skill_path = path.resolve()
-    try:
-        text = skill_path.read_text(encoding="utf-8")
-    except UnicodeDecodeError:
-        return SkillValidationReport(
-            status="failed",
-            source_type="direct_path",
-            source=str(skill_path),
-            diagnostics=[
-                _diagnostic("non_utf8_skill", "SKILL.md must be UTF-8 text", str(skill_path))
-            ],
-        )
-    return _validate_skill_text(text, source=str(skill_path), source_type="direct_path")
+    return _validate_skill_file(skill_path, source=str(skill_path), source_type="direct_path")
 
 
 def _iter_bundled_skill_ids() -> list[str]:
@@ -187,13 +216,12 @@ def _iter_bundled_skill_ids() -> list[str]:
     return sorted(skill_ids)
 
 
-def _skill_registry_record(skill_id: str) -> SkillRegistryRecord:
+def _bundled_skill_registry_record(skill_id: str) -> SkillRegistryRecord:
     source = f"bundled_skills/{skill_id}/SKILL.md"
     text = _read_bundled_skill_text(skill_id)
-    diagnostics: list[dict[str, object]] = []
-    metadata, _body = _parse_frontmatter(text, diagnostics)
+    metadata, _body = _parse_frontmatter(text, [])
     spec = SkillSpec.model_validate(metadata or {})
-    report = validate_skill(skill_id)
+    report = _validate_skill_text(text, source=source, source_type="bundled")
     return SkillRegistryRecord(
         skill_id=spec.skill_id,
         version=spec.version,
@@ -203,7 +231,131 @@ def _skill_registry_record(skill_id: str) -> SkillRegistryRecord:
         source=source,
         compatibility_status=report.compatibility_status,
         validation_status=report.status,
+        diagnostics=report.diagnostics,
     )
+
+
+def _local_skill_records(project_root: Path) -> list[SkillRegistryRecord]:
+    config = load_config(project_root)
+    records: list[SkillRegistryRecord] = []
+    for configured_dir in config.skills.local_dirs:
+        local_dir = _resolve_local_skill_dir(project_root, configured_dir)
+        if not local_dir.is_dir():
+            continue
+        for skill_path in sorted(local_dir.rglob("SKILL.md")):
+            source = _display_source(project_root, skill_path)
+            report = _validate_skill_file(skill_path, source=source, source_type="local")
+            metadata = _local_skill_metadata(skill_path)
+            records.append(
+                SkillRegistryRecord(
+                    skill_id=_metadata_string(metadata, "skill_id", skill_path.parent.name),
+                    version=_metadata_string(metadata, "version", ""),
+                    name=_metadata_string(metadata, "name", skill_path.parent.name),
+                    description=_metadata_string(metadata, "description", ""),
+                    source_type="local",
+                    source=source,
+                    compatibility_status=report.compatibility_status,
+                    validation_status=report.status,
+                    diagnostics=report.diagnostics,
+                )
+            )
+    return records
+
+
+def _resolve_local_skill_dir(project_root: Path, configured_dir: str) -> Path:
+    if configured_dir.startswith("~"):
+        return Path(configured_dir).expanduser().resolve()
+    return (project_root / configured_dir).resolve()
+
+
+def _display_source(project_root: Path, path: Path) -> str:
+    resolved = path.resolve()
+    try:
+        return resolved.relative_to(project_root.resolve()).as_posix()
+    except ValueError:
+        return str(resolved)
+
+
+def _metadata_string(metadata: dict[str, Any] | None, field: str, fallback: str) -> str:
+    if metadata is None:
+        return fallback
+    value = metadata.get(field)
+    return value if isinstance(value, str) else fallback
+
+
+def _metadata_optional_string(metadata: dict[str, Any] | None, field: str) -> str | None:
+    if metadata is None:
+        return None
+    value = metadata.get(field)
+    return value if isinstance(value, str) else None
+
+
+def _metadata_list(metadata: dict[str, Any] | None, field: str) -> list[str]:
+    if metadata is None:
+        return []
+    value = metadata.get(field)
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, str)]
+
+
+def _ensure_unique_skill_ids(records: list[SkillRegistryRecord]) -> None:
+    seen: set[str] = set()
+    duplicates: set[str] = set()
+    for record in records:
+        if record.skill_id in seen:
+            duplicates.add(record.skill_id)
+        seen.add(record.skill_id)
+    if duplicates:
+        duplicate_list = ", ".join(sorted(duplicates))
+        raise ValueError(f"duplicate skill ids discovered: {duplicate_list}")
+
+
+def _skill_record(skill_id: str, project_root: Path) -> SkillRegistryRecord:
+    for record in list_skills(project_root):
+        if record.skill_id == skill_id:
+            return record
+    raise FileNotFoundError(f"skill not found: {skill_id}")
+
+
+def _validate_skill_record(
+    record: SkillRegistryRecord,
+    project_root: Path,
+) -> SkillValidationReport:
+    if record.source_type == "bundled":
+        return _validate_skill_text(
+            _read_bundled_skill_text(record.skill_id),
+            source=record.source,
+            source_type="bundled",
+        )
+    return _validate_skill_file(
+        _skill_record_path(record, project_root),
+        source=record.source,
+        source_type="local",
+    )
+
+
+def _skill_record_path(record: SkillRegistryRecord, project_root: Path) -> Path:
+    source_path = Path(record.source)
+    if source_path.is_absolute():
+        return source_path
+    return project_root / source_path
+
+
+def _read_skill_record_text(record: SkillRegistryRecord, project_root: Path) -> str:
+    if record.source_type == "bundled":
+        return _read_bundled_skill_text(record.skill_id)
+    return _skill_record_path(record, project_root).read_text(encoding="utf-8")
+
+
+def _try_read_skill_record_text(
+    record: SkillRegistryRecord,
+    project_root: Path,
+) -> str | None:
+    try:
+        return _read_skill_record_text(record, project_root)
+    except UnicodeDecodeError:
+        return None
 
 
 def _read_bundled_skill_text(skill_id: str) -> str:
@@ -211,6 +363,36 @@ def _read_bundled_skill_text(skill_id: str) -> str:
     if not skill_path.is_file():
         raise FileNotFoundError(f"skill not found: {skill_id}")
     return skill_path.read_text(encoding="utf-8")
+
+
+def _validate_skill_file(
+    path: Path,
+    *,
+    source: str,
+    source_type: Literal["local", "direct_path"],
+) -> SkillValidationReport:
+    skill_path = path.resolve()
+    try:
+        text = skill_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return SkillValidationReport(
+            status="failed",
+            source_type=source_type,
+            source=source,
+            diagnostics=[
+                _diagnostic("non_utf8_skill", "SKILL.md must be UTF-8 text", str(skill_path))
+            ],
+        )
+    return _validate_skill_text(text, source=source, source_type=source_type)
+
+
+def _local_skill_metadata(path: Path) -> dict[str, Any] | None:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return None
+    metadata, _body = _parse_frontmatter(text, [])
+    return metadata
 
 
 def _body_summary(body: str) -> str:
@@ -222,7 +404,7 @@ def _validate_skill_text(
     text: str,
     *,
     source: str,
-    source_type: Literal["bundled", "direct_path"],
+    source_type: Literal["bundled", "local", "direct_path"],
 ) -> SkillValidationReport:
     diagnostics: list[dict[str, object]] = []
     metadata, body = _parse_frontmatter(text, diagnostics)

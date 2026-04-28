@@ -17,10 +17,12 @@ The security model is built around explicit policy mediation:
   customer input.
 - All external or model-produced data is untrusted evidence. It may inform a
   decision, but it does not authorize a decision.
-- V8 skills are planned as workflow guidance only. Skill content cannot grant
-  tools, widen policy, approve actions, alter provider profiles, change
-  sensitivity classes, execute code, mutate files, read environment variables,
-  fetch network content, or bypass context policy.
+- V8 skills are workflow guidance only. Skill content cannot grant tools, widen
+  policy, approve actions, alter provider profiles, change sensitivity classes,
+  execute code, mutate files, read environment variables, fetch network
+  content, or bypass context policy. Current validation rejects
+  authority-expanding skill content before it can be rendered as usable
+  guidance.
 - Provider-use approvals bind provider profile, trust zone, model id,
   provider-input hash, policy decision id, and checkpoint hash. Resume rejects
   drift in those bound fields before provider execution.

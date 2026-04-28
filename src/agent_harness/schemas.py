@@ -59,7 +59,7 @@ RuntimeAdapterId = Literal["langgraph"]
 RuntimeExecutionBoundary = Literal["native_runtime_delegate"]
 TemplateSourceType = Literal["bundled_json", "bundled_pack", "local_pack"]
 TemplateCompatibilityStatus = Literal["compatible", "incompatible"]
-SkillSourceType = Literal["bundled", "direct_path"]
+SkillSourceType = Literal["bundled", "local", "direct_path"]
 SkillCompatibilityStatus = Literal["compatible", "incompatible"]
 
 
@@ -274,6 +274,25 @@ class TemplatesConfig(StrictModel):
         return normalized
 
 
+class SkillsConfig(StrictModel):
+    local_dirs: list[str] = Field(default_factory=list)
+
+    @field_validator("local_dirs")
+    @classmethod
+    def validate_local_dirs(cls, values: list[str]) -> list[str]:
+        normalized = [_normalize_local_source_dir(value) for value in values]
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("skills.local_dirs values must be unique")
+        return normalized
+
+
+def _normalize_local_source_dir(value: str) -> str:
+    normalized = value.replace("\\", "/")
+    if normalized.startswith("~/") or normalized == "~":
+        return normalized
+    return normalize_relative_path(normalized)
+
+
 def _is_loopback_qdrant_host(hostname: str) -> bool:
     if hostname == "localhost":
         return True
@@ -292,6 +311,7 @@ class HarnessConfig(StrictModel):
     retrieval: RetrievalConfig | None = None
     template_catalog: str = "bundled"
     templates: TemplatesConfig = Field(default_factory=TemplatesConfig)
+    skills: SkillsConfig = Field(default_factory=SkillsConfig)
     default_provider_profile: str | None = None
     provider_profiles: list[ProviderProfileConfig] = Field(default_factory=list)
 
@@ -310,6 +330,8 @@ class HarnessConfig(StrictModel):
                 unsupported.append("retrieval settings")
             if self.templates.local_dirs:
                 unsupported.append("local template dirs")
+            if self.skills.local_dirs:
+                unsupported.append("local skill dirs")
             if unsupported:
                 raise ValueError(f"config.v1 does not support {', '.join(unsupported)}")
             return self
@@ -986,6 +1008,7 @@ class SkillRegistryRecord(StrictModel):
     source: str
     compatibility_status: SkillCompatibilityStatus = "compatible"
     validation_status: Literal["passed", "failed"]
+    diagnostics: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class SkillDetail(StrictModel):

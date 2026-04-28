@@ -229,15 +229,15 @@ configuration while keeping project-relative directories normalized.
 
 ### Acceptance criteria
 
-- [ ] `config.v2` accepts `skills.local_dirs`.
-- [ ] Existing configs without `skills` remain valid.
-- [ ] Local skills are discovered only from configured directories.
-- [ ] Missing configured directories are reported without crashing list output.
-- [ ] Invalid local skills are visible as invalid records with diagnostics.
-- [ ] Invalid local skills cannot be rendered or resolved as usable.
-- [ ] Duplicate local ids fail clearly.
-- [ ] Local ids cannot shadow bundled ids silently.
-- [ ] Source type and source path are recorded for local skills.
+- [x] `config.v2` accepts `skills.local_dirs`.
+- [x] Existing configs without `skills` remain valid.
+- [x] Local skills are discovered only from configured directories.
+- [x] Missing configured directories are reported without crashing list output.
+- [x] Invalid local skills are visible as invalid records with diagnostics.
+- [x] Invalid local skills cannot be rendered or resolved as usable.
+- [x] Duplicate local ids fail clearly.
+- [x] Local ids cannot shadow bundled ids silently.
+- [x] Source type and source path are recorded for local skills.
 
 ### Out of scope
 

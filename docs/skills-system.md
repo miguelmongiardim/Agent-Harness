@@ -8,11 +8,12 @@ V8 is the `v1.5.0` skills-system track. The durable source documents are the
 
 Phase 0 added documentation scope and docs-check guards. Phase 1 added the
 first validation slice for `agent-harness skill validate write-a-prd` and
-direct `SKILL.md` validation. Phase 2 adds bundled skill discovery, skill
-inspection, rendered Markdown review, and local skill-pack validation. Task
-resolution, context inclusion, run artifacts, and release-readiness evidence are
-later V8 slices and should not be described as current behavior until their
-tests and implementation land.
+direct `SKILL.md` validation. Phase 2 added bundled skill discovery, skill
+inspection, rendered Markdown review, and local skill-pack validation. Phase 3
+adds explicit configured local skill discovery through `config.v2`
+`skills.local_dirs`. Task resolution, context inclusion, run artifacts, and
+release-readiness evidence are later V8 slices and should not be described as
+current behavior until their tests and implementation land.
 
 ## Current Capabilities
 
@@ -20,6 +21,8 @@ The current implementation provides:
 
 - bundled skills for `write-a-prd`, `prd-to-plan`, `tdd`, and
   `prd-plan-tdd-workflow`
+- configured local skill directories through `config.v2` `skills.local_dirs`,
+  including project-relative paths and `~` expansion for user-local paths
 - `agent-harness skill list` with id, version, name, source type,
   compatibility, validation status, and description
 - `agent-harness skill show <skill-id>` with metadata, source, hash,
@@ -31,6 +34,16 @@ The current implementation provides:
   existing path
 - `agent-harness skill pack validate <path>` for read-only validation of every
   `SKILL.md` under a local directory
+- missing configured local skill directories reported to stderr without
+  crashing `skill list`
+- duplicate skill ids rejected clearly, including local-to-local duplicates and
+  local ids that would shadow bundled ids
+- invalid configured local skills listed as failed records with diagnostics
+  available through `skill show`
+- valid configured local skills rendered only after validation succeeds
+- local skill records include `source_type: local` and a recorded source path;
+  paths under the project are project-relative, while user-local paths outside
+  the project are absolute
 - `skill.v1` frontmatter validation for required fields, optional fields,
   version format, skill id format, compatibility expressions, non-empty
   description, and non-empty Markdown body
@@ -42,12 +55,13 @@ The current implementation provides:
 
 ## V8 Local Skill Boundary
 
-The V8 target introduces local Markdown skills as reusable workflow guidance.
+V8 introduces local Markdown skills as reusable workflow guidance.
 A skill is an inspectable `SKILL.md` file with `skill.v1` YAML frontmatter and
 a Markdown body. Skills explain how to perform a workflow; they are not tools,
 templates, policies, approvals, provider profiles, or executable code.
 
-The planned `agent_harness.skills` boundary owns:
+The `agent_harness.skills` boundary owns current registry and validation
+behavior and will own later runtime resolution behavior:
 
 - bundled and configured local skill discovery
 - frontmatter and body parsing
