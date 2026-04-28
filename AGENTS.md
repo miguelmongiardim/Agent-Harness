@@ -73,6 +73,16 @@ uv run agent-harness docs check
 uv run agent-harness template validate --all
 ```
 
+If `uv` is installed but unavailable on the inherited process `PATH`, first try
+the user-local executable relative to this repository root:
+
+```powershell
+& ..\.local\bin\uv.exe run agent-harness docs check
+```
+
+This is a session-environment fallback, not a reason to change project commands
+or install a second copy of `uv`.
+
 Optional live-provider or retrieval-extra paths must remain opt-in and must not
 be required for the default local suite.
 
