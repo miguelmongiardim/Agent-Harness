@@ -2,7 +2,7 @@
 
 > Source PRD: [docs/prd-agent-harness-v6.md](../docs/prd-agent-harness-v6.md)
 
-This plan has not been implemented. Acceptance boxes should be checked only
+Phase 0 has been implemented. Remaining acceptance boxes should be checked only
 after behavior is backed by tests, docs, or release evidence.
 
 ## Architectural Decisions
@@ -60,17 +60,17 @@ guard updates needed to separate local operator behavior from roadmap claims.
 
 ### Acceptance criteria
 
-- [ ] `docs/prd-agent-harness-v6.md` exists and follows the PRD template.
-- [ ] `plans/agent-harness-v6.md` is a vertical-slice implementation plan.
-- [ ] `docs/operator-ui.md` describes local-only operator scope.
-- [ ] README and roadmap distinguish local operator API/UI from hosted or
+- [x] `docs/prd-agent-harness-v6.md` exists and follows the PRD template.
+- [x] `plans/agent-harness-v6.md` is a vertical-slice implementation plan.
+- [x] `docs/operator-ui.md` describes local-only operator scope.
+- [x] README and roadmap distinguish local operator API/UI from hosted or
       enterprise UI.
-- [ ] Docs-check guarded phrases allow implemented local operator wording only
+- [x] Docs-check guarded phrases allow implemented local operator wording only
       where appropriate.
-- [ ] Docs-check guarded phrases keep hosted API, remote web UI, multi-user
+- [x] Docs-check guarded phrases keep hosted API, remote web UI, multi-user
       auth, enterprise control plane, MCP, multi-agent, cloud deployment,
       production web service, and compliance claims roadmap-only.
-- [ ] Docs check passes.
+- [x] Docs check passes.
 
 ### Out of scope
 
@@ -552,4 +552,3 @@ through the UI, verify the approval decision in run artifacts, verify CLI
 inspect shows the same approval state, and confirm release readiness reports
 operator evidence without hosted, enterprise, MCP, multi-agent, cloud,
 production web service, or compliance claims.
-

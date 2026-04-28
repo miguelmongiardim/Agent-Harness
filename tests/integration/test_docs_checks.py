@@ -158,6 +158,47 @@ def test_docs_check_allows_local_retrieval_scope_denials(
     assert report["status"] == "passed"
 
 
+def test_docs_check_rejects_hosted_operator_claims_outside_roadmap(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    docs = tmp_path / "docs"
+    docs.mkdir(exist_ok=True)
+    (docs / "operator.md").write_text(
+        "\n".join(
+            [
+                "# Operator",
+                "",
+                "## Current Capabilities",
+                "",
+                "Agent Harness provides a hosted API.",
+                "",
+                "## Roadmap / Not implemented yet",
+                "",
+                "Hosted API support remains future-only.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["docs", "check"]) == 1
+    report = json.loads(capsys.readouterr().out)
+    operator_claims = [
+        finding
+        for finding in report["findings"]
+        if finding["rule_id"] == "unsupported_operator_scope_claim"
+    ]
+
+    assert operator_claims
+    assert operator_claims[0]["path"] == "docs/operator.md"
+    assert operator_claims[0]["line"] == 5
+    assert "hosted API" in operator_claims[0]["text"]
+
+
 def test_ci_runs_docs_check() -> None:
     workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
     assert "python -m agent_harness docs check" in workflow

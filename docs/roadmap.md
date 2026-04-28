@@ -56,6 +56,21 @@ Qdrant endpoints, production Qdrant server operation, MCP, API/UI surfaces,
 multi-agent workflows, enterprise retrieval claims, and compliance-ready
 retrieval claims remain future-only and are not V5 behavior.
 
+## v1.3.0 Planned
+
+v1.3.0 is planned as the V6 local operator surface track:
+[docs/prd-agent-harness-v6.md](prd-agent-harness-v6.md) and
+[plans/agent-harness-v6.md](../plans/agent-harness-v6.md). The target is a
+loopback-only API and packaged static UI for inspecting existing run artifacts
+and approving or denying existing pending approvals through the same approval
+service as the CLI.
+
+V6 does not target hosted API behavior, remote web UI operation, multi-user
+authentication, an enterprise control plane, cloud deployment, production web
+service operation, compliance readiness, MCP, multi-agent orchestration, run
+creation, config editing, direct patch application, direct git commit creation,
+or direct provider execution.
+
 ## Release Maintenance Priorities
 
 - Preserve the v1.0.0 compatibility and deprecation contract.
@@ -68,8 +83,10 @@ retrieval claims remain future-only and are not V5 behavior.
 
 ## Later Possibilities
 
-- Add a web API.
-- Add an approval and inspection UI.
+- Add hosted operator deployment only after a separate security and identity
+  plan exists.
+- Add multi-user authentication only after the local operator surface is
+  complete and audited.
 - Add external template catalogs and remote template discovery.
 - Expand optional LangGraph coverage beyond the current boundary proof.
 - Add policy-mediated multi-agent support.

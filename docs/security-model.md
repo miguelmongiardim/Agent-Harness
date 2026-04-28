@@ -52,3 +52,9 @@ enterprise DLP, fixture capture tooling, API/UI surfaces, MCP support,
 multi-agent execution, retention profiles, retrieval redesign, Anthropic live
 support, compliance readiness, enterprise claims, and multi-tenant guarantees.
 Those belong in future roadmap work.
+
+V6 is planned as a narrower local operator surface. Its security boundary is
+loopback-only serving, token-protected local API routes, allowlisted run
+artifact access, and approval decisions routed through the existing approval
+service. It must not claim hosted operation, enterprise authentication,
+production web service readiness, or compliance readiness.

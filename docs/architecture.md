@@ -42,6 +42,12 @@ features. For example, `agent_harness.runtimes.mcp_adapter` and the live
 OpenAI-compatible adapter entry point fail clearly with `UnsupportedAdapterError`
 until those phases are implemented.
 
+V6 plans an `agent_harness.operator` boundary for the local operator surface.
+That boundary should sit above storage, policy, approvals, exports, provider
+evidence, and run artifacts. It should expose existing evidence through a local
+API and packaged static UI without becoming a runtime, policy engine, approval
+engine, or arbitrary file server.
+
 ## Dependency Direction
 
 The CLI depends on the runtime, policy, context, tool, storage, template, eval,
@@ -80,5 +86,7 @@ without making LangGraph the primary runtime.
 The v1.0.0 compatibility and deprecation policy is defined in
 [the V3 PRD](prd-agent-harness-v3.md). Until later phases implement and test
 them, enterprise readiness, compliance readiness, MCP support, multi-agent
-orchestration, production Qdrant server mode, external catalogs, and hosted
-web/API platform behavior remain roadmap scope.
+orchestration, production Qdrant server mode, external catalogs, hosted web/API
+platform behavior, and cloud deployment remain roadmap scope. V6 narrows the
+near-term platform direction to loopback-only local operator inspection and
+approval over existing artifacts.

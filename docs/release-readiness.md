@@ -167,3 +167,11 @@ files under `.agent-harness/release/evidence/`. Reviewers should verify that:
 
 Automated release publishing, production deployment artifacts, and compliance
 attestation are outside the current release workflow.
+
+For the planned V6 local operator surface, release readiness should add
+operator evidence only after the feature is implemented: operator extra install,
+app factory import, API smoke, token enforcement, loopback host rejection,
+approval binding protection, static UI packaging, and no external UI asset
+references. Hosted API behavior, remote web UI operation, enterprise control
+plane evidence, and compliance attestation remain outside the V6 release
+readiness target.

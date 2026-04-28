@@ -193,9 +193,17 @@ The retrieval quality demo is runnable under
 remote embeddings, hosted embedding providers, and production Qdrant server
 operation remain roadmap scope, not default behavior.
 
+V6 is planned as a local operator surface:
+[docs/operator-ui.md](docs/operator-ui.md),
+[docs/prd-agent-harness-v6.md](docs/prd-agent-harness-v6.md), and
+[plans/agent-harness-v6.md](plans/agent-harness-v6.md). The target is a
+loopback-only inspection and approval UI over existing artifacts, not hosted
+API/UI operation, enterprise authentication, MCP, or multi-agent orchestration.
+
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [Local operator surface](docs/operator-ui.md)
 - [Research foundations](docs/research-foundations.md)
 - [Security model](docs/security-model.md)
 - [Context packs and retrieval](docs/context-packs.md)
@@ -207,7 +215,9 @@ operation remain roadmap scope, not default behavior.
 - [Conception alignment](docs/conception-alignment.md)
 - [V4 Provider Core PRD](docs/prd-agent-harness-v4.md)
 - [V5 Local-First Retrieval Hardening PRD](docs/prd-agent-harness-v5.md)
+- [V6 Local Operator Surface PRD](docs/prd-agent-harness-v6.md)
 - [V5 implementation plan](plans/agent-harness-v5.md)
+- [V6 implementation plan](plans/agent-harness-v6.md)
 - [Roadmap](docs/roadmap.md)
 
 ## License

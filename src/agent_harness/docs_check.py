@@ -11,6 +11,9 @@ DOC_CAPABILITY_VERB_PATTERN = r"(?:provides|supports|includes|ships|offers)"
 RETRIEVAL_DOC_SUBJECT_PATTERN = (
     r"(?:Agent Harness|This repo|The current implementation|V5|The V5 implementation)"
 )
+OPERATOR_DOC_SUBJECT_PATTERN = (
+    r"(?:Agent Harness|This repo|The current implementation|V6|The V6 implementation)"
+)
 
 
 def _unsupported_doc_pattern(claim: str, *, uses_is: bool = False) -> re.Pattern[str]:
@@ -74,6 +77,80 @@ UNSUPPORTED_RETRIEVAL_SCOPE_CLAIMS = [
         ),
     ),
 ]
+UNSUPPORTED_OPERATOR_SCOPE_CLAIMS = [
+    (
+        "hosted API",
+        re.compile(
+            rf"\b{OPERATOR_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bhosted APIs?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "remote web UI",
+        re.compile(
+            rf"\b{OPERATOR_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bremote web UIs?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "multi-user auth",
+        re.compile(
+            rf"\b{OPERATOR_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bmulti-user auth(?:entication)?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "enterprise control plane",
+        re.compile(
+            rf"\b{OPERATOR_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\benterprise control plane\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "cloud deployment",
+        re.compile(
+            rf"\b{OPERATOR_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bcloud deployment\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "production web service",
+        re.compile(
+            rf"\b{OPERATOR_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bproduction web service\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "compliance readiness",
+        re.compile(
+            rf"\b{OPERATOR_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bcompliance readiness\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "MCP",
+        re.compile(
+            rf"\b{OPERATOR_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bMCP(?:\s+(?:support|workflows|resources|prompts|tool execution|adapter))?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "multi-agent",
+        re.compile(
+            rf"\b{OPERATOR_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bmulti-agent(?:\s+(?:orchestration|workflows|support|execution))?\b",
+            re.IGNORECASE,
+        ),
+    ),
+]
 RETRIEVAL_ROADMAP_HEADINGS = (
     "roadmap",
     "out of scope",
@@ -82,6 +159,7 @@ RETRIEVAL_ROADMAP_HEADINGS = (
     "later possibilities",
     "future",
 )
+OPERATOR_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 
 IMPLEMENTED_SECTION_MARKERS = (
     "## What This Repo Proves",
@@ -136,6 +214,7 @@ def run_docs_check(project_root: Path) -> dict[str, Any]:
         lines = text.splitlines()
         findings.extend(_unsupported_claim_findings(relative, lines))
         findings.extend(_unsupported_retrieval_scope_findings(relative, lines))
+        findings.extend(_unsupported_operator_scope_findings(relative, lines))
         findings.extend(_required_section_findings(relative, text))
         findings.extend(_internal_link_findings(project_root, path, relative, lines))
         findings.extend(_citation_placeholder_findings(relative, lines))
@@ -278,6 +357,44 @@ def _unsupported_retrieval_scope_findings(
 
 
 def _denies_unsupported_retrieval_scope(line: str, label: str) -> bool:
+    phrase = re.escape(label).replace(r"\ ", r"\s+")
+    return bool(
+        re.search(
+            rf"\b(?:without|no|not)\s+{phrase}\b"
+            rf"|\bdoes\s+not\s+(?:use|support|provide|include|ship|offer)\s+{phrase}\b",
+            line,
+            re.IGNORECASE,
+        )
+    )
+
+
+def _unsupported_operator_scope_findings(
+    relative: str, lines: list[str]
+) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    in_roadmap_scope = False
+    for line_number, line in enumerate(lines, start=1):
+        heading = re.match(r"^#{1,6}\s+(.+?)\s*$", line)
+        if heading is not None:
+            heading_text = heading.group(1).lower()
+            in_roadmap_scope = any(marker in heading_text for marker in OPERATOR_ROADMAP_HEADINGS)
+        if in_roadmap_scope:
+            continue
+        for label, pattern in UNSUPPORTED_OPERATOR_SCOPE_CLAIMS:
+            if pattern.search(line) and not _denies_unsupported_operator_scope(line, label):
+                findings.append(
+                    _finding(
+                        "unsupported_operator_scope_claim",
+                        relative,
+                        line_number,
+                        f"Docs claim unsupported V6 operator behavior as available: {label}",
+                        line,
+                    )
+                )
+    return findings
+
+
+def _denies_unsupported_operator_scope(line: str, label: str) -> bool:
     phrase = re.escape(label).replace(r"\ ", r"\s+")
     return bool(
         re.search(
