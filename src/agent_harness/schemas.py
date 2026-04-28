@@ -57,6 +57,8 @@ SecuritySeverity = Literal["critical", "high", "medium", "low", "info"]
 SecurityPolicyAction = Literal["block", "report"]
 RuntimeAdapterId = Literal["langgraph"]
 RuntimeExecutionBoundary = Literal["native_runtime_delegate"]
+TemplateSourceType = Literal["bundled_json", "bundled_pack", "local_pack"]
+TemplateCompatibilityStatus = Literal["compatible", "incompatible"]
 
 
 class StrictModel(BaseModel):
@@ -916,9 +918,13 @@ class TemplateFile(StrictModel):
 class TemplateSpec(StrictModel):
     schema_version: Literal["template.v1", "template.v2"]
     name: str
+    version: str = ""
+    title: str = ""
     description: str
     minimum_agent_harness_version: str | None = None
+    maximum_agent_harness_version: str | None = None
     required_capabilities: list[str] = Field(default_factory=list)
+    parameters: dict[str, dict[str, Any]] = Field(default_factory=dict)
     generated_schema_versions: dict[str, str] = Field(default_factory=dict)
     provider_requirements: dict[str, Any] = Field(default_factory=dict)
     policy_requirements: dict[str, Any] = Field(default_factory=dict)
@@ -958,6 +964,8 @@ class TemplateRegistryRecord(StrictModel):
     title: str
     description: str
     bundle_path: str
+    source_type: TemplateSourceType = "bundled_json"
+    compatibility_status: TemplateCompatibilityStatus = "compatible"
     tags: list[str] = Field(default_factory=list)
 
     @field_validator("bundle_path")
@@ -973,10 +981,14 @@ class TemplateDetail(StrictModel):
     title: str
     description: str
     bundle_path: str
+    source_type: TemplateSourceType = "bundled_json"
+    compatibility_status: TemplateCompatibilityStatus = "compatible"
     tags: list[str] = Field(default_factory=list)
     template_schema_version: Literal["template.v1", "template.v2"] = "template.v1"
     minimum_agent_harness_version: str | None = None
+    maximum_agent_harness_version: str | None = None
     required_capabilities: list[str] = Field(default_factory=list)
+    parameters: dict[str, dict[str, Any]] = Field(default_factory=dict)
     generated_schema_versions: dict[str, str] = Field(default_factory=dict)
     provider_requirements: dict[str, Any] = Field(default_factory=dict)
     policy_requirements: dict[str, Any] = Field(default_factory=dict)

@@ -53,6 +53,66 @@ def test_template_catalog_exposes_python_trio_with_v2_metadata(
         assert detail["eval_or_demo_metadata"]
 
 
+def test_template_show_reads_python_lib_pack_manifest_metadata(
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    assert main(["template", "show", "python-lib"]) == 0
+    detail = json.loads(capsys.readouterr().out)
+
+    assert detail["source_type"] == "bundled_pack"
+    assert detail["compatibility_status"] == "compatible"
+    assert detail["bundle_path"] == "bundled_templates/python-lib/template.v2.toml"
+    assert detail["parameters"]["package_name"]["type"] == "path_fragment"
+    assert detail["generated_schema_versions"] == {
+        "config": "config.v2",
+        "policy": "policy.v2",
+        "task": "task.v2",
+        "template": "template.v2",
+    }
+    assert detail["required_capabilities"] == ["python.library"]
+    assert detail["eval_or_demo_metadata"]["commands"] == ["python -m pytest"]
+    assert {file["path"] for file in detail["files"]} == {
+        "pyproject.toml",
+        "src/example_python_lib/__init__.py",
+        "src/example_python_lib/core.py",
+        "tests/test_core.py",
+    }
+
+
+def test_template_list_reports_pack_sources_and_legacy_json_remains_showable(
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    assert main(["template", "list"]) == 0
+    rows = {
+        parts[0]: parts
+        for line in capsys.readouterr().out.splitlines()
+        if (parts := line.split("\t"))
+    }
+
+    assert rows["python-lib"] == [
+        "python-lib",
+        "1.0.0",
+        "Python Library",
+        "bundled_pack",
+        "compatible",
+    ]
+    assert rows["cli-tool"] == [
+        "cli-tool",
+        "1.0.0",
+        "CLI Tool",
+        "bundled_json",
+        "compatible",
+    ]
+
+    assert main(["template", "show", "cli-tool"]) == 0
+    detail = json.loads(capsys.readouterr().out)
+    assert detail["source_type"] == "bundled_json"
+    assert detail["compatibility_status"] == "compatible"
+    assert detail["bundle_path"] == "bundled_templates/cli-tool.json"
+    assert detail["parameters"] == {}
+    assert detail["files"]
+
+
 def test_template_validate_all_applies_bundled_templates_cleanly_and_records_release_evidence(
     tmp_path: Path,
     monkeypatch,  # type: ignore[no-untyped-def]

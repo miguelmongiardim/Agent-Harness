@@ -309,7 +309,10 @@ def cmd_init(args: argparse.Namespace) -> int:
 def cmd_template_list(args: argparse.Namespace) -> int:
     del args
     for template in list_templates():
-        print(f"{template.template_id}\t{template.version}\t{template.title}")
+        print(
+            f"{template.template_id}\t{template.version}\t{template.title}"
+            f"\t{template.source_type}\t{template.compatibility_status}"
+        )
     return 0
 
 

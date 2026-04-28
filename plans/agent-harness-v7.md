@@ -123,14 +123,14 @@ format.
 
 ### Acceptance criteria
 
-- [ ] A packaged `python-lib` pack with `template.v2.toml` is discoverable.
-- [ ] Legacy bundled JSON templates remain listed and showable.
-- [ ] `template list` reports template ID, version, source type, and
+- [x] A packaged `python-lib` pack with `template.v2.toml` is discoverable.
+- [x] Legacy bundled JSON templates remain listed and showable.
+- [x] `template list` reports template ID, version, source type, and
       compatibility.
-- [ ] `template show python-lib` reports source, files, params, schemas,
+- [x] `template show python-lib` reports source, files, params, schemas,
       capabilities, and demo metadata.
-- [ ] Duplicate template IDs fail clearly during discovery.
-- [ ] Existing `python-lib`, `cli-tool`, and `fastapi-service` IDs remain
+- [x] Duplicate template IDs fail clearly during discovery.
+- [x] Existing `python-lib`, `cli-tool`, and `fastapi-service` IDs remain
       stable.
 
 ### Out of scope

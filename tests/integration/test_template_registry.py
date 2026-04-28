@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import json
+import sqlite3
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 from agent_harness.cli import main
@@ -22,8 +25,60 @@ def test_template_list_and_show_use_packaged_registry_metadata(
     assert template["template_id"] == "python-lib"
     assert template["version"] == "1.0.0"
     assert template["title"] == "Python Library"
-    assert template["bundle_path"] == "bundled_templates/python-lib.json"
+    assert template["bundle_path"] == "bundled_templates/python-lib/template.v2.toml"
+    assert template["source_type"] == "bundled_pack"
+    assert template["compatibility_status"] == "compatible"
     assert template["files"]
+
+
+def test_template_list_fails_clearly_on_duplicate_registry_ids(
+    tmp_path: Path,
+    monkeypatch,  # type: ignore[no-untyped-def]
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    registry = tmp_path / "registry.sqlite3"
+    with sqlite3.connect(registry) as conn:
+        conn.execute(
+            """
+            create table template_registry (
+              template_id text,
+              version text,
+              title text,
+              description text,
+              bundle_path text,
+              tags_json text
+            )
+            """
+        )
+        rows = [
+            (
+                "python-lib",
+                "1.0.0",
+                "Python Library",
+                "First record",
+                "bundled_templates/python-lib.json",
+                "[]",
+            ),
+            (
+                "python-lib",
+                "1.0.0",
+                "Python Library Duplicate",
+                "Second record",
+                "bundled_templates/python-lib.json",
+                "[]",
+            ),
+        ]
+        conn.executemany("insert into template_registry values (?, ?, ?, ?, ?, ?)", rows)
+
+    @contextmanager
+    def fake_registry_path() -> Iterator[Path]:
+        yield registry
+
+    monkeypatch.setattr("agent_harness.templates.registry.registry_path", fake_registry_path)
+
+    assert main(["template", "list"]) == 1
+    result = capsys.readouterr()
+    assert "duplicate template ids discovered: python-lib" in result.err
 
 
 def test_template_apply_to_non_empty_destination_is_approval_bound_and_records_version(
