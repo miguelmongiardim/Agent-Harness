@@ -198,6 +198,7 @@ def _load_run_detail(project_root: Path, run_id: str) -> OperatorRunDetailRespon
         security_findings=_read_optional_run_data(store, "security_findings.json"),
         runtime_adapter=_read_optional_run_data(store, "runtime_adapter.json"),
         schema_versions=_read_optional_run_data(store, "schema_versions.json"),
+        skill_manifest=_read_optional_run_data(store, "skill_manifest.json"),
         template_apply=_read_optional_run_data(store, "template_apply.json"),
         git_commit=_read_optional_run_data(store, "git_commit.json"),
         eval_results=_read_optional_run_data(store, "eval_results.json"),

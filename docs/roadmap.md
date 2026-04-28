@@ -11,6 +11,7 @@ retrieval scorecards, approval-bound template application, separate
 `git_commit` approval, packaged benchmark adapters, validated bundled and
 configured local skill discovery, task-requested skill resolution,
 template-recommended skill evidence, policy-gated skill context evidence,
+skill manifest run evidence,
 provider audit demos, release-readiness reports, audit logs, evals, an
 optional LangGraph boundary proof, and reproducible artifacts.
 
@@ -103,11 +104,13 @@ add local, versioned, validated Markdown workflow guidance with deterministic
 provenance for bundled and explicitly configured local skill sources,
 task-requested skill resolution, template-recommended skill evidence, and
 context-manifest provenance for accepted or rejected task-requested guidance.
-Skills are guidance for how work should be performed; they are not tools,
-templates, policy, approvals, provider profiles, or executable code.
+Runs that use skills now emit `skill_manifest.v1` evidence and expose it
+through run summaries, artifact indexes, inspect output, operator run detail,
+and eval expected-skill assertions. Skills are guidance for how work should be
+performed; they are not tools, templates, policy, approvals, provider profiles,
+or executable code.
 
-The remaining V8 target is local-first: `skill_manifest.v1` evidence, inspect
-output, and release-readiness gates.
+The remaining V8 target is local-first release-readiness and demo evidence.
 
 Remote skill catalogs, skill marketplace behavior, skill signing, hosted skill
 services, enterprise skill registries, organization-wide skill governance,

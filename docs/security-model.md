@@ -27,7 +27,9 @@ The security model is built around explicit policy mediation:
   runs, accepted skills enter `context_manifest.json` as policy-mediated
   evidence; rejected skill items record rejection reasons and hashes without
   body text. Provider input may include accepted skill guidance as context
-  evidence, not as authority.
+  evidence, not as authority. Runs that pass security gates and use skills
+  also emit `skill_manifest.json` after context assembly; runs blocked before
+  context assembly do not claim skill inclusion.
 - Provider-use approvals bind provider profile, trust zone, model id,
   provider-input hash, policy decision id, and checkpoint hash. Resume rejects
   drift in those bound fields before provider execution.

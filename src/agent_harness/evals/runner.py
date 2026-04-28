@@ -51,45 +51,42 @@ ADVANCED_EVAL_RUNNERS = [
 def run_builtin_evals(project_root: Path) -> list[EvalResult]:
     results: list[EvalResult] = []
     for spec in BUILTIN_EVALS:
-        task_path = project_root / spec.task_path
-        if not task_path.exists():
-            results.append(
-                EvalResult(
-                    eval_id=spec.eval_id,
-                    title=spec.title,
-                    passed=False,
-                    message="task missing",
-                )
-            )
-            continue
-        try:
-            summary = HarnessRuntime(project_root).run_task(task_path, dry_run=True)
-            invariants = _base_invariants(spec, summary)
-            invariants.extend(_custom_invariants(project_root, spec, task_path, summary))
-            passed = all(invariant.passed for invariant in invariants)
-            results.append(
-                EvalResult(
-                    eval_id=spec.eval_id,
-                    title=spec.title,
-                    passed=passed,
-                    message=_invariant_summary(invariants),
-                    artifacts=summary.artifacts,
-                    invariants=invariants,
-                )
-            )
-        except Exception as exc:  # pragma: no cover - eval command reports exceptions as data
-            results.append(
-                EvalResult(
-                    eval_id=spec.eval_id,
-                    title=spec.title,
-                    passed=False,
-                    message=str(exc),
-                )
-            )
+        results.append(run_eval_spec(project_root, spec))
     for runner_name in ADVANCED_EVAL_RUNNERS:
         runner = globals()[runner_name]
         results.append(runner(project_root))
     return results
+
+
+def run_eval_spec(project_root: Path, spec: EvalSpec) -> EvalResult:
+    task_path = project_root / spec.task_path
+    if not task_path.exists():
+        return EvalResult(
+            eval_id=spec.eval_id,
+            title=spec.title,
+            passed=False,
+            message="task missing",
+        )
+    try:
+        summary = HarnessRuntime(project_root).run_task(task_path, dry_run=True)
+        invariants = _base_invariants(project_root, spec, summary)
+        invariants.extend(_custom_invariants(project_root, spec, task_path, summary))
+        passed = all(invariant.passed for invariant in invariants)
+        return EvalResult(
+            eval_id=spec.eval_id,
+            title=spec.title,
+            passed=passed,
+            message=_invariant_summary(invariants),
+            artifacts=summary.artifacts,
+            invariants=invariants,
+        )
+    except Exception as exc:  # pragma: no cover - eval command reports exceptions as data
+        return EvalResult(
+            eval_id=spec.eval_id,
+            title=spec.title,
+            passed=False,
+            message=str(exc),
+        )
 
 
 def write_eval_report(project_root: Path, results: list[EvalResult]) -> Path:
@@ -118,9 +115,13 @@ def write_eval_report(project_root: Path, results: list[EvalResult]) -> Path:
     return output
 
 
-def _base_invariants(spec: EvalSpec, summary: RunSummary) -> list[EvalInvariant]:
+def _base_invariants(
+    project_root: Path,
+    spec: EvalSpec,
+    summary: RunSummary,
+) -> list[EvalInvariant]:
     missing = sorted(name for name in spec.required_artifacts if name not in summary.artifacts)
-    return [
+    invariants = [
         EvalInvariant(
             name="expected_status",
             passed=summary.status == spec.expected_status,
@@ -140,6 +141,47 @@ def _base_invariants(spec: EvalSpec, summary: RunSummary) -> list[EvalInvariant]
             ),
         ),
     ]
+    if spec.expected_skills:
+        invariants.append(_expected_skills_invariant(project_root, spec, summary))
+    return invariants
+
+
+def _expected_skills_invariant(
+    project_root: Path,
+    spec: EvalSpec,
+    summary: RunSummary,
+) -> EvalInvariant:
+    expected = set(spec.expected_skills)
+    manifest_reference = summary.artifacts.get("skill_manifest")
+    if manifest_reference is None:
+        return EvalInvariant(
+            name="expected_skills_used",
+            passed=False,
+            message=f"missing skill_manifest for expected skills: {', '.join(sorted(expected))}",
+        )
+    try:
+        manifest = cast(dict[str, Any], load_json(project_root / manifest_reference))
+    except Exception as exc:
+        return EvalInvariant(
+            name="expected_skills_used",
+            passed=False,
+            message=f"skill_manifest could not be read: {exc}",
+        )
+    actual = {
+        str(record.get("skill_id"))
+        for record in manifest.get("skills", [])
+        if isinstance(record, dict) and record.get("inclusion_status") == "included"
+    }
+    missing = sorted(expected - actual)
+    return EvalInvariant(
+        name="expected_skills_used",
+        passed=not missing,
+        message=(
+            "expected skills were included"
+            if not missing
+            else f"expected skills missing from skill_manifest: {', '.join(missing)}"
+        ),
+    )
 
 
 def _custom_invariants(
@@ -282,7 +324,7 @@ def _run_prompt_injection_eval(project_root: Path) -> EvalResult:
         expected_status="dry_run",
         required_artifacts=["context_manifest", "events", "summary"],
     )
-    invariants = _base_invariants(spec, summary)
+    invariants = _base_invariants(sandbox, spec, summary)
     invariants.extend(
         [
             EvalInvariant(

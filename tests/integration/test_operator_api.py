@@ -275,6 +275,7 @@ def test_operator_run_detail_includes_optional_evidence_seen_by_cli_inspect(
         ),
         "runtime_adapter": ("runtime_adapter.json", {"schema_version": "runtime_adapter.v1"}),
         "schema_versions": ("schema_versions.json", {"schema_version": "schema_versions.v1"}),
+        "skill_manifest": ("skill_manifest.json", {"schema_version": "skill_manifest.v1"}),
         "template_apply": ("template_apply.json", {"schema_version": "template_apply.v1"}),
         "git_commit": ("git_commit.json", {"schema_version": "git_commit.v1"}),
     }

@@ -13,9 +13,11 @@ inspection, rendered Markdown review, and local skill-pack validation. Phase 3
 added explicit configured local skill discovery through `config.v2`
 `skills.local_dirs`. Phase 4 adds task-requested skill resolution and
 template-recommended skill evidence. Phase 5 adds policy-gated skill guidance
-inside run context manifests. `skill_manifest.v1`, inspect output changes, and
-release-readiness evidence are later V8 slices and should not be described as
-current behavior until their tests and implementation land.
+inside run context manifests. Phase 6 adds `skill_manifest.v1` run artifacts,
+summary and artifact-index links, inspect output, operator run-detail evidence,
+and eval assertions for expected skill usage. Release-readiness evidence is a
+later V8 slice and should not be described as current behavior until its tests
+and implementation land.
 
 ## Current Capabilities
 
@@ -58,6 +60,19 @@ The current implementation provides:
   without widening task or policy authority
 - provider input treats accepted skill guidance as context evidence linked to a
   context manifest item
+- runs that use task-requested skills emit `skill_manifest.json` with run id,
+  task id, context manifest id, skill id, version, source type, source, hash,
+  requested-by records, resolution time, inclusion status, policy decision id,
+  and context manifest item id
+- run summaries and `artifact-index.json` link `skill_manifest`; the artifact
+  index records its hash
+- `agent-harness inspect run <run-id>` includes `skill_manifest` when present
+- local operator run detail includes `skill_manifest` when present
+- `eval.v1` accepts `expected_skills` so evals can verify included skills from
+  recorded `skill_manifest` evidence
+- runs without selected skills do not emit a skill manifest
+- security-gated runs that stop before context assembly do not claim skill
+  inclusion
 - missing configured local skill directories reported to stderr without
   crashing `skill list`
 - duplicate skill ids rejected clearly, including local-to-local duplicates and
@@ -85,7 +100,7 @@ a Markdown body. Skills explain how to perform a workflow; they are not tools,
 templates, policies, approvals, provider profiles, or executable code.
 
 The `agent_harness.skills` boundary owns current registry, validation, and
-task/template resolution behavior and will own later manifest behavior:
+task/template resolution and skill-manifest behavior:
 
 - bundled and configured local skill discovery
 - frontmatter and body parsing

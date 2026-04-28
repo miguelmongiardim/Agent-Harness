@@ -21,8 +21,8 @@ runtime around explicit ownership boundaries.
 - `agent_harness.skills` owns local skill discovery, frontmatter/body parsing,
   validation, deterministic hashing, rendering, and task/template resolution.
   Runtime context assembly consumes resolved skill guidance as policy-mediated
-  context evidence. Later V8 phases extend the same boundary with
-  `skill_manifest.v1` evidence construction.
+  context evidence, and the same boundary constructs `skill_manifest.v1` run
+  evidence from resolution plus context-manifest decisions.
 - `agent_harness.release` owns local release-readiness evidence collection.
 - `agent_harness.model`, `agent_harness.runtimes`, `agent_harness.storage`,
   `agent_harness.telemetry`, `agent_harness.evals`, and
@@ -105,6 +105,9 @@ assembly and records accepted or rejected skill context items with policy
 decision evidence. Bundled skill guidance is public context; configured local
 skill guidance defaults to internal context. Policy remains the gate for whether
 skill guidance may enter context and must never be loosened by skill content.
+Runs that use skills emit `skill_manifest.json` after context assembly so the
+artifact can reference context manifest ids, included or rejected context item
+ids, and policy decision ids without re-resolving guidance during inspection.
 
 Schema migration stays outside runtime execution. The migration module reports
 original and proposed effective schema versions by default, and `--write` only

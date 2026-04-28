@@ -387,18 +387,18 @@ artifact statuses.
 
 ### Acceptance criteria
 
-- [ ] Runs using skills emit `skill_manifest.json`.
-- [ ] `skill_manifest.v1` records run id and task id.
-- [ ] Each skill record includes id, version, source, hash, requested-by
+- [x] Runs using skills emit `skill_manifest.json`.
+- [x] `skill_manifest.v1` records run id and task id.
+- [x] Each skill record includes id, version, source, hash, requested-by
       evidence, resolution time, inclusion status, policy decision id, and
       context manifest id.
-- [ ] Summary artifacts include `skill_manifest`.
-- [ ] Artifact index includes the skill manifest hash.
-- [ ] `inspect run` includes `skill_manifest` when present.
-- [ ] Runs without skills continue without a skill manifest.
-- [ ] Evals can verify expected skills were used.
-- [ ] Dry-run and non-dry-run paths record equivalent skill provenance.
-- [ ] Security-gated runs that stop before context assembly do not claim skills
+- [x] Summary artifacts include `skill_manifest`.
+- [x] Artifact index includes the skill manifest hash.
+- [x] `inspect run` includes `skill_manifest` when present.
+- [x] Runs without skills continue without a skill manifest.
+- [x] Evals can verify expected skills were used.
+- [x] Dry-run and non-dry-run paths record equivalent skill provenance.
+- [x] Security-gated runs that stop before context assembly do not claim skills
       were included.
 
 ### Out of scope

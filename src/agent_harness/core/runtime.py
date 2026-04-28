@@ -61,7 +61,12 @@ from agent_harness.schemas import (
     WorkspaceMetadata,
 )
 from agent_harness.security import collect_advisory_reports, scan_task_security
-from agent_harness.skills import load_skill_detail, render_skill, resolve_task_skills
+from agent_harness.skills import (
+    build_skill_manifest,
+    load_skill_detail,
+    render_skill,
+    resolve_task_skills,
+)
 from agent_harness.storage import RunStore, make_event
 from agent_harness.templates import load_template, plan_template_apply
 from agent_harness.templates.apply import (
@@ -268,6 +273,28 @@ class HarnessRuntime:
                 {"manifest_id": manifest.manifest_id, "chunks": len(manifest.chunks)},
             )
         )
+        skill_manifest = build_skill_manifest(
+            run_id,
+            task.task_id,
+            skill_resolution,
+            manifest,
+        )
+        skill_manifest_path = (
+            store.write_model("skill_manifest.json", skill_manifest)
+            if skill_manifest is not None
+            else None
+        )
+        if skill_manifest is not None:
+            store.append_event(
+                make_event(
+                    run_id,
+                    "skill_manifest_created",
+                    {
+                        "context_manifest_id": manifest.manifest_id,
+                        "skills": len(skill_manifest.skills),
+                    },
+                )
+            )
 
         checkpoint = Checkpoint(
             checkpoint_id=stable_id("checkpoint", run_id, task.task_id, manifest.manifest_id),
@@ -338,6 +365,8 @@ class HarnessRuntime:
                     artifact_paths["advisory_reports"] = advisory_reports_path
                 if runtime_adapter_path is not None:
                     artifact_paths["runtime_adapter"] = runtime_adapter_path
+                if skill_manifest_path is not None:
+                    artifact_paths["skill_manifest"] = skill_manifest_path
                 return self._finalize_task_run(
                     store,
                     task,
@@ -547,6 +576,8 @@ class HarnessRuntime:
             artifact_paths["advisory_reports"] = advisory_reports_path
         if runtime_adapter_path is not None:
             artifact_paths["runtime_adapter"] = runtime_adapter_path
+        if skill_manifest_path is not None:
+            artifact_paths["skill_manifest"] = skill_manifest_path
         if provider_path is not None:
             artifact_paths["provider"] = provider_path
         if provider_input_path is not None:

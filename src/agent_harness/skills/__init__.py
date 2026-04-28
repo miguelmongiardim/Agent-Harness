@@ -1,3 +1,4 @@
+from agent_harness.skills.manifest import build_skill_manifest
 from agent_harness.skills.resolution import resolve_task_skills
 from agent_harness.skills.validation import (
     list_skills,
@@ -10,6 +11,7 @@ from agent_harness.skills.validation import (
 )
 
 __all__ = [
+    "build_skill_manifest",
     "list_skills",
     "load_skill_detail",
     "render_skill",

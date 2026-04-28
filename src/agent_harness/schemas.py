@@ -103,6 +103,7 @@ class OperatorRunDetailResponse(StrictModel):
     security_findings: dict[str, Any] | None = None
     runtime_adapter: dict[str, Any] | None = None
     schema_versions: dict[str, Any] | None = None
+    skill_manifest: dict[str, Any] | None = None
     template_apply: dict[str, Any] | None = None
     git_commit: dict[str, Any] | None = None
     eval_results: dict[str, Any] | None = None
@@ -1099,6 +1100,32 @@ class SkillResolutionReport(StrictModel):
     authority: dict[str, Any]
 
 
+class SkillManifestRecord(StrictModel):
+    skill_id: str
+    version: str | None = None
+    source_type: SkillSourceType | None = None
+    source: str | None = None
+    skill_hash: str | None = None
+    required: bool
+    requested_by: list[SkillRequestedBy]
+    resolution_time: datetime = Field(default_factory=now_utc)
+    resolution_status: Literal["resolved", "missing", "invalid"]
+    inclusion_status: Literal["included", "rejected", "not_included"]
+    policy_decision_id: str | None = None
+    context_manifest_id: str | None = None
+    context_manifest_item_id: str | None = None
+    diagnostics: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class SkillManifest(StrictModel):
+    schema_version: Literal["skill_manifest.v1"] = "skill_manifest.v1"
+    run_id: str
+    task_id: str
+    context_manifest_id: str | None = None
+    skills: list[SkillManifestRecord] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=now_utc)
+
+
 class TemplateSpec(StrictModel):
     schema_version: Literal["template.v1", "template.v2"]
     name: str
@@ -1365,6 +1392,12 @@ class EvalSpec(StrictModel):
     task_path: str
     expected_status: RunStatus = "dry_run"
     required_artifacts: list[str] = Field(default_factory=list)
+    expected_skills: list[str] = Field(default_factory=list)
+
+    @field_validator("expected_skills")
+    @classmethod
+    def validate_expected_skills(cls, values: list[str]) -> list[str]:
+        return _validate_skill_id_list(values, "expected_skills")
 
 
 class EvalInvariant(StrictModel):

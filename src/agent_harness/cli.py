@@ -704,6 +704,8 @@ def cmd_inspect_run(args: argparse.Namespace) -> int:
         payload["runtime_adapter"] = store.read_data("runtime_adapter.json")
     if (store.run_dir / "schema_versions.json").exists():
         payload["schema_versions"] = store.read_data("schema_versions.json")
+    if (store.run_dir / "skill_manifest.json").exists():
+        payload["skill_manifest"] = store.read_data("skill_manifest.json")
     if (store.run_dir / "template_apply.json").exists():
         payload["template_apply"] = store.read_data("template_apply.json")
     if (store.run_dir / "git_commit.json").exists():

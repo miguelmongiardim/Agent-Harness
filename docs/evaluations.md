@@ -26,6 +26,8 @@ The bundled eval suite focuses on:
   behavior rather than public dataset downloads
 - optional LangGraph boundary compatibility through the same native policy and
   audit evidence path
+- optional `eval.v1` `expected_skills` assertions that verify included skill
+  ids from recorded `skill_manifest.v1` run evidence
 
 Each `agent-harness eval` run writes a JSON and Markdown scorecard under
 `.agent-harness/evals/`. Scorecards record pass/fail status per scenario plus
