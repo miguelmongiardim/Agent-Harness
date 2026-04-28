@@ -42,10 +42,15 @@ from agent_harness.retrieval_indexes import (
     query_index,
 )
 from agent_harness.retrieval_scorecards import run_retrieval_scorecard
-from agent_harness.schemas import TaskSpec
+from agent_harness.schemas import TaskSpec, TemplateDetail
 from agent_harness.storage import RunStore
 from agent_harness.templates import list_templates, load_template
-from agent_harness.templates.validation import validate_template_pack_path, validate_templates
+from agent_harness.templates.apply import build_template_application_evidence
+from agent_harness.templates.validation import (
+    validate_bundled_template_pack,
+    validate_template_pack_path,
+    validate_templates,
+)
 from agent_harness.utils import load_json, write_json
 
 STARTER_DOC = """# Agent Harness Project
@@ -106,9 +111,14 @@ def build_parser() -> argparse.ArgumentParser:
     template_pack_validate.set_defaults(func=cmd_template_pack_validate)
     template_apply = template_sub.add_parser("apply")
     template_apply.add_argument("name")
-    template_apply.add_argument("--destination", default=".")
+    template_apply.add_argument("--target")
+    template_apply.add_argument("--destination")
     template_apply.add_argument("--force", action="store_true")
     template_apply.add_argument("--profile", default="default")
+    template_apply.add_argument("--param", action="append", default=[])
+    template_apply_mode = template_apply.add_mutually_exclusive_group()
+    template_apply_mode.add_argument("--dry-run", action="store_true")
+    template_apply_mode.add_argument("--preview-diff", action="store_true")
     template_apply.set_defaults(func=cmd_template_apply)
 
     ingest = sub.add_parser("ingest")
@@ -345,7 +355,29 @@ def cmd_template_pack_validate(args: argparse.Namespace) -> int:
 
 
 def cmd_template_apply(args: argparse.Namespace) -> int:
-    destination = Path(args.destination).resolve()
+    target = args.target or args.destination or "."
+    destination = Path(target).resolve()
+    if args.dry_run or args.preview_diff:
+        template = load_template(args.name)
+        diagnostics: list[dict[str, object]] = []
+        if template.source_type == "bundled_pack":
+            report = validate_bundled_template_pack(template.template_id)
+            diagnostics = list(report["diagnostics"])
+            if report["status"] != "passed":
+                raise ValueError("template pack validation failed")
+        profile = load_policy(Path.cwd(), args.profile)
+        policy = PolicyEngine(Path.cwd(), profile)
+        evidence = build_template_application_evidence(
+            template,
+            destination,
+            policy,
+            parameters=_template_parameters(template, args.param),
+            mode="preview_diff" if args.preview_diff else "dry_run",
+            diagnostics=diagnostics,
+        )
+        print(json.dumps(evidence, indent=2))
+        return 0
+
     summary = HarnessRuntime(Path.cwd()).apply_template(
         args.name,
         destination,
@@ -354,6 +386,29 @@ def cmd_template_apply(args: argparse.Namespace) -> int:
     )
     print(summary.model_dump_json(indent=2))
     return 0
+
+
+def _template_parameters(template: TemplateDetail, values: list[str]) -> dict[str, str]:
+    parameters: dict[str, str] = {}
+    for name, metadata in template.parameters.items():
+        default = metadata.get("default")
+        if default is not None:
+            parameters[name] = str(default)
+    parameters.update(_parse_template_parameters(values))
+    return parameters
+
+
+def _parse_template_parameters(values: list[str]) -> dict[str, str]:
+    parameters: dict[str, str] = {}
+    for value in values:
+        if "=" not in value:
+            raise ValueError("--param values must use key=value")
+        key, parameter_value = value.split("=", 1)
+        key = key.strip()
+        if not key:
+            raise ValueError("--param values must include a non-empty key")
+        parameters[key] = parameter_value
+    return parameters
 
 
 def cmd_ingest_docs(args: argparse.Namespace) -> int:

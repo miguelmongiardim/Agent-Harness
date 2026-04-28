@@ -226,19 +226,19 @@ secret-like content.
 
 ### Acceptance criteria
 
-- [ ] `--target` works and `--destination` remains an alias.
-- [ ] Repeated `--param key=value` values are accepted by the CLI.
-- [ ] Dry-run reports planned creates, skips, conflicts, schema versions,
+- [x] `--target` works and `--destination` remains an alias.
+- [x] Repeated `--param key=value` values are accepted by the CLI.
+- [x] Dry-run reports planned creates, skips, conflicts, schema versions,
       capabilities, warnings, policy implications, generated files, and plan
       hash.
-- [ ] Preview diff reports safe relative diffs.
-- [ ] Dry-run and preview do not write target files.
-- [ ] Dry-run and preview do not persist run artifacts.
-- [ ] Dry-run and preview do not persist template application evidence.
-- [ ] Dry-run and preview do not mutate workspace metadata.
-- [ ] Traversal and symlink escapes are denied before diff output.
-- [ ] Hidden or unlisted generated files are denied.
-- [ ] Diff output redacts environment-like and secret-like values.
+- [x] Preview diff reports safe relative diffs.
+- [x] Dry-run and preview do not write target files.
+- [x] Dry-run and preview do not persist run artifacts.
+- [x] Dry-run and preview do not persist template application evidence.
+- [x] Dry-run and preview do not mutate workspace metadata.
+- [x] Traversal and symlink escapes are denied before diff output.
+- [x] Hidden or unlisted generated files are denied.
+- [x] Diff output redacts environment-like and secret-like values.
 
 ### Out of scope
 
