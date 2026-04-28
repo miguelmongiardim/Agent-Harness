@@ -6,6 +6,27 @@ All notable changes to this project will be documented in this file.
 
 - No changes yet.
 
+## [1.3.0] - 2026-04-28
+
+V6 Local Operator Surface release.
+
+- Added the optional `agent-harness[operator]` extra with FastAPI/Uvicorn
+  dependencies while keeping the base install CLI-first.
+- Added `agent-harness serve`, a loopback-only local operator server that
+  rejects non-loopback hosts and uses an in-memory operator token by default.
+- Added a token-protected local operator API for run listing, run detail,
+  context manifest inspection, policy summaries, approval listing, and
+  approve/deny decisions routed through the existing approval service.
+- Added packaged offline static operator UI assets with no Node build, CDN,
+  remote fonts, analytics, external API calls, or persisted browser token
+  storage.
+- Preserved V6 mutation boundaries: no run creation, config editing, template
+  application, direct patch/commit/provider execution, MCP, multi-agent
+  orchestration, hosted API claim, enterprise auth claim, or compliance claim.
+- Added release-readiness and CI evidence for operator app import, API smoke,
+  token enforcement, loopback host rejection, approval binding protection, and
+  static UI packaging.
+
 ## [1.2.0] - 2026-04-27
 
 V5 Local-First Retrieval Hardening release.

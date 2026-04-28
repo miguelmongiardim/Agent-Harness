@@ -184,10 +184,10 @@ agent-harness doctor
 Agent Harness does not claim enterprise readiness, general live provider
 operation, production Qdrant server operation, hosted API/UI operation, MCP
 workflows, multi-agent orchestration, external template catalogs, deployment
-hardening, or compliance assurance. The v1.2.0 release establishes local-first retrieval
-hardening on top of Provider Core: local retrieval index lifecycle commands,
-hybrid retrieval, local FastEmbed/Qdrant evidence, retrieval scorecards, and
-policy-filtered context manifests.
+hardening, or compliance assurance. The v1.2.0 release established local-first
+retrieval hardening on top of Provider Core: local retrieval index lifecycle
+commands, hybrid retrieval, local FastEmbed/Qdrant evidence, retrieval
+scorecards, and policy-filtered context manifests.
 
 The retrieval quality demo is runnable under
 [examples/retrieval_quality/](examples/retrieval_quality/). Cloud Qdrant,

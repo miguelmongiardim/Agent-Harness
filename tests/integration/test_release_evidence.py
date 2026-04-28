@@ -201,10 +201,11 @@ def test_release_readiness_requires_v1_release_closure_docs(
 
 def test_current_release_metadata_and_v1_closure_docs_are_complete() -> None:
     pyproject = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
-    assert pyproject["project"]["version"] == "1.2.0"
-    assert __version__ == "1.2.0"
+    assert pyproject["project"]["version"] == "1.3.0"
+    assert __version__ == "1.3.0"
 
     changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+    assert "## [1.3.0]" in changelog
     assert "## [1.2.0]" in changelog
     assert "## [1.1.0]" in changelog
     assert "## [1.0.0]" in changelog

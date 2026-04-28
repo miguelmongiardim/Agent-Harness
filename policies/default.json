@@ -76,6 +76,9 @@
   "max_context_bytes": 20000,
   "security_fail_threshold": "high",
   "sensitivity_rules": [
+    {"pattern": "examples/retrieval_quality/docs/public/**", "classification": "public"},
+    {"pattern": "examples/retrieval_quality/docs/internal/secret-internal.md", "classification": "secret"},
+    {"pattern": "examples/retrieval_quality/docs/internal/**", "classification": "internal"},
     {"pattern": "**/.env", "classification": "secret"},
     {"pattern": "**/*secret*", "classification": "secret"},
     {"pattern": "**/*.key", "classification": "secret"},

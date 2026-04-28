@@ -9,7 +9,7 @@ The command defaults to `[project].version` from `pyproject.toml`. Release
 managers can still bind the report to an explicit version and CI run:
 
 ```powershell
-agent-harness release readiness --version 1.2.0 --ci-run-id <run-id>
+agent-harness release readiness --version 1.3.0 --ci-run-id <run-id>
 ```
 
 When GitHub CLI is authenticated, the command attempts to discover the latest
@@ -76,10 +76,11 @@ remains the secondary dry-run demo.
 Retrieval scorecard evidence is generated with:
 
 ```powershell
-agent-harness retrieval scorecard <fixture> --index-id <index-id> --k 5
+agent-harness retrieval index build --index-id demo-retrieval --paths examples/retrieval_quality/docs --mode hybrid --dense-backend deterministic --overwrite
+agent-harness retrieval scorecard examples/retrieval_quality/scorecard.yaml --index-id demo-retrieval --k 5
 ```
 
-The command records a passing `retrieval_scorecard.v1` artifact under
+These commands record a passing `retrieval_scorecard.v1` artifact under
 `.agent-harness/retrieval-scorecards/`. Release readiness reports this as the
 retrieval scorecard gate and leaves the report pending when no passing
 scorecard exists.
@@ -132,13 +133,13 @@ Before tagging the current release:
 5. Run `agent-harness demo provider-audit`.
 6. Run `agent-harness run examples/tasks/python_refactor.json --dry-run`.
 7. Run `agent-harness template validate --all`.
-8. Run `agent-harness retrieval scorecard <fixture> --index-id <index-id> --k 5`.
+8. Run the local retrieval index build and scorecard commands above.
 9. Run `uv sync --extra operator`.
 10. Run `uv run agent-harness demo provider-audit`.
 11. Run `uv run agent-harness serve --host 127.0.0.1 --port 8765` and verify
     the local UI with the generated token.
 12. Run `agent-harness eval`.
-13. Run `agent-harness release readiness --version 1.2.0`.
+13. Run `agent-harness release readiness --version 1.3.0`.
 14. Confirm CI passes for the release commit.
 
 ## Tag Process
@@ -147,9 +148,9 @@ Create the release tag only after the release commit is pushed and required CI
 has passed for that exact commit:
 
 ```powershell
-git tag -a v1.2.0 -m "v1.2.0"
-git push origin v1.2.0
-agent-harness release readiness --version 1.2.0 --ci-run-id <run-id>
+git tag -a v1.3.0 -m "v1.3.0"
+git push origin v1.3.0
+agent-harness release readiness --version 1.3.0 --ci-run-id <run-id>
 ```
 
 The readiness report binds the tag target commit to the recorded GitHub Actions
@@ -162,12 +163,12 @@ different commit.
 hashes in `.agent-harness/release/package-check.json` and supporting evidence
 files under `.agent-harness/release/evidence/`. Reviewers should verify that:
 
-- `dist/agent_harness-1.2.0-*.whl` exists.
-- `dist/agent_harness-1.2.0.tar.gz` exists.
+- `dist/agent_harness-1.3.0-*.whl` exists.
+- `dist/agent_harness-1.3.0.tar.gz` exists.
 - package-check evidence reports `status: passed`.
 - clean-install evidence reports `status: passed`.
 - console-script evidence reports `status: passed`.
-- the final readiness report is generated for `version: 1.2.0`.
+- the final readiness report is generated for `version: 1.3.0`.
 
 ## Roadmap
 

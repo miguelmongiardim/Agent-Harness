@@ -75,6 +75,66 @@ def test_release_readiness_reports_retrieval_demo_and_rejects_remote_defaults(
     assert "retrieval.configuration" in {diagnostic["gate"] for diagnostic in remote["diagnostics"]}
 
 
+def test_retrieval_quality_scorecard_golden_path_passes_with_repo_policy(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    monkeypatch.chdir(tmp_path)
+    _write_minimal_release_project(tmp_path)
+    shutil.copytree(
+        repo_root / "examples" / "retrieval_quality",
+        tmp_path / "examples" / "retrieval_quality",
+        ignore=shutil.ignore_patterns(".agent-harness"),
+    )
+    (tmp_path / "policies").mkdir()
+    shutil.copy2(repo_root / "policies" / "default.json", tmp_path / "policies" / "default.json")
+
+    assert (
+        main(
+            [
+                "retrieval",
+                "index",
+                "build",
+                "--index-id",
+                "demo-retrieval",
+                "--paths",
+                "examples/retrieval_quality/docs",
+                "--mode",
+                "hybrid",
+                "--dense-backend",
+                "deterministic",
+                "--overwrite",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    assert (
+        main(
+            [
+                "retrieval",
+                "scorecard",
+                "examples/retrieval_quality/scorecard.yaml",
+                "--index-id",
+                "demo-retrieval",
+                "--k",
+                "5",
+            ]
+        )
+        == 0
+    )
+    scorecard = json.loads(capsys.readouterr().out)
+
+    assert scorecard["status"] == "passed"
+    assert scorecard["metrics"]["hybrid"]["status"] == "passed"
+    assert scorecard["queries"][0]["modes"]["hybrid"]["hit_chunks"] == [
+        "examples/retrieval_quality/docs/public/architecture.md"
+    ]
+
+
 def _write_minimal_release_project(root: Path) -> None:
     (root / "pyproject.toml").write_text(
         "\n".join(
