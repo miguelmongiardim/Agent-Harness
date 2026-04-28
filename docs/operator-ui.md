@@ -12,7 +12,8 @@ current until tests and release evidence exist.
 
 ## Implemented in V6
 
-Phase 1 has added the safe `agent-harness serve` CLI shell:
+Phases 1 and 2 have added the safe `agent-harness serve` shell and the first
+local operator API skeleton:
 
 - the `operator` optional dependency extra is declared
 - `serve` defaults to `127.0.0.1:8765` and profile `default`
@@ -23,6 +24,13 @@ Phase 1 has added the safe `agent-harness serve` CLI shell:
   `agent-harness[operator]` install hint
 - when no token is provided, `serve` prints one generated in-memory token and
   does not persist it to run artifacts
+- with operator dependencies installed, `serve` builds the local operator app
+  and starts it through uvicorn
+- `agent_harness.operator` exposes an app factory for the local API
+- `GET /health` returns `operator_health.v1` without requiring run storage
+- `/api/v1/*` routes require `X-Agent-Harness-Operator-Token`
+- missing or invalid operator tokens return authorization errors without
+  leaking the configured token
 
 The operator surface is not a new runtime. The CLI and existing runtime remain
 responsible for task execution, provider setup, template application, patch
@@ -30,11 +38,8 @@ planning, and git commit planning.
 
 ## Roadmap / Not implemented yet
 
-These remain unimplemented after Phase 1:
+These remain unimplemented after Phase 2:
 
-- operator app factory
-- `/health`
-- token-protected `/api/v1/*` routes
 - run, context, policy, artifact, provider, security, eval, scorecard, and
   approval inspection through the API
 - approve or deny through the API or UI

@@ -42,11 +42,12 @@ features. For example, `agent_harness.runtimes.mcp_adapter` and the live
 OpenAI-compatible adapter entry point fail clearly with `UnsupportedAdapterError`
 until those phases are implemented.
 
-V6 plans an `agent_harness.operator` boundary for the local operator surface.
-That boundary should sit above storage, policy, approvals, exports, provider
-evidence, and run artifacts. It should expose existing evidence through a local
-API and packaged static UI without becoming a runtime, policy engine, approval
-engine, or arbitrary file server.
+V6 adds an `agent_harness.operator` boundary for the local operator surface.
+The current implementation has the app factory, `/health`, and token-gated
+`/api/v1/*` fallback behavior. The completed boundary should sit above storage,
+policy, approvals, exports, provider evidence, and run artifacts. It should
+expose existing evidence through a local API and packaged static UI without
+becoming a runtime, policy engine, approval engine, or arbitrary file server.
 
 ## Dependency Direction
 

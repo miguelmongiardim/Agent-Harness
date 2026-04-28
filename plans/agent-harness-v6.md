@@ -2,7 +2,7 @@
 
 > Source PRD: [docs/prd-agent-harness-v6.md](../docs/prd-agent-harness-v6.md)
 
-Phases 0 and 1 have been implemented. Remaining acceptance boxes should be
+Phases 0, 1, and 2 have been implemented. Remaining acceptance boxes should be
 checked only after behavior is backed by tests, docs, or release evidence.
 
 ## Architectural Decisions
@@ -159,15 +159,15 @@ when optional dependencies are installed.
 
 ### Acceptance criteria
 
-- [ ] Operator app factory imports when `agent-harness[operator]` dependencies
+- [x] Operator app factory imports when `agent-harness[operator]` dependencies
       are installed.
-- [ ] `GET /health` returns `operator_health.v1`.
-- [ ] Health response includes status, Agent Harness version, and local-only
+- [x] `GET /health` returns `operator_health.v1`.
+- [x] Health response includes status, Agent Harness version, and local-only
       operator mode metadata.
-- [ ] Health route does not require run storage.
-- [ ] Missing token on `/api/v1/*` returns authorization error.
-- [ ] Invalid token on `/api/v1/*` returns authorization error.
-- [ ] Authorization errors do not leak configured token values.
+- [x] Health route does not require run storage.
+- [x] Missing token on `/api/v1/*` returns authorization error.
+- [x] Invalid token on `/api/v1/*` returns authorization error.
+- [x] Authorization errors do not leak configured token values.
 
 ### Out of scope
 

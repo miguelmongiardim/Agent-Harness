@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import secrets
 import sys
+from importlib import import_module
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -413,6 +415,17 @@ def cmd_serve(args: argparse.Namespace) -> int:
     print(f"Operator profile: {args.profile}")
     if args.token is None:
         print(f"Operator token: {token}")
+    if _operator_dependencies_available():
+        from agent_harness.operator import create_operator_app
+
+        app = create_operator_app(
+            project_root=Path.cwd(),
+            token=token,
+            profile=args.profile,
+        )
+        uvicorn = import_module("uvicorn")
+        uvicorn.run(app, host=args.host, port=args.port)
+        return 0
     print(
         "error: operator server requires FastAPI and uvicorn from agent-harness[operator]; "
         "install with `pip install agent-harness[operator]`",
@@ -673,3 +686,10 @@ def _export_output(
 
 def _is_operator_loopback_host(host: str) -> bool:
     return host in {"127.0.0.1", "localhost", "::1"}
+
+
+def _operator_dependencies_available() -> bool:
+    return (
+        importlib.util.find_spec("fastapi") is not None
+        and importlib.util.find_spec("uvicorn") is not None
+    )

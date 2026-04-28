@@ -122,6 +122,7 @@ agent-harness release readiness
 agent-harness export json <run-id>
 agent-harness export markdown <run-id>
 agent-harness export sarif <run-id>
+agent-harness serve --host 127.0.0.1 --port 8765
 agent-harness doctor
 ```
 
@@ -181,9 +182,9 @@ agent-harness doctor
 ## Roadmap / Not Enabled By Init
 
 Agent Harness does not claim enterprise readiness, general live provider
-operation, production Qdrant server operation, a web API/UI, MCP workflows,
-multi-agent orchestration, external template catalogs, deployment hardening, or
-compliance assurance. The v1.2.0 release establishes local-first retrieval
+operation, production Qdrant server operation, hosted API/UI operation, MCP
+workflows, multi-agent orchestration, external template catalogs, deployment
+hardening, or compliance assurance. The v1.2.0 release establishes local-first retrieval
 hardening on top of Provider Core: local retrieval index lifecycle commands,
 hybrid retrieval, local FastEmbed/Qdrant evidence, retrieval scorecards, and
 policy-filtered context manifests.
@@ -193,12 +194,14 @@ The retrieval quality demo is runnable under
 remote embeddings, hosted embedding providers, and production Qdrant server
 operation remain roadmap scope, not default behavior.
 
-V6 is planned as a local operator surface:
+V6 is in progress as a local operator surface:
 [docs/operator-ui.md](docs/operator-ui.md),
 [docs/prd-agent-harness-v6.md](docs/prd-agent-harness-v6.md), and
-[plans/agent-harness-v6.md](plans/agent-harness-v6.md). The target is a
-loopback-only inspection and approval UI over existing artifacts, not hosted
-API/UI operation, enterprise authentication, MCP, or multi-agent orchestration.
+[plans/agent-harness-v6.md](plans/agent-harness-v6.md). The current slice adds
+`agent-harness serve`, the local operator app factory, `/health`, and
+token-gated `/api/v1/*` fallback behavior. The target remains a loopback-only
+inspection and approval UI over existing artifacts, not hosted API/UI
+operation, enterprise authentication, MCP, or multi-agent orchestration.
 
 ## Documentation
 

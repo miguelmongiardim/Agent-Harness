@@ -63,6 +63,14 @@ class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, str_strip_whitespace=True)
 
 
+class OperatorHealthResponse(StrictModel):
+    schema_version: Literal["operator_health.v1"] = "operator_health.v1"
+    status: Literal["ok"] = "ok"
+    agent_harness_version: str
+    mode: Literal["local_operator"] = "local_operator"
+    local_only: bool = True
+
+
 def _validate_env_var_name(value: str) -> str:
     if not re.fullmatch(r"[A-Z_][A-Z0-9_]*", value):
         raise ValueError("env var names must match [A-Z_][A-Z0-9_]*")

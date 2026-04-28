@@ -48,13 +48,15 @@ The security model is built around explicit policy mediation:
 
 The current implementation intentionally excludes production identity, remote
 provider controls, centralized secrets management, hardened sandbox isolation,
-enterprise DLP, fixture capture tooling, API/UI surfaces, MCP support,
+enterprise DLP, fixture capture tooling, hosted API/UI surfaces, MCP support,
 multi-agent execution, retention profiles, retrieval redesign, Anthropic live
 support, compliance readiness, enterprise claims, and multi-tenant guarantees.
 Those belong in future roadmap work.
 
-V6 is planned as a narrower local operator surface. Its security boundary is
-loopback-only serving, token-protected local API routes, allowlisted run
-artifact access, and approval decisions routed through the existing approval
-service. It must not claim hosted operation, enterprise authentication,
+V6 is a narrower local operator surface. Its security boundary is loopback-only
+serving, token-protected local API routes, allowlisted run artifact access, and
+approval decisions routed through the existing approval service. The current
+slice implements the loopback serve command, `/health`, and token enforcement
+for `/api/v1/*`; artifact inspection and approval decisions remain later V6
+phases. It must not claim hosted operation, enterprise authentication,
 production web service readiness, or compliance readiness.

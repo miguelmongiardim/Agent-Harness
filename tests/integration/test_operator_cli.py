@@ -4,9 +4,16 @@ import tomllib
 from pathlib import Path
 
 import pytest
+from fastapi.testclient import TestClient
 
+import agent_harness.cli as cli
+from agent_harness import __version__
 from agent_harness.cli import main
 from tests.conftest import seed_project
+
+
+def _simulate_missing_operator_dependencies(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.setattr(cli, "_operator_dependencies_available", lambda: False)
 
 
 def test_operator_optional_extra_and_test_client_dependency_are_declared() -> None:
@@ -50,6 +57,7 @@ def test_serve_valid_loopback_reports_operator_extra_install_hint(
     capsys,
 ) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.chdir(tmp_path)
+    _simulate_missing_operator_dependencies(monkeypatch)
     seed_project(tmp_path)
 
     assert main(["serve", "--host", "127.0.0.1"]) == 1
@@ -60,12 +68,55 @@ def test_serve_valid_loopback_reports_operator_extra_install_hint(
     assert "uvicorn" in captured.err
 
 
+def test_serve_with_operator_extra_starts_loopback_app(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    calls = []
+
+    import uvicorn
+
+    def fake_run(app, *, host: str, port: int) -> None:  # type: ignore[no-untyped-def]
+        calls.append({"app": app, "host": host, "port": port})
+
+    monkeypatch.setattr(uvicorn, "run", fake_run)
+
+    assert (
+        main(
+            [
+                "serve",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "9876",
+                "--token",
+                "provided-secret",
+                "--profile",
+                "default",
+            ]
+        )
+        == 0
+    )
+    captured = capsys.readouterr()
+
+    assert len(calls) == 1
+    assert calls[0]["host"] == "127.0.0.1"
+    assert calls[0]["port"] == 9876
+    assert TestClient(calls[0]["app"]).get("/health").json()["agent_harness_version"] == __version__
+    assert "provided-secret" not in captured.out
+    assert "provided-secret" not in captured.err
+
+
 def test_serve_defaults_print_generated_token_once_without_persisting(
     tmp_path: Path,
     monkeypatch,
     capsys,
 ) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.chdir(tmp_path)
+    _simulate_missing_operator_dependencies(monkeypatch)
     seed_project(tmp_path)
 
     assert main(["serve"]) == 1
@@ -92,6 +143,7 @@ def test_serve_accepts_allowed_loopback_hosts_without_echoing_supplied_token(
     host: str,
 ) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.chdir(tmp_path)
+    _simulate_missing_operator_dependencies(monkeypatch)
     seed_project(tmp_path)
 
     assert main(["serve", "--host", host, "--token", "provided-secret"]) == 1
