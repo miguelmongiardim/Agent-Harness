@@ -71,6 +71,29 @@ class OperatorHealthResponse(StrictModel):
     local_only: bool = True
 
 
+class OperatorRunListResponse(StrictModel):
+    schema_version: Literal["operator_run_list.v1"] = "operator_run_list.v1"
+    runs: list[dict[str, Any]]
+    count: int = Field(ge=0)
+
+
+class OperatorRunDetailResponse(StrictModel):
+    schema_version: Literal["operator_run_detail.v1"] = "operator_run_detail.v1"
+    run_id: str
+    summary: dict[str, Any]
+    events: list[dict[str, Any]]
+    artifact_index: dict[str, Any]
+    provider: dict[str, Any] | None = None
+    provider_calls: dict[str, Any] | None = None
+    provider_input: dict[str, Any] | None = None
+    security_findings: dict[str, Any] | None = None
+    runtime_adapter: dict[str, Any] | None = None
+    schema_versions: dict[str, Any] | None = None
+    template_apply: dict[str, Any] | None = None
+    git_commit: dict[str, Any] | None = None
+    workspace_metadata: dict[str, Any] | None = None
+
+
 def _validate_env_var_name(value: str) -> str:
     if not re.fullmatch(r"[A-Z_][A-Z0-9_]*", value):
         raise ValueError("env var names must match [A-Z_][A-Z0-9_]*")

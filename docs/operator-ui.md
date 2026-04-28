@@ -12,8 +12,8 @@ current until tests and release evidence exist.
 
 ## Implemented in V6
 
-Phases 1 and 2 have added the safe `agent-harness serve` shell and the first
-local operator API skeleton:
+Phases 1 through 3 have added the safe `agent-harness serve` shell and the
+first local operator run-inspection APIs:
 
 - the `operator` optional dependency extra is declared
 - `serve` defaults to `127.0.0.1:8765` and profile `default`
@@ -31,6 +31,11 @@ local operator API skeleton:
 - `/api/v1/*` routes require `X-Agent-Harness-Operator-Token`
 - missing or invalid operator tokens return authorization errors without
   leaking the configured token
+- `GET /api/v1/runs` returns `operator_run_list.v1` from existing run storage
+- `GET /api/v1/runs/{run_id}` returns `operator_run_detail.v1` with summary,
+  events, artifact index, and known optional run evidence when present
+- missing runs and malformed required run artifacts return safe API errors
+  without local filesystem paths
 
 The operator surface is not a new runtime. The CLI and existing runtime remain
 responsible for task execution, provider setup, template application, patch
@@ -38,10 +43,10 @@ planning, and git commit planning.
 
 ## Roadmap / Not implemented yet
 
-These remain unimplemented after Phase 2:
+These remain unimplemented after Phase 3:
 
-- run, context, policy, artifact, provider, security, eval, scorecard, and
-  approval inspection through the API
+- context-specific, policy-specific, eval, scorecard, and approval inspection
+  routes
 - approve or deny through the API or UI
 - packaged static UI
 

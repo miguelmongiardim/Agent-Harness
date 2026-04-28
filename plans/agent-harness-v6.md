@@ -2,7 +2,7 @@
 
 > Source PRD: [docs/prd-agent-harness-v6.md](../docs/prd-agent-harness-v6.md)
 
-Phases 0, 1, and 2 have been implemented. Remaining acceptance boxes should be
+Phases 0, 1, 2, and 3 have been implemented. Remaining acceptance boxes should be
 checked only after behavior is backed by tests, docs, or release evidence.
 
 ## Architectural Decisions
@@ -204,18 +204,18 @@ artifact status for missing or malformed evidence.
 
 ### Acceptance criteria
 
-- [ ] `GET /api/v1/runs` requires a valid token.
-- [ ] Run list reads existing run storage.
-- [ ] Run list returns `operator_run_list.v1`.
-- [ ] `GET /api/v1/runs/{run_id}` requires a valid token.
-- [ ] Run detail returns `operator_run_detail.v1`.
-- [ ] Run detail includes summary, events, and artifact index.
-- [ ] Run detail includes known optional provider, security, template, git,
+- [x] `GET /api/v1/runs` requires a valid token.
+- [x] Run list reads existing run storage.
+- [x] Run list returns `operator_run_list.v1`.
+- [x] `GET /api/v1/runs/{run_id}` requires a valid token.
+- [x] Run detail returns `operator_run_detail.v1`.
+- [x] Run detail includes summary, events, and artifact index.
+- [x] Run detail includes known optional provider, security, template, git,
       runtime adapter, schema version, and workspace metadata evidence when
       present.
-- [ ] Missing run returns not found.
-- [ ] Malformed artifact returns a clear safe error.
-- [ ] API detail and CLI inspect agree on approval state and run status.
+- [x] Missing run returns not found.
+- [x] Malformed artifact returns a clear safe error.
+- [x] API detail and CLI inspect agree on approval state and run status.
 
 ### Out of scope
 
