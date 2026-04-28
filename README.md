@@ -100,6 +100,7 @@ uv run agent-harness run examples/tasks/python_refactor.json --runtime langgraph
 
 ```text
 agent-harness init
+agent-harness skill validate write-a-prd
 agent-harness template list
 agent-harness template show python-lib
 agent-harness template validate --all

@@ -59,6 +59,8 @@ RuntimeAdapterId = Literal["langgraph"]
 RuntimeExecutionBoundary = Literal["native_runtime_delegate"]
 TemplateSourceType = Literal["bundled_json", "bundled_pack", "local_pack"]
 TemplateCompatibilityStatus = Literal["compatible", "incompatible"]
+SkillSourceType = Literal["bundled", "direct_path"]
+SkillCompatibilityStatus = Literal["compatible", "incompatible"]
 
 
 class StrictModel(BaseModel):
@@ -930,6 +932,48 @@ class TemplateFile(StrictModel):
     @classmethod
     def validate_path(cls, value: str) -> str:
         return normalize_relative_path(value)
+
+
+class SkillSpec(StrictModel):
+    schema_version: Literal["skill.v1"]
+    skill_id: str
+    name: str = Field(min_length=1)
+    version: str
+    description: str = Field(min_length=1)
+    category: str = Field(min_length=1)
+    compatible_agent_harness_versions: str = Field(min_length=1)
+    required_capabilities: list[str]
+    allowed_context_classes: list[str] = Field(default_factory=list)
+    default_policy_profile: str | None = None
+    related_skills: list[str] = Field(default_factory=list)
+    output_artifacts: list[str] = Field(default_factory=list)
+    validation_commands: list[str] = Field(default_factory=list)
+    examples: list[str] = Field(default_factory=list)
+
+    @field_validator("skill_id")
+    @classmethod
+    def validate_skill_id(cls, value: str) -> str:
+        if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", value):
+            raise ValueError("skill_id must be lowercase kebab-case")
+        return value
+
+    @field_validator("version")
+    @classmethod
+    def validate_version(cls, value: str) -> str:
+        if not re.fullmatch(r"\d+\.\d+\.\d+", value):
+            raise ValueError("version must use MAJOR.MINOR.PATCH")
+        return value
+
+
+class SkillValidationReport(StrictModel):
+    schema_version: Literal["skill_validation.v1"] = "skill_validation.v1"
+    status: Literal["passed", "failed"]
+    skill_id: str | None = None
+    source_type: SkillSourceType
+    source: str
+    compatibility_status: SkillCompatibilityStatus = "compatible"
+    skill_hash: str | None = None
+    diagnostics: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class TemplateSpec(StrictModel):

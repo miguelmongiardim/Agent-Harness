@@ -122,20 +122,20 @@ paths and registry-loaded skills.
 
 ### Acceptance criteria
 
-- [ ] `skill.v1` required fields validate.
-- [ ] Optional fields validate when present.
-- [ ] `skill_id` is stable and URL/path safe.
-- [ ] `version` is semantic-version-like.
-- [ ] Body and description must be non-empty.
-- [ ] Unsupported future schema versions fail clearly.
-- [ ] Missing required fields fail clearly.
-- [ ] Compatibility ranges including `>=1.5.0,<2.0.0` are evaluated.
-- [ ] Unsupported compatibility expressions fail clearly.
-- [ ] Generated citation markers, private uploaded-file references, and
+- [x] `skill.v1` required fields validate.
+- [x] Optional fields validate when present.
+- [x] `skill_id` is stable and URL/path safe.
+- [x] `version` is semantic-version-like.
+- [x] Body and description must be non-empty.
+- [x] Unsupported future schema versions fail clearly.
+- [x] Missing required fields fail clearly.
+- [x] Compatibility ranges including `>=1.5.0,<2.0.0` are evaluated.
+- [x] Unsupported compatibility expressions fail clearly.
+- [x] Generated citation markers, private uploaded-file references, and
       secret-like values fail validation.
-- [ ] Attempts to declare tools, approvals, provider changes, policy changes,
+- [x] Attempts to declare tools, approvals, provider changes, policy changes,
       file mutation, code execution, or network calls fail validation.
-- [ ] Hashes are deterministic across repeated validation.
+- [x] Hashes are deterministic across repeated validation.
 
 ### Out of scope
 

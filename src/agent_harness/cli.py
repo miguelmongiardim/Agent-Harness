@@ -43,6 +43,7 @@ from agent_harness.retrieval_indexes import (
 )
 from agent_harness.retrieval_scorecards import run_retrieval_scorecard
 from agent_harness.schemas import TaskSpec, TemplateDetail
+from agent_harness.skills import validate_skill
 from agent_harness.storage import RunStore
 from agent_harness.templates import list_templates, load_template
 from agent_harness.templates.apply import (
@@ -123,6 +124,12 @@ def build_parser() -> argparse.ArgumentParser:
     template_apply_mode.add_argument("--dry-run", action="store_true")
     template_apply_mode.add_argument("--preview-diff", action="store_true")
     template_apply.set_defaults(func=cmd_template_apply)
+
+    skill = sub.add_parser("skill")
+    skill_sub = skill.add_subparsers(required=True)
+    skill_validate = skill_sub.add_parser("validate")
+    skill_validate.add_argument("skill_id")
+    skill_validate.set_defaults(func=cmd_skill_validate)
 
     ingest = sub.add_parser("ingest")
     ingest_sub = ingest.add_subparsers(required=True)
@@ -398,6 +405,12 @@ def cmd_template_apply(args: argparse.Namespace) -> int:
     )
     print(summary.model_dump_json(indent=2))
     return 0
+
+
+def cmd_skill_validate(args: argparse.Namespace) -> int:
+    report = validate_skill(args.skill_id)
+    print(report.model_dump_json(indent=2))
+    return 0 if report.status == "passed" else 1
 
 
 def _template_parameters(template: TemplateDetail, values: list[str]) -> dict[str, str]:

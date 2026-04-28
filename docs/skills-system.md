@@ -6,17 +6,28 @@ V8 is the `v1.5.0` skills-system track. The durable source documents are the
 [V8 PRD](prd-agent-harness-v8.md) and
 [V8 implementation plan](../plans/agent-harness-v8.md).
 
-The Phase 0 implementation adds documentation scope and docs-check guards. The
-skill CLI, bundled skill registry, task resolution, context inclusion, run
-artifacts, and release-readiness evidence are later V8 slices and should not be
-described as current behavior until their tests and implementation land.
+Phase 0 added documentation scope and docs-check guards. Phase 1 adds the first
+validation slice for `agent-harness skill validate write-a-prd` and direct
+`SKILL.md` validation. The full skill list/show/render registry, task
+resolution, context inclusion, run artifacts, and release-readiness evidence are
+later V8 slices and should not be described as current behavior until their
+tests and implementation land.
 
 ## Current Capabilities
 
-The current implementation provides a docs-check guard that rejects
-implemented-scope claims for unsupported skill distribution and governance
-features. This keeps the public docs aligned while V8 is implemented
-incrementally.
+The current implementation provides:
+
+- `agent-harness skill validate write-a-prd` for the first bundled skill
+- direct `SKILL.md` validation through the same command when the argument is an
+  existing path
+- `skill.v1` frontmatter validation for required fields, optional fields,
+  version format, skill id format, compatibility expressions, non-empty
+  description, and non-empty Markdown body
+- deterministic skill hashes for valid skills
+- diagnostics for unsupported schemas, missing fields, unsafe content markers,
+  and authority-expanding skill content or metadata
+- a docs-check guard that rejects implemented-scope claims for unsupported skill
+  distribution and governance features
 
 ## V8 Local Skill Boundary
 
