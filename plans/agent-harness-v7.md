@@ -171,21 +171,21 @@ the pack can be used by planning or apply.
 
 ### Acceptance criteria
 
-- [ ] `template validate <id>` and `template pack validate <path>` use the same
+- [x] `template validate <id>` and `template pack validate <path>` use the same
       validator core.
-- [ ] Required manifest fields, template ID format, version format, and simple
+- [x] Required manifest fields, template ID format, version format, and simple
       min/max compatibility validate.
-- [ ] Included files must exist and be UTF-8 text.
-- [ ] Traversal, absolute paths, and drive-prefixed paths are rejected.
-- [ ] Symlink escapes and parent symlink traversal are rejected.
-- [ ] Remote source declarations are rejected.
-- [ ] Hook and script declarations are rejected.
-- [ ] Unsupported placeholders and undeclared placeholders are rejected.
-- [ ] Secret-like values, generated citation markers, and private uploaded-file
+- [x] Included files must exist and be UTF-8 text.
+- [x] Traversal, absolute paths, and drive-prefixed paths are rejected.
+- [x] Symlink escapes and parent symlink traversal are rejected.
+- [x] Remote source declarations are rejected.
+- [x] Hook and script declarations are rejected.
+- [x] Unsupported placeholders and undeclared placeholders are rejected.
+- [x] Secret-like values, generated citation markers, and private uploaded-file
       references are rejected or reported according to the V7 policy decision.
-- [ ] Hidden or unlisted generated files are denied.
-- [ ] Generated config, task, policy, and eval examples validate where present.
-- [ ] Diagnostics are actionable and machine-readable.
+- [x] Hidden or unlisted generated files are denied.
+- [x] Generated config, task, policy, and eval examples validate where present.
+- [x] Diagnostics are actionable and machine-readable.
 
 ### Out of scope
 
