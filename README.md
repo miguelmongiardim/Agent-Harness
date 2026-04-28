@@ -88,8 +88,9 @@ The V8 skills-system scope is documented in
 [`docs/skills-system.md`](docs/skills-system.md). Current slices provide
 bundled and configured local skill discovery, validation, inspection, rendered
 Markdown review, read-only skill-pack validation, task-requested skill
-resolution, and template-recommended skill evidence. Context inclusion and run
-artifacts arrive in later V8 slices.
+resolution, template-recommended skill evidence, and policy-gated skill
+guidance in run context manifests. Dedicated skill manifest artifacts arrive in
+later V8 slices.
 
 The optional LangGraph boundary proof is isolated behind the `langgraph` extra:
 

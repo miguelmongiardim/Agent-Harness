@@ -98,6 +98,58 @@ class PolicyEngine:
             )
         return self._decision(True, False, f"{sensitivity} allowed for context", matched)
 
+    def evaluate_skill_context(
+        self,
+        *,
+        skill_id: str,
+        source: str,
+        source_type: str,
+        context_class: Sensitivity,
+        allowed_context_classes: list[str],
+    ) -> PolicyDecision:
+        matched = [
+            "skill_context",
+            f"skill:{skill_id}",
+            f"source_type:{source_type}",
+            f"context_class:{context_class}",
+            f"source:{source}",
+        ]
+        if context_class not in self.profile.allowed_context_classes:
+            return self._decision(
+                False,
+                False,
+                f"{context_class} skill guidance denied by policy context classes",
+                [*matched, "skill_context:policy_context_class_deny"],
+            )
+        if allowed_context_classes and context_class not in allowed_context_classes:
+            return self._decision(
+                False,
+                False,
+                f"{context_class} skill guidance denied by skill context classes",
+                [*matched, "skill_context:skill_context_class_deny"],
+            )
+        sensitivity_decision = self.evaluate_context_sensitivity(context_class, source)
+        if not sensitivity_decision.allowed:
+            return sensitivity_decision.model_copy(
+                update={
+                    "decision_id": stable_id(
+                        "policy",
+                        "skill_context",
+                        skill_id,
+                        source,
+                        context_class,
+                        "sensitivity",
+                    ),
+                    "matched_rules": [*matched, *sensitivity_decision.matched_rules],
+                }
+            )
+        return self._decision(
+            True,
+            False,
+            "skill guidance allowed for context",
+            [*matched, "skill_context:allowed"],
+        )
+
     def evaluate_tool_call(
         self,
         call: ToolCall,

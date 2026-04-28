@@ -60,7 +60,7 @@ def manifest_item(
     *,
     source_id: str,
     chunk_id: str,
-    source_kind: Literal["file", "retrieval"],
+    source_kind: Literal["file", "retrieval", "skill"],
     path: str | None,
     content_hash: str | None,
     text: str | None,
@@ -71,6 +71,11 @@ def manifest_item(
     provenance: list[RetrievalProvenance],
     scores: dict[str, float],
     decision: PolicyDecision,
+    skill_id: str | None = None,
+    skill_version: str | None = None,
+    skill_source: str | None = None,
+    skill_hash: str | None = None,
+    inclusion_mode: Literal["task_required", "template_recommended"] | None = None,
 ) -> ContextManifestItem:
     return ContextManifestItem(
         item_id=stable_id(
@@ -95,4 +100,9 @@ def manifest_item(
         policy_allowed=decision.allowed,
         policy_decision_id=decision.decision_id,
         policy_reason=decision.reason,
+        skill_id=skill_id,
+        skill_version=skill_version,
+        skill_source=skill_source,
+        skill_hash=skill_hash,
+        inclusion_mode=inclusion_mode,
     )

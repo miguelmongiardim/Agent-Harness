@@ -23,7 +23,11 @@ The security model is built around explicit policy mediation:
   content, or bypass context policy. Current validation rejects
   authority-expanding skill content before it can be rendered as usable
   guidance, and current resolution records empty tool, approval, policy, and
-  provider changes for task-requested and template-recommended skills.
+  provider changes for task-requested and template-recommended skills. During
+  runs, accepted skills enter `context_manifest.json` as policy-mediated
+  evidence; rejected skill items record rejection reasons and hashes without
+  body text. Provider input may include accepted skill guidance as context
+  evidence, not as authority.
 - Provider-use approvals bind provider profile, trust zone, model id,
   provider-input hash, policy decision id, and checkpoint hash. Resume rejects
   drift in those bound fields before provider execution.

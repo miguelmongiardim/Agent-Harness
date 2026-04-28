@@ -335,18 +335,18 @@ the skill change policy.
 
 ### Acceptance criteria
 
-- [ ] Accepted skills are represented in `context_manifest.json`.
-- [ ] Skill manifest items include skill id, version, source, hash, inclusion
+- [x] Accepted skills are represented in `context_manifest.json`.
+- [x] Skill manifest items include skill id, version, source, hash, inclusion
       mode, and policy decision id.
-- [ ] Rejected skills are represented with rejection reason and no body text.
-- [ ] Skill content hash is deterministic.
-- [ ] Policy decision events are recorded for skill inclusion.
-- [ ] Bundled skills are classified consistently.
-- [ ] Local skills have a conservative default context class.
-- [ ] `allowed_context_classes` can reject an otherwise valid skill.
-- [ ] Skills cannot change effective policy, tools, provider profile,
+- [x] Rejected skills are represented with rejection reason and no body text.
+- [x] Skill content hash is deterministic.
+- [x] Policy decision events are recorded for skill inclusion.
+- [x] Bundled skills are classified consistently.
+- [x] Local skills have a conservative default context class.
+- [x] `allowed_context_classes` can reject an otherwise valid skill.
+- [x] Skills cannot change effective policy, tools, provider profile,
       sensitivity classes, write roots, read roots, or approval rules.
-- [ ] Provider input treats accepted skill guidance as context evidence, not
+- [x] Provider input treats accepted skill guidance as context evidence, not
       authority.
 
 ### Out of scope

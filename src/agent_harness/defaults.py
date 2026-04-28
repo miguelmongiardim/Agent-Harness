@@ -102,6 +102,7 @@ DEFAULT_POLICY = {
     },
     "hard_deny_sensitivities": ["secret", "credential", "pii", "customer"],
     "provider_input_redact_reclassify": {},
+    "allowed_context_classes": ["public", "internal", "generated"],
     "max_context_bytes": 20000,
     "security_fail_threshold": "high",
     "sensitivity_rules": [

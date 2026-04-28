@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from agent_harness.context.chunking import RetrievedChunk, chunk_text
 from agent_harness.context.manifest import manifest_chunk, manifest_item, merged_candidate_item
@@ -15,15 +16,30 @@ from agent_harness.schemas import (
     ContextSource,
     PolicyDecision,
     RetrievalBackendManifest,
+    Sensitivity,
     TaskSpec,
 )
 from agent_harness.utils import sha256_text, stable_id
 
 
 @dataclass(frozen=True)
+class SkillContextGuidance:
+    skill_id: str
+    version: str
+    source_type: str
+    source: str
+    skill_hash: str
+    text: str
+    context_class: Sensitivity
+    allowed_context_classes: list[str]
+    inclusion_mode: Literal["task_required", "template_recommended"]
+
+
+@dataclass(frozen=True)
 class ContextBuildResult:
     manifest: ContextManifest
     retrieval_decisions: list[tuple[str, str, PolicyDecision]]
+    skill_decisions: list[tuple[str, str, PolicyDecision]]
 
 
 def build_context_manifest(
@@ -34,14 +50,99 @@ def build_context_manifest(
     lexical_retriever: Retriever,
     dense_retriever: DenseRetriever | None = None,
     retrieval: RetrievalBackendManifest | None = None,
+    skill_guidance: list[SkillContextGuidance] | None = None,
 ) -> ContextBuildResult:
     sources: dict[str, ContextSource] = {}
     chunks: list[ContextChunk] = []
     items: list[ContextManifestItem] = []
     rejected_items: list[ContextManifestItem] = []
     retrieval_decisions: list[tuple[str, str, PolicyDecision]] = []
+    skill_decisions: list[tuple[str, str, PolicyDecision]] = []
     budget = policy.profile.max_context_bytes
     used = 0
+
+    for skill in skill_guidance or []:
+        decision = policy.evaluate_skill_context(
+            skill_id=skill.skill_id,
+            source=skill.source,
+            source_type=skill.source_type,
+            context_class=skill.context_class,
+            allowed_context_classes=skill.allowed_context_classes,
+        )
+        skill_decisions.append((skill.skill_id, skill.source, decision))
+        source_id = stable_id("source", "skill", skill.skill_id, skill.skill_hash, skill.source)
+        chunk_id = stable_id("chunk", source_id, skill.skill_hash)
+        end_line = max(1, len(skill.text.splitlines()))
+        if not decision.allowed or used + len(skill.text) > budget:
+            rejected_items.append(
+                manifest_item(
+                    source_id=source_id,
+                    chunk_id=chunk_id,
+                    source_kind="skill",
+                    path=skill.source,
+                    content_hash=skill.skill_hash,
+                    text=None,
+                    start_line=1,
+                    end_line=end_line,
+                    sensitivity=skill.context_class,
+                    retrieval_method="direct",
+                    provenance=[],
+                    scores={},
+                    decision=decision,
+                    skill_id=skill.skill_id,
+                    skill_version=skill.version,
+                    skill_source=skill.source,
+                    skill_hash=skill.skill_hash,
+                    inclusion_mode=skill.inclusion_mode,
+                )
+            )
+            continue
+        sources[source_id] = ContextSource(
+            source_id=source_id,
+            kind="skill",
+            path=skill.source,
+            content_hash=skill.skill_hash,
+            sensitivity=skill.context_class,
+            policy_decision_id=decision.decision_id,
+            skill_id=skill.skill_id,
+            skill_version=skill.version,
+            skill_source=skill.source,
+            skill_hash=skill.skill_hash,
+        )
+        chunk = ContextChunk(
+            chunk_id=chunk_id,
+            source_id=source_id,
+            text=skill.text,
+            content_hash=skill.skill_hash,
+            start_line=1,
+            end_line=end_line,
+            score=1.0,
+            sensitivity=skill.context_class,
+        )
+        chunks.append(chunk)
+        items.append(
+            manifest_item(
+                source_id=source_id,
+                chunk_id=chunk_id,
+                source_kind="skill",
+                path=skill.source,
+                content_hash=skill.skill_hash,
+                text=skill.text,
+                start_line=1,
+                end_line=end_line,
+                sensitivity=skill.context_class,
+                retrieval_method="direct",
+                provenance=[],
+                scores={},
+                decision=decision,
+                skill_id=skill.skill_id,
+                skill_version=skill.version,
+                skill_source=skill.source,
+                skill_hash=skill.skill_hash,
+                inclusion_mode=skill.inclusion_mode,
+            )
+        )
+        used += len(skill.text)
 
     for target in task.target_paths:
         decision = policy.evaluate_context_source(target)
@@ -186,4 +287,5 @@ def build_context_manifest(
             retrieval=retrieval,
         ),
         retrieval_decisions=retrieval_decisions,
+        skill_decisions=skill_decisions,
     )

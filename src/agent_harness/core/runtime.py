@@ -11,7 +11,7 @@ from agent_harness.config import (
     load_model,
     load_public_model_with_schema_evidence,
 )
-from agent_harness.context.builder import build_context_manifest
+from agent_harness.context.builder import SkillContextGuidance, build_context_manifest
 from agent_harness.context.retrieval import (
     DenseRetriever,
     FakeRetriever,
@@ -51,6 +51,7 @@ from agent_harness.schemas import (
     RunSummary,
     RuntimeAdapterRecord,
     Sensitivity,
+    SkillResolutionReport,
     TaskSpec,
     TemplateApplyRecord,
     TemplateProposedWrite,
@@ -60,6 +61,7 @@ from agent_harness.schemas import (
     WorkspaceMetadata,
 )
 from agent_harness.security import collect_advisory_reports, scan_task_security
+from agent_harness.skills import load_skill_detail, render_skill, resolve_task_skills
 from agent_harness.storage import RunStore, make_event
 from agent_harness.templates import load_template, plan_template_apply
 from agent_harness.templates.apply import (
@@ -199,6 +201,11 @@ class HarnessRuntime:
                 message="run blocked by security findings",
             )
 
+        skill_resolution = resolve_task_skills(task_path, self.project_root)
+        if skill_resolution.status == "failed":
+            raise ValueError("task skill resolution failed")
+        skill_guidance = _skill_context_guidance(self.project_root, skill_resolution)
+
         lexical_retriever, dense_retriever, retrieval = _select_retrieval_backend(
             self.config,
             self.project_root,
@@ -212,6 +219,7 @@ class HarnessRuntime:
             lexical_retriever,
             dense_retriever=dense_retriever,
             retrieval=retrieval,
+            skill_guidance=skill_guidance,
         )
         manifest = context.manifest
         store.write_model("context_manifest.json", manifest)
@@ -236,6 +244,19 @@ class HarnessRuntime:
                     {
                         "operation": operation,
                         "path": source_path,
+                        "decision": decision.model_dump(mode="json"),
+                    },
+                )
+            )
+        for skill_id, source, decision in context.skill_decisions:
+            store.append_event(
+                make_event(
+                    run_id,
+                    "policy_decision",
+                    {
+                        "operation": "skill_context",
+                        "skill_id": skill_id,
+                        "source": source,
                         "decision": decision.model_dump(mode="json"),
                     },
                 )
@@ -1454,9 +1475,7 @@ def _template_apply_plan_payload(template_apply: TemplateApplyRecord) -> dict[st
         write.path: "create" if write.before_hash == empty_hash else "overwrite"
         for write in template_apply.proposed_writes
     }
-    rendered_hashes = {
-        write.path: write.after_hash for write in template_apply.proposed_writes
-    }
+    rendered_hashes = {write.path: write.after_hash for write in template_apply.proposed_writes}
     return {
         "template_id": template_apply.template_id,
         "template_version": template_apply.version,
@@ -2153,6 +2172,41 @@ def _coerce_provider_input_sensitivities(values: list[str]) -> list[Sensitivity]
             raise ValueError(f"unknown provider-input sensitivity: {value}")
         normalized.append(value)  # type: ignore[arg-type]
     return normalized
+
+
+def _skill_context_guidance(
+    project_root: Path,
+    resolution: SkillResolutionReport,
+) -> list[SkillContextGuidance]:
+    guidance: list[SkillContextGuidance] = []
+    for record in resolution.skills:
+        if not record.required or record.resolution_status != "resolved":
+            continue
+        detail = load_skill_detail(record.skill_id, project_root)
+        skill_hash = record.skill_hash or detail.skill_hash
+        if skill_hash is None:
+            raise ValueError(f"resolved skill is missing a content hash: {record.skill_id}")
+        source_type = record.source_type or detail.source_type
+        guidance.append(
+            SkillContextGuidance(
+                skill_id=record.skill_id,
+                version=record.version or detail.version,
+                source_type=source_type,
+                source=record.source or detail.source,
+                skill_hash=skill_hash,
+                text=render_skill(record.skill_id, project_root),
+                context_class=_skill_context_class(source_type),
+                allowed_context_classes=detail.allowed_context_classes,
+                inclusion_mode="task_required",
+            )
+        )
+    return guidance
+
+
+def _skill_context_class(source_type: str) -> Sensitivity:
+    if source_type == "bundled":
+        return "public"
+    return "internal"
 
 
 def _select_retrieval_backend(

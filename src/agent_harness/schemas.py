@@ -434,6 +434,10 @@ class MigrationPolicyContract(StrictModel):
     allow_loose_rewrites: bool = False
 
 
+def _default_allowed_context_classes() -> list[Sensitivity]:
+    return ["public", "internal", "generated"]
+
+
 class PolicyProfile(StrictModel):
     schema_version: Literal["policy.v1", "policy.v2"]
     name: str
@@ -458,6 +462,9 @@ class PolicyProfile(StrictModel):
     provider_input_policy: dict[Sensitivity, ProviderInputRuleAction] = Field(default_factory=dict)
     hard_deny_sensitivities: list[Sensitivity] = Field(default_factory=list)
     provider_input_redact_reclassify: dict[Sensitivity, Sensitivity] = Field(default_factory=dict)
+    allowed_context_classes: list[Sensitivity] = Field(
+        default_factory=_default_allowed_context_classes
+    )
     max_context_bytes: int = Field(default=20000, ge=1024)
     security_fail_threshold: SecuritySeverity = "high"
     sensitivity_rules: list[SensitivityRule] = Field(default_factory=list)
@@ -659,12 +666,16 @@ class ProviderActionEnvelope(StrictModel):
 
 class ContextSource(StrictModel):
     source_id: str
-    kind: Literal["file", "ingested_doc", "retrieval"]
+    kind: Literal["file", "ingested_doc", "retrieval", "skill"]
     path: str | None = None
     uri: str | None = None
     content_hash: str
     sensitivity: Sensitivity = "public"
     policy_decision_id: str
+    skill_id: str | None = None
+    skill_version: str | None = None
+    skill_source: str | None = None
+    skill_hash: str | None = None
 
 
 class ContextChunk(StrictModel):
@@ -794,7 +805,7 @@ class ContextManifestItem(StrictModel):
     item_id: str
     source_id: str
     chunk_id: str
-    source_kind: Literal["file", "retrieval"]
+    source_kind: Literal["file", "retrieval", "skill"]
     path: str | None = None
     content_hash: str | None = None
     text: str | None = None
@@ -807,6 +818,11 @@ class ContextManifestItem(StrictModel):
     policy_allowed: bool
     policy_decision_id: str
     policy_reason: str
+    skill_id: str | None = None
+    skill_version: str | None = None
+    skill_source: str | None = None
+    skill_hash: str | None = None
+    inclusion_mode: Literal["task_required", "template_recommended"] | None = None
 
 
 class ContextManifest(StrictModel):
@@ -1243,9 +1259,7 @@ class TemplateSkillRecommendationRecord(StrictModel):
 class WorkspaceMetadata(StrictModel):
     schema_version: Literal["workspace_metadata.v1"] = "workspace_metadata.v1"
     applied_templates: list[AppliedTemplateRecord] = Field(default_factory=list)
-    skill_recommendations: list[TemplateSkillRecommendationRecord] = Field(
-        default_factory=list
-    )
+    skill_recommendations: list[TemplateSkillRecommendationRecord] = Field(default_factory=list)
 
 
 class GitCommitPlan(StrictModel):

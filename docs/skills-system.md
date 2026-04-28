@@ -12,7 +12,8 @@ direct `SKILL.md` validation. Phase 2 added bundled skill discovery, skill
 inspection, rendered Markdown review, and local skill-pack validation. Phase 3
 added explicit configured local skill discovery through `config.v2`
 `skills.local_dirs`. Phase 4 adds task-requested skill resolution and
-template-recommended skill evidence. Context inclusion, run artifacts, and
+template-recommended skill evidence. Phase 5 adds policy-gated skill guidance
+inside run context manifests. `skill_manifest.v1`, inspect output changes, and
 release-readiness evidence are later V8 slices and should not be described as
 current behavior until their tests and implementation land.
 
@@ -45,6 +46,18 @@ The current implementation provides:
 - missing template-recommended skills reported as non-required diagnostics
 - resolution evidence for source, version, hash, requested-by records, and
   unchanged task authority fields
+- `agent-harness run <task> --dry-run` includes task-requested, resolved skills
+  in `context_manifest.json` as policy-mediated guidance
+- accepted skill context items record skill id, version, source, deterministic
+  hash, inclusion mode, policy decision id, and body text
+- rejected skill context items record the skill id, source, hash, rejection
+  reason, and policy decision id without persisting body text
+- bundled skill guidance is classified as public context; configured local
+  skill guidance defaults to an internal context class
+- policy `allowed_context_classes` and skill metadata can reject valid guidance
+  without widening task or policy authority
+- provider input treats accepted skill guidance as context evidence linked to a
+  context manifest item
 - missing configured local skill directories reported to stderr without
   crashing `skill list`
 - duplicate skill ids rejected clearly, including local-to-local duplicates and
@@ -94,9 +107,12 @@ actions, alter provider profiles, change sensitivity classes, execute code,
 mutate files, read environment variables, fetch network content, or bypass
 context policy. Local skill content is untrusted until validation succeeds.
 
-Accepted skill guidance must enter runs through the same policy-aware context
-assembly path used for other context evidence. Rejected skill guidance must be
-recorded without leaking body text into rejected manifest evidence.
+Accepted skill guidance enters runs through the same policy-aware context
+assembly path used for other context evidence. Rejected skill guidance is
+recorded without leaking body text into rejected manifest evidence. Provider
+input can include accepted skill guidance as evidence, but the skill record does
+not alter effective policy, tools, provider profile, sensitivity classes, roots,
+or approval rules.
 
 ## Planned Reviewer Workflow
 
@@ -109,7 +125,8 @@ behaviors:
 - render deterministic Markdown for review
 - resolve task-requested skills and template recommendations without widening
   task or policy authority
-- include accepted skill guidance in context manifests with policy provenance
+- include accepted and rejected skill guidance in context manifests with policy
+  provenance
 - emit `skill_manifest.v1` run evidence
 - show skill evidence through `inspect run`
 - validate bundled skills and demo evidence through release readiness
