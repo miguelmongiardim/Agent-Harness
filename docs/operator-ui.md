@@ -6,30 +6,39 @@ The local operator surface is the planned V6 track for v1.3.0. It is described
 by [the V6 PRD](prd-agent-harness-v6.md) and
 [the V6 plan](../plans/agent-harness-v6.md).
 
-This page records the intended boundary before implementation. It must be
-updated as each V6 phase lands, and it must not describe behavior as current
-until tests and release evidence exist.
+This page records the intended boundary as V6 is implemented. It must be
+updated as each V6 phase lands, and it must not describe later behavior as
+current until tests and release evidence exist.
 
 ## Implemented in V6
 
-V6 will add a local-only operator API and packaged static UI over existing run
-artifacts and approval services. The intended behavior is:
+Phase 1 has added the safe `agent-harness serve` CLI shell:
 
-- optional `agent-harness[operator]` dependencies
-- `agent-harness serve` bound only to loopback hosts
-- in-memory operator token for local API access
-- token-protected `/api/v1/*` routes
-- run, context, policy, artifact, provider, security, eval, scorecard, and
-  approval inspection
-- approve or deny for existing pending approvals only
-- decisions routed through the same approval service used by the CLI
-- packaged static UI with no external runtime assets
+- the `operator` optional dependency extra is declared
+- `serve` defaults to `127.0.0.1:8765` and profile `default`
+- `serve` accepts only `127.0.0.1`, `localhost`, and `::1`
+- `serve` rejects wildcard, public, private LAN, and unknown hostnames before
+  startup
+- missing FastAPI or uvicorn dependencies report an
+  `agent-harness[operator]` install hint
+- when no token is provided, `serve` prints one generated in-memory token and
+  does not persist it to run artifacts
 
 The operator surface is not a new runtime. The CLI and existing runtime remain
 responsible for task execution, provider setup, template application, patch
 planning, and git commit planning.
 
 ## Roadmap / Not implemented yet
+
+These remain unimplemented after Phase 1:
+
+- operator app factory
+- `/health`
+- token-protected `/api/v1/*` routes
+- run, context, policy, artifact, provider, security, eval, scorecard, and
+  approval inspection through the API
+- approve or deny through the API or UI
+- packaged static UI
 
 These remain outside the V6 local operator scope:
 
@@ -62,4 +71,3 @@ The planned V6 security model is intentionally local and modest:
 
 V6 must not present the in-memory token as enterprise authentication or the
 local server as a hosted platform.
-

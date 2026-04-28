@@ -2,8 +2,8 @@
 
 > Source PRD: [docs/prd-agent-harness-v6.md](../docs/prd-agent-harness-v6.md)
 
-Phase 0 has been implemented. Remaining acceptance boxes should be checked only
-after behavior is backed by tests, docs, or release evidence.
+Phases 0 and 1 have been implemented. Remaining acceptance boxes should be
+checked only after behavior is backed by tests, docs, or release evidence.
 
 ## Architectural Decisions
 
@@ -111,17 +111,17 @@ and invalid-host paths are safe.
 
 ### Acceptance criteria
 
-- [ ] `agent-harness serve` is present in CLI help.
-- [ ] Default host is `127.0.0.1`.
-- [ ] Default port is `8765`.
-- [ ] Default profile is `default`.
-- [ ] Missing FastAPI/uvicorn dependencies fail clearly with an
+- [x] `agent-harness serve` is present in CLI help.
+- [x] Default host is `127.0.0.1`.
+- [x] Default port is `8765`.
+- [x] Default profile is `default`.
+- [x] Missing FastAPI/uvicorn dependencies fail clearly with an
       `agent-harness[operator]` install hint.
-- [ ] `127.0.0.1`, `localhost`, and `::1` are accepted host values.
-- [ ] `0.0.0.0`, public IPs, private LAN IPs, and non-loopback hostnames are
+- [x] `127.0.0.1`, `localhost`, and `::1` are accepted host values.
+- [x] `0.0.0.0`, public IPs, private LAN IPs, and non-loopback hostnames are
       rejected.
-- [ ] Generated token is printed once when `--token` is omitted.
-- [ ] Generated token is not persisted or written to `.agent-harness` artifacts.
+- [x] Generated token is printed once when `--token` is omitted.
+- [x] Generated token is not persisted or written to `.agent-harness` artifacts.
 
 ### Out of scope
 

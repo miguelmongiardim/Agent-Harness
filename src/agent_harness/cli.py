@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import secrets
 import sys
 from pathlib import Path
 
@@ -149,6 +150,13 @@ def build_parser() -> argparse.ArgumentParser:
     approve.add_argument("--actor", default="cli")
     approve.add_argument("--reason")
     approve.set_defaults(func=cmd_approve)
+
+    serve = sub.add_parser("serve")
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8765)
+    serve.add_argument("--token")
+    serve.add_argument("--profile", default="default")
+    serve.set_defaults(func=cmd_serve)
 
     commit = sub.add_parser("commit")
     commit_sub = commit.add_subparsers(required=True)
@@ -391,6 +399,26 @@ def cmd_approve(args: argparse.Namespace) -> int:
     )
     print(approval.model_dump_json(indent=2))
     return 0
+
+
+def cmd_serve(args: argparse.Namespace) -> int:
+    if not _is_operator_loopback_host(args.host):
+        print(
+            f"error: serve host must be loopback-only; got {args.host!r}",
+            file=sys.stderr,
+        )
+        return 1
+    token = args.token or secrets.token_urlsafe(32)
+    print(f"Operator server: http://{args.host}:{args.port}")
+    print(f"Operator profile: {args.profile}")
+    if args.token is None:
+        print(f"Operator token: {token}")
+    print(
+        "error: operator server requires FastAPI and uvicorn from agent-harness[operator]; "
+        "install with `pip install agent-harness[operator]`",
+        file=sys.stderr,
+    )
+    return 1
 
 
 def cmd_commit_propose(args: argparse.Namespace) -> int:
@@ -641,3 +669,7 @@ def _export_output(
     if output:
         return Path(output)
     return root / artifact_root / "exports" / f"{run_id}{suffix}"
+
+
+def _is_operator_loopback_host(host: str) -> bool:
+    return host in {"127.0.0.1", "localhost", "::1"}
