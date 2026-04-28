@@ -438,18 +438,18 @@ path.
 
 ### Acceptance criteria
 
-- [ ] `examples/template_pack_system/` exists and documents the V7 golden path.
-- [ ] Release readiness validates all bundled packs.
-- [ ] Release readiness dry-runs all bundled packs.
-- [ ] Release readiness clean-applies all bundled packs to temporary targets.
-- [ ] Release readiness validates generated config, task, policy, and eval
+- [x] `examples/template_pack_system/` exists and documents the V7 golden path.
+- [x] Release readiness validates all bundled packs.
+- [x] Release readiness dry-runs all bundled packs.
+- [x] Release readiness clean-applies all bundled packs to temporary targets.
+- [x] Release readiness validates generated config, task, policy, and eval
       examples.
-- [ ] Release readiness confirms template application evidence exists for
+- [x] Release readiness confirms template application evidence exists for
       clean applies.
-- [ ] Release readiness confirms template docs exist.
-- [ ] Release readiness rejects remote catalog defaults.
-- [ ] Docs check passes with V7 implemented and roadmap boundaries intact.
-- [ ] The final acceptance path works:
+- [x] Release readiness confirms template docs exist.
+- [x] Release readiness rejects remote catalog defaults.
+- [x] Docs check passes with V7 implemented and roadmap boundaries intact.
+- [x] The final acceptance path works:
       `template list`, `template show python-lib`, `template validate
       python-lib`, dry-run apply, preview-diff apply, clean apply, and
       `release readiness`.

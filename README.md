@@ -79,6 +79,11 @@ When the secondary demo is run from the repo root, it records
 `.agent-harness/release/evidence/demo-python-refactor.json` for release
 readiness.
 
+The V7 bundled template-pack golden path is documented in
+[`examples/template_pack_system/`](examples/template_pack_system/). It covers
+`template list`, `template show python-lib`, `template validate python-lib`,
+dry-run apply, preview-diff apply, clean apply, and release readiness.
+
 The optional LangGraph boundary proof is isolated behind the `langgraph` extra:
 
 ```powershell

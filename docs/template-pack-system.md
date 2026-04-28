@@ -44,6 +44,26 @@ boundary around local template packs. The target behavior is:
 The preferred future apply option is `--target`; `--destination` remains a
 compatibility alias.
 
+## Golden Path
+
+The executable V7 walkthrough lives in
+`examples/template_pack_system/README.md`. It covers:
+
+- `agent-harness template list`
+- `agent-harness template show python-lib`
+- `agent-harness template validate python-lib`
+- `agent-harness template apply python-lib --target ./scratch/python-lib --dry-run`
+- `agent-harness template apply python-lib --target ./scratch/python-lib --preview-diff`
+- `agent-harness template apply python-lib --target ./scratch/python-lib`
+- `agent-harness release readiness`
+
+Release readiness now runs the bundled-pack acceptance loop directly. It
+refreshes `template validate --all` evidence, dry-runs every bundled V7 pack,
+clean-applies every bundled V7 pack to temporary release workspaces, validates
+generated `config.v2`, `policy.v2`, `task.v2`, and `eval.v1` examples, confirms
+template docs exist, confirms completed `template_application.v1` evidence, and
+keeps remote catalog defaults out of executable config.
+
 ## Guarded Scope
 
 The V7 docs-check guard rejects implemented-scope claims that template packs

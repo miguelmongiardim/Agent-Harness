@@ -103,6 +103,10 @@ The report represents:
 - schema compatibility documentation presence
 - roadmap-claim docs status
 - bundled template validation evidence
+- bundled template-pack acceptance evidence for validation, dry-run,
+  clean apply, generated example schema checks, docs presence, and
+  `template_application.v1` evidence
+- local-only template catalog configuration evidence
 - retrieval scorecard evidence
 - retrieval demo and local-first config evidence
 - operator app factory, API smoke, token requirement, loopback host rejection,
@@ -122,12 +126,15 @@ only when required package, install, console script, demo, docs, changelog,
 template, retrieval scorecard, retrieval demo/config, artifact, tag, and remote
 CI evidence is present and passing.
 
-V7 plans to extend the template evidence gates for the local template-pack
-system. The planned gates are bundled pack validation, dry-run evidence,
-clean-apply evidence, generated config/task/policy/eval schema validation,
-template docs presence, `template_application.v1` evidence for actual applies,
-and rejection of remote catalog defaults. These are V7 targets, not current
-v1.3.0 release requirements.
+For V7 template packs, release readiness refreshes `template validate --all`
+evidence, then validates every bundled pack through a temporary release
+workspace. Each bundled pack must validate, produce dry-run evidence without
+mutating the target, clean-apply to a temporary target, generate valid
+`config.v2`, `task.v2`, `policy.v2`, and `eval.v1` examples, include README or
+docs content, and record completed `template_application.v1` evidence. The
+report also scans executable template config defaults and stays pending when a
+remote catalog, marketplace URL, cloud registry, or registry URL is configured
+as a default.
 
 ## Release Checklist
 
@@ -140,14 +147,15 @@ Before tagging the current release:
 5. Run `agent-harness demo provider-audit`.
 6. Run `agent-harness run examples/tasks/python_refactor.json --dry-run`.
 7. Run `agent-harness template validate --all`.
-8. Run the local retrieval index build and scorecard commands above.
-9. Run `uv sync --extra operator`.
-10. Run `uv run agent-harness demo provider-audit`.
-11. Run `uv run agent-harness serve --host 127.0.0.1 --port 8765` and verify
+8. Run the template-pack golden path in `examples/template_pack_system/`.
+9. Run the local retrieval index build and scorecard commands above.
+10. Run `uv sync --extra operator`.
+11. Run `uv run agent-harness demo provider-audit`.
+12. Run `uv run agent-harness serve --host 127.0.0.1 --port 8765` and verify
     the local UI with the generated token.
-12. Run `agent-harness eval`.
-13. Run `agent-harness release readiness --version 1.3.0`.
-14. Confirm CI passes for the release commit.
+13. Run `agent-harness eval`.
+14. Run `agent-harness release readiness --version 1.3.0`.
+15. Confirm CI passes for the release commit.
 
 ## Tag Process
 

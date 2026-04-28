@@ -161,6 +161,161 @@ def test_release_readiness_reports_ready_when_required_evidence_is_present(
     assert all(entry["status"] == "passed" for entry in report["operator"].values())
 
 
+def test_release_readiness_runs_v7_bundled_template_pack_acceptance(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    _write_release_ready_project(tmp_path, "9.9.9")
+    monkeypatch.setattr(release, "_tag_exists", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_pushed", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_target_commit", lambda project_root, tag_name: "abc123")
+    monkeypatch.setattr(
+        release,
+        "_remote_ci_evidence",
+        lambda project_root, target_commit, ci_run_id: {
+            "run": {
+                "source": "github_actions",
+                "status": "completed",
+                "conclusion": "success",
+                "matches_target_commit": True,
+            },
+            "python_3_11": {"required": True, "status": "passed"},
+            "python_3_12": {"required": True, "status": "passed"},
+            "python_3_13": {"allowed_failure": True, "status": "failed_allowed"},
+        },
+    )
+
+    assert main(["release", "readiness"]) == 0
+    report = json.loads(capsys.readouterr().out)
+
+    assert report["status"] == "ready"
+    templates = report["templates"]
+    assert templates["bundled_pack_acceptance"]["status"] == "passed"
+    assert templates["bundled_pack_acceptance"]["template_ids"] == [
+        "cli-tool",
+        "fastapi-service",
+        "provider-audit",
+        "python-lib",
+        "retrieval-quality",
+    ]
+    assert templates["remote_catalog_defaults"]["status"] == "passed"
+    assert templates["remote_catalog_defaults"]["remote_defaults"] == []
+
+    for pack in templates["bundled_pack_acceptance"]["packs"]:
+        assert pack["validation"]["status"] == "passed"
+        assert pack["dry_run"]["status"] == "passed"
+        assert pack["clean_apply"]["status"] == "passed"
+        assert pack["generated_examples"]["status"] == "passed"
+        assert pack["application_evidence"]["status"] == "passed"
+        assert pack["docs"]["status"] == "passed"
+
+
+def test_v7_template_pack_golden_path_example_and_cli_sequence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    readme = repo_root / "examples" / "template_pack_system" / "README.md"
+    text = readme.read_text(encoding="utf-8")
+
+    for command in (
+        "agent-harness template list",
+        "agent-harness template show python-lib",
+        "agent-harness template validate python-lib",
+        "agent-harness template apply python-lib --target ./scratch/python-lib --dry-run",
+        "agent-harness template apply python-lib --target ./scratch/python-lib --preview-diff",
+        "agent-harness template apply python-lib --target ./scratch/python-lib",
+        "agent-harness release readiness",
+    ):
+        assert command in text
+
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+
+    assert main(["template", "list"]) == 0
+    listed = capsys.readouterr().out
+    assert "python-lib" in listed
+    assert "bundled_pack" in listed
+
+    assert main(["template", "show", "python-lib"]) == 0
+    shown = json.loads(capsys.readouterr().out)
+    assert shown["template_id"] == "python-lib"
+    assert shown["source_type"] == "bundled_pack"
+
+    assert main(["template", "validate", "python-lib"]) == 0
+    validation = json.loads(capsys.readouterr().out)
+    assert validation["status"] == "passed"
+
+    target = tmp_path / "scratch" / "python-lib"
+    assert main(["template", "apply", "python-lib", "--target", str(target), "--dry-run"]) == 0
+    dry_run = json.loads(capsys.readouterr().out)
+    assert dry_run["status"] == "planned"
+    assert not (target / "pyproject.toml").exists()
+
+    assert (
+        main(["template", "apply", "python-lib", "--target", str(target), "--preview-diff"])
+        == 0
+    )
+    preview = json.loads(capsys.readouterr().out)
+    assert preview["mode"] == "preview_diff"
+    assert preview["preview_diffs"]
+    assert not (target / "pyproject.toml").exists()
+
+    assert main(["template", "apply", "python-lib", "--target", str(target)]) == 0
+    apply_summary = json.loads(capsys.readouterr().out)
+    assert apply_summary["status"] == "completed"
+    assert (target / "pyproject.toml").exists()
+
+    assert main(["release", "readiness", "--version", "9.9.9"]) == 0
+    readiness = json.loads(capsys.readouterr().out)
+    assert readiness["templates"]["bundled_pack_acceptance"]["status"] == "passed"
+    assert readiness["templates"]["remote_catalog_defaults"]["status"] == "passed"
+
+
+def test_release_readiness_rejects_remote_template_catalog_defaults(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    _write_release_project_without_evidence(tmp_path, "1.3.0")
+    (tmp_path / "agent-harness.yaml").write_text(
+        "\n".join(
+            [
+                "schema_version: config.v2",
+                "project_name: remote-template-default",
+                "artifact_root: .agent-harness",
+                "default_policy: default",
+                "retrieval_backend: lexical",
+                "template_catalog: https://templates.example.invalid/catalog.json",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["release", "readiness"]) == 0
+    report = json.loads(capsys.readouterr().out)
+
+    assert report["status"] == "pending"
+    remote_defaults = report["templates"]["remote_catalog_defaults"]
+    assert remote_defaults["status"] == "failed"
+    assert remote_defaults["remote_defaults"] == [
+        {
+            "path": "agent-harness.yaml",
+            "setting": "template_catalog",
+            "value": "https://templates.example.invalid/catalog.json",
+        }
+    ]
+    assert "templates.remote_catalog_defaults" in {
+        entry["gate"] for entry in report["diagnostics"]
+    }
+
+
 def test_release_readiness_requires_v1_release_closure_docs(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

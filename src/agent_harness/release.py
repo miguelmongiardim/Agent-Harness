@@ -391,6 +391,7 @@ def _required_doc_markers(
 
 
 def _template_evidence(project_root: Path) -> dict[str, Any]:
+    _run_template_validation_evidence(project_root)
     evidence = _release_evidence(project_root, "template-validation")
     return {
         "validation": {
@@ -398,8 +399,425 @@ def _template_evidence(project_root: Path) -> dict[str, Any]:
             "status": _evidence_status(evidence),
             "evidence": evidence["path"],
             "action": "Run bundled template validation and record the report.",
-        }
+        },
+        "bundled_pack_acceptance": _bundled_template_pack_acceptance(project_root),
+        "remote_catalog_defaults": _template_remote_catalog_defaults(project_root),
     }
+
+
+def _run_template_validation_evidence(project_root: Path) -> dict[str, Any]:
+    from agent_harness.templates.validation import validate_templates
+
+    try:
+        return validate_templates(project_root, all_templates=True)
+    except Exception as exc:
+        report = {
+            "schema_version": "template_validation.v1",
+            "status": "failed",
+            "generated_at": now_utc().isoformat(),
+            "templates": [],
+            "message": _safe_error(exc),
+        }
+        _write_release_evidence(project_root, "template-validation", report)
+        return report
+
+
+def _bundled_template_pack_acceptance(project_root: Path) -> dict[str, Any]:
+    from agent_harness.config import write_default_config
+    from agent_harness.policy import PolicyEngine, load_policy
+    from agent_harness.templates.apply import resolve_template_parameters
+    from agent_harness.templates.registry import list_templates, load_template
+    from agent_harness.templates.validation import validate_bundled_template_pack
+
+    release_root = project_root / ".agent-harness" / "release"
+    release_root.mkdir(parents=True, exist_ok=True)
+    work_root = Path(tempfile.mkdtemp(prefix="template-pack-acceptance-", dir=release_root))
+    catalog_root = work_root / "_catalog"
+    catalog_root.mkdir(parents=True)
+    write_default_config(catalog_root, force=True)
+    write_json(catalog_root / "policies" / "default.json", DEFAULT_POLICY)
+    records = [
+        record for record in list_templates(catalog_root) if record.source_type == "bundled_pack"
+    ]
+    template_ids = sorted(record.template_id for record in records)
+    packs: list[dict[str, Any]] = []
+    for template_id in template_ids:
+        sandbox = work_root / template_id
+        sandbox.mkdir(parents=True)
+        write_default_config(sandbox, force=True)
+        write_json(sandbox / "policies" / "default.json", DEFAULT_POLICY)
+
+        detail = load_template(template_id, sandbox)
+        parameters = resolve_template_parameters(detail, {})
+        policy = PolicyEngine(sandbox, load_policy(sandbox, "default"))
+        target = sandbox / "scaffold"
+
+        validation = validate_bundled_template_pack(template_id)
+        dry_run = _template_pack_dry_run_evidence(
+            sandbox,
+            detail,
+            target,
+            policy,
+            parameters,
+        )
+        clean_apply = _template_pack_clean_apply_evidence(
+            sandbox,
+            template_id,
+            target,
+            parameters,
+        )
+        generated_examples = _generated_template_examples_evidence(
+            target,
+            clean_apply.get("summary", {}),
+        )
+        application_evidence = _template_application_record_evidence(
+            sandbox,
+            clean_apply.get("summary", {}),
+            template_id,
+        )
+        docs = _template_docs_evidence(target, detail)
+        pack: dict[str, Any] = {
+            "template_id": template_id,
+            "validation": {
+                "status": validation["status"],
+                "diagnostics": validation.get("diagnostics", []),
+            },
+            "dry_run": dry_run,
+            "clean_apply": {
+                key: value for key, value in clean_apply.items() if key != "summary"
+            },
+            "generated_examples": generated_examples,
+            "application_evidence": application_evidence,
+            "docs": docs,
+        }
+        pack["status"] = (
+            "passed"
+            if all(
+                pack[gate]["status"] == "passed"
+                for gate in (
+                    "validation",
+                    "dry_run",
+                    "clean_apply",
+                    "generated_examples",
+                    "application_evidence",
+                    "docs",
+                )
+            )
+            else "failed"
+        )
+        packs.append(pack)
+
+    report = {
+        "command": "agent-harness release readiness",
+        "status": (
+            "passed" if packs and all(pack["status"] == "passed" for pack in packs) else "failed"
+        ),
+        "schema_version": "template_pack_acceptance.v1",
+        "template_ids": template_ids,
+        "work_root": _project_relative(project_root, work_root),
+        "packs": packs,
+        "action": (
+            "Ensure every bundled V7 pack validates, dry-runs, clean-applies, "
+            "generates valid config/task/policy/eval examples, records "
+            "template_application.v1 evidence, and includes docs."
+        ),
+    }
+    _write_release_evidence(project_root, "template-pack-acceptance", report)
+    return report
+
+
+def _template_pack_dry_run_evidence(
+    sandbox: Path,
+    detail: Any,
+    target: Path,
+    policy: Any,
+    parameters: dict[str, str],
+) -> dict[str, Any]:
+    from agent_harness.templates.apply import build_template_application_evidence
+
+    before = _relative_files(sandbox)
+    try:
+        evidence = build_template_application_evidence(
+            detail,
+            target,
+            policy,
+            parameters=parameters,
+            mode="dry_run",
+        )
+    except Exception as exc:
+        return {
+            "status": "failed",
+            "detail": _safe_error(exc),
+            "mutated_files": [],
+        }
+    after = _relative_files(sandbox)
+    mutated_files = sorted(after - before)
+    return {
+        "status": (
+            "passed"
+            if evidence.get("schema_version") == "template_application.v1"
+            and evidence.get("status") == "planned"
+            and evidence.get("mode") == "dry_run"
+            and not mutated_files
+            else "failed"
+        ),
+        "mode": evidence.get("mode"),
+        "planned_files": evidence.get("planned_files", []),
+        "approval_required": evidence.get("approval_required"),
+        "mutated_files": mutated_files,
+    }
+
+
+def _template_pack_clean_apply_evidence(
+    sandbox: Path,
+    template_id: str,
+    target: Path,
+    parameters: dict[str, str],
+) -> dict[str, Any]:
+    from agent_harness.core.runtime import HarnessRuntime
+
+    try:
+        summary = HarnessRuntime(sandbox).apply_template(
+            template_id,
+            target,
+            parameters=parameters,
+        )
+    except Exception as exc:
+        return {
+            "status": "failed",
+            "detail": _safe_error(exc),
+            "summary": {},
+        }
+    summary_payload = summary.model_dump(mode="json")
+    return {
+        "status": "passed" if summary.status == "completed" and not summary.approvals else "failed",
+        "run_id": summary.run_id,
+        "target": _project_relative(sandbox, target),
+        "artifacts": summary_payload.get("artifacts", {}),
+        "summary": summary_payload,
+    }
+
+
+def _generated_template_examples_evidence(
+    target: Path,
+    summary: dict[str, Any],
+) -> dict[str, Any]:
+    del summary
+    from agent_harness.schemas import EvalSpec, HarnessConfig, PolicyProfile, TaskSpec
+
+    models: dict[str, type[Any]] = {
+        "config.v2": HarnessConfig,
+        "policy.v2": PolicyProfile,
+        "task.v2": TaskSpec,
+        "eval.v1": EvalSpec,
+    }
+    examples: dict[str, str] = {}
+    diagnostics: list[dict[str, str]] = []
+    for path in sorted(target.rglob("*.json")):
+        relative = _project_relative(target, path)
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            diagnostics.append(
+                {
+                    "path": relative,
+                    "schema_version": "",
+                    "detail": f"invalid JSON: {exc}",
+                }
+            )
+            continue
+        if not isinstance(payload, dict):
+            continue
+        schema_version = payload.get("schema_version")
+        if not isinstance(schema_version, str) or schema_version not in models:
+            continue
+        try:
+            models[schema_version].model_validate(payload)
+        except Exception as exc:
+            diagnostics.append(
+                {
+                    "path": relative,
+                    "schema_version": schema_version,
+                    "detail": _safe_error(exc),
+                }
+            )
+            continue
+        examples[schema_version] = relative
+    missing = sorted(set(models) - set(examples))
+    return {
+        "status": "passed" if not missing and not diagnostics else "failed",
+        "examples": examples,
+        "missing_schema_versions": missing,
+        "diagnostics": diagnostics,
+        "action": (
+            "Generated template examples must validate as config.v2, policy.v2, "
+            "task.v2, and eval.v1."
+        ),
+    }
+
+
+def _template_application_record_evidence(
+    sandbox: Path,
+    summary: dict[str, Any],
+    template_id: str,
+) -> dict[str, Any]:
+    artifacts = summary.get("artifacts")
+    if not isinstance(artifacts, dict):
+        return {
+            "status": "missing_evidence",
+            "path": None,
+            "action": "Clean applies must record template_application.v1 evidence.",
+        }
+    relative = artifacts.get("template_application")
+    if not isinstance(relative, str):
+        return {
+            "status": "missing_evidence",
+            "path": None,
+            "action": "Clean applies must record template_application.v1 evidence.",
+        }
+    path = sandbox / relative
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {
+            "status": "failed",
+            "path": relative,
+            "detail": _safe_error(exc),
+            "action": "Clean applies must record readable template_application.v1 evidence.",
+        }
+    status = (
+        "passed"
+        if payload.get("schema_version") == "template_application.v1"
+        and payload.get("status") == "completed"
+        and payload.get("mode") == "apply"
+        and payload.get("template_id") == template_id
+        and payload.get("created_files")
+        else "failed"
+    )
+    return {
+        "status": status,
+        "path": relative,
+        "created_files": payload.get("created_files", []),
+        "action": "Clean applies must record completed template_application.v1 evidence.",
+    }
+
+
+def _template_docs_evidence(target: Path, detail: Any) -> dict[str, Any]:
+    declared_docs = sorted(
+        file.path
+        for file in detail.files
+        if file.path == "README.md" or file.path.startswith("docs/") or file.path.endswith(".md")
+    )
+    missing_docs = [path for path in declared_docs if not (target / path).exists()]
+    return {
+        "status": "passed" if declared_docs and not missing_docs else "missing_evidence",
+        "files": declared_docs,
+        "missing_files": missing_docs,
+        "action": "Bundled template packs must include README or docs content.",
+    }
+
+
+def _relative_files(root: Path) -> set[str]:
+    return {
+        path.relative_to(root).as_posix()
+        for path in root.rglob("*")
+        if path.is_file()
+    }
+
+
+def _template_remote_catalog_defaults(project_root: Path) -> dict[str, Any]:
+    findings: list[dict[str, object]] = []
+    for path in _template_config_paths(project_root):
+        try:
+            config = load_mapping(path)
+        except Exception as exc:
+            findings.append(
+                {
+                    "path": _project_relative(project_root, path),
+                    "setting": "parse_error",
+                    "value": str(exc),
+                }
+            )
+            continue
+        findings.extend(_remote_template_catalog_findings(project_root, path, config))
+    return {
+        "status": "failed" if findings else "passed",
+        "checked_paths": [
+            _project_relative(project_root, path)
+            for path in _template_config_paths(project_root)
+        ],
+        "remote_defaults": findings,
+        "action": (
+            "Keep executable template configuration on bundled/local sources; "
+            "remote catalogs, marketplace URLs, and cloud registries are not V7 defaults."
+        ),
+    }
+
+
+def _template_config_paths(project_root: Path) -> list[Path]:
+    paths: list[Path] = []
+    root_config = project_root / "agent-harness.yaml"
+    if root_config.exists():
+        paths.append(root_config)
+    examples = project_root / "examples"
+    if examples.exists():
+        paths.extend(sorted(examples.rglob("agent-harness.yaml")))
+        paths.extend(sorted(examples.rglob("config.v2.yaml")))
+        paths.extend(sorted(examples.rglob("config.v2.json")))
+        paths.extend(sorted(examples.rglob("*.config.json")))
+    return sorted(dict.fromkeys(paths))
+
+
+def _remote_template_catalog_findings(
+    project_root: Path,
+    path: Path,
+    config: dict[str, Any],
+) -> list[dict[str, object]]:
+    relative = _project_relative(project_root, path)
+    findings: list[dict[str, object]] = []
+    catalog = config.get("template_catalog")
+    if isinstance(catalog, str) and _remote_template_catalog_value(catalog):
+        findings.append(
+            {
+                "path": relative,
+                "setting": "template_catalog",
+                "value": catalog,
+            }
+        )
+    templates = config.get("templates")
+    if isinstance(templates, dict):
+        for setting in (
+            "catalog_url",
+            "remote_catalog",
+            "remote_catalog_url",
+            "marketplace",
+            "marketplace_url",
+            "cloud_registry",
+            "registry_url",
+        ):
+            value = templates.get(setting)
+            if value not in (None, "", False):
+                findings.append(
+                    {
+                        "path": relative,
+                        "setting": f"templates.{setting}",
+                        "value": value,
+                    }
+                )
+    return findings
+
+
+def _remote_template_catalog_value(value: str) -> bool:
+    lowered = value.strip().lower()
+    if lowered in {"", "bundled", "local"}:
+        return False
+    return (
+        "://" in lowered
+        or lowered.startswith("remote")
+        or "marketplace" in lowered
+        or "cloud" in lowered
+        or "registry" in lowered
+    )
 
 
 def _retrieval_evidence(project_root: Path) -> dict[str, Any]:
