@@ -59,6 +59,8 @@ approval decisions routed through the existing approval service. The current
 slice implements the loopback serve command, `/health`, token enforcement for
 `/api/v1/*`, run list/detail inspection over existing run artifacts, context
 manifest inspection, policy inspection, and safe missing/malformed/denied
-artifact status reporting. Approval decisions remain a later V6 phase. It must
-not claim hosted operation, enterprise authentication, production web service
-readiness, or compliance readiness.
+artifact status reporting. It also implements approval listing and approve/deny
+API decisions through the existing approval service, preserving binding,
+checkpoint, drift, policy re-check, approval artifact, and event behavior. It
+must not claim hosted operation, enterprise authentication, production web
+service readiness, or compliance readiness.

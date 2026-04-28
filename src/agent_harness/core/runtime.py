@@ -899,6 +899,8 @@ def approve_action(
     actor: str,
     reason: str | None = None,
 ) -> ApprovalRecord:
+    if decision not in {"approve", "deny"}:
+        raise ValueError("decision must be approve or deny")
     runtime = HarnessRuntime(project_root)
     store = RunStore.open_existing(runtime.artifact_root, run_id)
     approval = store.read_approval(action_id)
@@ -912,11 +914,8 @@ def approve_action(
             "reason": reason,
         }
     )
-    store.write_approval(updated)
-    store.append_event(
-        make_event(run_id, "approval_decided", {"approval": updated.model_dump(mode="json")})
-    )
     if decision != "approve":
+        _record_approval_decision(store, updated)
         _finalize_resumed_run(store, "failed")
         return updated
 
@@ -932,6 +931,7 @@ def approve_action(
             run_id=run_id,
             policy_profile=policy.profile.name,
         )
+        _record_approval_decision(store, updated)
         _apply_template_approval(
             project_root,
             store,
@@ -954,6 +954,7 @@ def approve_action(
             run_id=run_id,
             policy_profile=policy.profile.name,
         )
+        _record_approval_decision(store, updated)
         commit_hash = execute_git_commit(project_root, plan)
         committed = bind_committed_hash(plan, commit_hash)
         store.write_model("git_commit.json", committed)
@@ -990,6 +991,7 @@ def approve_action(
             ),
             policy_decision_id=str(action_record["policy_decision_id"]),
         )
+        _record_approval_decision(store, updated)
         if _has_pending_approvals(store):
             _update_resumed_summary(store, "paused")
             _refresh_artifact_index(project_root, store)
@@ -1025,6 +1027,7 @@ def approve_action(
             run_id=run_id,
             policy_profile=policy.profile.name,
         )
+        _record_approval_decision(store, updated)
         provider_input = load_model(store.run_dir / "provider_input.json", ProviderInputManifest)
         store.write_model(
             "provider_input.json",
@@ -1058,6 +1061,8 @@ def approve_action(
 
     executor = ToolExecutor(project_root, policy)
     call = ToolCall.model_validate_json(json.dumps(action_record["call"]))
+    _validate_tool_approval(executor, call, task, updated, run_id, action_record)
+    _record_approval_decision(store, updated)
     observation, policy_decision = executor.execute(
         call,
         task,
@@ -1084,6 +1089,60 @@ def approve_action(
     store.write_action(action_id, action_record)
     _finalize_resumed_run(store, "completed" if observation.success else "failed")
     return updated
+
+
+def _record_approval_decision(store: RunStore, approval: ApprovalRecord) -> None:
+    store.write_approval(approval)
+    store.append_event(
+        make_event(
+            store.run_id,
+            "approval_decided",
+            {"approval": approval.model_dump(mode="json")},
+        )
+    )
+
+
+def _validate_tool_approval(
+    executor: ToolExecutor,
+    call: ToolCall,
+    task: TaskSpec,
+    approval: ApprovalRecord,
+    run_id: str,
+    action_record: dict[str, object],
+) -> None:
+    try:
+        checkpoint_hash = str(action_record["checkpoint_hash"])
+        policy_profile = str(action_record["policy_profile"])
+        proposed_effect_hash = str(action_record["proposed_effect_hash"])
+    except KeyError as exc:
+        raise ValueError("approval binding does not match action") from exc
+    expected = {
+        "run_id": run_id,
+        "action_id": call.action_id,
+        "tool_name": call.tool_name,
+        "arguments_hash": call.arguments_hash(),
+        "policy_profile": policy_profile,
+        "checkpoint_hash": checkpoint_hash,
+        "proposed_effect_hash": proposed_effect_hash,
+    }
+    actual = {
+        "run_id": approval.run_id,
+        "action_id": approval.action_id,
+        "tool_name": approval.tool_name,
+        "arguments_hash": approval.arguments_hash,
+        "policy_profile": approval.policy_profile,
+        "checkpoint_hash": approval.checkpoint_hash,
+        "proposed_effect_hash": approval.proposed_effect_hash,
+    }
+    if actual != expected:
+        raise ValueError("approval binding does not match action")
+    if policy_profile != executor.policy.profile.name:
+        raise ValueError("approval binding does not match action")
+    if proposed_effect_hash != executor.proposed_effect_hash(call):
+        raise ValueError("approval binding does not match action")
+    decision = executor.policy.evaluate_tool_call(call, task, checkpoint_hash)
+    if not decision.allowed:
+        raise ValueError(decision.reason)
 
 
 def _finalize_resumed_run(store: RunStore, final_status: str) -> None:

@@ -12,7 +12,7 @@ current until tests and release evidence exist.
 
 ## Implemented in V6
 
-Phases 1 through 4 have added the safe `agent-harness serve` shell and the
+Phases 1 through 5 have added the safe `agent-harness serve` shell and the
 first local operator run-inspection APIs:
 
 - the `operator` optional dependency extra is declared
@@ -44,6 +44,15 @@ first local operator run-inspection APIs:
   values without leaking local filesystem paths
 - `GET /api/v1/policy/{profile}` returns `operator_policy.v1` from existing
   policy loading without exposing environment values
+- `GET /api/v1/runs/{run_id}/approvals` returns `operator_approval_list.v1`
+  with pending and decided approval records from existing run artifacts
+- `POST /api/v1/runs/{run_id}/approvals/{action_id}/decision` returns
+  `operator_approval_decision.v1` after approving or denying through the
+  existing approval service
+- approval decisions preserve binding, checkpoint, and drift checks; failed
+  checks return safe API errors without marking the approval decided
+- API approval decisions write the same approval artifacts and run events that
+  CLI approval uses
 
 The operator surface is not a new runtime. The CLI and existing runtime remain
 responsible for task execution, provider setup, template application, patch
@@ -51,10 +60,10 @@ planning, and git commit planning.
 
 ## Roadmap / Not implemented yet
 
-These remain unimplemented after Phase 4:
+These remain unimplemented after Phase 5:
 
-- eval, scorecard, and approval inspection routes
-- approve or deny through the API or UI
+- eval and scorecard inspection routes
+- approve or deny through the UI
 - packaged static UI
 
 These remain outside the V6 local operator scope:

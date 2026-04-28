@@ -2,7 +2,7 @@
 
 > Source PRD: [docs/prd-agent-harness-v6.md](../docs/prd-agent-harness-v6.md)
 
-Phases 0, 1, 2, 3, and 4 have been implemented. Remaining acceptance boxes
+Phases 0, 1, 2, 3, 4, and 5 have been implemented. Remaining acceptance boxes
 should be checked only after behavior is backed by tests, docs, or release
 evidence.
 
@@ -21,8 +21,8 @@ Durable decisions that apply across all phases:
   inspection.
 - **Key models**: add `operator_health.v1`, `operator_run_list.v1`,
   `operator_run_detail.v1`, `operator_context.v1`, `operator_policy.v1`, and
-  `operator_approval_decision.v1`; reuse existing artifact schemas where
-  available.
+  `operator_approval_list.v1`, `operator_approval_decision.v1`; reuse existing
+  artifact schemas where available.
 - **Storage boundary**: read only known run evidence under the configured
   artifact root; do not expose arbitrary filesystem reads.
 - **Approval boundary**: the only mutating API behavior is approve/deny for
@@ -304,20 +304,20 @@ approval service and map domain errors to clear HTTP responses.
 
 ### Acceptance criteria
 
-- [ ] `GET /api/v1/runs/{run_id}/approvals` requires a valid token.
-- [ ] Approval list returns pending and decided approvals.
-- [ ] Decision endpoint accepts only `approve` or `deny`.
-- [ ] Decision endpoint accepts optional `actor` and `reason`.
-- [ ] Decision endpoint calls the existing approval service.
-- [ ] Approval binding checks cannot be bypassed.
-- [ ] Drift and checkpoint checks cannot be bypassed.
-- [ ] Already-decided approvals return conflict.
-- [ ] Missing run returns not found.
-- [ ] Missing action returns not found.
-- [ ] Failed binding checks surface clear safe errors.
-- [ ] Decision writes the same approval artifact shape as CLI approval.
-- [ ] Decision appends auditable run events.
-- [ ] CLI inspect shows the same state after API approval or denial.
+- [x] `GET /api/v1/runs/{run_id}/approvals` requires a valid token.
+- [x] Approval list returns pending and decided approvals.
+- [x] Decision endpoint accepts only `approve` or `deny`.
+- [x] Decision endpoint accepts optional `actor` and `reason`.
+- [x] Decision endpoint calls the existing approval service.
+- [x] Approval binding checks cannot be bypassed.
+- [x] Drift and checkpoint checks cannot be bypassed.
+- [x] Already-decided approvals return conflict.
+- [x] Missing run returns not found.
+- [x] Missing action returns not found.
+- [x] Failed binding checks surface clear safe errors.
+- [x] Decision writes the same approval artifact shape as CLI approval.
+- [x] Decision appends auditable run events.
+- [x] CLI inspect shows the same state after API approval or denial.
 
 ### Out of scope
 

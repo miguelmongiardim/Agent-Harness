@@ -7,11 +7,17 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, FastAPI, Header, HTTPException
+from pydantic import ValidationError
 
 from agent_harness import __version__
 from agent_harness.config import load_config
+from agent_harness.core.runtime import approve_action
 from agent_harness.policy import PolicyError, load_policy
 from agent_harness.schemas import (
+    ApprovalRecord,
+    OperatorApprovalDecisionRequest,
+    OperatorApprovalDecisionResponse,
+    OperatorApprovalListResponse,
     OperatorArtifactStatus,
     OperatorContextResponse,
     OperatorHealthResponse,
@@ -72,6 +78,27 @@ def create_operator_app(project_root: Path, token: str, profile: str = "default"
     ) -> dict[str, object]:
         del _authorized
         return _load_context_manifest(app.state.project_root, run_id).model_dump(
+            mode="json",
+            exclude_none=True,
+        )
+
+    @app.get("/api/v1/runs/{run_id}/approvals")
+    def run_approvals(
+        run_id: str,
+        _authorized: None = Depends(require_operator_token),
+    ) -> dict[str, object]:
+        del _authorized
+        return _load_approvals(app.state.project_root, run_id).model_dump(mode="json")
+
+    @app.post("/api/v1/runs/{run_id}/approvals/{action_id}/decision")
+    def approval_decision(
+        run_id: str,
+        action_id: str,
+        request: OperatorApprovalDecisionRequest,
+        _authorized: None = Depends(require_operator_token),
+    ) -> dict[str, object]:
+        del _authorized
+        return _decide_approval(app.state.project_root, run_id, action_id, request).model_dump(
             mode="json",
             exclude_none=True,
         )
@@ -188,6 +215,61 @@ def _load_policy_summary(project_root: Path, profile: str) -> OperatorPolicyResp
     return OperatorPolicyResponse(
         profile=profile,
         policy=policy.model_dump(mode="json"),
+    )
+
+
+def _load_approvals(project_root: Path, run_id: str) -> OperatorApprovalListResponse:
+    store = _open_run_store(project_root, run_id)
+    approval_dir = store.run_dir / "approvals"
+    approvals: list[dict[str, Any]] = []
+    counts = {"pending": 0, "approved": 0, "denied": 0}
+    if approval_dir.exists():
+        for path in sorted(approval_dir.glob("*.json")):
+            try:
+                approval = ApprovalRecord.model_validate_json(path.read_text(encoding="utf-8"))
+            except (ValidationError, json.JSONDecodeError, ValueError) as exc:
+                raise HTTPException(
+                    status_code=422,
+                    detail="malformed run artifact: approvals",
+                ) from exc
+            approvals.append(approval.model_dump(mode="json"))
+            counts[approval.status] += 1
+    return OperatorApprovalListResponse(
+        run_id=run_id,
+        approvals=approvals,
+        counts=counts,
+    )
+
+
+def _decide_approval(
+    project_root: Path,
+    run_id: str,
+    action_id: str,
+    request: OperatorApprovalDecisionRequest,
+) -> OperatorApprovalDecisionResponse:
+    store = _open_run_store(project_root, run_id)
+    if RUN_ID_PATTERN.fullmatch(action_id) is None:
+        raise HTTPException(status_code=404, detail="approval action not found")
+    if not (store.run_dir / "approvals" / f"{action_id}.json").exists():
+        raise HTTPException(status_code=404, detail="approval action not found")
+    try:
+        approval = approve_action(
+            project_root,
+            run_id,
+            action_id,
+            request.decision,
+            actor=request.actor or "operator",
+            reason=request.reason,
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="approval action not found") from exc
+    except ValueError as exc:
+        detail = str(exc)
+        status_code = 409 if detail.startswith("approval is already ") else 422
+        raise HTTPException(status_code=status_code, detail=detail) from exc
+    return OperatorApprovalDecisionResponse(
+        run_id=run_id,
+        approval=approval.model_dump(mode="json"),
     )
 
 

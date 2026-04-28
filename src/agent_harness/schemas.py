@@ -118,6 +118,25 @@ class OperatorPolicyResponse(StrictModel):
     policy: dict[str, Any]
 
 
+class OperatorApprovalListResponse(StrictModel):
+    schema_version: Literal["operator_approval_list.v1"] = "operator_approval_list.v1"
+    run_id: str
+    approvals: list[dict[str, Any]]
+    counts: dict[str, int]
+
+
+class OperatorApprovalDecisionRequest(StrictModel):
+    decision: Literal["approve", "deny"]
+    actor: str | None = None
+    reason: str | None = None
+
+
+class OperatorApprovalDecisionResponse(StrictModel):
+    schema_version: Literal["operator_approval_decision.v1"] = "operator_approval_decision.v1"
+    run_id: str
+    approval: dict[str, Any]
+
+
 def _validate_env_var_name(value: str) -> str:
     if not re.fullmatch(r"[A-Z_][A-Z0-9_]*", value):
         raise ValueError("env var names must match [A-Z_][A-Z0-9_]*")
