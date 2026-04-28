@@ -14,10 +14,14 @@ runtime around explicit ownership boundaries.
   execution, and the exact-state `git_commit` planning/execution boundary.
 - `agent_harness.benchmarks` owns packaged local benchmark sample packs,
   workspace staging, result mapping, and evidence-backed benchmark exports.
+- `agent_harness.templates` owns bundled template catalog behavior today and is
+  the V7 boundary for local pack source discovery, manifest loading,
+  validation, deterministic rendering, planning, application evidence, and
+  policy-mediated template writes.
 - `agent_harness.release` owns local release-readiness evidence collection.
-- `agent_harness.model`, `agent_harness.runtimes`, `agent_harness.templates`,
-  `agent_harness.storage`, `agent_harness.telemetry`, `agent_harness.evals`,
-  and `agent_harness.exporters` provide the report's package-level structural
+- `agent_harness.model`, `agent_harness.runtimes`, `agent_harness.storage`,
+  `agent_harness.telemetry`, `agent_harness.evals`, and
+  `agent_harness.exporters` provide the report's package-level structural
   boundaries.
 
 ## Deep Research Layout Reconciliation
@@ -76,6 +80,14 @@ Template loading is a schema and catalog boundary. `template.v2` manifests carry
 compatibility, capability, generated-schema, provider, policy, retrieval, and
 demo metadata. Template application remains approval-bound and records applied
 template id and version in workspace metadata.
+
+The V7 template-pack plan keeps local pack behavior inside
+`agent_harness.templates`: `template.v2.toml` loading, configured local
+directory discovery, validation diagnostics, deterministic substitution,
+dry-run and preview planning, clean apply evidence, and
+`template_application.v1` construction. Runtime and policy code should
+coordinate approvals and write permissions without absorbing pack parsing or
+rendering rules.
 
 Schema migration stays outside runtime execution. The migration module reports
 original and proposed effective schema versions by default, and `--write` only

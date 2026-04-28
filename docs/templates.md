@@ -47,3 +47,8 @@ rejected before write planning.
 
 External catalogs, remote template discovery, and non-Python template expansion
 are not part of the current V2 release.
+
+The planned V7 Template Pack System is documented in
+[template-pack-system.md](template-pack-system.md). V7 keeps template packs
+local-first, explicit, and inspectable while adding pack manifests, dry-run
+planning, preview diffs, clean-apply evidence, and release-readiness gates.

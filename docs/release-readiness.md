@@ -122,6 +122,13 @@ only when required package, install, console script, demo, docs, changelog,
 template, retrieval scorecard, retrieval demo/config, artifact, tag, and remote
 CI evidence is present and passing.
 
+V7 plans to extend the template evidence gates for the local template-pack
+system. The planned gates are bundled pack validation, dry-run evidence,
+clean-apply evidence, generated config/task/policy/eval schema validation,
+template docs presence, `template_application.v1` evidence for actual applies,
+and rejection of remote catalog defaults. These are V7 targets, not current
+v1.3.0 release requirements.
+
 ## Release Checklist
 
 Before tagging the current release:

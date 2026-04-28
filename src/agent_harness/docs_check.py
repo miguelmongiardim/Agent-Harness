@@ -14,6 +14,9 @@ RETRIEVAL_DOC_SUBJECT_PATTERN = (
 OPERATOR_DOC_SUBJECT_PATTERN = (
     r"(?:Agent Harness|This repo|The current implementation|V6|The V6 implementation)"
 )
+TEMPLATE_PACK_DOC_SUBJECT_PATTERN = (
+    r"(?:Agent Harness|This repo|The current implementation|V7|The V7 implementation)"
+)
 
 
 def _unsupported_doc_pattern(claim: str, *, uses_is: bool = False) -> re.Pattern[str]:
@@ -151,6 +154,80 @@ UNSUPPORTED_OPERATOR_SCOPE_CLAIMS = [
         ),
     ),
 ]
+UNSUPPORTED_TEMPLATE_PACK_SCOPE_CLAIMS = [
+    (
+        "remote template catalogs",
+        re.compile(
+            rf"\b{TEMPLATE_PACK_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bremote template catalogs?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "template marketplace behavior",
+        re.compile(
+            rf"\b{TEMPLATE_PACK_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\btemplate marketplace(?: behavior)?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "template signing",
+        re.compile(
+            rf"\b{TEMPLATE_PACK_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\btemplate signing\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "organization template catalogs",
+        re.compile(
+            rf"\b{TEMPLATE_PACK_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\borganization template catalogs?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "cloud template registries",
+        re.compile(
+            rf"\b{TEMPLATE_PACK_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bcloud template registr(?:y|ies)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "template hooks",
+        re.compile(
+            rf"\b{TEMPLATE_PACK_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\b(?:template hooks?|hook execution|lifecycle hooks?)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "template scripts",
+        re.compile(
+            rf"\b{TEMPLATE_PACK_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\b(?:template scripts?|script execution)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "enterprise template governance",
+        re.compile(
+            rf"\b{TEMPLATE_PACK_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\benterprise template governance\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "conditional file inclusion",
+        re.compile(
+            rf"\b{TEMPLATE_PACK_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bconditional file inclusion\b",
+            re.IGNORECASE,
+        ),
+    ),
+]
 RETRIEVAL_ROADMAP_HEADINGS = (
     "roadmap",
     "out of scope",
@@ -160,6 +237,7 @@ RETRIEVAL_ROADMAP_HEADINGS = (
     "future",
 )
 OPERATOR_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
+TEMPLATE_PACK_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 
 IMPLEMENTED_SECTION_MARKERS = (
     "## What This Repo Proves",
@@ -215,6 +293,7 @@ def run_docs_check(project_root: Path) -> dict[str, Any]:
         findings.extend(_unsupported_claim_findings(relative, lines))
         findings.extend(_unsupported_retrieval_scope_findings(relative, lines))
         findings.extend(_unsupported_operator_scope_findings(relative, lines))
+        findings.extend(_unsupported_template_pack_scope_findings(relative, lines))
         findings.extend(_required_section_findings(relative, text))
         findings.extend(_internal_link_findings(project_root, path, relative, lines))
         findings.extend(_citation_placeholder_findings(relative, lines))
@@ -395,6 +474,46 @@ def _unsupported_operator_scope_findings(
 
 
 def _denies_unsupported_operator_scope(line: str, label: str) -> bool:
+    phrase = re.escape(label).replace(r"\ ", r"\s+")
+    return bool(
+        re.search(
+            rf"\b(?:without|no|not)\s+{phrase}\b"
+            rf"|\bdoes\s+not\s+(?:use|support|provide|include|ship|offer)\s+{phrase}\b",
+            line,
+            re.IGNORECASE,
+        )
+    )
+
+
+def _unsupported_template_pack_scope_findings(
+    relative: str, lines: list[str]
+) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    in_roadmap_scope = False
+    for line_number, line in enumerate(lines, start=1):
+        heading = re.match(r"^#{1,6}\s+(.+?)\s*$", line)
+        if heading is not None:
+            heading_text = heading.group(1).lower()
+            in_roadmap_scope = any(
+                marker in heading_text for marker in TEMPLATE_PACK_ROADMAP_HEADINGS
+            )
+        if in_roadmap_scope:
+            continue
+        for label, pattern in UNSUPPORTED_TEMPLATE_PACK_SCOPE_CLAIMS:
+            if pattern.search(line) and not _denies_unsupported_template_pack_scope(line, label):
+                findings.append(
+                    _finding(
+                        "unsupported_template_pack_scope_claim",
+                        relative,
+                        line_number,
+                        f"Docs claim unsupported V7 template-pack behavior as available: {label}",
+                        line,
+                    )
+                )
+    return findings
+
+
+def _denies_unsupported_template_pack_scope(line: str, label: str) -> bool:
     phrase = re.escape(label).replace(r"\ ", r"\s+")
     return bool(
         re.search(

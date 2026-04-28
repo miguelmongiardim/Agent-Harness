@@ -71,17 +71,17 @@ boundary and keep roadmap-only claims out of implemented sections.
 
 ### Acceptance criteria
 
-- [ ] `docs/prd-agent-harness-v7.md` exists and follows the PRD template.
-- [ ] `plans/agent-harness-v7.md` exists and uses vertical slices.
-- [ ] `docs/template-pack-system.md` describes V7 local template packs.
-- [ ] README and roadmap describe V7 as local-first and keep remote template
+- [x] `docs/prd-agent-harness-v7.md` exists and follows the PRD template.
+- [x] `plans/agent-harness-v7.md` exists and uses vertical slices.
+- [x] `docs/template-pack-system.md` describes V7 local template packs.
+- [x] README and roadmap describe V7 as local-first and keep remote template
       features future-only.
-- [ ] Architecture docs identify `agent_harness.templates` as the pack-system
+- [x] Architecture docs identify `agent_harness.templates` as the pack-system
       boundary.
-- [ ] Release-readiness docs name the V7 template-pack gates.
-- [ ] Docs check rejects unsupported template-pack claims outside roadmap
+- [x] Release-readiness docs name the V7 template-pack gates.
+- [x] Docs check rejects unsupported template-pack claims outside roadmap
       sections.
-- [ ] Docs check passes after docs are corrected.
+- [x] Docs check passes after docs are corrected.
 
 ### Out of scope
 

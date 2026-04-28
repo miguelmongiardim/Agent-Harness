@@ -208,6 +208,17 @@ target remains a loopback-only inspection and approval UI over existing
 artifacts, not hosted API/UI operation, enterprise authentication, MCP, or
 multi-agent orchestration.
 
+V7 is planned as a local-first template-pack system:
+[docs/template-pack-system.md](docs/template-pack-system.md),
+[docs/prd-agent-harness-v7.md](docs/prd-agent-harness-v7.md), and
+[plans/agent-harness-v7.md](plans/agent-harness-v7.md). The target keeps
+template packs local and inspectable, adds `template.v2.toml` pack manifests,
+dry-run and preview evidence, clean empty-target apply evidence, and
+release-readiness gates. Remote template catalogs, marketplace behavior,
+template signing, organization catalogs, cloud registries, lifecycle hooks,
+script execution, enterprise governance, and conditional file inclusion remain
+future-only scope.
+
 ## Documentation
 
 - [Architecture](docs/architecture.md)
@@ -218,14 +229,17 @@ multi-agent orchestration.
 - [Evaluation strategy](docs/evaluations.md)
 - [Provider Core](docs/provider-core.md)
 - [Template catalog](docs/templates.md)
+- [Template pack system](docs/template-pack-system.md)
 - [Schema migration](docs/migration.md)
 - [Release readiness](docs/release-readiness.md)
 - [Conception alignment](docs/conception-alignment.md)
 - [V4 Provider Core PRD](docs/prd-agent-harness-v4.md)
 - [V5 Local-First Retrieval Hardening PRD](docs/prd-agent-harness-v5.md)
 - [V6 Local Operator Surface PRD](docs/prd-agent-harness-v6.md)
+- [V7 Template Pack System PRD](docs/prd-agent-harness-v7.md)
 - [V5 implementation plan](plans/agent-harness-v5.md)
 - [V6 implementation plan](plans/agent-harness-v6.md)
+- [V7 implementation plan](plans/agent-harness-v7.md)
 - [Roadmap](docs/roadmap.md)
 
 ## License
