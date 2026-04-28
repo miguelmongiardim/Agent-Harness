@@ -335,7 +335,13 @@ def test_template_validation_satisfies_release_readiness_template_gate(
     assert main(["template", "validate", "--all"]) == 0
     evidence = json.loads(capsys.readouterr().out)
     assert evidence["status"] == "passed"
-    assert len(evidence["templates"]) == 3
+    assert {entry["template_id"] for entry in evidence["templates"]} == {
+        "cli-tool",
+        "fastapi-service",
+        "provider-audit",
+        "python-lib",
+        "retrieval-quality",
+    }
 
     assert main(["release", "readiness"]) == 0
     readiness = json.loads(capsys.readouterr().out)

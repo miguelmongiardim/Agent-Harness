@@ -1,0 +1,30 @@
+{
+  "allowed_tools": [
+    "read_file",
+    "search_code",
+    "run_tests"
+  ],
+  "context_queries": [
+    "provider audit policy",
+    "provider profile approval"
+  ],
+  "intent": "Review the generated provider audit workflow and confirm provider access remains policy-gated.",
+  "max_steps": 4,
+  "policy_profile": "default",
+  "provider_profile": "provider-audit-mock",
+  "schema_version": "task.v2",
+  "target_paths": [
+    "docs/provider-audit-workflow.md",
+    "examples"
+  ],
+  "task_id": "provider-audit-review",
+  "test_commands": [
+    [
+      "agent-harness",
+      "task",
+      "validate",
+      "examples/provider-audit.task.json"
+    ]
+  ],
+  "title": "Review provider audit workflow"
+}

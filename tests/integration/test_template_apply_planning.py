@@ -44,6 +44,7 @@ def test_template_apply_dry_run_reports_plan_without_mutation(
     assert evidence["target_path"] == "scaffold"
     assert evidence["parameters"] == {"package_name": "planned_lib"}
     assert evidence["planned_creates"] == [
+        "scaffold/README.md",
         "scaffold/pyproject.toml",
         "scaffold/src/example_python_lib/__init__.py",
         "scaffold/src/example_python_lib/core.py",
@@ -58,6 +59,7 @@ def test_template_apply_dry_run_reports_plan_without_mutation(
     assert evidence["generated_schema_versions"]["template"] == "template.v2"
     assert evidence["required_capabilities"] == ["python.library"]
     assert evidence["generated_files"] == [
+        "README.md",
         "pyproject.toml",
         "src/example_python_lib/__init__.py",
         "src/example_python_lib/core.py",
@@ -108,6 +110,7 @@ def test_template_apply_preview_diff_reports_relative_diffs_without_mutation(
     assert evidence["target_path"] == "scaffold"
     assert evidence["parameters"] == {"package_name": "example_python_lib"}
     assert [entry["path"] for entry in evidence["preview_diffs"]] == [
+        "scaffold/README.md",
         "scaffold/pyproject.toml",
         "scaffold/src/example_python_lib/__init__.py",
         "scaffold/src/example_python_lib/core.py",
@@ -118,8 +121,8 @@ def test_template_apply_preview_diff_reports_relative_diffs_without_mutation(
         "scaffold/examples/python-lib.eval.json",
     ]
     first_diff = evidence["preview_diffs"][0]["diff"]
-    assert "--- a/scaffold/pyproject.toml" in first_diff
-    assert "+++ b/scaffold/pyproject.toml" in first_diff
+    assert "--- a/scaffold/README.md" in first_diff
+    assert "+++ b/scaffold/README.md" in first_diff
     assert str(tmp_path) not in first_diff
 
     assert not (target / "pyproject.toml").exists()
@@ -156,6 +159,7 @@ def test_template_apply_dry_run_reports_conflicts_without_artifacts(
 
     assert evidence["status"] == "planned"
     assert evidence["planned_creates"] == [
+        "scaffold/README.md",
         "scaffold/src/example_python_lib/__init__.py",
         "scaffold/src/example_python_lib/core.py",
         "scaffold/tests/test_core.py",

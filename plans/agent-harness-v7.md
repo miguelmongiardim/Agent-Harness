@@ -385,20 +385,20 @@ task, eval, docs, and demo metadata behavior without remote catalogs or hooks.
 
 ### Acceptance criteria
 
-- [ ] Required bundled packs are `python-lib`, `cli-tool`, `fastapi-service`,
+- [x] Required bundled packs are `python-lib`, `cli-tool`, `fastapi-service`,
       `provider-audit`, and `retrieval-quality`.
-- [ ] Every bundled pack has `template.v2.toml`.
-- [ ] Every bundled pack has README or docs fragment content.
-- [ ] Every bundled pack generates config, policy, task, and `eval.v1`
+- [x] Every bundled pack has `template.v2.toml`.
+- [x] Every bundled pack has README or docs fragment content.
+- [x] Every bundled pack generates config, policy, task, and `eval.v1`
       examples.
-- [ ] Every bundled pack has demo metadata.
-- [ ] Every bundled pack has at least one runnable validation or demo command
+- [x] Every bundled pack has demo metadata.
+- [x] Every bundled pack has at least one runnable validation or demo command
       where practical.
-- [ ] Every bundled pack validates.
-- [ ] Every bundled pack dry-runs.
-- [ ] Every bundled pack clean-applies.
-- [ ] Generated examples validate after apply.
-- [ ] No bundled pack declares remote catalogs, hooks, scripts, signing,
+- [x] Every bundled pack validates.
+- [x] Every bundled pack dry-runs.
+- [x] Every bundled pack clean-applies.
+- [x] Generated examples validate after apply.
+- [x] No bundled pack declares remote catalogs, hooks, scripts, signing,
       marketplace behavior, or cloud registry defaults.
 
 ### Out of scope

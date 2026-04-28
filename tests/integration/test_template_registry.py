@@ -94,7 +94,7 @@ def test_template_apply_to_non_empty_destination_is_approval_bound_and_records_v
 
     destination = tmp_path / "scaffold"
     destination.mkdir()
-    (destination / "README.md").write_text("# Existing workspace\n", encoding="utf-8")
+    (destination / "NOTES.md").write_text("# Existing workspace\n", encoding="utf-8")
 
     assert main(["template", "apply", "python-lib", "--destination", str(destination)]) == 0
     proposed = json.loads(capsys.readouterr().out)
@@ -111,8 +111,9 @@ def test_template_apply_to_non_empty_destination_is_approval_bound_and_records_v
     assert action["kind"] == "template_apply"
     assert action["template"]["template_id"] == "python-lib"
     assert action["template"]["version"] == "1.0.0"
-    assert len(action["proposed_writes"]) == 8
+    assert len(action["proposed_writes"]) == 9
     assert {entry["path"] for entry in action["proposed_writes"]} == {
+        "scaffold/README.md",
         "scaffold/examples/agent-harness.config.json",
         "scaffold/examples/default.policy.json",
         "scaffold/examples/python-lib.eval.json",

@@ -2,26 +2,28 @@
 
 ## Status
 
-V7 is the planned `v1.4.0` template-pack track. The durable source documents
-are the [V7 PRD](prd-agent-harness-v7.md) and
+V7 is the active `v1.4.0` template-pack track. The durable source documents are
+the [V7 PRD](prd-agent-harness-v7.md) and
 [V7 implementation plan](../plans/agent-harness-v7.md).
-
-Phase 0 documents the local-first scope and adds docs-check guards before
-manifest loading, source discovery, rendering, dry-run, preview, or apply
-behavior changes land.
 
 ## Current Capabilities
 
-The current implementation provides a bundled local template catalog. It can
-list, show, validate, dry-run, preview, and apply packaged templates through the
-existing `agent-harness template` commands. The stable template IDs are
-`python-lib`, `cli-tool`, and `fastapi-service`, and legacy bundled JSON inputs
-remain readable through the current compatibility path.
+The current implementation provides a bundled local template-pack catalog. It
+can list, show, validate, dry-run, preview, and apply packaged templates through
+the existing `agent-harness template` commands. The bundled V7 pack IDs are
+`python-lib`, `cli-tool`, `fastapi-service`, `provider-audit`, and
+`retrieval-quality`. Legacy bundled JSON inputs remain readable through the
+compatibility model path, while the public bundled catalog now serves these IDs
+from pack directories.
 
 Clean empty-destination scaffolding is local and records
 `template_application.v1` evidence plus workspace metadata. Non-empty targets,
 overwrites, unsupported template capabilities, invalid packs, target escapes,
 and undeclared parameters remain guarded before writing.
+
+Every bundled V7 pack includes `template.v2.toml`, README content, demo
+metadata, generated config/policy/task/eval examples, and at least one local
+validation or demo command where practical.
 
 ## V7 Local Pack Boundary
 

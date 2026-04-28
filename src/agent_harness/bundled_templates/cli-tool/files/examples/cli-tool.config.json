@@ -1,0 +1,8 @@
+{
+  "artifact_root": ".agent-harness",
+  "default_policy": "default",
+  "project_name": "example-cli-tool",
+  "retrieval_backend": "lexical",
+  "schema_version": "config.v2",
+  "template_catalog": "bundled"
+}

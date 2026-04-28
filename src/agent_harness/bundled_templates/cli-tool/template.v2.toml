@@ -1,0 +1,65 @@
+schema_version = "template.v2"
+template_id = "cli-tool"
+version = "1.0.0"
+title = "CLI Tool"
+description = "Minimal Python CLI tool scaffold with argparse entry point, src layout, tests, and Agent Harness workflow examples."
+minimum_agent_harness_version = "0.2.0"
+required_capabilities = ["python.cli"]
+
+[generated_schema_versions]
+config = "config.v2"
+policy = "policy.v2"
+task = "task.v2"
+template = "template.v2"
+
+[provider_requirements]
+required = false
+profiles = []
+
+[policy_requirements]
+required_template_capabilities = ["python.cli"]
+required_tools = ["patch_file"]
+
+[retrieval_assumptions]
+backend = "lexical"
+remote_embeddings = false
+
+[eval_or_demo_metadata]
+kind = "demo"
+commands = ["python -m pytest"]
+
+[[files]]
+path = "README.md"
+source = "files/README.md"
+
+[[files]]
+path = "pyproject.toml"
+source = "files/pyproject.toml"
+
+[[files]]
+path = "src/example_cli_tool/__init__.py"
+source = "files/src/example_cli_tool/__init__.py.template"
+
+[[files]]
+path = "src/example_cli_tool/cli.py"
+source = "files/src/example_cli_tool/cli.py.template"
+
+[[files]]
+path = "tests/test_cli.py"
+source = "files/tests/test_cli.py.template"
+
+[[files]]
+path = "examples/cli-tool.config.json"
+source = "files/examples/cli-tool.config.json"
+
+[[files]]
+path = "examples/cli-tool.policy.json"
+source = "files/examples/cli-tool.policy.json"
+
+[[files]]
+path = "examples/cli-tool.task.json"
+source = "files/examples/cli-tool.task.json"
+
+[[files]]
+path = "examples/cli-tool.eval.json"
+source = "files/examples/cli-tool.eval.json"

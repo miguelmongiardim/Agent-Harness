@@ -43,6 +43,7 @@ def test_template_apply_clean_target_persists_application_evidence(
     assert {
         path.relative_to(target).as_posix() for path in target.rglob("*") if path.is_file()
     } == {
+        "README.md",
         "examples/agent-harness.config.json",
         "examples/default.policy.json",
         "examples/python-lib.eval.json",
@@ -63,6 +64,7 @@ def test_template_apply_clean_target_persists_application_evidence(
     assert evidence["target_path"] == "scaffold"
     assert evidence["parameters"] == {"package_name": "example_python_lib"}
     assert evidence["planned_files"] == [
+        "scaffold/README.md",
         "scaffold/pyproject.toml",
         "scaffold/src/example_python_lib/__init__.py",
         "scaffold/src/example_python_lib/core.py",

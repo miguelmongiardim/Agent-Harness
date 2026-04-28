@@ -1,0 +1,8 @@
+{
+  "eval_id": "fastapi-service-generated-tests",
+  "expected_status": "dry_run",
+  "required_artifacts": [],
+  "schema_version": "eval.v1",
+  "task_path": "examples/fastapi-service.task.json",
+  "title": "Generated FastAPI service validation"
+}

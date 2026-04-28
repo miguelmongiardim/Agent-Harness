@@ -1,0 +1,25 @@
+{
+  "allowed_tools": [
+    "read_file",
+    "search_code",
+    "run_tests"
+  ],
+  "context_queries": [],
+  "intent": "Run the generated FastAPI service tests and report the result.",
+  "max_steps": 4,
+  "policy_profile": "default",
+  "schema_version": "task.v2",
+  "target_paths": [
+    "src/example_fastapi_service",
+    "tests"
+  ],
+  "task_id": "fastapi-service-validate",
+  "test_commands": [
+    [
+      "python",
+      "-m",
+      "pytest"
+    ]
+  ],
+  "title": "Validate generated FastAPI service"
+}

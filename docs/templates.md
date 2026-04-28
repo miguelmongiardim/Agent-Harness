@@ -16,11 +16,13 @@ registry metadata and public template manifests.
 - retrieval assumptions
 - eval or demo metadata
 
-The bundled V2 Python trio is:
+The bundled V7 pack set is:
 
 - `python-lib`
 - `cli-tool`
 - `fastapi-service`
+- `provider-audit`
+- `retrieval-quality`
 
 Bundled templates can be validated with:
 
@@ -39,9 +41,10 @@ persists `template_application.v1` evidence under
 `.agent-harness/template_applications/`, and records the template id, version,
 target, and evidence path in workspace metadata.
 
-The bundled `python-lib` pack includes generated JSON examples for config,
-policy, task, and eval schemas. Template validation and clean apply exercise
-those examples as local files; no remote catalog or hook execution is involved.
+Every bundled pack includes `template.v2.toml`, README content, demo metadata,
+and generated JSON examples for config, policy, task, and eval schemas.
+Template validation and clean apply exercise those examples as local files; no
+remote catalog or hook execution is involved.
 
 Approval remains required for a non-empty destination, `--force` overwrite
 planning, or higher-risk mutations. Incompatible required capabilities are
@@ -51,8 +54,8 @@ rejected before write planning.
 
 ## Roadmap
 
-External catalogs, remote template discovery, and non-Python template expansion
-are not part of the current V2 release.
+External catalogs, remote template discovery, and organization-wide template
+distribution are not part of the current release.
 
 The planned V7 Template Pack System is documented in
 [template-pack-system.md](template-pack-system.md). V7 keeps template packs

@@ -1,0 +1,30 @@
+{
+  "allowed_tools": [
+    "read_file",
+    "search_code",
+    "run_tests"
+  ],
+  "context_queries": [
+    "release readiness retrieval",
+    "local retrieval quality"
+  ],
+  "intent": "Review the generated local retrieval quality workflow and confirm lexical retrieval fixtures are present.",
+  "max_steps": 4,
+  "policy_profile": "default",
+  "schema_version": "task.v2",
+  "target_paths": [
+    "docs/knowledge-base.md",
+    "docs/retrieval-quality-workflow.md",
+    "examples"
+  ],
+  "task_id": "retrieval-quality-review",
+  "test_commands": [
+    [
+      "agent-harness",
+      "task",
+      "validate",
+      "examples/retrieval-quality.task.json"
+    ]
+  ],
+  "title": "Review retrieval quality workflow"
+}

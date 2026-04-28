@@ -1,0 +1,20 @@
+{
+  "artifact_root": ".agent-harness",
+  "default_policy": "default",
+  "default_provider_profile": "provider-audit-mock",
+  "project_name": "provider-audit-workflow",
+  "provider_profiles": [
+    {
+      "endpoint_env": "AGENT_HARNESS_PROVIDER_AUDIT_ENDPOINT",
+      "model": "recorded-provider-audit",
+      "network": false,
+      "provider_profile_id": "provider-audit-mock",
+      "requires_approval": false,
+      "transport": "mock",
+      "trust_zone": "mock"
+    }
+  ],
+  "retrieval_backend": "lexical",
+  "schema_version": "config.v2",
+  "template_catalog": "bundled"
+}

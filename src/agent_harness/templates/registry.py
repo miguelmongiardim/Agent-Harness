@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import tomllib
+from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Any
 
@@ -39,6 +40,7 @@ def list_templates(project_root: Path | None = None) -> list[TemplateRegistryRec
         )
         for template_id, version, title, description, bundle_path, tags_json in rows
     ]
+    records.extend(_unregistered_bundled_pack_records(records))
     records.extend(_local_template_records(root))
     _ensure_unique_template_ids(records)
     return records
@@ -57,6 +59,42 @@ def _record_with_source_metadata(record: TemplateRegistryRecord) -> TemplateRegi
             "compatibility_status": _compatibility_status(spec),
         }
     )
+
+
+def _unregistered_bundled_pack_records(
+    existing_records: list[TemplateRegistryRecord],
+) -> list[TemplateRegistryRecord]:
+    existing_ids = {record.template_id for record in existing_records}
+    records: list[TemplateRegistryRecord] = []
+    for template_id in _iter_bundled_pack_ids():
+        if template_id in existing_ids:
+            continue
+        record = TemplateRegistryRecord(
+            template_id=template_id,
+            version="",
+            title=template_id,
+            description="",
+            bundle_path=f"bundled_templates/{template_id}/template.v2.toml",
+            source_type="bundled_pack",
+        )
+        records.append(_record_with_source_metadata(record))
+    return records
+
+
+def _iter_bundled_pack_ids() -> list[str]:
+    template_ids = []
+    for child in _bundled_templates_root().iterdir():
+        if child.is_dir():
+            manifest = child.joinpath("template.v2.toml")
+            if manifest.is_file():
+                template_ids.append(child.name)
+    return sorted(template_ids)
+
+
+def _bundled_templates_root() -> Traversable:
+    from agent_harness.templates.store import bundled_templates_root
+
+    return bundled_templates_root()
 
 
 def _local_template_records(project_root: Path) -> list[TemplateRegistryRecord]:

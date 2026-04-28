@@ -5,6 +5,7 @@ import tomllib
 from collections.abc import Iterator
 from contextlib import contextmanager
 from importlib import resources
+from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,10 @@ _REGISTRY_PATH = _BUNDLED_TEMPLATES.joinpath("registry.sqlite3")
 def registry_path() -> Iterator[Path]:
     with resources.as_file(_REGISTRY_PATH) as path:
         yield path
+
+
+def bundled_templates_root() -> Traversable:
+    return _BUNDLED_TEMPLATES
 
 
 def load_template_spec(

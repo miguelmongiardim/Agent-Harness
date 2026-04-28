@@ -1,0 +1,8 @@
+from __future__ import annotations
+
+from example_cli_tool.cli import main
+
+
+def test_cli_greets_named_user(capsys) -> None:
+    assert main(["--name", "Codex"]) == 0
+    assert capsys.readouterr().out == "hello Codex\n"

@@ -1,0 +1,53 @@
+schema_version = "template.v2"
+template_id = "provider-audit"
+version = "1.0.0"
+title = "Provider Audit"
+description = "Local provider-audit workflow scaffold with mock provider config, policy, task, eval, and documentation examples."
+minimum_agent_harness_version = "0.2.0"
+required_capabilities = ["provider.audit"]
+
+[generated_schema_versions]
+config = "config.v2"
+policy = "policy.v2"
+task = "task.v2"
+template = "template.v2"
+
+[provider_requirements]
+required = false
+profiles = ["mock"]
+
+[policy_requirements]
+required_template_capabilities = ["provider.audit"]
+required_tools = ["patch_file"]
+
+[retrieval_assumptions]
+backend = "lexical"
+remote_embeddings = false
+
+[eval_or_demo_metadata]
+kind = "demo"
+commands = ["agent-harness task validate examples/provider-audit.task.json"]
+
+[[files]]
+path = "README.md"
+source = "files/README.md"
+
+[[files]]
+path = "docs/provider-audit-workflow.md"
+source = "files/docs/provider-audit-workflow.md"
+
+[[files]]
+path = "examples/provider-audit.config.json"
+source = "files/examples/provider-audit.config.json"
+
+[[files]]
+path = "examples/provider-audit.policy.json"
+source = "files/examples/provider-audit.policy.json"
+
+[[files]]
+path = "examples/provider-audit.task.json"
+source = "files/examples/provider-audit.task.json"
+
+[[files]]
+path = "examples/provider-audit.eval.json"
+source = "files/examples/provider-audit.eval.json"

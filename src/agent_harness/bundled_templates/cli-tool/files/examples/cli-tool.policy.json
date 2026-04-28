@@ -1,0 +1,79 @@
+{
+  "allow_network": false,
+  "allowed_test_commands": [
+    [
+      "python",
+      "-m",
+      "pytest"
+    ]
+  ],
+  "allowed_tools": [
+    "read_file",
+    "search_code",
+    "run_tests",
+    "patch_file"
+  ],
+  "approval_required_tools": [
+    "patch_file"
+  ],
+  "approvals": {
+    "required_tools": [
+      "patch_file"
+    ]
+  },
+  "description": "Generated local policy example for the cli-tool template.",
+  "documented": true,
+  "migration": {
+    "allow_loose_rewrites": false,
+    "preserve_or_tighten": true,
+    "safe_writes": true
+  },
+  "name": "default",
+  "profile_kind": "default",
+  "provider_input": {
+    "hard_deny_sensitivities": [
+      "credential",
+      "pii",
+      "customer"
+    ],
+    "redact_reclassify": {},
+    "rules": {
+      "confidential": "deny",
+      "credential": "deny",
+      "customer": "deny",
+      "generated": "allow_untrusted",
+      "internal": "approval_required",
+      "pii": "deny",
+      "public": "allow",
+      "restricted": "deny",
+      "secret": "deny",
+      "unknown": "deny"
+    }
+  },
+  "read_roots": [
+    "."
+  ],
+  "scanner": {
+    "external_reports": "advisory",
+    "fail_threshold": "high"
+  },
+  "schema_version": "policy.v2",
+  "template_capabilities": {
+    "allowed_capabilities": [
+      "python.cli"
+    ],
+    "default_action": "deny"
+  },
+  "trust_zones": {
+    "rules": {
+      "hosted_provider": "approval_required",
+      "local_endpoint": "approval_required",
+      "local_process": "allow",
+      "mock": "allow",
+      "private_network": "approval_required"
+    }
+  },
+  "write_roots": [
+    "."
+  ]
+}

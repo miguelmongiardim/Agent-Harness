@@ -1,0 +1,57 @@
+schema_version = "template.v2"
+template_id = "retrieval-quality"
+version = "1.0.0"
+title = "Retrieval Quality"
+description = "Local retrieval-quality workflow scaffold with lexical retrieval config, policy, task, eval, and scorecard notes."
+minimum_agent_harness_version = "0.2.0"
+required_capabilities = ["retrieval.quality"]
+
+[generated_schema_versions]
+config = "config.v2"
+policy = "policy.v2"
+task = "task.v2"
+template = "template.v2"
+
+[provider_requirements]
+required = false
+profiles = []
+
+[policy_requirements]
+required_template_capabilities = ["retrieval.quality"]
+required_tools = ["patch_file"]
+
+[retrieval_assumptions]
+backend = "lexical"
+remote_embeddings = false
+
+[eval_or_demo_metadata]
+kind = "demo"
+commands = ["agent-harness task validate examples/retrieval-quality.task.json"]
+
+[[files]]
+path = "README.md"
+source = "files/README.md"
+
+[[files]]
+path = "docs/retrieval-quality-workflow.md"
+source = "files/docs/retrieval-quality-workflow.md"
+
+[[files]]
+path = "docs/knowledge-base.md"
+source = "files/docs/knowledge-base.md"
+
+[[files]]
+path = "examples/retrieval-quality.config.json"
+source = "files/examples/retrieval-quality.config.json"
+
+[[files]]
+path = "examples/retrieval-quality.policy.json"
+source = "files/examples/retrieval-quality.policy.json"
+
+[[files]]
+path = "examples/retrieval-quality.task.json"
+source = "files/examples/retrieval-quality.task.json"
+
+[[files]]
+path = "examples/retrieval-quality.eval.json"
+source = "files/examples/retrieval-quality.eval.json"

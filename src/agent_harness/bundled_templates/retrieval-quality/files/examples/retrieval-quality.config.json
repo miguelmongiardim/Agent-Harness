@@ -1,0 +1,21 @@
+{
+  "artifact_root": ".agent-harness",
+  "default_policy": "default",
+  "project_name": "retrieval-quality-workflow",
+  "retrieval": {
+    "default_mode": "lexical",
+    "dense": {
+      "embedding_backend": "deterministic",
+      "remote_embeddings": false
+    },
+    "fallback": {
+      "allow_lexical": true
+    },
+    "lexical": {
+      "enabled": true
+    }
+  },
+  "retrieval_backend": "lexical",
+  "schema_version": "config.v2",
+  "template_catalog": "bundled"
+}

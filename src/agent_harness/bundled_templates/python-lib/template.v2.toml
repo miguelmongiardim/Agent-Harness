@@ -35,6 +35,10 @@ kind = "demo"
 commands = ["python -m pytest"]
 
 [[files]]
+path = "README.md"
+source = "files/README.md"
+
+[[files]]
 path = "pyproject.toml"
 source = "files/pyproject.toml"
 
