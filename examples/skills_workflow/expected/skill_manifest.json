@@ -9,7 +9,7 @@
       "version": "1.0.0",
       "source_type": "bundled",
       "source": "bundled_skills/prd-plan-tdd-workflow/SKILL.md",
-      "skill_hash": "d74b79be3778966d425babdebadee380f57585460c2ccfe53d5f421e173f0471",
+      "skill_hash": "60793791a6d6a89c3231248b820434474f2f75ce7ef6b72a2aecad88c05857b6",
       "required": true,
       "requested_by": [
         {

@@ -6,6 +6,28 @@ All notable changes to this project will be documented in this file.
 
 - No changes yet.
 
+## [1.5.0] - 2026-04-28
+
+V8 Skills System release.
+
+- Added local, versioned, validated Markdown skills as policy-mediated workflow
+  guidance with bundled and explicitly configured local sources.
+- Added `agent-harness skill list/show/validate/render/resolve` and
+  `agent-harness skill pack validate` for skill discovery, inspection,
+  deterministic hashing, compatibility checks, and local pack validation.
+- Added bundled `write-a-prd`, `prd-to-plan`, `tdd`, and
+  `prd-plan-tdd-workflow` skills.
+- Added `config.v2` `skills.local_dirs`, `task.v2` requested skills, and
+  `template.v2` recommended skill evidence without letting skills widen tools,
+  policies, approvals, provider profiles, or execution authority.
+- Added policy-gated skill context provenance and `skill_manifest.v1` run
+  artifacts linked from summaries, artifact indexes, inspect output, operator
+  run detail, and eval expected-skill assertions.
+- Added `examples/skills_workflow/` as the V8 golden path and expanded release
+  readiness to verify bundled skill validation, skill registry commands, task
+  resolution, dry-run manifest emission, context provenance, inspect output,
+  skills docs, and deferred-scope docs hygiene.
+
 ## [1.4.0] - 2026-04-28
 
 V7 Template Pack System release.

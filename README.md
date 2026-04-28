@@ -243,17 +243,17 @@ template signing, organization catalogs, cloud registries, lifecycle hooks,
 script execution, enterprise governance, and conditional file inclusion remain
 future-only scope.
 
-V8 is planned as a local skills system:
+V8 is the local skills system:
 [docs/skills-system.md](docs/skills-system.md),
 [docs/prd-agent-harness-v8.md](docs/prd-agent-harness-v8.md), and
-[plans/agent-harness-v8.md](plans/agent-harness-v8.md). The target keeps skills
-local, inspectable, validated, and policy-mediated. Skills are workflow
+[plans/agent-harness-v8.md](plans/agent-harness-v8.md). The implementation keeps
+skills local, inspectable, validated, and policy-mediated. Skills are workflow
 guidance, not tools, templates, policy, approvals, provider profiles, or
 executable code. Remote skill catalogs, marketplaces, signing, hosted skill
 services, enterprise registries, organization-wide governance, centralized
 governance, network installation, and automatic execution from skills remain
-future-only scope. The implemented V8 path includes the skills workflow demo
-and release-readiness gates for local skill evidence.
+future-only scope. The V8 path includes the skills workflow demo and
+release-readiness gates for local skill evidence.
 
 ## Documentation
 

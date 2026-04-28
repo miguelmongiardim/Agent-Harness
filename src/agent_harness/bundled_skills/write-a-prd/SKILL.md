@@ -5,7 +5,7 @@ name: Write a PRD
 version: 1.0.0
 description: Guide a user from product intent to testable product requirements.
 category: planning
-compatible_agent_harness_versions: ">=1.4.0,<2.0.0"
+compatible_agent_harness_versions: ">=1.5.0,<2.0.0"
 required_capabilities: []
 allowed_context_classes:
   - public

@@ -8,13 +8,13 @@
       "source_id": "source-skill-example",
       "kind": "skill",
       "path": "bundled_skills/prd-plan-tdd-workflow/SKILL.md",
-      "content_hash": "d74b79be3778966d425babdebadee380f57585460c2ccfe53d5f421e173f0471",
+      "content_hash": "60793791a6d6a89c3231248b820434474f2f75ce7ef6b72a2aecad88c05857b6",
       "sensitivity": "public",
       "policy_decision_id": "decision-skill-example",
       "skill_id": "prd-plan-tdd-workflow",
       "skill_version": "1.0.0",
       "skill_source": "bundled_skills/prd-plan-tdd-workflow/SKILL.md",
-      "skill_hash": "d74b79be3778966d425babdebadee380f57585460c2ccfe53d5f421e173f0471"
+      "skill_hash": "60793791a6d6a89c3231248b820434474f2f75ce7ef6b72a2aecad88c05857b6"
     }
   ],
   "chunks": [
@@ -22,7 +22,7 @@
       "chunk_id": "chunk-skill-example",
       "source_id": "source-skill-example",
       "text": "Rendered prd-plan-tdd-workflow guidance enters context as policy-mediated evidence.",
-      "content_hash": "d74b79be3778966d425babdebadee380f57585460c2ccfe53d5f421e173f0471",
+      "content_hash": "60793791a6d6a89c3231248b820434474f2f75ce7ef6b72a2aecad88c05857b6",
       "start_line": 1,
       "end_line": 1,
       "score": 1.0,
@@ -36,7 +36,7 @@
       "chunk_id": "chunk-skill-example",
       "source_kind": "skill",
       "path": "bundled_skills/prd-plan-tdd-workflow/SKILL.md",
-      "content_hash": "d74b79be3778966d425babdebadee380f57585460c2ccfe53d5f421e173f0471",
+      "content_hash": "60793791a6d6a89c3231248b820434474f2f75ce7ef6b72a2aecad88c05857b6",
       "text": "Rendered prd-plan-tdd-workflow guidance enters context as policy-mediated evidence.",
       "start_line": 1,
       "end_line": 1,
@@ -48,7 +48,7 @@
       "skill_id": "prd-plan-tdd-workflow",
       "skill_version": "1.0.0",
       "skill_source": "bundled_skills/prd-plan-tdd-workflow/SKILL.md",
-      "skill_hash": "d74b79be3778966d425babdebadee380f57585460c2ccfe53d5f421e173f0471",
+      "skill_hash": "60793791a6d6a89c3231248b820434474f2f75ce7ef6b72a2aecad88c05857b6",
       "inclusion_mode": "task_required"
     }
   ],

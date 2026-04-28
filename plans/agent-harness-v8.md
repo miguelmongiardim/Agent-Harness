@@ -2,9 +2,8 @@
 
 > Source PRD: [docs/prd-agent-harness-v8.md](../docs/prd-agent-harness-v8.md)
 
-V8 targets `v1.5.0`. This plan is written for PRD to plan to TDD execution:
-each phase is a vertical tracer bullet, and each phase starts from one public
-behavior test before implementation.
+V8 targets `v1.5.0`. All implementation phases are complete. Release tagging
+and package publishing remain outside this implementation plan.
 
 ## Architectural Decisions
 

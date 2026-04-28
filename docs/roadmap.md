@@ -94,9 +94,9 @@ organization template catalogs, cloud template registries, executable lifecycle
 hooks, script execution, enterprise template governance, and conditional file
 inclusion remain future-only and are not V7 behavior.
 
-## v1.5.0 Direction
+## v1.5.0 Status
 
-v1.5.0 is the V8 Skills System track:
+v1.5.0 is the V8 Skills System release:
 [docs/skills-system.md](skills-system.md),
 [docs/prd-agent-harness-v8.md](prd-agent-harness-v8.md), and
 [plans/agent-harness-v8.md](../plans/agent-harness-v8.md). Implemented slices

@@ -2,7 +2,7 @@
 
 ## Status
 
-V8 is the `v1.5.0` skills-system track. The durable source documents are the
+V8 is the complete `v1.5.0` skills-system track. The durable source documents are the
 [V8 PRD](prd-agent-harness-v8.md) and
 [V8 implementation plan](../plans/agent-harness-v8.md).
 

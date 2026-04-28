@@ -5,7 +5,7 @@ name: PRD Plan TDD Workflow
 version: 1.0.0
 description: Coordinate PRD, plan, and TDD guidance for feature work.
 category: workflow
-compatible_agent_harness_versions: ">=1.4.0,<2.0.0"
+compatible_agent_harness_versions: ">=1.5.0,<2.0.0"
 required_capabilities: []
 allowed_context_classes:
   - public
