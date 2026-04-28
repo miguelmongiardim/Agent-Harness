@@ -6,6 +6,32 @@ All notable changes to this project will be documented in this file.
 
 - No changes yet.
 
+## [1.4.0] - 2026-04-28
+
+V7 Template Pack System release.
+
+- Added local-first `template.v2.toml` template packs with bundled and
+  configured local-pack discovery while preserving legacy bundled JSON
+  readability.
+- Added shared template-pack validation for bundled and local packs, including
+  path safety, placeholder safety, generated example schema checks, and
+  explicit denials for remote sources, hooks, scripts, private upload
+  references, and secret-like generated content.
+- Added deterministic parameter rendering for declared `{{ param_name }}`
+  placeholders in generated text and relative target paths.
+- Added dry-run and preview-diff template apply modes that emit
+  `template_application.v1` plan evidence without mutating targets, run
+  artifacts, application evidence, or workspace metadata.
+- Added clean empty-target apply evidence with rollback on safe write failures,
+  `template_application.v1` records, and workspace metadata references.
+- Added bundled V7 packs for `python-lib`, `cli-tool`, `fastapi-service`,
+  `provider-audit`, and `retrieval-quality`, each with docs, demo metadata,
+  and generated config/policy/task/eval examples.
+- Added `examples/template_pack_system/` as the V7 golden path and expanded
+  release readiness to validate, dry-run, clean-apply, schema-check, docs-check,
+  and evidence-check all bundled packs while rejecting remote template catalog
+  defaults.
+
 ## [1.3.0] - 2026-04-28
 
 V6 Local Operator Surface release.

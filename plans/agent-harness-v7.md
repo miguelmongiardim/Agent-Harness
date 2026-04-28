@@ -2,8 +2,8 @@
 
 > Source PRD: [docs/prd-agent-harness-v7.md](../docs/prd-agent-harness-v7.md)
 
-V7 targets `v1.4.0`. No implementation phases have been completed yet. Release
-tagging and package publishing remain outside this implementation plan.
+V7 targets `v1.4.0`. All implementation phases are complete. Release tagging
+and package publishing remain outside this implementation plan.
 
 ## Architectural Decisions
 

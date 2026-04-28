@@ -73,16 +73,18 @@ service operation, compliance readiness, MCP, multi-agent orchestration, run
 creation, config editing, direct patch application, direct git commit creation,
 or direct provider execution.
 
-## v1.4.0 Planned V7 Scope
+## v1.4.0 Status
 
-v1.4.0 is planned as the V7 Template Pack System track:
+v1.4.0 is the V7 Template Pack System track:
 [docs/template-pack-system.md](template-pack-system.md),
 [docs/prd-agent-harness-v7.md](prd-agent-harness-v7.md), and
-[plans/agent-harness-v7.md](../plans/agent-harness-v7.md). The target keeps
-template packs local-first and inspectable through `template.v2.toml` pack
-manifests, explicit local directories, deterministic parameter substitution,
-dry-run and preview-diff planning, clean empty-target apply evidence, and
-release-readiness gates for bundled pack validation.
+[plans/agent-harness-v7.md](../plans/agent-harness-v7.md). The implemented
+track keeps template packs local-first and inspectable through `template.v2.toml`
+pack manifests, explicit local directories, deterministic parameter
+substitution, dry-run and preview-diff planning, clean empty-target apply
+evidence, bundled workflow packs, and release-readiness gates for bundled pack
+validation, dry-run, clean apply, generated example schemas, docs, application
+evidence, and remote catalog default rejection.
 
 Remote template catalogs, template marketplace behavior, template signing,
 organization template catalogs, cloud template registries, executable lifecycle
