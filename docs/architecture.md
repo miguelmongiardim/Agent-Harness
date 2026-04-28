@@ -43,12 +43,13 @@ OpenAI-compatible adapter entry point fail clearly with `UnsupportedAdapterError
 until those phases are implemented.
 
 V6 adds an `agent_harness.operator` boundary for the local operator surface.
-The current implementation has the app factory, `/health`, and token-gated
-run list/detail APIs for existing run artifacts. The completed boundary should
-sit above storage, policy, approvals, exports, provider evidence, and run
-artifacts. It should expose existing evidence through a local API and packaged
-static UI without becoming a runtime, policy engine, approval engine, or
-arbitrary file server.
+The current implementation has the app factory, `/health`, token-gated run
+list/detail APIs for existing run artifacts, context manifest inspection, policy
+inspection, and artifact-status reporting for denied, missing, and malformed
+run evidence. The completed boundary should sit above storage, policy,
+approvals, exports, provider evidence, and run artifacts. It should expose
+existing evidence through a local API and packaged static UI without becoming a
+runtime, policy engine, approval engine, or arbitrary file server.
 
 ## Dependency Direction
 

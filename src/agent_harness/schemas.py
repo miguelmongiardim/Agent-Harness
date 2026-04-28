@@ -77,6 +77,16 @@ class OperatorRunListResponse(StrictModel):
     count: int = Field(ge=0)
 
 
+ArtifactStatus = Literal["available", "missing", "denied", "malformed"]
+
+
+class OperatorArtifactStatus(StrictModel):
+    artifact_type: str
+    status: ArtifactStatus
+    path: str | None = None
+    detail: str | None = None
+
+
 class OperatorRunDetailResponse(StrictModel):
     schema_version: Literal["operator_run_detail.v1"] = "operator_run_detail.v1"
     run_id: str
@@ -92,6 +102,20 @@ class OperatorRunDetailResponse(StrictModel):
     template_apply: dict[str, Any] | None = None
     git_commit: dict[str, Any] | None = None
     workspace_metadata: dict[str, Any] | None = None
+    artifact_statuses: dict[str, OperatorArtifactStatus] = Field(default_factory=dict)
+
+
+class OperatorContextResponse(StrictModel):
+    schema_version: Literal["operator_context.v1"] = "operator_context.v1"
+    run_id: str
+    artifact: OperatorArtifactStatus
+    context_manifest: dict[str, Any] | None = None
+
+
+class OperatorPolicyResponse(StrictModel):
+    schema_version: Literal["operator_policy.v1"] = "operator_policy.v1"
+    profile: str
+    policy: dict[str, Any]
 
 
 def _validate_env_var_name(value: str) -> str:

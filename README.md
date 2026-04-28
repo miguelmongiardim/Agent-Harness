@@ -198,10 +198,12 @@ V6 is in progress as a local operator surface:
 [docs/operator-ui.md](docs/operator-ui.md),
 [docs/prd-agent-harness-v6.md](docs/prd-agent-harness-v6.md), and
 [plans/agent-harness-v6.md](plans/agent-harness-v6.md). The current slice adds
-`agent-harness serve`, the local operator app factory, `/health`, and
-token-gated run list/detail APIs. The target remains a loopback-only inspection
-and approval UI over existing artifacts, not hosted API/UI operation,
-enterprise authentication, MCP, or multi-agent orchestration.
+`agent-harness serve`, the local operator app factory, `/health`, token-gated
+run list/detail APIs, context manifest inspection, policy inspection, and safe
+artifact-status reporting for denied, missing, and malformed run evidence. The
+target remains a loopback-only inspection and approval UI over existing
+artifacts, not hosted API/UI operation, enterprise authentication, MCP, or
+multi-agent orchestration.
 
 ## Documentation
 

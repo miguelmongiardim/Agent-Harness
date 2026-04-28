@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from agent_harness import __version__
@@ -90,6 +91,32 @@ def test_operator_api_rejects_invalid_token_without_leaking_configured_token(
     assert response.status_code == 401
     assert "operator token" in response.json()["detail"]
     assert "operator-secret" not in response.text
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/v1/runs/run-token-check/context",
+        "/api/v1/policy/default",
+    ],
+)
+def test_operator_phase4_routes_require_valid_token(tmp_path: Path, path: str) -> None:
+    app = create_operator_app(
+        project_root=tmp_path,
+        token="operator-secret",
+        profile="default",
+    )
+
+    missing = TestClient(app).get(path)
+    invalid = TestClient(app).get(
+        path,
+        headers={"X-Agent-Harness-Operator-Token": "wrong-secret"},
+    )
+
+    assert missing.status_code == 401
+    assert invalid.status_code == 401
+    assert "operator-secret" not in missing.text
+    assert "operator-secret" not in invalid.text
 
 
 def test_operator_api_accepts_valid_token_for_unimplemented_route(
@@ -280,4 +307,214 @@ def test_operator_run_detail_reports_malformed_required_artifact_safely(
 
     assert response.status_code == 422
     assert response.json()["detail"] == "malformed run artifact: summary.json"
+    assert str(tmp_path) not in response.text
+
+
+def test_operator_run_detail_denies_arbitrary_workspace_metadata_reference(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    seed_project(tmp_path)
+    task_path = _write_read_only_task(tmp_path, "operator-denied-artifact")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-denied-artifact")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T12:00:00Z")
+
+    assert main(["run", str(task_path), "--dry-run"]) == 0
+    run_summary = json.loads(capsys.readouterr().out)
+    secret_payload = {"api_key": "do-not-expose-this-secret"}
+    (tmp_path / "secrets.json").write_text(json.dumps(secret_payload), encoding="utf-8")
+    summary_path = tmp_path / ".agent-harness" / "runs" / run_summary["run_id"] / "summary.json"
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    summary["artifacts"]["workspace_metadata"] = "secrets.json"
+    summary_path.write_text(json.dumps(summary), encoding="utf-8")
+    app = create_operator_app(
+        project_root=tmp_path,
+        token="operator-secret",
+        profile="default",
+    )
+
+    response = TestClient(app).get(
+        f"/api/v1/runs/{run_summary['run_id']}",
+        headers=_operator_headers(),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert "workspace_metadata" not in body
+    assert body["artifact_statuses"]["workspace_metadata"]["status"] == "denied"
+    assert "secrets.json" not in response.text
+    assert "do-not-expose-this-secret" not in response.text
+    assert str(tmp_path) not in response.text
+
+
+def test_operator_run_detail_does_not_echo_absolute_artifact_paths(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    seed_project(tmp_path)
+    task_path = _write_read_only_task(tmp_path, "operator-absolute-path")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-absolute-path")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T12:00:00Z")
+
+    assert main(["run", str(task_path), "--dry-run"]) == 0
+    run_summary = json.loads(capsys.readouterr().out)
+    absolute_path = str(tmp_path / "secret-context.json")
+    run_dir = tmp_path / ".agent-harness" / "runs" / run_summary["run_id"]
+    for artifact_name in ("summary.json", "artifact-index.json"):
+        artifact = json.loads((run_dir / artifact_name).read_text(encoding="utf-8"))
+        artifact["artifacts"]["context_manifest"] = absolute_path
+        (run_dir / artifact_name).write_text(json.dumps(artifact), encoding="utf-8")
+    app = create_operator_app(
+        project_root=tmp_path,
+        token="operator-secret",
+        profile="default",
+    )
+
+    response = TestClient(app).get(
+        f"/api/v1/runs/{run_summary['run_id']}",
+        headers=_operator_headers(),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["artifact_statuses"]["context_manifest"]["status"] == "denied"
+    assert absolute_path not in response.text
+    assert str(tmp_path) not in response.text
+
+
+def test_operator_context_route_returns_existing_context_manifest(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    seed_project(tmp_path)
+    task_path = _write_read_only_task(tmp_path, "operator-context")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-operator-context")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T12:00:00Z")
+
+    assert main(["run", str(task_path), "--dry-run"]) == 0
+    run_summary = json.loads(capsys.readouterr().out)
+    assert main(["inspect", "context", run_summary["run_id"]]) == 0
+    cli_context = json.loads(capsys.readouterr().out)
+    app = create_operator_app(
+        project_root=tmp_path,
+        token="operator-secret",
+        profile="default",
+    )
+
+    response = TestClient(app).get(
+        f"/api/v1/runs/{run_summary['run_id']}/context",
+        headers=_operator_headers(),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["schema_version"] == "operator_context.v1"
+    assert body["run_id"] == run_summary["run_id"]
+    assert body["artifact"]["artifact_type"] == "context_manifest"
+    assert body["artifact"]["status"] == "available"
+    assert body["context_manifest"] == cli_context
+
+
+def test_operator_context_route_reports_missing_context_manifest(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    seed_project(tmp_path)
+    task_path = _write_read_only_task(tmp_path, "operator-missing-context")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-missing-context")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T12:00:00Z")
+
+    assert main(["run", str(task_path), "--dry-run"]) == 0
+    run_summary = json.loads(capsys.readouterr().out)
+    context_path = (
+        tmp_path / ".agent-harness" / "runs" / run_summary["run_id"] / "context_manifest.json"
+    )
+    context_path.unlink()
+    app = create_operator_app(
+        project_root=tmp_path,
+        token="operator-secret",
+        profile="default",
+    )
+
+    response = TestClient(app).get(
+        f"/api/v1/runs/{run_summary['run_id']}/context",
+        headers=_operator_headers(),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["artifact"]["artifact_type"] == "context_manifest"
+    assert body["artifact"]["status"] == "missing"
+    assert "context_manifest" not in body
+    assert str(tmp_path) not in response.text
+
+
+def test_operator_context_route_reports_malformed_context_manifest_safely(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    seed_project(tmp_path)
+    task_path = _write_read_only_task(tmp_path, "operator-malformed-context")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-malformed-context")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T12:00:00Z")
+
+    assert main(["run", str(task_path), "--dry-run"]) == 0
+    run_summary = json.loads(capsys.readouterr().out)
+    context_path = (
+        tmp_path / ".agent-harness" / "runs" / run_summary["run_id"] / "context_manifest.json"
+    )
+    context_path.write_text("{not-json", encoding="utf-8")
+    app = create_operator_app(
+        project_root=tmp_path,
+        token="operator-secret",
+        profile="default",
+    )
+
+    response = TestClient(app).get(
+        f"/api/v1/runs/{run_summary['run_id']}/context",
+        headers=_operator_headers(),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["artifact"]["artifact_type"] == "context_manifest"
+    assert body["artifact"]["status"] == "malformed"
+    assert "context_manifest" not in body
+    assert str(tmp_path) not in response.text
+
+
+def test_operator_policy_route_returns_redaction_safe_policy_summary(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    seed_project(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_LIVE_TEST_API_KEY", "do-not-expose-env-secret")
+    app = create_operator_app(
+        project_root=tmp_path,
+        token="operator-secret",
+        profile="default",
+    )
+
+    response = TestClient(app).get(
+        "/api/v1/policy/default",
+        headers=_operator_headers(),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["schema_version"] == "operator_policy.v1"
+    assert body["profile"] == "default"
+    assert body["policy"]["schema_version"] == "policy.v2"
+    assert body["policy"]["name"] == "default"
+    assert "do-not-expose-env-secret" not in response.text
     assert str(tmp_path) not in response.text

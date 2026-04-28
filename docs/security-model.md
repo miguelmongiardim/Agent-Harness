@@ -57,7 +57,8 @@ V6 is a narrower local operator surface. Its security boundary is loopback-only
 serving, token-protected local API routes, allowlisted run artifact access, and
 approval decisions routed through the existing approval service. The current
 slice implements the loopback serve command, `/health`, token enforcement for
-`/api/v1/*`, and run list/detail inspection over existing run artifacts;
-context-specific artifact inspection and approval decisions remain later V6
-phases. It must not claim hosted operation, enterprise authentication,
-production web service readiness, or compliance readiness.
+`/api/v1/*`, run list/detail inspection over existing run artifacts, context
+manifest inspection, policy inspection, and safe missing/malformed/denied
+artifact status reporting. Approval decisions remain a later V6 phase. It must
+not claim hosted operation, enterprise authentication, production web service
+readiness, or compliance readiness.

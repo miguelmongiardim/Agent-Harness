@@ -2,8 +2,9 @@
 
 > Source PRD: [docs/prd-agent-harness-v6.md](../docs/prd-agent-harness-v6.md)
 
-Phases 0, 1, 2, and 3 have been implemented. Remaining acceptance boxes should be
-checked only after behavior is backed by tests, docs, or release evidence.
+Phases 0, 1, 2, 3, and 4 have been implemented. Remaining acceptance boxes
+should be checked only after behavior is backed by tests, docs, or release
+evidence.
 
 ## Architectural Decisions
 
@@ -19,8 +20,9 @@ Durable decisions that apply across all phases:
   runs, run detail, context, approvals, approval decisions, and policy
   inspection.
 - **Key models**: add `operator_health.v1`, `operator_run_list.v1`,
-  `operator_run_detail.v1`, and `operator_approval_decision.v1`; reuse existing
-  artifact schemas where available.
+  `operator_run_detail.v1`, `operator_context.v1`, `operator_policy.v1`, and
+  `operator_approval_decision.v1`; reuse existing artifact schemas where
+  available.
 - **Storage boundary**: read only known run evidence under the configured
   artifact root; do not expose arbitrary filesystem reads.
 - **Approval boundary**: the only mutating API behavior is approve/deny for
@@ -253,17 +255,17 @@ evidence classes. Keep artifact access typed and run-scoped.
 
 ### Acceptance criteria
 
-- [ ] `GET /api/v1/runs/{run_id}/context` requires a valid token.
-- [ ] Context route returns existing `context_manifest.v2` evidence.
-- [ ] Missing context manifest returns a missing-artifact status.
-- [ ] Malformed context manifest returns a safe malformed-artifact status.
-- [ ] `GET /api/v1/policy/{profile}` requires a valid token.
-- [ ] Policy route returns a redaction-safe policy summary.
-- [ ] API distinguishes missing artifact, denied artifact, and malformed
+- [x] `GET /api/v1/runs/{run_id}/context` requires a valid token.
+- [x] Context route returns existing `context_manifest.v2` evidence.
+- [x] Missing context manifest returns a missing-artifact status.
+- [x] Malformed context manifest returns a safe malformed-artifact status.
+- [x] `GET /api/v1/policy/{profile}` requires a valid token.
+- [x] Policy route returns a redaction-safe policy summary.
+- [x] API distinguishes missing artifact, denied artifact, and malformed
       artifact.
-- [ ] API exposes only allowlisted artifact classes.
-- [ ] API does not expose arbitrary workspace files or absolute local paths.
-- [ ] API does not expose raw provider payloads, env values, credentials, or
+- [x] API exposes only allowlisted artifact classes.
+- [x] API does not expose arbitrary workspace files or absolute local paths.
+- [x] API does not expose raw provider payloads, env values, credentials, or
       ignored caches.
 
 ### Out of scope
