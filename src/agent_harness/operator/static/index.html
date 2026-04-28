@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Agent Harness Operator</title>
+    <link rel="stylesheet" href="/operator/static/app.css">
+  </head>
+  <body data-policy-profile="__OPERATOR_PROFILE__">
+    <header class="topbar">
+      <div>
+        <h1>Agent Harness Operator</h1>
+        <p>Local-only / non-hosted inspection surface</p>
+      </div>
+      <form id="token-form" class="token-form">
+        <label for="operator-token">Operator token</label>
+        <input id="operator-token" name="operator-token" type="password" autocomplete="off">
+        <button type="submit">Use token</button>
+      </form>
+    </header>
+    <main class="layout">
+      <section class="pane run-list-pane" aria-labelledby="run-list-heading">
+        <div class="pane-heading">
+          <h2 id="run-list-heading">Runs</h2>
+          <button id="refresh-runs" type="button">Refresh</button>
+        </div>
+        <div id="run-list-status" class="status">Enter the generated token.</div>
+        <ul id="run-list" class="run-list"></ul>
+      </section>
+      <section class="pane detail-pane" aria-labelledby="run-detail-heading">
+        <div class="pane-heading">
+          <h2 id="run-detail-heading">Run Detail</h2>
+          <span id="selected-run" class="selected-run">No run selected</span>
+        </div>
+        <nav class="tabs" aria-label="Run detail views">
+          <button class="tab active" type="button" data-tab="summary">Summary</button>
+          <button class="tab" type="button" data-tab="timeline">Timeline</button>
+          <button class="tab" type="button" data-tab="context">Context</button>
+          <button class="tab" type="button" data-tab="artifacts">Artifacts</button>
+          <button class="tab" type="button" data-tab="provider">Provider</button>
+          <button class="tab" type="button" data-tab="security">Security / Policy</button>
+          <button class="tab" type="button" data-tab="evals">Eval / Scorecard</button>
+          <button class="tab" type="button" data-tab="approvals">Approvals</button>
+        </nav>
+        <div id="detail-status" class="status">Select a run to inspect evidence.</div>
+        <pre id="detail-output" class="detail-output">{}</pre>
+      </section>
+    </main>
+    <script src="/operator/static/app.js"></script>
+  </body>
+</html>

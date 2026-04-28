@@ -101,6 +101,8 @@ class OperatorRunDetailResponse(StrictModel):
     schema_versions: dict[str, Any] | None = None
     template_apply: dict[str, Any] | None = None
     git_commit: dict[str, Any] | None = None
+    eval_results: dict[str, Any] | None = None
+    retrieval_scorecards: dict[str, Any] | None = None
     workspace_metadata: dict[str, Any] | None = None
     artifact_statuses: dict[str, OperatorArtifactStatus] = Field(default_factory=dict)
 

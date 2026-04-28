@@ -3,10 +3,13 @@ from __future__ import annotations
 import json
 import re
 import secrets
+from html import escape
+from importlib import resources
 from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi.responses import HTMLResponse, Response
 from pydantic import ValidationError
 
 from agent_harness import __version__
@@ -30,6 +33,10 @@ from agent_harness.utils import load_json, normalize_relative_path
 
 OPERATOR_TOKEN_HEADER = "X-Agent-Harness-Operator-Token"
 RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+STATIC_ASSET_TYPES = {
+    "app.css": "text/css; charset=utf-8",
+    "app.js": "text/javascript; charset=utf-8",
+}
 
 
 def create_operator_app(project_root: Path, token: str, profile: str = "default") -> FastAPI:
@@ -52,6 +59,23 @@ def create_operator_app(project_root: Path, token: str, profile: str = "default"
         return OperatorHealthResponse(
             agent_harness_version=__version__,
         ).model_dump(mode="json")
+
+    @app.get("/", response_class=HTMLResponse)
+    def operator_ui() -> HTMLResponse:
+        return HTMLResponse(
+            _read_index_html(app.state.profile),
+            media_type="text/html; charset=utf-8",
+        )
+
+    @app.get("/operator/static/{asset_name}")
+    def operator_static(asset_name: str) -> Response:
+        media_type = STATIC_ASSET_TYPES.get(asset_name)
+        if media_type is None:
+            raise HTTPException(status_code=404, detail="static asset not found")
+        return Response(
+            _read_static_text(asset_name),
+            media_type=media_type,
+        )
 
     @app.get("/api/v1/runs")
     def run_list(
@@ -125,6 +149,19 @@ def create_operator_app(project_root: Path, token: str, profile: str = "default"
     return app
 
 
+def _read_static_text(name: str) -> str:
+    return (
+        resources.files("agent_harness.operator.static").joinpath(name).read_text(encoding="utf-8")
+    )
+
+
+def _read_index_html(profile: str) -> str:
+    return _read_static_text("index.html").replace(
+        "__OPERATOR_PROFILE__",
+        escape(profile, quote=True),
+    )
+
+
 def _load_run_list(project_root: Path) -> OperatorRunListResponse:
     artifact_root = _artifact_root(project_root)
     runs_root = artifact_root / "runs"
@@ -163,6 +200,8 @@ def _load_run_detail(project_root: Path, run_id: str) -> OperatorRunDetailRespon
         schema_versions=_read_optional_run_data(store, "schema_versions.json"),
         template_apply=_read_optional_run_data(store, "template_apply.json"),
         git_commit=_read_optional_run_data(store, "git_commit.json"),
+        eval_results=_read_optional_run_data(store, "eval_results.json"),
+        retrieval_scorecards=_read_optional_run_data(store, "retrieval_scorecards.json"),
         workspace_metadata=workspace_metadata,
         artifact_statuses=artifact_statuses,
     )

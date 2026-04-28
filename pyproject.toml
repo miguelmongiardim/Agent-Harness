@@ -53,7 +53,7 @@ agent-harness = "agent_harness.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-agent_harness = ["bundled_templates/**/*.json", "bundled_templates/**/*.sqlite3", "bundled_benchmarks/**/*.json", "provider_fixtures/**/*.json", "py.typed"]
+agent_harness = ["bundled_templates/**/*.json", "bundled_templates/**/*.sqlite3", "bundled_benchmarks/**/*.json", "provider_fixtures/**/*.json", "operator/static/*.css", "operator/static/*.html", "operator/static/*.js", "py.typed"]
 
 [tool.uv]
 package = true

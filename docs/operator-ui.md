@@ -12,7 +12,7 @@ current until tests and release evidence exist.
 
 ## Implemented in V6
 
-Phases 1 through 5 have added the safe `agent-harness serve` shell and the
+Phases 1 through 6 have added the safe `agent-harness serve` shell and the
 first local operator run-inspection APIs:
 
 - the `operator` optional dependency extra is declared
@@ -53,6 +53,14 @@ first local operator run-inspection APIs:
   checks return safe API errors without marking the approval decided
 - API approval decisions write the same approval artifacts and run events that
   CLI approval uses
+- `GET /` serves a packaged static operator UI
+- packaged HTML, CSS, and JavaScript assets are served locally from the Python
+  distribution with no Node build
+- the UI stores the operator token only in browser memory for the current page
+  session and uses local `/api/v1/...` routes only
+- the UI can list runs, open run detail, and show timeline, context, artifacts,
+  provider evidence, security/policy evidence, eval/scorecard evidence, and
+  approvals
 
 The operator surface is not a new runtime. The CLI and existing runtime remain
 responsible for task execution, provider setup, template application, patch
@@ -60,11 +68,9 @@ planning, and git commit planning.
 
 ## Roadmap / Not implemented yet
 
-These remain unimplemented after Phase 5:
+These remain unimplemented after Phase 6:
 
-- eval and scorecard inspection routes
 - approve or deny through the UI
-- packaged static UI
 
 These remain outside the V6 local operator scope:
 

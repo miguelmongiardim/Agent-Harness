@@ -2,7 +2,7 @@
 
 > Source PRD: [docs/prd-agent-harness-v6.md](../docs/prd-agent-harness-v6.md)
 
-Phases 0, 1, 2, 3, 4, and 5 have been implemented. Remaining acceptance boxes
+Phases 0, 1, 2, 3, 4, 5, and 6 have been implemented. Remaining acceptance boxes
 should be checked only after behavior is backed by tests, docs, or release
 evidence.
 
@@ -358,19 +358,19 @@ UI simple, offline-capable, and operationally dense.
 
 ### Acceptance criteria
 
-- [ ] `GET /` serves the static UI.
-- [ ] Static assets load from packaged files.
-- [ ] Packaged files are included in the Python distribution.
-- [ ] UI has no Node build.
-- [ ] UI has no external CDN references.
-- [ ] UI has no remote font references.
-- [ ] UI has no analytics references.
-- [ ] UI has no external API calls.
-- [ ] UI references only `/api/v1/...` local API paths.
-- [ ] UI displays local-only/non-hosted status.
-- [ ] UI can list runs with a valid token.
-- [ ] UI can open run details with a valid token.
-- [ ] UI can display timeline, context, provider evidence, security/policy
+- [x] `GET /` serves the static UI.
+- [x] Static assets load from packaged files.
+- [x] Packaged files are included in the Python distribution.
+- [x] UI has no Node build.
+- [x] UI has no external CDN references.
+- [x] UI has no remote font references.
+- [x] UI has no analytics references.
+- [x] UI has no external API calls.
+- [x] UI references only `/api/v1/...` local API paths.
+- [x] UI displays local-only/non-hosted status.
+- [x] UI can list runs with a valid token.
+- [x] UI can open run details with a valid token.
+- [x] UI can display timeline, context, provider evidence, security/policy
       findings, eval/scorecard evidence, and artifacts.
 
 ### Out of scope

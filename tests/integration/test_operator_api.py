@@ -310,6 +310,47 @@ def test_operator_run_detail_includes_optional_evidence_seen_by_cli_inspect(
     assert body["workspace_metadata"] == cli_inspect["workspace_metadata"]
 
 
+def test_operator_run_detail_includes_eval_and_scorecard_evidence_for_ui(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    seed_project(tmp_path)
+    task_path = _write_read_only_task(tmp_path, "operator-eval-scorecard-evidence")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-operator-eval-scorecard-evidence")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-25T12:00:00Z")
+
+    assert main(["run", str(task_path), "--dry-run"]) == 0
+    run_summary = json.loads(capsys.readouterr().out)
+    run_dir = tmp_path / ".agent-harness" / "runs" / run_summary["run_id"]
+    eval_results = {"schema_version": "eval_results.v1", "results": []}
+    retrieval_scorecards = {
+        "schema_version": "operator_retrieval_scorecards.v1",
+        "scorecards": [{"schema_version": "retrieval_scorecard.v1", "status": "passed"}],
+    }
+    (run_dir / "eval_results.json").write_text(json.dumps(eval_results), encoding="utf-8")
+    (run_dir / "retrieval_scorecards.json").write_text(
+        json.dumps(retrieval_scorecards),
+        encoding="utf-8",
+    )
+    app = create_operator_app(
+        project_root=tmp_path,
+        token="operator-secret",
+        profile="default",
+    )
+
+    response = TestClient(app).get(
+        f"/api/v1/runs/{run_summary['run_id']}",
+        headers=_operator_headers(),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["eval_results"] == eval_results
+    assert body["retrieval_scorecards"] == retrieval_scorecards
+
+
 def test_operator_run_detail_returns_not_found_for_missing_run(tmp_path: Path) -> None:
     seed_project(tmp_path)
     app = create_operator_app(

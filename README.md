@@ -202,7 +202,8 @@ V6 is in progress as a local operator surface:
 run list/detail APIs, context manifest inspection, policy inspection, and safe
 artifact-status reporting for denied, missing, and malformed run evidence. It
 also adds token-gated approval listing plus approve/deny decisions routed
-through the existing approval service. The target remains a loopback-only
+through the existing approval service, plus a packaged static UI served from the
+local operator app with no external assets. The target remains a loopback-only
 inspection and approval UI over existing artifacts, not hosted API/UI operation,
 enterprise authentication, MCP, or multi-agent orchestration.
 

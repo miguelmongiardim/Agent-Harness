@@ -62,5 +62,7 @@ manifest inspection, policy inspection, and safe missing/malformed/denied
 artifact status reporting. It also implements approval listing and approve/deny
 API decisions through the existing approval service, preserving binding,
 checkpoint, drift, policy re-check, approval artifact, and event behavior. It
-must not claim hosted operation, enterprise authentication, production web
-service readiness, or compliance readiness.
+serves a packaged static UI from local package assets with no external CDN,
+remote font, analytics, or external API calls. It must not claim hosted
+operation, enterprise authentication, production web service readiness, or
+compliance readiness.
