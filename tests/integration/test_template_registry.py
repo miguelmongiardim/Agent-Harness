@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from agent_harness.cli import main
+from agent_harness.utils import sha256_json
 from tests.conftest import seed_project
 
 
@@ -121,6 +122,31 @@ def test_template_apply_to_non_empty_destination_is_approval_bound_and_records_v
         "scaffold/src/example_python_lib/core.py",
         "scaffold/tests/test_core.py",
     }
+    planned_files = [entry["path"] for entry in action["proposed_writes"]]
+    operation_types = {path: "create" for path in planned_files}
+    rendered_hashes = {
+        entry["path"]: entry["after_hash"] for entry in action["proposed_writes"]
+    }
+    plan_payload = {
+        "template_id": "python-lib",
+        "template_version": "1.0.0",
+        "target_path": "scaffold",
+        "planned_files": planned_files,
+        "operation_types": operation_types,
+        "rendered_hashes": rendered_hashes,
+    }
+    assert action["approval_binding"] == {
+        **plan_payload,
+        "plan_hash": sha256_json(plan_payload),
+        "policy_profile": "default",
+        "checkpoint_hash": action["checkpoint_hash"],
+    }
+
+    approval = json.loads(
+        (run_dir / "approvals" / f"{action_id}.json").read_text(encoding="utf-8")
+    )
+    assert approval["policy_profile"] == action["approval_binding"]["policy_profile"]
+    assert approval["checkpoint_hash"] == action["approval_binding"]["checkpoint_hash"]
 
     assert (
         main(
@@ -166,7 +192,9 @@ def test_template_apply_overwrite_with_force_remains_approval_bound(
     assert main(["template", "apply", "python-lib", "--destination", str(destination)]) == 0
     clean = json.loads(capsys.readouterr().out)
     assert clean["status"] == "completed"
-    assert (destination / "pyproject.toml").exists()
+    pyproject = destination / "pyproject.toml"
+    assert pyproject.exists()
+    original_pyproject = pyproject.read_text(encoding="utf-8")
 
     monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "template-overwrite-run")
     assert (
@@ -187,3 +215,9 @@ def test_template_apply_overwrite_with_force_remains_approval_bound(
     assert overwrite["run_id"] == "template-overwrite-run"
     assert overwrite["status"] == "paused"
     assert overwrite["approvals"]
+    assert pyproject.read_text(encoding="utf-8") == original_pyproject
+
+    run_dir = tmp_path / ".agent-harness" / "runs" / "template-overwrite-run"
+    action_id = overwrite["approvals"][0]
+    action = json.loads((run_dir / "actions" / f"{action_id}.json").read_text(encoding="utf-8"))
+    assert set(action["approval_binding"]["operation_types"].values()) == {"overwrite"}

@@ -195,7 +195,7 @@ def test_template_apply_preview_diff_redacts_secret_like_values(
             }
         ],
     )
-    monkeypatch.setattr("agent_harness.cli.load_template", lambda name: template)
+    monkeypatch.setattr("agent_harness.cli.load_template", lambda name, root=None: template)
 
     assert (
         main(
@@ -307,7 +307,7 @@ def test_template_apply_preview_denies_invalid_pack_before_diff_output(
         source_type="bundled_pack",
         files=[{"path": ".hidden", "content": "hidden\n"}],
     )
-    monkeypatch.setattr("agent_harness.cli.load_template", lambda name: template)
+    monkeypatch.setattr("agent_harness.cli.load_template", lambda name, root=None: template)
     monkeypatch.setattr(
         "agent_harness.cli.validate_bundled_template_pack",
         lambda template_id: {

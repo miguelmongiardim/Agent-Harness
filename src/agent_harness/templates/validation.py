@@ -12,7 +12,14 @@ from agent_harness.config import write_default_config
 from agent_harness.core.runtime import HarnessRuntime
 from agent_harness.defaults import DEFAULT_POLICY
 from agent_harness.release import RELEASE_EVIDENCE_DIR
-from agent_harness.schemas import EvalSpec, HarnessConfig, PolicyProfile, TaskSpec
+from agent_harness.schemas import (
+    EvalSpec,
+    HarnessConfig,
+    PolicyProfile,
+    TaskSpec,
+    TemplateRegistryRecord,
+)
+from agent_harness.templates.apply import render_template, resolve_template_parameters
 from agent_harness.templates.registry import list_templates, load_template
 from agent_harness.utils import now_utc, write_json
 
@@ -59,7 +66,7 @@ def validate_templates(
     if all_templates == (template_id is not None):
         raise ValueError("use either --all or a template id")
 
-    listed = {record.template_id: record for record in list_templates()}
+    listed = {record.template_id: record for record in list_templates(project_root)}
     selected_ids = sorted(listed) if all_templates else [str(template_id)]
     work_root = project_root / ".agent-harness" / "template-validation" / "work"
     results = [
@@ -117,7 +124,18 @@ def _validate_template(
         return result
 
     try:
-        detail = load_template(template_id)
+        record = _listed_template_record(project_root, template_id)
+        result["source_type"] = record.source_type
+        if record.source_type == "local_pack":
+            pack_report = validate_template_pack_path(
+                project_root / Path(record.bundle_path).parent
+            )
+            result["diagnostics"] = pack_report["diagnostics"]
+            if pack_report["status"] != "passed":
+                result["message"] = "template pack validation failed"
+                return result
+        detail = load_template(template_id, project_root)
+        rendered_detail = render_template(detail, resolve_template_parameters(detail, {}))
         result["shown"] = detail.template_id == template_id and bool(detail.files)
         if detail.source_type == "bundled_pack":
             pack_report = validate_bundled_template_pack(template_id)
@@ -127,6 +145,8 @@ def _validate_template(
                 return result
         sandbox = work_root / template_id
         _reset_validation_sandbox(project_root, sandbox)
+        if detail.source_type == "local_pack":
+            _copy_local_pack_for_validation(project_root, sandbox, record.bundle_path)
         destination = sandbox / "scaffold"
         summary = HarnessRuntime(sandbox).apply_template(template_id, destination)
         result["apply"] = {
@@ -141,13 +161,20 @@ def _validate_template(
             if result["shown"]
             and summary.status == "completed"
             and not summary.approvals
-            and all((destination / file.path).exists() for file in detail.files)
+            and all((destination / file.path).exists() for file in rendered_detail.files)
             else "failed"
         )
         result["message"] = "passed" if result["status"] == "passed" else "validation failed"
     except Exception as exc:  # pragma: no cover - surfaced as validation data
         result["message"] = str(exc)
     return result
+
+
+def _listed_template_record(project_root: Path, template_id: str) -> TemplateRegistryRecord:
+    for record in list_templates(project_root):
+        if record.template_id == template_id:
+            return record
+    raise FileNotFoundError(f"template not found: {template_id}")
 
 
 def _validate_template_pack_core(pack_dir: Path) -> list[dict[str, object]]:
@@ -490,6 +517,34 @@ def _reset_validation_sandbox(project_root: Path, sandbox: Path) -> None:
     sandbox.mkdir(parents=True)
     write_default_config(sandbox, force=True)
     write_json(sandbox / "policies" / "default.json", DEFAULT_POLICY)
+
+
+def _copy_local_pack_for_validation(project_root: Path, sandbox: Path, bundle_path: str) -> None:
+    bundle = Path(bundle_path)
+    pack_dir = bundle.parent
+    local_dir = pack_dir.parent
+    source_pack = project_root / pack_dir
+    target_pack = sandbox / pack_dir
+    if target_pack.exists():
+        shutil.rmtree(target_pack)
+    shutil.copytree(source_pack, target_pack)
+    (sandbox / "agent-harness.yaml").write_text(
+        "\n".join(
+            [
+                "schema_version: config.v2",
+                "project_name: template-validation",
+                "artifact_root: .agent-harness",
+                "default_policy: default",
+                "retrieval_backend: lexical",
+                "template_catalog: bundled",
+                "templates:",
+                "  local_dirs:",
+                f"    - {local_dir.as_posix()}",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
 
 
 def _rebase_artifacts(

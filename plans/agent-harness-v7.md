@@ -329,22 +329,22 @@ binding for non-empty targets and `--force` overwrite planning.
 
 ### Acceptance criteria
 
-- [ ] `templates.local_dirs` is readable from `config.v2`.
-- [ ] Existing `template_catalog: bundled` remains readable.
-- [ ] Local packs in configured directories are discovered.
-- [ ] Invalid local packs appear as diagnostics and are not usable.
-- [ ] Duplicate IDs across bundled, legacy, and local sources fail clearly.
-- [ ] Required params must be provided or have defaults.
-- [ ] Undeclared CLI params fail clearly.
-- [ ] Choice params accept only declared values.
-- [ ] Boolean params render deterministically.
-- [ ] `path_fragment` params cannot traverse, be absolute, contain drive
+- [x] `templates.local_dirs` is readable from `config.v2`.
+- [x] Existing `template_catalog: bundled` remains readable.
+- [x] Local packs in configured directories are discovered.
+- [x] Invalid local packs appear as diagnostics and are not usable.
+- [x] Duplicate IDs across bundled, legacy, and local sources fail clearly.
+- [x] Required params must be provided or have defaults.
+- [x] Undeclared CLI params fail clearly.
+- [x] Choice params accept only declared values.
+- [x] Boolean params render deterministically.
+- [x] `path_fragment` params cannot traverse, be absolute, contain drive
       prefixes, or escape the target.
-- [ ] Direct collisions stop by default.
-- [ ] `--force` can create an overwrite plan but does not write without
+- [x] Direct collisions stop by default.
+- [x] `--force` can create an overwrite plan but does not write without
       approval.
-- [ ] Non-empty target mutation requires approval-bound apply planning.
-- [ ] Approval binding includes template ID, version, target, planned files,
+- [x] Non-empty target mutation requires approval-bound apply planning.
+- [x] Approval binding includes template ID, version, target, planned files,
       operation types, rendered hashes, plan hash, policy profile, and
       checkpoint hash where applicable.
 

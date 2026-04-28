@@ -45,7 +45,10 @@ from agent_harness.retrieval_scorecards import run_retrieval_scorecard
 from agent_harness.schemas import TaskSpec, TemplateDetail
 from agent_harness.storage import RunStore
 from agent_harness.templates import list_templates, load_template
-from agent_harness.templates.apply import build_template_application_evidence
+from agent_harness.templates.apply import (
+    build_template_application_evidence,
+    resolve_template_parameters,
+)
 from agent_harness.templates.validation import (
     validate_bundled_template_pack,
     validate_template_pack_path,
@@ -323,7 +326,7 @@ def cmd_init(args: argparse.Namespace) -> int:
 
 def cmd_template_list(args: argparse.Namespace) -> int:
     del args
-    for template in list_templates():
+    for template in list_templates(Path.cwd()):
         print(
             f"{template.template_id}\t{template.version}\t{template.title}"
             f"\t{template.source_type}\t{template.compatibility_status}"
@@ -332,7 +335,7 @@ def cmd_template_list(args: argparse.Namespace) -> int:
 
 
 def cmd_template_show(args: argparse.Namespace) -> int:
-    print(load_template(args.name).model_dump_json(indent=2))
+    print(load_template(args.name, Path.cwd()).model_dump_json(indent=2))
     return 0
 
 
@@ -358,7 +361,7 @@ def cmd_template_apply(args: argparse.Namespace) -> int:
     target = args.target or args.destination or "."
     destination = Path(target).resolve()
     if args.dry_run or args.preview_diff:
-        template = load_template(args.name)
+        template = load_template(args.name, Path.cwd())
         diagnostics: list[dict[str, object]] = []
         if template.source_type == "bundled_pack":
             report = validate_bundled_template_pack(template.template_id)
@@ -378,7 +381,7 @@ def cmd_template_apply(args: argparse.Namespace) -> int:
         print(json.dumps(evidence, indent=2))
         return 0
 
-    template = load_template(args.name)
+    template = load_template(args.name, Path.cwd())
     apply_diagnostics: list[dict[str, object]] = []
     if template.source_type == "bundled_pack":
         report = validate_bundled_template_pack(template.template_id)
@@ -398,20 +401,7 @@ def cmd_template_apply(args: argparse.Namespace) -> int:
 
 
 def _template_parameters(template: TemplateDetail, values: list[str]) -> dict[str, str]:
-    overrides = _parse_template_parameters(values)
-    declared = set(template.parameters)
-    for name in sorted(overrides):
-        if name not in declared:
-            raise ValueError(f"undeclared template parameter: {name}")
-    parameters: dict[str, str] = {}
-    for name, metadata in template.parameters.items():
-        default = metadata.get("default")
-        if default is not None:
-            parameters[name] = str(default)
-        elif metadata.get("required") is True and name not in overrides:
-            raise ValueError(f"missing required template parameter: {name}")
-    parameters.update(overrides)
-    return parameters
+    return resolve_template_parameters(template, _parse_template_parameters(values))
 
 
 def _parse_template_parameters(values: list[str]) -> dict[str, str]:

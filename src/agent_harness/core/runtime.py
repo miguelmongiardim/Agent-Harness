@@ -61,7 +61,10 @@ from agent_harness.schemas import (
 from agent_harness.security import collect_advisory_reports, scan_task_security
 from agent_harness.storage import RunStore, make_event
 from agent_harness.templates import load_template, plan_template_apply
-from agent_harness.templates.apply import build_template_application_evidence
+from agent_harness.templates.apply import (
+    build_template_application_evidence,
+    resolve_template_parameters,
+)
 from agent_harness.tools.executor import ToolExecutor
 from agent_harness.tools.git_commit import (
     bind_committed_hash,
@@ -556,9 +559,15 @@ class HarnessRuntime:
         selected_profile = profile_name or self.config.default_policy
         profile = load_policy(self.project_root, selected_profile)
         policy = PolicyEngine(self.project_root, profile)
-        template = load_template(template_name)
-        template_apply = plan_template_apply(template, destination, policy, force=force)
-        template_parameters = parameters or _template_parameter_defaults(template.parameters)
+        template = load_template(template_name, self.project_root)
+        template_parameters = resolve_template_parameters(template, parameters or {})
+        template_apply = plan_template_apply(
+            template,
+            destination,
+            policy,
+            force=force,
+            parameters=template_parameters,
+        )
 
         task_id = f"template-apply:{template.template_id}"
         run_id = new_run_id(task_id)
@@ -657,6 +666,11 @@ class HarnessRuntime:
             ],
             "checkpoint_hash": checkpoint_hash,
             "policy_profile": policy.profile.name,
+            "approval_binding": _template_apply_approval_binding(
+                template_apply,
+                policy.profile.name,
+                checkpoint_hash,
+            ),
             "workspace_metadata_path": workspace_metadata_relative,
         }
         store.write_action(action_id, action_record)
@@ -1419,6 +1433,8 @@ def _template_apply_effect_payload(template_apply: TemplateApplyRecord) -> dict[
         "template_id": template_apply.template_id,
         "version": template_apply.version,
         "destination": template_apply.destination,
+        "plan": _template_apply_plan_payload(template_apply),
+        "plan_hash": sha256_json(_template_apply_plan_payload(template_apply)),
         "proposed_writes": [
             {
                 "path": write.path,
@@ -1427,6 +1443,40 @@ def _template_apply_effect_payload(template_apply: TemplateApplyRecord) -> dict[
             }
             for write in template_apply.proposed_writes
         ],
+    }
+
+
+def _template_apply_plan_payload(template_apply: TemplateApplyRecord) -> dict[str, object]:
+    planned_files = [write.path for write in template_apply.proposed_writes]
+    empty_hash = sha256_text("")
+    operation_types = {
+        write.path: "create" if write.before_hash == empty_hash else "overwrite"
+        for write in template_apply.proposed_writes
+    }
+    rendered_hashes = {
+        write.path: write.after_hash for write in template_apply.proposed_writes
+    }
+    return {
+        "template_id": template_apply.template_id,
+        "template_version": template_apply.version,
+        "target_path": template_apply.destination,
+        "planned_files": planned_files,
+        "operation_types": operation_types,
+        "rendered_hashes": rendered_hashes,
+    }
+
+
+def _template_apply_approval_binding(
+    template_apply: TemplateApplyRecord,
+    policy_profile: str,
+    checkpoint_hash: str,
+) -> dict[str, object]:
+    plan_payload = _template_apply_plan_payload(template_apply)
+    return {
+        **plan_payload,
+        "plan_hash": sha256_json(plan_payload),
+        "policy_profile": policy_profile,
+        "checkpoint_hash": checkpoint_hash,
     }
 
 
@@ -1505,7 +1555,7 @@ def _apply_template_approval(
 ) -> None:
     for write in template_apply.proposed_writes:
         path = project_root / write.path
-        current_hash = hash_file(path) if path.exists() else sha256_text("")
+        current_hash = _template_file_hash(path) if path.exists() else sha256_text("")
         if current_hash != write.before_hash:
             raise ValueError(f"template apply target changed before approval: {write.path}")
 
@@ -1517,7 +1567,7 @@ def _apply_template_approval(
             path = project_root / write.path
             existed = path.exists()
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(write.proposed_content, encoding="utf-8")
+            path.write_bytes(write.proposed_content.encode("utf-8"))
             if not existed:
                 created_writes.append((path, write))
             store.append_event(
@@ -1621,11 +1671,15 @@ def _rollback_created_template_files(
     for path, write in reversed(created_writes):
         if not path.is_file():
             continue
-        if hash_file(path) != write.after_hash:
+        if _template_file_hash(path) != write.after_hash:
             continue
         path.unlink()
         rolled_back.append(write.path)
     return list(reversed(rolled_back))
+
+
+def _template_file_hash(path: Path) -> str:
+    return sha256_text(path.read_text(encoding="utf-8"))
 
 
 def _provider_input_approval_record(

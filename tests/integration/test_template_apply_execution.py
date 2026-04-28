@@ -144,8 +144,11 @@ def test_template_apply_failure_rolls_back_created_files_and_records_failed_evid
             {"path": "blocked/child.txt", "content": "cannot create below a file\n"},
         ],
     )
-    monkeypatch.setattr("agent_harness.cli.load_template", lambda name: template)
-    monkeypatch.setattr("agent_harness.core.runtime.load_template", lambda name: template)
+    monkeypatch.setattr("agent_harness.cli.load_template", lambda name, root=None: template)
+    monkeypatch.setattr(
+        "agent_harness.core.runtime.load_template",
+        lambda name, root=None: template,
+    )
 
     assert (
         main(
@@ -222,7 +225,7 @@ def test_template_apply_rejects_invalid_bundled_pack_before_writing(
         source_type="bundled_pack",
         files=[{"path": ".hidden", "content": "hidden\n"}],
     )
-    monkeypatch.setattr("agent_harness.cli.load_template", lambda name: template)
+    monkeypatch.setattr("agent_harness.cli.load_template", lambda name, root=None: template)
     monkeypatch.setattr(
         "agent_harness.cli.validate_bundled_template_pack",
         lambda template_id: {

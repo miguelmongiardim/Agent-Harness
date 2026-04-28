@@ -20,7 +20,18 @@ def registry_path() -> Iterator[Path]:
         yield path
 
 
-def load_template_spec(record: TemplateRegistryRecord) -> TemplateSpec:
+def load_template_spec(
+    record: TemplateRegistryRecord,
+    project_root: Path | None = None,
+) -> TemplateSpec:
+    if record.source_type == "local_pack":
+        if project_root is None:
+            raise ValueError("local template packs require a project root")
+        manifest = project_root / record.bundle_path
+        if not manifest.is_file():
+            raise FileNotFoundError(f"template bundle not found: {record.template_id}")
+        return _load_template_pack(manifest, manifest.parent)
+
     manifest = _bundled_pack_manifest(record.template_id)
     if manifest.is_file():
         return _load_template_pack(manifest, _BUNDLED_TEMPLATES.joinpath(record.template_id))

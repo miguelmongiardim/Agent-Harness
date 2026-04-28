@@ -260,6 +260,18 @@ class RetrievalConfig(StrictModel):
     fallback: RetrievalFallbackConfig = Field(default_factory=RetrievalFallbackConfig)
 
 
+class TemplatesConfig(StrictModel):
+    local_dirs: list[str] = Field(default_factory=list)
+
+    @field_validator("local_dirs")
+    @classmethod
+    def validate_local_dirs(cls, values: list[str]) -> list[str]:
+        normalized = [normalize_relative_path(value) for value in values]
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("templates.local_dirs values must be unique")
+        return normalized
+
+
 def _is_loopback_qdrant_host(hostname: str) -> bool:
     if hostname == "localhost":
         return True
@@ -277,6 +289,7 @@ class HarnessConfig(StrictModel):
     retrieval_backend: Literal["fake", "lexical", "qdrant"] = "lexical"
     retrieval: RetrievalConfig | None = None
     template_catalog: str = "bundled"
+    templates: TemplatesConfig = Field(default_factory=TemplatesConfig)
     default_provider_profile: str | None = None
     provider_profiles: list[ProviderProfileConfig] = Field(default_factory=list)
 
@@ -293,6 +306,8 @@ class HarnessConfig(StrictModel):
                 unsupported.append("provider profiles")
             if self.retrieval is not None:
                 unsupported.append("retrieval settings")
+            if self.templates.local_dirs:
+                unsupported.append("local template dirs")
             if unsupported:
                 raise ValueError(f"config.v1 does not support {', '.join(unsupported)}")
             return self
@@ -660,7 +675,7 @@ class RetrievalIndexSource(StrictModel):
     @field_validator("path")
     @classmethod
     def validate_path(cls, value: str) -> str:
-        return normalize_relative_path(value)
+        return normalize_relative_path(value.strip())
 
 
 class RetrievalIndexChunk(StrictModel):
@@ -674,7 +689,7 @@ class RetrievalIndexChunk(StrictModel):
     @field_validator("path")
     @classmethod
     def validate_path(cls, value: str) -> str:
-        return normalize_relative_path(value)
+        return normalize_relative_path(value.strip())
 
 
 class RetrievalIndexManifest(StrictModel):
@@ -906,6 +921,8 @@ class RunSummary(StrictModel):
 
 
 class TemplateFile(StrictModel):
+    model_config = ConfigDict(extra="forbid", strict=True, str_strip_whitespace=False)
+
     path: str
     content: str
 
@@ -998,6 +1015,8 @@ class TemplateDetail(StrictModel):
 
 
 class TemplateProposedWrite(StrictModel):
+    model_config = ConfigDict(extra="forbid", strict=True, str_strip_whitespace=False)
+
     path: str
     before_hash: str
     after_hash: str

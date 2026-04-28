@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import difflib
+import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -9,10 +11,19 @@ from agent_harness.policy import PolicyEngine
 from agent_harness.schemas import (
     TemplateApplyRecord,
     TemplateDetail,
+    TemplateFile,
     TemplateProposedWrite,
     ToolCall,
 )
-from agent_harness.utils import sha256_json, sha256_text, stable_id
+from agent_harness.utils import (
+    normalize_relative_path,
+    sha256_json,
+    sha256_text,
+    stable_id,
+)
+
+_PLACEHOLDER_PATTERN = re.compile(r"{{\s*([A-Za-z_][A-Za-z0-9_]*)\s*}}")
+_DRIVE_PREFIX_PATTERN = re.compile(r"^[A-Za-z]:")
 
 
 @dataclass(frozen=True)
@@ -34,8 +45,9 @@ def build_template_application_evidence(
     created_files: list[str] | None = None,
     diagnostics: list[dict[str, object]] | None = None,
 ) -> dict[str, Any]:
+    rendered_spec = render_template(spec, parameters)
     plan = _build_template_application_plan(
-        spec,
+        rendered_spec,
         destination,
         policy,
         force=False,
@@ -119,7 +131,7 @@ def build_template_application_evidence(
             }
             for conflict in plan.conflicts
         ],
-        "generated_files": [file.path for file in spec.files],
+        "generated_files": [file.path for file in rendered_spec.files],
         "plan_hash": sha256_json(plan_payload),
         "approval_required": approval_required,
         "approval_id": None,
@@ -139,14 +151,111 @@ def plan_template_apply(
     destination: Path,
     policy: PolicyEngine,
     force: bool = False,
+    parameters: Mapping[str, str] | None = None,
 ) -> TemplateApplyRecord:
+    rendered_spec = render_template(spec, parameters or {})
     return _build_template_application_plan(
-        spec,
+        rendered_spec,
         destination,
         policy,
         force=force,
         report_existing=False,
     ).record
+
+
+def resolve_template_parameters(
+    spec: TemplateDetail,
+    overrides: Mapping[str, str] | None = None,
+) -> dict[str, str]:
+    supplied = dict(overrides or {})
+    declared = set(spec.parameters)
+    for name in sorted(supplied):
+        if name not in declared:
+            raise ValueError(f"undeclared template parameter: {name}")
+
+    resolved: dict[str, str] = {}
+    for name, metadata in spec.parameters.items():
+        if name in supplied:
+            raw_value: object = supplied[name]
+        else:
+            raw_value = metadata.get("default")
+        if raw_value is None:
+            if metadata.get("required") is True:
+                raise ValueError(f"missing required template parameter: {name}")
+            continue
+        resolved[name] = _render_parameter_value(name, raw_value, metadata)
+    return resolved
+
+
+def render_template(
+    spec: TemplateDetail,
+    parameters: Mapping[str, str],
+) -> TemplateDetail:
+    return spec.model_copy(
+        update={
+            "files": [
+                TemplateFile(
+                    path=_render_text(file.path, parameters),
+                    content=_render_text(file.content, parameters),
+                )
+                for file in spec.files
+            ]
+        }
+    )
+
+
+def _render_parameter_value(
+    name: str,
+    raw_value: object,
+    metadata: dict[str, Any],
+) -> str:
+    parameter_type = metadata.get("type", "string")
+    if parameter_type == "path_fragment":
+        return _validate_path_fragment(name, str(raw_value))
+    if parameter_type == "choice":
+        return _validate_choice(name, str(raw_value), metadata)
+    if parameter_type == "boolean":
+        return _validate_boolean(name, raw_value)
+    if parameter_type == "string":
+        return str(raw_value)
+    raise ValueError(f"unsupported template parameter type for {name}: {parameter_type}")
+
+
+def _validate_path_fragment(name: str, value: str) -> str:
+    if value.startswith(("/", "\\")) or _DRIVE_PREFIX_PATTERN.match(value):
+        raise ValueError(f"path_fragment template parameter cannot be absolute: {name}")
+    try:
+        normalized = normalize_relative_path(value)
+    except ValueError as exc:
+        raise ValueError(f"invalid path_fragment template parameter: {name}") from exc
+    if normalized == ".":
+        raise ValueError(f"path_fragment template parameter cannot be empty: {name}")
+    return normalized
+
+
+def _validate_choice(name: str, value: str, metadata: dict[str, Any]) -> str:
+    choices = metadata.get("choices")
+    if not isinstance(choices, list) or not all(isinstance(choice, str) for choice in choices):
+        raise ValueError(f"choice template parameter must declare string choices: {name}")
+    if value not in choices:
+        allowed = ", ".join(sorted(choices))
+        raise ValueError(f"invalid choice for template parameter {name}: {value} not in {allowed}")
+    return value
+
+
+def _validate_boolean(name: str, value: object) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, str) and value in {"true", "false"}:
+        return value
+    raise ValueError(f"boolean template parameter must be true or false: {name}")
+
+
+def _render_text(text: str, parameters: Mapping[str, str]) -> str:
+    return _PLACEHOLDER_PATTERN.sub(
+        lambda match: parameters.get(match.group(1), match.group(0)),
+        text,
+    )
 
 
 def _build_template_application_plan(
