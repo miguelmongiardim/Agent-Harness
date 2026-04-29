@@ -131,15 +131,26 @@ envelopes through `RunStore`.
 
 ### Acceptance criteria
 
-- [ ] Base install works without MCP dependencies.
-- [ ] `agent-harness mcp serve` fails clearly when `mcp` is missing.
-- [ ] `agent-harness mcp resources list [--profile PROFILE] [--json]` exists.
-- [ ] `agent-harness mcp resources read <uri> [--profile PROFILE] [--json]`
+- [x] Base install works without MCP dependencies.
+- [x] `agent-harness mcp serve` fails clearly when `mcp` is missing.
+- [x] `agent-harness mcp resources list [--profile PROFILE] [--json]` exists.
+- [x] `agent-harness mcp resources read <uri> [--profile PROFILE] [--json]`
       exists.
-- [ ] `agent-harness://runs` lists available run summary resources.
-- [ ] Run summary and context resources resolve through artifact storage.
-- [ ] CLI help states V9 is resources/prompts only.
-- [ ] CLI inspection commands do not import the MCP SDK.
+- [x] `agent-harness://runs` lists available run summary resources.
+- [x] Run summary and context resources resolve through artifact storage.
+- [x] CLI help states V9 is resources/prompts only.
+- [x] CLI inspection commands do not import the MCP SDK.
+
+### Phase 1 implementation notes
+
+- Added the optional `mcp = ["mcp>=1,<2"]` extra and refreshed `uv.lock`.
+- Added an SDK-independent `agent_harness.mcp` resource boundary for listing
+  runs and reading run summary/context envelopes from `RunStore` artifacts.
+- Added `agent-harness mcp resources list/read --json` and a placeholder
+  `agent-harness mcp serve` command that reports the missing SDK with an
+  `agent-harness[mcp]` install hint.
+- Verified default `uv run` has no `mcp` module installed while resource
+  inspection commands pass.
 
 ### Out of scope
 

@@ -27,6 +27,7 @@ from agent_harness.docs_check import write_docs_check_report
 from agent_harness.doctor import doctor
 from agent_harness.evals import run_builtin_evals, write_eval_report
 from agent_harness.exporters import export_json, export_markdown, export_sarif
+from agent_harness.mcp import list_mcp_resources, read_mcp_resource
 from agent_harness.migration import migrate_schemas
 from agent_harness.policy import PolicyEngine, load_policy
 from agent_harness.release import (
@@ -227,6 +228,26 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_run.add_argument("pack_id")
     benchmark_run.add_argument("case_id")
     benchmark_run.set_defaults(func=cmd_benchmark_run)
+
+    mcp = sub.add_parser(
+        "mcp",
+        description="Local MCP boundary inspection. V9 exposes resources/prompts only; no tools.",
+    )
+    mcp_sub = mcp.add_subparsers(required=True)
+    mcp_serve = mcp_sub.add_parser("serve")
+    mcp_serve.add_argument("--profile", default="default")
+    mcp_serve.set_defaults(func=cmd_mcp_serve)
+    mcp_resources = mcp_sub.add_parser("resources")
+    mcp_resources_sub = mcp_resources.add_subparsers(required=True)
+    mcp_resources_list = mcp_resources_sub.add_parser("list")
+    mcp_resources_list.add_argument("--profile", default="default")
+    mcp_resources_list.add_argument("--json", action="store_true")
+    mcp_resources_list.set_defaults(func=cmd_mcp_resources_list)
+    mcp_resources_read = mcp_resources_sub.add_parser("read")
+    mcp_resources_read.add_argument("uri")
+    mcp_resources_read.add_argument("--profile", default="default")
+    mcp_resources_read.add_argument("--json", action="store_true")
+    mcp_resources_read.set_defaults(func=cmd_mcp_resources_read)
 
     retrieval = sub.add_parser("retrieval")
     retrieval_sub = retrieval.add_subparsers(required=True)
@@ -604,6 +625,41 @@ def cmd_benchmark_run(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_mcp_resources_list(args: argparse.Namespace) -> int:
+    payload = list_mcp_resources(Path.cwd(), profile=args.profile)
+    if args.json:
+        print(json.dumps(payload, indent=2))
+    else:
+        for resource in payload["resources"]:
+            print(f"{resource['uri']}\t{resource['resource_type']}\t{resource['mime_type']}")
+    return 0
+
+
+def cmd_mcp_resources_read(args: argparse.Namespace) -> int:
+    payload = read_mcp_resource(Path.cwd(), args.uri, profile=args.profile)
+    if args.json:
+        print(json.dumps(payload, indent=2))
+    else:
+        print(json.dumps(payload["content"], indent=2))
+    return 0
+
+
+def cmd_mcp_serve(args: argparse.Namespace) -> int:
+    del args
+    if not _mcp_sdk_available():
+        print(
+            "error: MCP SDK is not installed; install with "
+            "`pip install agent-harness[mcp]` or `uv sync --extra mcp`",
+            file=sys.stderr,
+        )
+        return 1
+    print(
+        "error: MCP stdio server is planned for a later V9 phase",
+        file=sys.stderr,
+    )
+    return 1
+
+
 def cmd_retrieval_index_build(args: argparse.Namespace) -> int:
     root = Path.cwd()
     config = load_config(root)
@@ -841,3 +897,7 @@ def _operator_dependencies_available() -> bool:
         importlib.util.find_spec("fastapi") is not None
         and importlib.util.find_spec("uvicorn") is not None
     )
+
+
+def _mcp_sdk_available() -> bool:
+    return importlib.util.find_spec("mcp") is not None
