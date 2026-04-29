@@ -372,17 +372,32 @@ approval, context, eval, template, skill, and retrieval review prompts.
 
 ### Acceptance criteria
 
-- [ ] Prompt list works.
-- [ ] Prompt get works.
-- [ ] Prompt arguments validate.
-- [ ] Prompt output is deterministic for the same arguments.
-- [ ] Prompt hash is stable.
-- [ ] Prompt responses include referenced allowed resources.
-- [ ] Prompts do not request policy bypass.
-- [ ] Prompts do not request write actions.
-- [ ] Prompts do not request approval mutation.
-- [ ] Prompts do not request provider execution.
-- [ ] Prompt access evidence is emitted.
+- [x] Prompt list works.
+- [x] Prompt get works.
+- [x] Prompt arguments validate.
+- [x] Prompt output is deterministic for the same arguments.
+- [x] Prompt hash is stable.
+- [x] Prompt responses include referenced allowed resources.
+- [x] Prompts do not request policy bypass.
+- [x] Prompts do not request write actions.
+- [x] Prompts do not request approval mutation.
+- [x] Prompts do not request provider execution.
+- [x] Prompt access evidence is emitted.
+
+### Phase 5 implementation notes
+
+- Added SDK-independent `agent_harness.mcp` prompt registry behavior for the
+  eight V9 review prompts.
+- Added `agent-harness mcp prompts list --json` and
+  `agent-harness mcp prompts get <name> [--arg key=value] --json`.
+- Prompt responses use `mcp_prompt_response.v1`, deterministic Markdown
+  messages, allowlisted resource references, stable `prompt_hash` values, and
+  safe JSON denials for invalid prompt arguments.
+- Prompt list and get requests append metadata-only `mcp_access_log.v1`
+  records with prompt request type, prompt name where applicable, result, and
+  prompt hash where applicable.
+- Shared MCP access-log writing now lives in `agent_harness.mcp.access_log`;
+  resource reads keep their existing access-log behavior.
 
 ### Out of scope
 

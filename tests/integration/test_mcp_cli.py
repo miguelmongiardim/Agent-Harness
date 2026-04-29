@@ -29,6 +29,148 @@ def test_mcp_help_states_v9_resources_prompts_only(capsys) -> None:  # type: ign
     assert "no tools" in help_text
 
 
+def test_mcp_prompts_list_exposes_v9_review_prompts(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    seed_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["mcp", "prompts", "list", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    prompt_names = {prompt["name"] for prompt in payload["prompts"]}
+
+    assert payload["schema_version"] == "mcp_prompt_list.v1"
+    assert payload["count"] == 8
+    assert prompt_names == {
+        "agent-harness-run-review",
+        "agent-harness-policy-review",
+        "agent-harness-approval-review",
+        "agent-harness-context-review",
+        "agent-harness-eval-review",
+        "agent-harness-template-review",
+        "agent-harness-skill-review",
+        "agent-harness-retrieval-review",
+    }
+
+
+def test_mcp_prompt_get_returns_deterministic_review_prompt(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    seed_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["mcp", "prompts", "get", "agent-harness-run-review", "--json"]) == 0
+    first = json.loads(capsys.readouterr().out)
+    assert main(["mcp", "prompts", "get", "agent-harness-run-review", "--json"]) == 0
+    second = json.loads(capsys.readouterr().out)
+
+    assert first["schema_version"] == "mcp_prompt_response.v1"
+    assert first["name"] == "agent-harness-run-review"
+    assert first["mime_type"] == "text/markdown"
+    assert first["denial_status"] == "allowed"
+    assert first["arguments"] == {}
+    assert first["resource_references"] == ["agent-harness://runs"]
+    assert len(first["prompt_hash"]) == 64
+    assert first["prompt_hash"] == second["prompt_hash"]
+    assert first["messages"] == second["messages"]
+    assert "Agent Harness run evidence" in first["messages"][0]["content"]
+
+
+def test_mcp_prompt_get_rejects_unsupported_arguments(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    seed_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    assert (
+        main(
+            [
+                "mcp",
+                "prompts",
+                "get",
+                "agent-harness-run-review",
+                "--arg",
+                "template_id=python-lib",
+                "--json",
+            ]
+        )
+        == 1
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["schema_version"] == "mcp_prompt_response.v1"
+    assert payload["name"] == "agent-harness-run-review"
+    assert payload["denial_status"] == "denied"
+    assert payload["prompt_hash"] is None
+    assert payload["messages"] == []
+    assert payload["metadata"]["denial_reason"] == "unsupported_argument"
+    assert payload["metadata"]["argument"] == "template_id"
+
+
+def test_mcp_prompt_requests_append_metadata_only_access_log(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    seed_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-29T15:00:00Z")
+
+    assert main(["mcp", "prompts", "list", "--json"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "mcp",
+                "prompts",
+                "get",
+                "agent-harness-run-review",
+                "--arg",
+                "run_id=run-mcp-review",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    response = json.loads(capsys.readouterr().out)
+    serialized_messages = json.dumps(response["messages"]).lower()
+    log_path = tmp_path / ".agent-harness" / "mcp" / "access-log.jsonl"
+    records = [json.loads(line) for line in log_path.read_text(encoding="utf-8").splitlines()]
+
+    assert response["resource_references"] == [
+        "agent-harness://runs/run-mcp-review/summary",
+        "agent-harness://runs/run-mcp-review/context",
+        "agent-harness://runs/run-mcp-review/events",
+        "agent-harness://runs/run-mcp-review/provider-evidence",
+    ]
+    for forbidden in (
+        "bypass policy",
+        "write file",
+        "approve action",
+        "mutate approval",
+        "execute provider",
+        "call provider",
+        "use tool",
+    ):
+        assert forbidden not in serialized_messages
+
+    assert [record["request_type"] for record in records] == ["prompt_list", "prompt_get"]
+    assert records[0]["schema_version"] == "mcp_access_log.v1"
+    assert records[0]["result"] == "allowed"
+    assert records[0]["prompt_name"] is None
+    assert records[1]["prompt_name"] == "agent-harness-run-review"
+    assert records[1]["prompt_hash"] == response["prompt_hash"]
+    assert records[1]["result"] == "allowed"
+    assert "messages" not in records[1]
+    assert "Agent Harness run evidence" not in json.dumps(records[1])
+
+
 def test_mcp_resources_list_exposes_run_resources_without_mcp_sdk(
     tmp_path: Path,
     monkeypatch,

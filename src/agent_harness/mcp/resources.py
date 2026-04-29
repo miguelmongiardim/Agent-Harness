@@ -7,11 +7,11 @@ from typing import Any
 from urllib.parse import urlparse
 
 from agent_harness.config import load_config
+from agent_harness.mcp.access_log import append_mcp_access_log
 from agent_harness.policy import PolicyError, load_policy, load_policy_with_schema_evidence
 from agent_harness.skills import list_skills, load_skill_detail
 from agent_harness.storage import RunStore
 from agent_harness.templates import list_templates, load_template
-from agent_harness.utils import now_utc
 
 RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 RESOURCE_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
@@ -886,24 +886,16 @@ def _append_access_log(
     artifact_type: str | None = None,
     denial_reason: str | None = None,
 ) -> None:
-    record = {
-        "schema_version": "mcp_access_log.v1",
-        "timestamp": now_utc().isoformat(),
-        "transport": "cli",
-        "request_type": "resource_read",
-        "resource_uri": uri,
-        "run_id": run_id,
-        "artifact_type": artifact_type,
-        "policy_profile": profile,
-        "policy_decision_id": None,
-        "result": result,
-        "redaction_applied": False,
-        "denial_reason": denial_reason,
-    }
-    path = artifact_root / "mcp" / "access-log.jsonl"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(record, sort_keys=True) + "\n")
+    append_mcp_access_log(
+        artifact_root,
+        request_type="resource_read",
+        uri=uri,
+        profile=profile,
+        result=result,
+        run_id=run_id,
+        artifact_type=artifact_type,
+        denial_reason=denial_reason,
+    )
 
 
 def _safe_project_relative(project_root: Path, path: Path) -> str:

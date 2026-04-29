@@ -126,14 +126,16 @@ agent-harness-retrieval-review
 Prompt responses should include:
 
 ```text
+schema_version
 name
-version
 description
-arguments_schema
-rendered_messages or rendered_markdown
+mime_type
+arguments
+resource_references
+messages
 prompt_hash
-referenced_resources
-warnings
+denial_status
+metadata
 ```
 
 Prompts are review aids. They may reference allowed MCP resources, but they must
@@ -168,6 +170,7 @@ policy_decision_id
 result
 redaction_applied
 denial_reason if applicable
+prompt_hash if applicable
 ```
 
 MCP reads must not mutate run summaries, artifact indexes, approval records,

@@ -27,7 +27,12 @@ from agent_harness.docs_check import write_docs_check_report
 from agent_harness.doctor import doctor
 from agent_harness.evals import run_builtin_evals, write_eval_report
 from agent_harness.exporters import export_json, export_markdown, export_sarif
-from agent_harness.mcp import list_mcp_resources, read_mcp_resource
+from agent_harness.mcp import (
+    get_mcp_prompt,
+    list_mcp_prompts,
+    list_mcp_resources,
+    read_mcp_resource,
+)
 from agent_harness.migration import migrate_schemas
 from agent_harness.policy import PolicyEngine, load_policy
 from agent_harness.release import (
@@ -248,6 +253,16 @@ def build_parser() -> argparse.ArgumentParser:
     mcp_resources_read.add_argument("--profile", default="default")
     mcp_resources_read.add_argument("--json", action="store_true")
     mcp_resources_read.set_defaults(func=cmd_mcp_resources_read)
+    mcp_prompts = mcp_sub.add_parser("prompts")
+    mcp_prompts_sub = mcp_prompts.add_subparsers(required=True)
+    mcp_prompts_list = mcp_prompts_sub.add_parser("list")
+    mcp_prompts_list.add_argument("--json", action="store_true")
+    mcp_prompts_list.set_defaults(func=cmd_mcp_prompts_list)
+    mcp_prompts_get = mcp_prompts_sub.add_parser("get")
+    mcp_prompts_get.add_argument("name")
+    mcp_prompts_get.add_argument("--arg", action="append", default=[])
+    mcp_prompts_get.add_argument("--json", action="store_true")
+    mcp_prompts_get.set_defaults(func=cmd_mcp_prompts_get)
 
     retrieval = sub.add_parser("retrieval")
     retrieval_sub = retrieval.add_subparsers(required=True)
@@ -509,6 +524,19 @@ def _parse_template_parameters(values: list[str]) -> dict[str, str]:
     return parameters
 
 
+def _parse_mcp_prompt_arguments(values: list[str]) -> dict[str, str]:
+    parameters: dict[str, str] = {}
+    for value in values:
+        if "=" not in value:
+            raise ValueError("--arg values must use key=value")
+        key, parameter_value = value.split("=", 1)
+        key = key.strip()
+        if not key:
+            raise ValueError("--arg values must include a non-empty key")
+        parameters[key] = parameter_value
+    return parameters
+
+
 def cmd_ingest_docs(args: argparse.Namespace) -> int:
     root = Path.cwd()
     config = load_config(root)
@@ -642,6 +670,29 @@ def cmd_mcp_resources_read(args: argparse.Namespace) -> int:
     else:
         content = payload["content"] if payload["content"] is not None else payload
         print(json.dumps(content, indent=2))
+    return 1 if payload.get("denial_status") == "denied" else 0
+
+
+def cmd_mcp_prompts_list(args: argparse.Namespace) -> int:
+    payload = list_mcp_prompts(Path.cwd())
+    if args.json:
+        print(json.dumps(payload, indent=2))
+    else:
+        for prompt in payload["prompts"]:
+            print(f"{prompt['name']}\t{prompt['mime_type']}\t{prompt['description']}")
+    return 0
+
+
+def cmd_mcp_prompts_get(args: argparse.Namespace) -> int:
+    payload = get_mcp_prompt(
+        args.name,
+        _parse_mcp_prompt_arguments(args.arg),
+        project_root=Path.cwd(),
+    )
+    if args.json or payload.get("denial_status") == "denied":
+        print(json.dumps(payload, indent=2))
+    else:
+        print(payload["messages"][0]["content"], end="")
     return 1 if payload.get("denial_status") == "denied" else 0
 
 
