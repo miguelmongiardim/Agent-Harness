@@ -336,6 +336,72 @@ def test_docs_check_rejects_mcp_scope_claims_outside_roadmap(
     assert label in mcp_claims[0]["text"]
 
 
+@pytest.mark.parametrize(
+    ("claim", "label"),
+    [
+        (
+            "Agent Harness supports parallel multi-agent orchestration.",
+            "parallel multi-agent orchestration",
+        ),
+        (
+            "Agent Harness provides hosted multi-agent orchestration.",
+            "hosted multi-agent orchestration",
+        ),
+        ("Agent Harness includes nested orchestration.", "nested orchestration"),
+        (
+            "Agent Harness offers MCP execution for multi-agent orchestration.",
+            "MCP execution for multi-agent orchestration",
+        ),
+        (
+            "Agent Harness supports enterprise multi-agent governance.",
+            "enterprise multi-agent governance",
+        ),
+    ],
+)
+def test_docs_check_rejects_v11_orchestration_claims_outside_roadmap(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+    claim: str,
+    label: str,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    docs = tmp_path / "docs"
+    docs.mkdir(exist_ok=True)
+    (docs / "orchestration.md").write_text(
+        "\n".join(
+            [
+                "# Orchestration",
+                "",
+                "## Current Capabilities",
+                "",
+                claim,
+                "",
+                "## Roadmap / Not implemented yet",
+                "",
+                f"{label} remains future-only.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["docs", "check"]) == 1
+    report = json.loads(capsys.readouterr().out)
+    orchestration_claims = [
+        finding
+        for finding in report["findings"]
+        if finding["rule_id"] == "unsupported_orchestration_scope_claim"
+    ]
+
+    assert orchestration_claims
+    assert orchestration_claims[0]["path"] == "docs/orchestration.md"
+    assert orchestration_claims[0]["line"] == 5
+    assert {finding["line"] for finding in orchestration_claims} == {5}
+    assert label in orchestration_claims[0]["text"]
+
+
 def test_ci_runs_docs_check() -> None:
     workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
     assert "python -m agent_harness docs check" in workflow

@@ -76,14 +76,24 @@ orchestration CLI behavior in this phase.
 
 ### Acceptance criteria
 
-- [ ] `docs/prd-agent-harness-v11.md` exists and follows the PRD template.
-- [ ] `plans/agent-harness-v11.md` exists and uses vertical tracer-bullet
+- [x] `docs/prd-agent-harness-v11.md` exists and follows the PRD template.
+- [x] `plans/agent-harness-v11.md` exists and uses vertical tracer-bullet
       phases.
-- [ ] Docs checks fail on unsupported multi-agent capability claims.
-- [ ] README and roadmap do not describe V11 orchestration as implemented until
+- [x] Docs checks fail on unsupported multi-agent capability claims.
+- [x] README and roadmap do not describe V11 orchestration as implemented until
       code and release evidence exist.
-- [ ] No runtime, policy, storage, MCP, or CLI implementation is added in this
+- [x] No runtime, policy, storage, MCP, or CLI implementation is added in this
       phase beyond documentation guards.
+
+### Phase 0 implementation notes
+
+- Added `unsupported_orchestration_scope_claim` docs-check coverage for current
+  docs that claim parallel, hosted, nested, MCP-execution, or enterprise
+  multi-agent orchestration behavior.
+- README and roadmap now link the V11 PRD and plan only as future local,
+  sequential, policy-mediated orchestration scope.
+- No orchestration runtime, policy, storage, MCP, release-readiness, or CLI
+  implementation was added.
 
 ### Out of scope
 

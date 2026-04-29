@@ -136,6 +136,17 @@ provider execution, Streamable HTTP MCP, hosted MCP service, remote MCP
 gateways, enterprise MCP registries, and multi-agent orchestration remain
 future-only.
 
+## v1.7.0 Planning
+
+v1.7.0 planning is captured in
+[docs/prd-agent-harness-v11.md](prd-agent-harness-v11.md) and
+[plans/agent-harness-v11.md](../plans/agent-harness-v11.md). It describes
+future local, sequential, policy-mediated orchestration over normal child task
+runs. V11 orchestration CLI, runtime supervision, storage artifacts, policy
+contracts, MCP resources, and release-readiness gates are not implemented yet.
+Parallel execution, nested orchestration, MCP execution, hosted APIs, operator
+UI support, and enterprise governance remain future-only.
+
 ## Release Maintenance Priorities
 
 - Preserve the v1.0.0 compatibility and deprecation contract.

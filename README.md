@@ -270,6 +270,13 @@ actions, approval mutation, provider execution, run creation, arbitrary
 filesystem resources, HTTP transport, hosted MCP service, remote gateways, and
 enterprise registries future-only.
 
+V11 planning is captured in
+[`docs/prd-agent-harness-v11.md`](docs/prd-agent-harness-v11.md) and
+[`plans/agent-harness-v11.md`](plans/agent-harness-v11.md). These docs describe
+future local, sequential, policy-mediated orchestration scope; no V11
+orchestration CLI, runtime, storage, policy, MCP, or release-readiness behavior
+is implemented yet.
+
 ## Documentation
 
 - [Architecture](docs/architecture.md)
@@ -292,11 +299,13 @@ enterprise registries future-only.
 - [V7 Template Pack System PRD](docs/prd-agent-harness-v7.md)
 - [V8 Skills System PRD](docs/prd-agent-harness-v8.md)
 - [V9 MCP Boundary PRD](docs/prd-agent-harness-v9.md)
+- [V11 Policy-Mediated Multi-Agent Orchestration PRD](docs/prd-agent-harness-v11.md)
 - [V5 implementation plan](plans/agent-harness-v5.md)
 - [V6 implementation plan](plans/agent-harness-v6.md)
 - [V7 implementation plan](plans/agent-harness-v7.md)
 - [V8 implementation plan](plans/agent-harness-v8.md)
 - [V9 implementation plan](plans/agent-harness-v9.md)
+- [V11 implementation plan](plans/agent-harness-v11.md)
 - [Roadmap](docs/roadmap.md)
 
 ## License

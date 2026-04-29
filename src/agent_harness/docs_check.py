@@ -23,6 +23,9 @@ SKILL_DOC_SUBJECT_PATTERN = (
 MCP_DOC_SUBJECT_PATTERN = (
     r"(?:Agent Harness|This repo|The current implementation|V9|The V9 implementation)"
 )
+ORCHESTRATION_DOC_SUBJECT_PATTERN = (
+    r"(?:Agent Harness|This repo|The current implementation|V11|The V11 implementation)"
+)
 
 
 def _unsupported_doc_pattern(claim: str, *, uses_is: bool = False) -> re.Pattern[str]:
@@ -342,6 +345,42 @@ UNSUPPORTED_MCP_SCOPE_CLAIMS = [
         ),
     ),
 ]
+
+
+def _orchestration_scope_pattern(*required_terms: str) -> re.Pattern[str]:
+    lookaheads = "".join(rf"(?=[^\n]*\b{term}\b)" for term in required_terms)
+    return re.compile(
+        rf"\b{ORCHESTRATION_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}\b"
+        rf"{lookaheads}[^\n]*",
+        re.IGNORECASE,
+    )
+
+
+UNSUPPORTED_ORCHESTRATION_SCOPE_CLAIMS = [
+    (
+        "parallel multi-agent orchestration",
+        _orchestration_scope_pattern("parallel", r"(?:multi-agent|orchestration)"),
+    ),
+    (
+        "hosted multi-agent orchestration",
+        _orchestration_scope_pattern("hosted", r"(?:multi-agent|orchestration)"),
+    ),
+    (
+        "nested orchestration",
+        _orchestration_scope_pattern("nested", r"(?:multi-agent|orchestration)"),
+    ),
+    (
+        "MCP execution",
+        _orchestration_scope_pattern(
+            r"MCP(?:\s+(?:run|tool))?\s+execution",
+            r"(?:multi-agent|orchestration)",
+        ),
+    ),
+    (
+        "enterprise multi-agent",
+        _orchestration_scope_pattern("enterprise", r"(?:multi-agent|orchestration)"),
+    ),
+]
 RETRIEVAL_ROADMAP_HEADINGS = (
     "roadmap",
     "out of scope",
@@ -354,6 +393,7 @@ OPERATOR_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 TEMPLATE_PACK_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 SKILL_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 MCP_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
+ORCHESTRATION_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 
 IMPLEMENTED_SECTION_MARKERS = (
     "## What This Repo Proves",
@@ -412,6 +452,7 @@ def run_docs_check(project_root: Path) -> dict[str, Any]:
         findings.extend(_unsupported_template_pack_scope_findings(relative, lines))
         findings.extend(_unsupported_skill_scope_findings(relative, lines))
         findings.extend(_unsupported_mcp_scope_findings(relative, lines))
+        findings.extend(_unsupported_orchestration_scope_findings(relative, lines))
         findings.extend(_required_section_findings(relative, text))
         findings.extend(_internal_link_findings(project_root, path, relative, lines))
         findings.extend(_citation_placeholder_findings(relative, lines))
@@ -710,6 +751,47 @@ def _denies_unsupported_mcp_scope(line: str, label: str) -> bool:
             rf"\b(?:without|no|not)\s+{phrase}\b"
             rf"|\bdoes\s+not\s+(?:use|support|provide|include|ship|offer)\s+{phrase}\b"
             rf"|\b{phrase}\s+remain(?:s)?\s+future-only\b",
+            line,
+            re.IGNORECASE,
+        )
+    )
+
+
+def _unsupported_orchestration_scope_findings(
+    relative: str, lines: list[str]
+) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    in_roadmap_scope = False
+    for line_number, line in enumerate(lines, start=1):
+        heading = re.match(r"^#{1,6}\s+(.+?)\s*$", line)
+        if heading is not None:
+            heading_text = heading.group(1).lower()
+            in_roadmap_scope = any(
+                marker in heading_text for marker in ORCHESTRATION_ROADMAP_HEADINGS
+            )
+        if in_roadmap_scope:
+            continue
+        for label, pattern in UNSUPPORTED_ORCHESTRATION_SCOPE_CLAIMS:
+            if pattern.search(line) and not _denies_unsupported_orchestration_scope(line, label):
+                findings.append(
+                    _finding(
+                        "unsupported_orchestration_scope_claim",
+                        relative,
+                        line_number,
+                        f"Docs claim unsupported V11 orchestration behavior as available: {label}",
+                        line,
+                    )
+                )
+    return findings
+
+
+def _denies_unsupported_orchestration_scope(line: str, label: str) -> bool:
+    phrase = re.escape(label).replace(r"\ ", r"\s+")
+    return bool(
+        re.search(
+            rf"\b(?:without|no|not)\s+{phrase}\b"
+            rf"|\bdoes\s+not\s+(?:use|support|provide|include|ship|offer)\s+{phrase}\b"
+            rf"|\b{phrase}\s+remain(?:s)?\s+(?:future-only|roadmap-only)\b",
             line,
             re.IGNORECASE,
         )
