@@ -1,0 +1,49 @@
+{
+  "schema_version": "mcp_resource_list.v1",
+  "profile": "default",
+  "resources": [
+    {
+      "uri": "agent-harness://runs",
+      "resource_type": "run_collection",
+      "mime_type": "application/json",
+      "name": "runs",
+      "description": "Available Agent Harness runs."
+    },
+    {
+      "uri": "agent-harness://templates",
+      "resource_type": "template_collection",
+      "mime_type": "application/json",
+      "name": "templates",
+      "description": "Available Agent Harness templates."
+    },
+    {
+      "uri": "agent-harness://skills",
+      "resource_type": "skill_collection",
+      "mime_type": "application/json",
+      "name": "skills",
+      "description": "Available Agent Harness skills."
+    },
+    {
+      "uri": "agent-harness://policies/default",
+      "resource_type": "policy_summary",
+      "mime_type": "application/json",
+      "name": "default",
+      "source_artifact": "policies/default.json"
+    },
+    {
+      "uri": "agent-harness://runs/<run-id>/summary",
+      "resource_type": "run_summary",
+      "mime_type": "application/json",
+      "name": "summary",
+      "source_artifact": ".agent-harness/runs/<run-id>/summary.json"
+    },
+    {
+      "uri": "agent-harness://runs/<run-id>/context",
+      "resource_type": "run_context",
+      "mime_type": "application/json",
+      "name": "context",
+      "source_artifact": ".agent-harness/runs/<run-id>/context_manifest.json"
+    }
+  ],
+  "count": 6
+}

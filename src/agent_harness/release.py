@@ -6,7 +6,7 @@ import subprocess
 import sys
 import tempfile
 import tomllib
-from importlib import resources
+from importlib import resources, util
 from ipaddress import ip_address
 from pathlib import Path
 from typing import Any
@@ -83,6 +83,7 @@ def build_release_readiness_report(
     retrieval = _retrieval_evidence(project_root)
     operator = _operator_evidence(project_root)
     skills = _skills_evidence(project_root, docs_report)
+    mcp = _mcp_evidence(project_root)
     release_artifacts = _release_artifact_evidence(project_root, normalized_version)
     diagnostics = _diagnostics(
         package=package,
@@ -92,6 +93,7 @@ def build_release_readiness_report(
         retrieval=retrieval,
         operator=operator,
         skills=skills,
+        mcp=mcp,
         release_artifacts=release_artifacts,
         changelog_present=changelog_present,
         tag_exists=tag_exists,
@@ -137,6 +139,7 @@ def build_release_readiness_report(
         "retrieval": retrieval,
         "operator": operator,
         "skills": skills,
+        "mcp": mcp,
         "release_artifacts": release_artifacts,
         "local_checks": {
             name: {
@@ -854,6 +857,527 @@ def _skills_evidence(project_root: Path, docs_report: dict[str, Any]) -> dict[st
         "registry_commands": _skill_registry_command_evidence(project_root),
         "workflow_demo": _skills_workflow_demo_evidence(project_root),
         "docs": _skills_docs_evidence(project_root, docs_report),
+    }
+
+
+def _mcp_evidence(project_root: Path) -> dict[str, Any]:
+    cli_smoke = _mcp_cli_smoke_evidence(project_root)
+    smoke_workspace = cli_smoke.pop("_workspace", None)
+    return {
+        "demo": _mcp_demo_evidence(project_root),
+        "extra_install": _mcp_extra_install_evidence(project_root),
+        "ci_install": _mcp_ci_install_evidence(project_root),
+        **cli_smoke,
+        "stdio_protocol": _mcp_stdio_protocol_evidence(
+            smoke_workspace if isinstance(smoke_workspace, Path) else None
+        ),
+    }
+
+
+def _mcp_demo_evidence(project_root: Path) -> dict[str, Any]:
+    demo_root = project_root / "examples" / "mcp_boundary"
+    required_files = (
+        "README.md",
+        "expected/resources-list.json",
+        "expected/prompts-list.json",
+        "expected/denied-resource.json",
+    )
+    missing = [relative for relative in required_files if not (demo_root / relative).exists()]
+    return {
+        "path": "examples/mcp_boundary",
+        "status": "passed" if demo_root.exists() and not missing else "missing_evidence",
+        "required_files": list(required_files),
+        "missing_files": missing,
+        "action": (
+            "Add the V9 MCP boundary demo README and expected resources, prompts, "
+            "and denied-resource examples."
+        ),
+    }
+
+
+def _mcp_extra_install_evidence(project_root: Path) -> dict[str, Any]:
+    pyproject = project_root / "pyproject.toml"
+    declared = False
+    detail: str | None = None
+    if pyproject.exists():
+        try:
+            data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+            optional = data.get("project", {}).get("optional-dependencies", {})
+            mcp_extra = optional.get("mcp") if isinstance(optional, dict) else None
+            declared = isinstance(mcp_extra, list) and any("mcp" in str(item) for item in mcp_extra)
+        except tomllib.TOMLDecodeError as exc:
+            detail = _safe_error(exc)
+    sdk_available = util.find_spec("mcp") is not None
+    status = "passed" if declared and sdk_available else "missing_evidence"
+    return {
+        "command": "python -m pip install -e .[mcp]",
+        "status": status,
+        "optional_extra_declared": declared,
+        "sdk_importable": sdk_available,
+        "detail": detail,
+        "action": (
+            "Declare the mcp optional extra and run release readiness from an "
+            "environment installed with agent-harness[mcp]."
+        ),
+    }
+
+
+def _mcp_ci_install_evidence(project_root: Path) -> dict[str, Any]:
+    workflow_root = project_root / ".github" / "workflows"
+    workflow_paths = sorted(workflow_root.glob("*.yml")) + sorted(workflow_root.glob("*.yaml"))
+    matches: list[str] = []
+    for path in workflow_paths:
+        text = path.read_text(encoding="utf-8")
+        lowered = text.lower()
+        if "release readiness" in lowered and (
+            "[dev,operator,mcp]" in lowered
+            or "[dev,mcp,operator]" in lowered
+            or "--extra mcp" in lowered
+            or ".[mcp" in lowered
+        ):
+            matches.append(_project_relative(project_root, path))
+    return {
+        "status": "passed" if matches else "missing_evidence",
+        "checked_paths": [_project_relative(project_root, path) for path in workflow_paths],
+        "matches": matches,
+        "action": "Install agent-harness[mcp] in the CI job that records release readiness.",
+    }
+
+
+def _mcp_cli_smoke_evidence(project_root: Path) -> dict[str, Any]:
+    try:
+        workspace, run_id = _prepare_mcp_smoke_workspace(project_root)
+    except Exception as exc:
+        failed = _mcp_failed_smoke_gates(_safe_error(exc))
+        failed["_workspace"] = None
+        return failed
+
+    cli_commands = _mcp_cli_commands_evidence(workspace)
+    listing, resources_payload = _mcp_resource_listing_evidence(workspace, run_id)
+    reads = _mcp_resource_reads_evidence(workspace, run_id)
+    prompts = _mcp_prompt_commands_evidence(workspace, run_id)
+    denial = _mcp_denied_resource_evidence(workspace)
+    access_log = _mcp_access_log_evidence(workspace, run_id)
+    return {
+        "_workspace": workspace,
+        "cli_commands": cli_commands,
+        "resource_listing": listing,
+        "resource_reads": reads,
+        "prompt_commands": prompts,
+        "denied_resource": denial,
+        "access_log": access_log,
+        "smoke_workspace": {
+            "path": _project_relative(project_root, workspace),
+            "run_id": run_id,
+            "resource_count": (
+                resources_payload.get("count") if isinstance(resources_payload, dict) else None
+            ),
+        },
+    }
+
+
+def _mcp_failed_smoke_gates(detail: str) -> dict[str, Any]:
+    action = "Create the MCP release smoke workspace and exercise public MCP CLI commands."
+    return {
+        "cli_commands": {"status": "failed", "detail": detail, "action": action},
+        "resource_listing": {"status": "failed", "detail": detail, "action": action},
+        "resource_reads": {"status": "failed", "detail": detail, "action": action},
+        "prompt_commands": {"status": "failed", "detail": detail, "action": action},
+        "denied_resource": {"status": "failed", "detail": detail, "action": action},
+        "access_log": {"status": "failed", "detail": detail, "action": action},
+    }
+
+
+def _prepare_mcp_smoke_workspace(project_root: Path) -> tuple[Path, str]:
+    from agent_harness.core.runtime import HarnessRuntime
+
+    release_root = project_root / ".agent-harness" / "release"
+    release_root.mkdir(parents=True, exist_ok=True)
+    workspace = Path(tempfile.mkdtemp(prefix="mcp-boundary-", dir=release_root))
+    _write_mcp_smoke_project(workspace)
+    summary = HarnessRuntime(workspace).run_task(
+        workspace / "task.json",
+        dry_run=True,
+    )
+    return workspace, summary.run_id
+
+
+def _write_mcp_smoke_project(root: Path) -> None:
+    (root / "agent-harness.yaml").write_text(
+        "\n".join(
+            [
+                "schema_version: config.v1",
+                "project_name: mcp-release-smoke",
+                "artifact_root: .agent-harness",
+                "default_policy: default",
+                "retrieval_backend: lexical",
+                "template_catalog: bundled",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (root / "policies").mkdir()
+    (root / "policies" / "default.json").write_text(
+        json.dumps(DEFAULT_POLICY, indent=2),
+        encoding="utf-8",
+    )
+    (root / "fixture.py").write_text(
+        "def add_numbers(a, b):\n    return a + b\n",
+        encoding="utf-8",
+    )
+    (root / "task.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "task.v1",
+                "task_id": "mcp-release-smoke",
+                "title": "Inspect MCP release smoke fixture",
+                "intent": "Inspect the add_numbers helper without mutation.",
+                "target_paths": ["fixture.py"],
+                "allowed_tools": ["read_file"],
+                "max_steps": 1,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+
+def _mcp_cli_commands_evidence(workspace: Path) -> dict[str, Any]:
+    result = _run_command(
+        [sys.executable, "-m", "agent_harness", "mcp", "--help"],
+        cwd=workspace,
+        timeout_seconds=60,
+    )
+    stdout = str(result.get("stdout", ""))
+    status = (
+        "passed"
+        if result["status"] == "passed"
+        and "resources" in stdout
+        and "prompts" in stdout
+        and "serve" in stdout
+        else "failed"
+    )
+    return {
+        **result,
+        "status": status,
+        "action": "Verify the mcp CLI group exposes resources, prompts, and serve commands.",
+    }
+
+
+def _mcp_resource_listing_evidence(
+    workspace: Path,
+    run_id: str,
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    result, payload = _mcp_json_command(
+        workspace,
+        ["mcp", "resources", "list", "--json"],
+    )
+    resources = payload.get("resources") if isinstance(payload, dict) else None
+    resource_uris = (
+        {str(resource.get("uri")) for resource in resources if isinstance(resource, dict)}
+        if isinstance(resources, list)
+        else set()
+    )
+    expected = {
+        "agent-harness://runs",
+        f"agent-harness://runs/{run_id}/summary",
+        f"agent-harness://runs/{run_id}/context",
+        "agent-harness://templates",
+        "agent-harness://skills",
+        "agent-harness://policies/default",
+    }
+    status = (
+        "passed"
+        if result["status"] == "passed"
+        and isinstance(payload, dict)
+        and payload.get("schema_version") == "mcp_resource_list.v1"
+        and expected <= resource_uris
+        else "failed"
+    )
+    return (
+        {
+            **result,
+            "status": status,
+            "run_id": run_id,
+            "missing_uris": sorted(expected - resource_uris),
+            "action": "Verify mcp resources list returns core V9 resources.",
+        },
+        payload,
+    )
+
+
+def _mcp_resource_reads_evidence(workspace: Path, run_id: str) -> dict[str, Any]:
+    summary_result, summary = _mcp_json_command(
+        workspace,
+        ["mcp", "resources", "read", f"agent-harness://runs/{run_id}/summary", "--json"],
+    )
+    context_result, context = _mcp_json_command(
+        workspace,
+        ["mcp", "resources", "read", f"agent-harness://runs/{run_id}/context", "--json"],
+    )
+    status = (
+        "passed"
+        if summary_result["status"] == "passed"
+        and context_result["status"] == "passed"
+        and isinstance(summary, dict)
+        and isinstance(context, dict)
+        and summary.get("denial_status") == "allowed"
+        and context.get("denial_status") == "allowed"
+        and summary.get("resource_type") == "run_summary"
+        and context.get("resource_type") == "run_context"
+        else "failed"
+    )
+    return {
+        "command": "agent-harness mcp resources read <summary/context>",
+        "status": status,
+        "summary": {
+            "status": summary_result["status"],
+            "resource_type": summary.get("resource_type") if isinstance(summary, dict) else None,
+        },
+        "context": {
+            "status": context_result["status"],
+            "resource_type": context.get("resource_type") if isinstance(context, dict) else None,
+        },
+        "action": "Verify summary and context resources read through MCP envelopes.",
+    }
+
+
+def _mcp_prompt_commands_evidence(workspace: Path, run_id: str) -> dict[str, Any]:
+    list_result, prompt_list = _mcp_json_command(workspace, ["mcp", "prompts", "list", "--json"])
+    get_result, prompt = _mcp_json_command(
+        workspace,
+        [
+            "mcp",
+            "prompts",
+            "get",
+            "agent-harness-run-review",
+            "--arg",
+            f"run_id={run_id}",
+            "--json",
+        ],
+    )
+    prompt_entries = prompt_list.get("prompts", []) if isinstance(prompt_list, dict) else []
+    prompt_names = {str(item.get("name")) for item in prompt_entries if isinstance(item, dict)}
+    status = (
+        "passed"
+        if list_result["status"] == "passed"
+        and get_result["status"] == "passed"
+        and "agent-harness-run-review" in prompt_names
+        and isinstance(prompt, dict)
+        and prompt.get("denial_status") == "allowed"
+        and f"agent-harness://runs/{run_id}/summary" in prompt.get("resource_references", [])
+        else "failed"
+    )
+    return {
+        "command": "agent-harness mcp prompts list/get",
+        "status": status,
+        "prompt_count": prompt_list.get("count") if isinstance(prompt_list, dict) else None,
+        "prompt_hash": prompt.get("prompt_hash") if isinstance(prompt, dict) else None,
+        "action": "Verify deterministic MCP prompt list and get commands.",
+    }
+
+
+def _mcp_denied_resource_evidence(workspace: Path) -> dict[str, Any]:
+    result = _run_command(
+        [
+            sys.executable,
+            "-m",
+            "agent_harness",
+            "mcp",
+            "resources",
+            "read",
+            "file:///tmp/secret.txt",
+            "--json",
+        ],
+        cwd=workspace,
+        timeout_seconds=60,
+    )
+    payload: dict[str, Any] | None
+    try:
+        loaded = json.loads(str(result.get("stdout", "")))
+        payload = loaded if isinstance(loaded, dict) else None
+    except json.JSONDecodeError:
+        payload = None
+    status = (
+        "passed"
+        if result["returncode"] == 1
+        and isinstance(payload, dict)
+        and payload.get("denial_status") == "denied"
+        and payload.get("metadata", {}).get("denial_reason") == "unsupported_uri_scheme"
+        else "failed"
+    )
+    return {
+        "command": "agent-harness mcp resources read file:///tmp/secret.txt --json",
+        "status": status,
+        "returncode": result["returncode"],
+        "denial_reason": (
+            payload.get("metadata", {}).get("denial_reason") if isinstance(payload, dict) else None
+        ),
+        "action": "Verify arbitrary file URI reads are denied and reported safely.",
+    }
+
+
+def _mcp_access_log_evidence(workspace: Path, run_id: str) -> dict[str, Any]:
+    log_path = workspace / ".agent-harness" / "mcp" / "access-log.jsonl"
+    if not log_path.exists():
+        return {
+            "status": "missing_evidence",
+            "path": ".agent-harness/mcp/access-log.jsonl",
+            "action": "MCP resource and prompt requests must append metadata-only access logs.",
+        }
+    records: list[dict[str, Any]] = []
+    diagnostics: list[str] = []
+    for line in log_path.read_text(encoding="utf-8").splitlines():
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError as exc:
+            diagnostics.append(_safe_error(exc))
+            continue
+        if isinstance(record, dict):
+            records.append(record)
+    observed = {(str(record.get("request_type")), str(record.get("result"))) for record in records}
+    required = {
+        ("resource_read", "allowed"),
+        ("resource_read", "denied"),
+        ("prompt_list", "allowed"),
+        ("prompt_get", "allowed"),
+    }
+    leaked_content = any("content" in record for record in records)
+    status = (
+        "passed"
+        if required <= observed
+        and not diagnostics
+        and not leaked_content
+        and any(record.get("run_id") == run_id for record in records)
+        else "failed"
+    )
+    return {
+        "status": status,
+        "path": ".agent-harness/mcp/access-log.jsonl",
+        "record_count": len(records),
+        "missing_records": sorted(f"{kind}:{result}" for kind, result in required - observed),
+        "leaked_content": leaked_content,
+        "diagnostics": diagnostics,
+        "action": "Verify MCP access evidence is append-only metadata, not returned content.",
+    }
+
+
+def _mcp_json_command(
+    workspace: Path,
+    args: list[str],
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    result = _run_command(
+        [sys.executable, "-m", "agent_harness", *args],
+        cwd=workspace,
+        timeout_seconds=60,
+    )
+    try:
+        payload = json.loads(str(result.get("stdout", "")))
+    except json.JSONDecodeError:
+        payload = None
+    return result, payload if isinstance(payload, dict) else None
+
+
+def _mcp_stdio_protocol_evidence(workspace: Path | None) -> dict[str, Any]:
+    if workspace is None:
+        return {
+            "command": "agent-harness mcp serve",
+            "status": "blocked",
+            "action": "Create the MCP release smoke workspace before protocol verification.",
+        }
+    if util.find_spec("mcp") is None:
+        return {
+            "command": "agent-harness mcp serve",
+            "status": "missing_evidence",
+            "action": (
+                "Install agent-harness[mcp] before release readiness so the stdio "
+                "protocol smoke can verify resources/prompts only."
+            ),
+        }
+    try:
+        evidence = _run_mcp_stdio_protocol_smoke(workspace)
+    except Exception as exc:
+        return {
+            "command": "agent-harness mcp serve",
+            "status": "failed",
+            "detail": _safe_error(exc),
+            "action": (
+                "Run the MCP stdio protocol smoke and verify resources/prompts "
+                "are advertised while tools are absent."
+            ),
+        }
+    return evidence
+
+
+def _run_mcp_stdio_protocol_smoke(workspace: Path) -> dict[str, Any]:
+    script = """
+import json
+import sys
+from importlib import import_module
+
+anyio = import_module("anyio")
+stdio_module = import_module("mcp.client.stdio")
+session_module = import_module("mcp.client.session")
+workspace = sys.argv[1]
+
+async def main():
+    server = stdio_module.StdioServerParameters(
+        command=sys.executable,
+        args=["-m", "agent_harness", "mcp", "serve"],
+        cwd=workspace,
+    )
+    async with (
+        stdio_module.stdio_client(server) as (read_stream, write_stream),
+        session_module.ClientSession(read_stream, write_stream) as session,
+    ):
+        initialized = await session.initialize()
+        resources = await session.list_resources()
+        prompts = await session.list_prompts()
+        resource_uris = {str(resource.uri) for resource in resources.resources}
+        prompt_names = {str(prompt.name) for prompt in prompts.prompts}
+        print(json.dumps({
+            "resources_advertised": initialized.capabilities.resources is not None,
+            "prompts_advertised": initialized.capabilities.prompts is not None,
+            "tools_advertised": initialized.capabilities.tools is not None,
+            "resource_count": len(resource_uris),
+            "prompt_count": len(prompt_names),
+            "has_templates": "agent-harness://templates" in resource_uris,
+            "has_run_review": "agent-harness-run-review" in prompt_names,
+        }))
+
+anyio.run(main)
+"""
+    result = _run_command(
+        [sys.executable, "-c", script, str(workspace)],
+        cwd=workspace,
+        timeout_seconds=120,
+    )
+    try:
+        loaded = json.loads(str(result.get("stdout", "")))
+    except json.JSONDecodeError:
+        loaded = {}
+    payload = loaded if isinstance(loaded, dict) else {}
+    status = (
+        "passed"
+        if result["status"] == "passed"
+        and payload.get("resources_advertised") is True
+        and payload.get("prompts_advertised") is True
+        and payload.get("tools_advertised") is False
+        and payload.get("has_templates") is True
+        and payload.get("has_run_review") is True
+        else "failed"
+    )
+    return {
+        "command": "agent-harness mcp serve",
+        "status": status,
+        "returncode": result["returncode"],
+        "stderr": result["stderr"],
+        **payload,
+        "action": (
+            "Verify the MCP stdio server advertises resources and prompts only, "
+            "with no tools capability."
+        ),
     }
 
 
@@ -1943,6 +2467,7 @@ def _diagnostics(
     retrieval: dict[str, Any],
     operator: dict[str, Any],
     skills: dict[str, Any],
+    mcp: dict[str, Any],
     release_artifacts: dict[str, Any],
     changelog_present: bool,
     tag_exists: bool,
@@ -1957,6 +2482,7 @@ def _diagnostics(
     _collect_status_diagnostics(diagnostics, "retrieval", retrieval)
     _collect_status_diagnostics(diagnostics, "operator", operator)
     _collect_status_diagnostics(diagnostics, "skills", skills)
+    _collect_status_diagnostics(diagnostics, "mcp", mcp)
     _collect_status_diagnostics(diagnostics, "release_artifacts", release_artifacts)
     if not changelog_present:
         diagnostics.append(

@@ -498,20 +498,37 @@ MCP extra for relevant jobs, and docs claim guards.
 
 ### Acceptance criteria
 
-- [ ] `examples/mcp_boundary/README.md` documents the V9 golden path.
-- [ ] Expected resources list, prompts list, and denied resource examples exist.
-- [ ] Release readiness verifies MCP extra installed in the CI path.
-- [ ] Release readiness verifies MCP CLI commands exist.
-- [ ] Release readiness verifies `mcp resources list --json` succeeds.
-- [ ] Release readiness verifies summary and context resource reads succeed.
-- [ ] Release readiness verifies prompt list/get succeeds.
-- [ ] Release readiness verifies denied resource behavior.
-- [ ] Release readiness verifies access log emission.
-- [ ] Release readiness verifies stdio server advertises resources/prompts only.
-- [ ] Release readiness verifies stdio server does not advertise tools.
-- [ ] Docs do not claim MCP tools, HTTP, hosted service, or runtime adapter
+- [x] `examples/mcp_boundary/README.md` documents the V9 golden path.
+- [x] Expected resources list, prompts list, and denied resource examples exist.
+- [x] Release readiness verifies MCP extra installed in the CI path.
+- [x] Release readiness verifies MCP CLI commands exist.
+- [x] Release readiness verifies `mcp resources list --json` succeeds.
+- [x] Release readiness verifies summary and context resource reads succeed.
+- [x] Release readiness verifies prompt list/get succeeds.
+- [x] Release readiness verifies denied resource behavior.
+- [x] Release readiness verifies access log emission.
+- [x] Release readiness verifies stdio server advertises resources/prompts only.
+- [x] Release readiness verifies stdio server does not advertise tools.
+- [x] Docs do not claim MCP tools, HTTP, hosted service, or runtime adapter
       behavior as implemented.
-- [ ] Final V9 golden path works from a clean checkout.
+- [x] Final V9 golden path works from a clean checkout.
+
+### Phase 7 implementation notes
+
+- Added `examples/mcp_boundary/` with the V9 golden-path commands and expected
+  resource list, prompt list, and denied resource envelope examples.
+- Release readiness now records an `mcp` evidence section covering demo files,
+  optional extra importability, CI install coverage, CLI command discovery,
+  resource listing, summary/context resource reads, prompt list/get behavior,
+  denied resource behavior, metadata-only access logs, and stdio protocol
+  resources/prompts-only evidence.
+- The stdio protocol release smoke runs in a child Python process so pytest or
+  other captured stdio callers do not affect the real MCP stdio transport.
+- CI installs `agent-harness[dev,operator,mcp]` in Python jobs and includes the
+  MCP protocol test in the release-evidence gate.
+- Release-readiness docs now describe the V9 MCP gates as implemented, with
+  `mcp.extra_install`, `mcp.ci_install`, `mcp.resource_listing`,
+  `mcp.access_log`, and `mcp.stdio_protocol` as named report gates.
 
 ### Out of scope
 

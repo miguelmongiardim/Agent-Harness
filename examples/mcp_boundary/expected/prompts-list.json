@@ -1,0 +1,70 @@
+{
+  "schema_version": "mcp_prompt_list.v1",
+  "prompts": [
+    {
+      "name": "agent-harness-run-review",
+      "description": "Review run summary, context, and evidence for release risks.",
+      "mime_type": "text/markdown",
+      "arguments": [
+        "run_id"
+      ]
+    },
+    {
+      "name": "agent-harness-policy-review",
+      "description": "Review policy evidence and permission ceilings.",
+      "mime_type": "text/markdown",
+      "arguments": [
+        "profile"
+      ]
+    },
+    {
+      "name": "agent-harness-approval-review",
+      "description": "Review approval evidence for decision traceability.",
+      "mime_type": "text/markdown",
+      "arguments": [
+        "run_id"
+      ]
+    },
+    {
+      "name": "agent-harness-context-review",
+      "description": "Review context manifest provenance and filtering.",
+      "mime_type": "text/markdown",
+      "arguments": [
+        "run_id"
+      ]
+    },
+    {
+      "name": "agent-harness-eval-review",
+      "description": "Review eval evidence and scorecard outcomes.",
+      "mime_type": "text/markdown",
+      "arguments": [
+        "run_id"
+      ]
+    },
+    {
+      "name": "agent-harness-template-review",
+      "description": "Review template registry and detail evidence.",
+      "mime_type": "text/markdown",
+      "arguments": [
+        "template_id"
+      ]
+    },
+    {
+      "name": "agent-harness-skill-review",
+      "description": "Review skill registry and detail evidence.",
+      "mime_type": "text/markdown",
+      "arguments": [
+        "skill_id"
+      ]
+    },
+    {
+      "name": "agent-harness-retrieval-review",
+      "description": "Review retrieval scorecard and provenance evidence.",
+      "mime_type": "text/markdown",
+      "arguments": [
+        "run_id"
+      ]
+    }
+  ],
+  "count": 8
+}

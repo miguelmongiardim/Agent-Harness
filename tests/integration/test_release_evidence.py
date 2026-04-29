@@ -153,7 +153,7 @@ def test_release_readiness_reports_ready_when_required_evidence_is_present(
     report = json.loads(capsys.readouterr().out)
 
     assert report["version"] == "9.9.9"
-    assert report["status"] == "ready"
+    assert report["status"] == "ready", report["mcp"]["stdio_protocol"]
     assert report["diagnostics"] == []
     assert report["package"]["build"]["status"] == "passed"
     assert report["package"]["clean_install"]["status"] == "passed"
@@ -193,7 +193,7 @@ def test_release_readiness_runs_v7_bundled_template_pack_acceptance(
     assert main(["release", "readiness"]) == 0
     report = json.loads(capsys.readouterr().out)
 
-    assert report["status"] == "ready"
+    assert report["status"] == "ready", report["diagnostics"]
     templates = report["templates"]
     assert templates["bundled_pack_acceptance"]["status"] == "passed"
     assert templates["bundled_pack_acceptance"]["template_ids"] == [
@@ -252,7 +252,7 @@ def test_release_readiness_verifies_v8_skill_gates(
     assert main(["release", "readiness"]) == 0
     report = json.loads(capsys.readouterr().out)
 
-    assert report["status"] == "ready"
+    assert report["status"] == "ready", report["diagnostics"]
     assert report["diagnostics"] == []
     skills = report["skills"]
     assert skills["bundled_validation"]["status"] == "passed"
@@ -270,6 +270,67 @@ def test_release_readiness_verifies_v8_skill_gates(
     assert skills["workflow_demo"]["skill_manifest"]["status"] == "passed"
     assert skills["workflow_demo"]["inspect"]["status"] == "passed"
     assert skills["docs"]["status"] == "passed"
+
+
+def test_release_readiness_requires_v9_mcp_boundary_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    _write_release_ready_project(tmp_path, "9.9.9", include_mcp=False)
+    monkeypatch.setattr(release, "_tag_exists", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_pushed", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_target_commit", lambda project_root, tag_name: "abc123")
+    monkeypatch.setattr(release, "_remote_ci_evidence", _passing_remote_ci)
+
+    assert main(["release", "readiness"]) == 0
+    report = json.loads(capsys.readouterr().out)
+
+    assert report["status"] == "pending"
+    assert report["mcp"]["demo"]["status"] == "missing_evidence"
+    assert report["mcp"]["extra_install"]["status"] == "missing_evidence"
+    assert report["mcp"]["ci_install"]["status"] == "missing_evidence"
+    assert {"mcp.demo", "mcp.extra_install", "mcp.ci_install"} <= {
+        entry["gate"] for entry in report["diagnostics"]
+    }
+
+
+def test_release_readiness_verifies_v9_mcp_gates(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    _write_release_ready_project(tmp_path, "9.9.9")
+    _write_mcp_boundary_demo(tmp_path)
+    _write_mcp_ci_workflow(tmp_path)
+    monkeypatch.setattr(release, "_tag_exists", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_pushed", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_target_commit", lambda project_root, tag_name: "abc123")
+    monkeypatch.setattr(release, "_remote_ci_evidence", _passing_remote_ci)
+
+    assert main(["release", "readiness"]) == 0
+    report = json.loads(capsys.readouterr().out)
+
+    assert report["status"] == "ready", report["mcp"]["stdio_protocol"]
+    assert report["diagnostics"] == []
+    mcp = report["mcp"]
+    assert mcp["demo"]["status"] == "passed"
+    assert mcp["extra_install"]["status"] == "passed"
+    assert mcp["ci_install"]["status"] == "passed"
+    assert mcp["cli_commands"]["status"] == "passed"
+    assert mcp["resource_listing"]["status"] == "passed"
+    assert mcp["resource_reads"]["status"] == "passed"
+    assert mcp["prompt_commands"]["status"] == "passed"
+    assert mcp["denied_resource"]["status"] == "passed"
+    assert mcp["access_log"]["status"] == "passed"
+    assert mcp["stdio_protocol"]["status"] == "passed"
+    assert mcp["stdio_protocol"]["resources_advertised"] is True
+    assert mcp["stdio_protocol"]["prompts_advertised"] is True
+    assert mcp["stdio_protocol"]["tools_advertised"] is False
 
 
 def test_v7_template_pack_golden_path_example_and_cli_sequence(
@@ -387,6 +448,115 @@ def test_v8_skills_workflow_golden_path_example_and_cli_sequence(
     assert inspected["skill_manifest"] == skill_manifest
 
 
+def test_v9_mcp_boundary_golden_path_example_and_cli_sequence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    readme = repo_root / "examples" / "mcp_boundary" / "README.md"
+    assert readme.exists()
+    text = readme.read_text(encoding="utf-8")
+
+    for command in (
+        "uv sync --extra mcp",
+        "uv run agent-harness demo provider-audit",
+        "uv run agent-harness mcp resources list --json",
+        "uv run agent-harness mcp resources read agent-harness://runs/<run-id>/summary --json",
+        "uv run agent-harness mcp resources read agent-harness://runs/<run-id>/context --json",
+        "uv run agent-harness mcp prompts list --json",
+        (
+            "uv run agent-harness mcp prompts get agent-harness-run-review "
+            "--arg run_id=<run-id> --json"
+        ),
+        "uv run agent-harness mcp serve",
+        "uv run agent-harness release readiness",
+    ):
+        assert command in text
+
+    expected_root = repo_root / "examples" / "mcp_boundary" / "expected"
+    expected_resources = json.loads((expected_root / "resources-list.json").read_text())
+    expected_prompts = json.loads((expected_root / "prompts-list.json").read_text())
+    expected_denial = json.loads((expected_root / "denied-resource.json").read_text())
+    assert expected_resources["schema_version"] == "mcp_resource_list.v1"
+    assert expected_prompts["schema_version"] == "mcp_prompt_list.v1"
+    assert expected_denial["schema_version"] == "mcp_resource_envelope.v1"
+    assert expected_denial["denial_status"] == "denied"
+
+    source = repo_root / "examples" / "provider_audit"
+    workspace = tmp_path / "examples" / "provider_audit"
+    shutil.copytree(source, workspace, ignore=shutil.ignore_patterns(".agent-harness"))
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-mcp-boundary-demo")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-29T15:30:00Z")
+
+    assert main(["demo", "provider-audit"]) == 0
+    demo = json.loads(capsys.readouterr().out)
+    run_id = demo["run_id"]
+    monkeypatch.chdir(workspace)
+
+    assert main(["mcp", "resources", "list", "--json"]) == 0
+    resources = json.loads(capsys.readouterr().out)
+    resource_uris = {resource["uri"] for resource in resources["resources"]}
+    assert resources["schema_version"] == "mcp_resource_list.v1"
+    assert f"agent-harness://runs/{run_id}/summary" in resource_uris
+    assert f"agent-harness://runs/{run_id}/context" in resource_uris
+
+    assert (
+        main(["mcp", "resources", "read", f"agent-harness://runs/{run_id}/summary", "--json"]) == 0
+    )
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["denial_status"] == "allowed"
+    assert summary["content"]["run_id"] == run_id
+
+    assert (
+        main(["mcp", "resources", "read", f"agent-harness://runs/{run_id}/context", "--json"]) == 0
+    )
+    context = json.loads(capsys.readouterr().out)
+    assert context["denial_status"] == "allowed"
+    assert context["resource_type"] == "run_context"
+
+    assert main(["mcp", "prompts", "list", "--json"]) == 0
+    prompts = json.loads(capsys.readouterr().out)
+    assert "agent-harness-run-review" in {prompt["name"] for prompt in prompts["prompts"]}
+
+    assert (
+        main(
+            [
+                "mcp",
+                "prompts",
+                "get",
+                "agent-harness-run-review",
+                "--arg",
+                f"run_id={run_id}",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    prompt = json.loads(capsys.readouterr().out)
+    assert prompt["denial_status"] == "allowed"
+    assert f"agent-harness://runs/{run_id}/summary" in prompt["resource_references"]
+
+    assert main(["mcp", "resources", "read", "file:///tmp/secret.txt", "--json"]) == 1
+    denied = json.loads(capsys.readouterr().out)
+    assert denied["denial_status"] == "denied"
+    assert denied["metadata"]["denial_reason"] == "unsupported_uri_scheme"
+
+    records = [
+        json.loads(line)
+        for line in (workspace / ".agent-harness" / "mcp" / "access-log.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ]
+    assert {(record["request_type"], record["result"]) for record in records} >= {
+        ("resource_read", "allowed"),
+        ("resource_read", "denied"),
+        ("prompt_list", "allowed"),
+        ("prompt_get", "allowed"),
+    }
+
+
 def test_release_readiness_rejects_remote_template_catalog_defaults(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -489,10 +659,11 @@ def test_current_release_metadata_and_v1_closure_docs_are_complete() -> None:
 def test_ci_installs_operator_extra_and_runs_operator_release_gates() -> None:
     workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
 
-    assert "python -m pip install -e .[dev,operator]" in workflow
+    assert "python -m pip install -e .[dev,operator,mcp]" in workflow
     assert "tests/integration/test_operator_cli.py" in workflow
     assert "tests/integration/test_operator_api.py" in workflow
     assert "tests/integration/test_operator_ui.py" in workflow
+    assert "tests/integration/test_mcp_protocol.py" in workflow
     assert "tests/integration/test_release_evidence.py" in workflow
 
 
@@ -509,6 +680,21 @@ def test_operator_release_docs_cover_v6_golden_path_and_evidence() -> None:
     assert "operator.approval_binding" in combined
     assert "hosted API" in operator_docs
     assert "Roadmap / Not implemented yet" in operator_docs
+
+
+def test_mcp_release_docs_cover_v9_golden_path_and_evidence() -> None:
+    release_docs = Path("docs/release-readiness.md").read_text(encoding="utf-8")
+    mcp_example = Path("examples/mcp_boundary/README.md").read_text(encoding="utf-8")
+    combined = f"{release_docs}\n{mcp_example}"
+
+    assert "examples/mcp_boundary" in release_docs
+    assert "uv sync --extra mcp" in combined
+    assert "agent-harness mcp resources list --json" in combined
+    assert "agent-harness mcp prompts get agent-harness-run-review" in combined
+    assert "agent-harness mcp serve" in combined
+    assert "mcp.extra_install" in release_docs
+    assert "mcp.stdio_protocol" in release_docs
+    assert "Planned V9 MCP Gates" not in release_docs
 
 
 def test_release_package_check_builds_installs_and_records_evidence(
@@ -622,6 +808,7 @@ def _write_release_ready_project(
     version: str,
     *,
     include_skills: bool = True,
+    include_mcp: bool = True,
 ) -> None:
     if not (root / "agent-harness.yaml").exists():
         (root / "agent-harness.yaml").write_text(
@@ -810,6 +997,9 @@ def _write_release_ready_project(
             path.write_text("demo\n", encoding="utf-8")
     if include_skills:
         _write_skills_workflow_demo(root)
+    if include_mcp:
+        _write_mcp_boundary_demo(root)
+        _write_mcp_ci_workflow(root)
 
 
 def _passing_remote_ci(
@@ -854,6 +1044,39 @@ def _write_skills_workflow_demo(root: Path) -> None:
                 "hosted skill services, enterprise skill registries, organization-wide",
                 "skill governance, centralized skill governance, and skill installation",
                 "from network locations remain future-only.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
+def _write_mcp_boundary_demo(root: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    source = repo_root / "examples" / "mcp_boundary"
+    target = root / "examples" / "mcp_boundary"
+    shutil.copytree(source, target, dirs_exist_ok=True)
+    pyproject = root / "pyproject.toml"
+    text = pyproject.read_text(encoding="utf-8")
+    if "[project.optional-dependencies]" not in text:
+        text += '\n[project.optional-dependencies]\nmcp = ["mcp>=1,<2"]\n'
+    pyproject.write_text(text, encoding="utf-8")
+
+
+def _write_mcp_ci_workflow(root: Path) -> None:
+    workflow = root / ".github" / "workflows" / "ci.yml"
+    workflow.parent.mkdir(parents=True, exist_ok=True)
+    workflow.write_text(
+        "\n".join(
+            [
+                "name: CI",
+                "jobs:",
+                "  release-evidence:",
+                "    steps:",
+                "      - name: Install dev, operator, and mcp dependencies",
+                "        run: python -m pip install -e .[dev,operator,mcp]",
+                "      - name: Release readiness report",
+                "        run: python -m agent_harness release readiness",
                 "",
             ]
         ),

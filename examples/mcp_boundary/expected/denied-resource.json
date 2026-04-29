@@ -1,0 +1,16 @@
+{
+  "schema_version": "mcp_resource_envelope.v1",
+  "uri": "file:///tmp/secret.txt",
+  "mime_type": "application/json",
+  "resource_type": "denial",
+  "source_artifact": null,
+  "source_schema_version": null,
+  "policy_profile": "default",
+  "policy_decision_id": null,
+  "redaction_applied": false,
+  "denial_status": "denied",
+  "content": null,
+  "metadata": {
+    "denial_reason": "unsupported_uri_scheme"
+  }
+}

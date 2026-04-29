@@ -113,6 +113,8 @@ The report represents:
   approval binding, and static UI packaging evidence
 - V8 skill validation, registry command, workflow demo, manifest, inspect, and
   skills docs evidence
+- V9 MCP boundary demo, optional extra, CI install, CLI resource and prompt,
+  denial, access log, and stdio resources/prompts-only evidence
 - release artifact presence
 - local check commands
 - remote CI run evidence for the target commit
@@ -125,8 +127,8 @@ The report represents:
 
 The command is evidence collection, not release automation. A report is `ready`
 only when required package, install, console script, demo, docs, changelog,
-template, retrieval scorecard, retrieval demo/config, artifact, tag, and remote
-CI evidence is present and passing.
+template, retrieval scorecard, retrieval demo/config, operator, skills, MCP,
+artifact, tag, and remote CI evidence is present and passing.
 
 For V7 template packs, release readiness refreshes `template validate --all`
 evidence, then validates every bundled pack through a temporary release
@@ -151,22 +153,29 @@ Release readiness also verifies `docs/skills-system.md` exists, docs check is
 passing, and deferred skill distribution and governance features remain outside
 implemented scope.
 
-## Planned V9 MCP Gates
+## V9 MCP Gates
 
-The V9 plan adds release-readiness gates for the MCP Boundary once the
-implementation exists. Those gates should verify:
+For V9, release readiness verifies the local read-only MCP Boundary. The
+golden-path example lives at `examples/mcp_boundary/` and documents the
+resource, prompt, denial, access-log, and stdio checks.
 
-- `agent-harness[mcp]` can be installed in the CI path.
-- `agent-harness mcp resources list --json` succeeds.
-- Run summary and context resources can be read through MCP resource envelopes.
-- `agent-harness mcp prompts list --json` and
-  `agent-harness mcp prompts get agent-harness-run-review --json` succeed.
-- Denied or unsafe resources return safe denial evidence.
-- MCP access appends `mcp_access_log.v1` metadata.
-- The stdio MCP server advertises resources and prompts only.
-- MCP tools, write-capable MCP, Streamable HTTP MCP, hosted MCP service, remote
-  gateways, enterprise registries, and MCP runtime adapter behavior stay outside
-  implemented scope.
+The report records:
+
+- `mcp.demo` for the `examples/mcp_boundary/` README and expected JSON outputs.
+- `mcp.extra_install` for the declared `agent-harness[mcp]` extra and SDK import.
+- `mcp.ci_install` for CI installing the MCP extra before release readiness.
+- `mcp.cli_commands` for the public `agent-harness mcp` command group.
+- `mcp.resource_listing` for `mcp resources list --json`.
+- `mcp.resource_reads` for summary and context resource envelopes.
+- `mcp.prompt_commands` for prompt list/get behavior.
+- `mcp.denied_resource` for safe denial of arbitrary file URI reads.
+- `mcp.access_log` for metadata-only `mcp_access_log.v1` records.
+- `mcp.stdio_protocol` for resources/prompts advertised with no tools
+  capability.
+
+MCP tools, write-capable MCP, Streamable HTTP MCP, hosted MCP service, remote
+gateways, enterprise registries, and MCP runtime adapter behavior remain outside
+implemented scope.
 
 ## Release Checklist
 
@@ -186,9 +195,11 @@ Before tagging the current release:
 12. Run `uv run agent-harness serve --host 127.0.0.1 --port 8765` and verify
     the local UI with the generated token.
 13. Run the skills workflow golden path in `examples/skills_workflow/`.
-14. Run `agent-harness eval`.
-15. Run `agent-harness release readiness --version 1.5.0`.
-16. Confirm CI passes for the release commit.
+14. Run `uv sync --extra mcp`.
+15. Run the MCP boundary golden path in `examples/mcp_boundary/`.
+16. Run `agent-harness eval`.
+17. Run `agent-harness release readiness --version 1.5.0`.
+18. Confirm CI passes for the release commit.
 
 ## Tag Process
 
