@@ -142,10 +142,14 @@ v1.7.0 planning is captured in
 [docs/prd-agent-harness-v11.md](prd-agent-harness-v11.md) and
 [plans/agent-harness-v11.md](../plans/agent-harness-v11.md). It describes
 future local, sequential, policy-mediated orchestration over normal child task
-runs. V11 orchestration CLI, runtime supervision, storage artifacts, policy
-contracts, MCP resources, and release-readiness gates are not implemented yet.
-Parallel execution, nested orchestration, MCP execution, hosted APIs, operator
-UI support, and enterprise governance remain future-only.
+runs. The current implementation includes only the denial-first
+`agent-harness orchestration run <spec> --dry-run` path that validates an
+`orchestration.v1` spec and rejects policies without explicit
+`policy.v2.orchestration`; it does not start child runs. Runtime supervision,
+storage artifacts, full policy contracts, MCP resources, and release-readiness
+gates remain future scope. Parallel execution, nested orchestration, MCP
+execution, hosted APIs, operator UI support, and enterprise governance remain
+future-only.
 
 ## Release Maintenance Priorities
 

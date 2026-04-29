@@ -272,10 +272,12 @@ enterprise registries future-only.
 
 V11 planning is captured in
 [`docs/prd-agent-harness-v11.md`](docs/prd-agent-harness-v11.md) and
-[`plans/agent-harness-v11.md`](plans/agent-harness-v11.md). These docs describe
-future local, sequential, policy-mediated orchestration scope; no V11
-orchestration CLI, runtime, storage, policy, MCP, or release-readiness behavior
-is implemented yet.
+[`plans/agent-harness-v11.md`](plans/agent-harness-v11.md). The current V11
+implementation only includes the denial-first `agent-harness orchestration run
+<spec> --dry-run` path that validates an `orchestration.v1` spec and requires
+explicit `policy.v2.orchestration` enablement before any child run can start.
+Successful orchestration runtime, storage artifacts, policy contracts, MCP
+resources, and release-readiness behavior remain future scope.
 
 ## Documentation
 

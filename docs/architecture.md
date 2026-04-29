@@ -27,6 +27,11 @@ runtime around explicit ownership boundaries.
   interoperability boundary over existing evidence. It owns MCP URI parsing,
   resource and prompt registries, response envelopes, access evidence, and
   stdio SDK integration without becoming a runtime.
+- The V11 orchestration work belongs under `agent_harness.orchestration`. The
+  current implementation owns `orchestration.v1` spec loading/validation and
+  the denial-first policy gate that requires explicit `policy.v2.orchestration`
+  before any child run can start; successful child scheduling and aggregate
+  artifacts remain future work.
 - `agent_harness.release` owns local release-readiness evidence collection.
 - `agent_harness.model`, `agent_harness.runtimes`, `agent_harness.storage`,
   `agent_harness.telemetry`, `agent_harness.evals`, and
@@ -130,11 +135,19 @@ when the optional MCP SDK is absent. The stdio server may depend on the SDK, but
 it should delegate to the same resource and prompt registries and advertise only
 resources and prompts.
 
+The V11 orchestration path starts as a policy-denial gate rather than a second
+runtime. The CLI can load and validate an `orchestration.v1` spec, load the
+selected policy, and reject policies without explicit orchestration enablement
+before creating child runs, aggregate orchestration directories, or mutation
+artifacts. Later V11 phases should keep scheduling and handoff behavior inside
+`agent_harness.orchestration` while delegating child execution to the native
+runtime.
+
 ## Compatibility And Roadmap Boundaries
 
 The v1.0.0 compatibility and deprecation policy is defined in
 [the V3 PRD](prd-agent-harness-v3.md). Until later phases implement and test
-them, enterprise readiness, compliance readiness, MCP support, multi-agent
+them, enterprise readiness, compliance readiness, successful multi-agent
 orchestration, production Qdrant server mode, external catalogs, hosted web/API
 platform behavior, and cloud deployment remain roadmap scope. V6 narrows the
 near-term platform direction to loopback-only local operator inspection and

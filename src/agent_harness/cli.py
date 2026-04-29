@@ -34,6 +34,7 @@ from agent_harness.mcp import (
     read_mcp_resource,
 )
 from agent_harness.migration import migrate_schemas
+from agent_harness.orchestration import load_orchestration_spec, require_orchestration_policy
 from agent_harness.policy import PolicyEngine, load_policy
 from agent_harness.release import (
     build_release_package_check_report,
@@ -200,6 +201,17 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--dry-run", action="store_true")
     run.add_argument("--runtime", choices=["native", "langgraph"], default="native")
     run.set_defaults(func=cmd_run)
+
+    orchestration = sub.add_parser("orchestration")
+    orchestration_sub = orchestration.add_subparsers(required=True)
+    orchestration_run = orchestration_sub.add_parser(
+        "run",
+        description="Run a local policy-mediated orchestration spec.",
+    )
+    orchestration_run.add_argument("spec_path")
+    orchestration_run.add_argument("--profile")
+    orchestration_run.add_argument("--dry-run", action="store_true")
+    orchestration_run.set_defaults(func=cmd_orchestration_run)
 
     approve = sub.add_parser("approve")
     approve.add_argument("run_id")
@@ -584,6 +596,16 @@ def cmd_run(args: argparse.Namespace) -> int:
     )
     print(summary.model_dump_json(indent=2))
     return 0
+
+
+def cmd_orchestration_run(args: argparse.Namespace) -> int:
+    root = Path.cwd()
+    load_orchestration_spec(Path(args.spec_path))
+    config = load_config(root)
+    profile_name = args.profile or config.default_policy
+    policy = load_policy(root, profile_name)
+    require_orchestration_policy(policy)
+    raise ValueError("orchestration execution requires a policy.v2.orchestration section")
 
 
 def cmd_approve(args: argparse.Namespace) -> int:

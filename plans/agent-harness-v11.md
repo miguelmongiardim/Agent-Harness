@@ -133,11 +133,22 @@ orchestration directory until policy allows the workflow.
 
 ### Acceptance criteria
 
-- [ ] The CLI command group exists with `run` help text.
-- [ ] Minimal `orchestration.v1` validation errors are actionable.
-- [ ] Missing `policy.v2.orchestration` denies orchestration.
-- [ ] Denial does not launch `HarnessRuntime`.
-- [ ] Existing `agent-harness run` behavior is unchanged.
+- [x] The CLI command group exists with `run` help text.
+- [x] Minimal `orchestration.v1` validation errors are actionable.
+- [x] Missing `policy.v2.orchestration` denies orchestration.
+- [x] Denial does not launch `HarnessRuntime`.
+- [x] Existing `agent-harness run` behavior is unchanged.
+
+### Phase 1 implementation notes
+
+- Added a boundary-owned `agent_harness.orchestration` package with
+  `orchestration.v1` spec loading and validation.
+- Added `agent-harness orchestration run <spec> --dry-run` as a denial-first
+  CLI path.
+- The command loads the selected policy and fails before creating child runs or
+  orchestration artifacts when `policy.v2.orchestration` is absent.
+- Successful orchestration, child execution, role ceilings, handoffs, approvals,
+  MCP resources, and release-readiness evidence remain out of scope.
 
 ### Out of scope
 
