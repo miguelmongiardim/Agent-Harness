@@ -6,6 +6,23 @@ All notable changes to this project will be documented in this file.
 
 - No changes yet.
 
+## [1.6.1] - 2026-04-29
+
+V10 Schema Boundary maintenance release.
+
+- Moved Pydantic contracts from the root `agent_harness.schemas` surface into
+  owner package schema modules for tasks, config, policy, tools, model,
+  context, storage, templates, skills, evals, benchmarks, MCP, operator,
+  security, and runtimes.
+- Removed the transitional `agent_harness.schemas` import facade and added
+  tests preventing the root schema module from returning.
+- Preserved CLI behavior, persisted artifact schemas, schema evidence, and
+  legacy public input compatibility while changing only Python import
+  ownership.
+- Split slow provider, retrieval, release-evidence, and e2e golden-path tests
+  out of the default pytest profile so contributor validation remains
+  practical while release gates stay explicit.
+
 ## [1.6.0] - 2026-04-29
 
 V9 MCP Boundary release.
