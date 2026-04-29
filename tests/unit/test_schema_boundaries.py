@@ -3,9 +3,25 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-import pytest
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+ROOT_SCHEMA_MODULE = "agent_harness" + ".schemas"
+ROOT_SCHEMA_HISTORICAL_REFERENCES = {
+    "docs/prd-agent-harness-v10.md",
+    "plans/agent-harness-v10.md",
+}
+TEXT_REFERENCE_SUFFIXES = {
+    ".css",
+    ".html",
+    ".ini",
+    ".js",
+    ".json",
+    ".md",
+    ".py",
+    ".toml",
+    ".txt",
+    ".yaml",
+    ".yml",
+}
 
 PHASE2_BOUNDARY_CONTRACTS = {
     "benchmarks": {
@@ -57,13 +73,9 @@ PHASE2_BOUNDARY_CONTRACTS = {
 }
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="V10 Phase 0 guard: Phase 4 removes agent_harness.schemas",
-)
 def test_root_schema_aggregator_is_removed() -> None:
     root_schema = PROJECT_ROOT / "src" / "agent_harness" / "schemas.py"
-    assert not root_schema.exists(), "agent_harness.schemas must not be reintroduced"
+    assert not root_schema.exists(), "root schema module must not be reintroduced"
 
     offenders = []
     for search_root in (PROJECT_ROOT / "src", PROJECT_ROOT / "tests"):
@@ -71,8 +83,35 @@ def test_root_schema_aggregator_is_removed() -> None:
             if path == Path(__file__).resolve():
                 continue
             text = path.read_text(encoding="utf-8")
-            if "agent_harness.schemas" in text:
+            if ROOT_SCHEMA_MODULE in text:
                 offenders.append(path.relative_to(PROJECT_ROOT).as_posix())
+
+    assert offenders == []
+
+
+def test_root_schema_text_references_are_historical_only() -> None:
+    offenders: list[str] = []
+    for search_root in (
+        PROJECT_ROOT / "src",
+        PROJECT_ROOT / "tests",
+        PROJECT_ROOT / "docs",
+        PROJECT_ROOT / "plans",
+    ):
+        for path in search_root.rglob("*"):
+            if not path.is_file():
+                continue
+            if path.suffix.lower() not in TEXT_REFERENCE_SUFFIXES:
+                continue
+            relative_path = path.relative_to(PROJECT_ROOT).as_posix()
+            if relative_path in ROOT_SCHEMA_HISTORICAL_REFERENCES:
+                continue
+            if path == Path(__file__).resolve():
+                continue
+            if ROOT_SCHEMA_MODULE in path.read_text(encoding="utf-8"):
+                offenders.append(relative_path)
+    readme = PROJECT_ROOT / "README.md"
+    if ROOT_SCHEMA_MODULE in readme.read_text(encoding="utf-8"):
+        offenders.append("README.md")
 
     assert offenders == []
 
@@ -115,7 +154,7 @@ def test_template_package_imports_template_contracts_from_owner_module() -> None
         for node in ast.walk(tree):
             if not isinstance(node, ast.ImportFrom):
                 continue
-            if node.module != "agent_harness.schemas":
+            if node.module != ROOT_SCHEMA_MODULE:
                 continue
             imported = {alias.name for alias in node.names}
             template_imports = sorted(imported & template_names)
@@ -124,13 +163,6 @@ def test_template_package_imports_template_contracts_from_owner_module() -> None
                 offenders.append(f"{relative_path}: {', '.join(template_imports)}")
 
     assert offenders == []
-
-
-def test_root_schema_template_names_reexport_owner_contracts_during_transition() -> None:
-    from agent_harness.schemas import TemplateSpec as RootTemplateSpec
-    from agent_harness.templates.schema import TemplateSpec
-
-    assert RootTemplateSpec is TemplateSpec
 
 
 def test_skills_schema_module_owns_skill_contracts() -> None:
@@ -411,13 +443,13 @@ def test_phase3_production_modules_do_not_import_from_root_schema() -> None:
             continue
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
-            if isinstance(node, ast.ImportFrom) and node.module == "agent_harness.schemas":
+            if isinstance(node, ast.ImportFrom) and node.module == ROOT_SCHEMA_MODULE:
                 imported = ", ".join(alias.name for alias in node.names)
                 relative_path = path.relative_to(PROJECT_ROOT).as_posix()
                 offenders.append(f"{relative_path}: from import {imported}")
             if isinstance(node, ast.Import):
                 for alias in node.names:
-                    if alias.name == "agent_harness.schemas":
+                    if alias.name == ROOT_SCHEMA_MODULE:
                         relative_path = path.relative_to(PROJECT_ROOT).as_posix()
                         offenders.append(f"{relative_path}: import {alias.name}")
 
@@ -433,7 +465,7 @@ def test_phase2_boundary_packages_do_not_import_moved_contracts_from_root_schema
             for node in ast.walk(tree):
                 if not isinstance(node, ast.ImportFrom):
                     continue
-                if node.module != "agent_harness.schemas":
+                if node.module != ROOT_SCHEMA_MODULE:
                     continue
                 imported = {alias.name for alias in node.names}
                 moved_imports = sorted(imported & contract_names)

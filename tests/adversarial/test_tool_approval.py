@@ -7,9 +7,11 @@ import pytest
 
 from agent_harness.defaults import DEFAULT_POLICY
 from agent_harness.policy import PolicyEngine
+from agent_harness.policy.schema import PolicyProfile
 from agent_harness.runtimes.native import HarnessRuntime, approve_action
-from agent_harness.schemas import PolicyProfile, TaskSpec, ToolCall
+from agent_harness.tasks.schema import TaskSpec
 from agent_harness.tools import ToolExecutor
+from agent_harness.tools.schema import ToolCall
 from tests.conftest import seed_project
 
 

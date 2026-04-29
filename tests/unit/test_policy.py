@@ -3,8 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 
 from agent_harness.defaults import DEFAULT_POLICY
+from agent_harness.model.schema import RunProviderRecord
 from agent_harness.policy import PolicyEngine
-from agent_harness.schemas import PolicyProfile, RunProviderRecord, TaskSpec, ToolCall
+from agent_harness.policy.schema import PolicyProfile
+from agent_harness.tasks.schema import TaskSpec
+from agent_harness.tools.schema import ToolCall
 
 
 def test_task_can_only_narrow_policy_tools(tmp_path: Path) -> None:

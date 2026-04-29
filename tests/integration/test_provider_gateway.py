@@ -11,15 +11,15 @@ from typing import Any, cast
 
 import pytest
 
+from agent_harness.context.schema import ContextManifest
 from agent_harness.defaults import DEFAULT_POLICY
 from agent_harness.model.adapters import ProviderEnvelopeValidationError, ProviderGateway
-from agent_harness.schemas import (
-    ContextManifest,
+from agent_harness.model.schema import (
     ProviderProfileConfig,
     RunProviderRecord,
-    TaskSpec,
-    ToolObservation,
 )
+from agent_harness.tasks.schema import TaskSpec
+from agent_harness.tools.schema import ToolObservation
 
 pytestmark = pytest.mark.slow
 

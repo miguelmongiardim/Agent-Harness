@@ -1,13 +1,9 @@
 from __future__ import annotations
 
+from agent_harness.context.schema import ContextChunk, ContextManifest, ContextSource
 from agent_harness.model import DeterministicMockModel
-from agent_harness.schemas import (
-    ContextChunk,
-    ContextManifest,
-    ContextSource,
-    TaskSpec,
-    ToolObservation,
-)
+from agent_harness.tasks.schema import TaskSpec
+from agent_harness.tools.schema import ToolObservation
 
 
 def _task(task_id: str) -> TaskSpec:

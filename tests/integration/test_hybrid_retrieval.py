@@ -5,10 +5,11 @@ from pathlib import Path
 
 from agent_harness.context.chunking import RetrievedChunk
 from agent_harness.context.retrieval import ingest_documents
+from agent_harness.context.schema import DenseRetrievalMetadata
 from agent_harness.defaults import DEFAULT_POLICY
 from agent_harness.policy import PolicyEngine
+from agent_harness.policy.schema import PolicyProfile
 from agent_harness.runtimes.native import HarnessRuntime
-from agent_harness.schemas import DenseRetrievalMetadata, PolicyProfile
 from tests.conftest import seed_project
 
 

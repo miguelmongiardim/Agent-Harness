@@ -235,12 +235,12 @@ comments that still describe a centralized schema module.
 
 ### Acceptance criteria
 
-- [ ] Import-boundary guard passes.
-- [ ] `rg "agent_harness\\.schemas" src tests docs plans README.md` finds no
+- [x] Import-boundary guard passes.
+- [x] `rg "agent_harness\\.schemas" src tests docs plans README.md` finds no
       stale implementation or docs references except historical notes if
       explicitly allowed by the test.
-- [ ] Focused unit, integration, adversarial, and e2e checks pass.
-- [ ] `agent-harness docs check` passes if docs were changed.
+- [x] Focused unit, integration, adversarial, and e2e checks pass.
+- [x] `agent-harness docs check` passes if docs were changed.
 
 ### Out of scope
 

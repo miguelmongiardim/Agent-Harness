@@ -7,8 +7,9 @@ import pytest
 from pydantic import ValidationError
 
 from agent_harness.defaults import DEFAULT_POLICY
+from agent_harness.model.schema import RunProviderRecord
 from agent_harness.policy import PolicyEngine
-from agent_harness.schemas import PolicyProfile, RunProviderRecord
+from agent_harness.policy.schema import PolicyProfile
 
 
 def test_default_provider_input_matrix_and_non_widening_overrides(

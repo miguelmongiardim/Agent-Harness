@@ -6,7 +6,10 @@ from pathlib import Path
 import pytest
 
 from agent_harness.cli import main
-from agent_harness.schemas import EvalSpec, HarnessConfig, PolicyProfile, TaskSpec
+from agent_harness.config.schema import HarnessConfig
+from agent_harness.evals.schema import EvalSpec
+from agent_harness.policy.schema import PolicyProfile
+from agent_harness.tasks.schema import TaskSpec
 from agent_harness.templates.schema import TemplateDetail
 from tests.conftest import seed_project
 

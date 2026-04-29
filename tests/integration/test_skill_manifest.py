@@ -6,7 +6,7 @@ from typing import Any
 
 from agent_harness.cli import main
 from agent_harness.evals import run_eval_spec
-from agent_harness.schemas import EvalSpec
+from agent_harness.evals.schema import EvalSpec
 from tests.conftest import seed_project
 
 

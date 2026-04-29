@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from agent_harness.schemas import TaskSpec
+from agent_harness.tasks.schema import TaskSpec
 
 
 def test_task_schema_rejects_extra_fields() -> None:

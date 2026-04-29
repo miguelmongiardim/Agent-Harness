@@ -9,7 +9,7 @@ from agent_harness.cli import main
 from agent_harness.context.retrieval import ingest_documents
 from agent_harness.defaults import DEFAULT_POLICY
 from agent_harness.policy import PolicyEngine
-from agent_harness.schemas import PolicyProfile
+from agent_harness.policy.schema import PolicyProfile
 from tests.integration.test_retrieval_hardening import _hide_optional_retrieval_dependencies
 
 
