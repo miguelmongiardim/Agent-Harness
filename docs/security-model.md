@@ -66,6 +66,13 @@ multi-agent execution, retention profiles, retrieval redesign, Anthropic live
 support, compliance readiness, enterprise claims, and multi-tenant guarantees.
 Those belong in future roadmap work.
 
+The V9 MCP plan narrows future MCP scope to local stdio, read-only resources,
+review prompts, policy-filtered evidence, and append-only MCP access evidence.
+It keeps MCP tools, write-capable MCP, MCP approval actions, MCP run execution,
+MCP provider execution, arbitrary filesystem resources, raw provider payload
+resources, Streamable HTTP MCP, hosted MCP service, remote MCP gateways,
+enterprise MCP registries, and MCP runtime adapter behavior out of V9.
+
 V6 is a narrower local operator surface. Its security boundary is loopback-only
 serving, token-protected local API routes, allowlisted run artifact access, and
 approval decisions routed through the existing approval service. The current

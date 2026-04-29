@@ -255,6 +255,16 @@ governance, network installation, and automatic execution from skills remain
 future-only scope. The V8 path includes the skills workflow demo and
 release-readiness gates for local skill evidence.
 
+V9 is planned as the MCP Boundary track:
+[docs/mcp-boundary.md](docs/mcp-boundary.md),
+[docs/prd-agent-harness-v9.md](docs/prd-agent-harness-v9.md), and
+[plans/agent-harness-v9.md](plans/agent-harness-v9.md). The target is a local,
+optional, read-only MCP boundary over existing Agent Harness evidence. It is
+planned under `agent_harness.mcp`, not as a runtime adapter, and keeps MCP tools,
+write actions, approval mutation, provider execution, run creation, arbitrary
+filesystem resources, HTTP transport, hosted MCP service, remote gateways, and
+enterprise registries future-only.
+
 ## Documentation
 
 - [Architecture](docs/architecture.md)
@@ -267,6 +277,7 @@ release-readiness gates for local skill evidence.
 - [Template catalog](docs/templates.md)
 - [Template pack system](docs/template-pack-system.md)
 - [Skills system](docs/skills-system.md)
+- [MCP boundary](docs/mcp-boundary.md)
 - [Schema migration](docs/migration.md)
 - [Release readiness](docs/release-readiness.md)
 - [Conception alignment](docs/conception-alignment.md)
@@ -275,10 +286,12 @@ release-readiness gates for local skill evidence.
 - [V6 Local Operator Surface PRD](docs/prd-agent-harness-v6.md)
 - [V7 Template Pack System PRD](docs/prd-agent-harness-v7.md)
 - [V8 Skills System PRD](docs/prd-agent-harness-v8.md)
+- [V9 MCP Boundary PRD](docs/prd-agent-harness-v9.md)
 - [V5 implementation plan](plans/agent-harness-v5.md)
 - [V6 implementation plan](plans/agent-harness-v6.md)
 - [V7 implementation plan](plans/agent-harness-v7.md)
 - [V8 implementation plan](plans/agent-harness-v8.md)
+- [V9 implementation plan](plans/agent-harness-v9.md)
 - [Roadmap](docs/roadmap.md)
 
 ## License

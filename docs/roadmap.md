@@ -118,6 +118,22 @@ services, enterprise skill registries, organization-wide skill governance,
 centralized skill governance, skill installation from network locations, and
 automatic execution from skills remain future-only and are not V8 behavior.
 
+## v1.6.0 Target
+
+v1.6.0 is planned as the V9 MCP Boundary release:
+[docs/mcp-boundary.md](mcp-boundary.md),
+[docs/prd-agent-harness-v9.md](prd-agent-harness-v9.md), and
+[plans/agent-harness-v9.md](../plans/agent-harness-v9.md). The target is a
+local, optional, read-only MCP boundary under `agent_harness.mcp` for exposing
+selected Agent Harness evidence through MCP resources and review prompts.
+
+V9 is not a runtime adapter. The existing `agent_harness.runtimes.mcp_adapter`
+can remain unsupported while V9 proves resources, prompts, stdio transport,
+policy-filtered artifacts, and MCP access evidence. MCP tools,
+write-capable MCP, MCP approval actions, MCP run execution, MCP provider
+execution, Streamable HTTP MCP, hosted MCP service, remote MCP gateways,
+enterprise MCP registries, and multi-agent orchestration remain future-only.
+
 ## Release Maintenance Priorities
 
 - Preserve the v1.0.0 compatibility and deprecation contract.
@@ -141,7 +157,7 @@ automatic execution from skills remain future-only and are not V8 behavior.
 - Add OpenTelemetry dashboards.
 - Add cloud or production Qdrant modes and deployment-scale retrieval tuning.
 - Add hosted or remote retrieval providers.
-- Add MCP resources, prompts, or tool execution behind explicit policy
-  boundaries.
+- After V9, consider MCP tools or hosted MCP only with a separate policy,
+  approval, identity, and release-evidence plan.
 - Add enterprise/compliance readiness work, including production identity,
   centralized secrets management, hardened sandboxing, and attestation.

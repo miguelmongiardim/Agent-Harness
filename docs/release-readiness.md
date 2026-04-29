@@ -151,6 +151,23 @@ Release readiness also verifies `docs/skills-system.md` exists, docs check is
 passing, and deferred skill distribution and governance features remain outside
 implemented scope.
 
+## Planned V9 MCP Gates
+
+The V9 plan adds release-readiness gates for the MCP Boundary once the
+implementation exists. Those gates should verify:
+
+- `agent-harness[mcp]` can be installed in the CI path.
+- `agent-harness mcp resources list --json` succeeds.
+- Run summary and context resources can be read through MCP resource envelopes.
+- `agent-harness mcp prompts list --json` and
+  `agent-harness mcp prompts get agent-harness-run-review --json` succeed.
+- Denied or unsafe resources return safe denial evidence.
+- MCP access appends `mcp_access_log.v1` metadata.
+- The stdio MCP server advertises resources and prompts only.
+- MCP tools, write-capable MCP, Streamable HTTP MCP, hosted MCP service, remote
+  gateways, enterprise registries, and MCP runtime adapter behavior stay outside
+  implemented scope.
+
 ## Release Checklist
 
 Before tagging the current release:

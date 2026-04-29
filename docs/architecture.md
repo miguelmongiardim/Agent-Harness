@@ -23,6 +23,10 @@ runtime around explicit ownership boundaries.
   Runtime context assembly consumes resolved skill guidance as policy-mediated
   context evidence, and the same boundary constructs `skill_manifest.v1` run
   evidence from resolution plus context-manifest decisions.
+- The planned V9 MCP work belongs under `agent_harness.mcp` as a read-only
+  interoperability boundary over existing evidence. It should own MCP URI
+  parsing, resource and prompt registries, response envelopes, access evidence,
+  and stdio SDK integration without becoming a runtime.
 - `agent_harness.release` owns local release-readiness evidence collection.
 - `agent_harness.model`, `agent_harness.runtimes`, `agent_harness.storage`,
   `agent_harness.telemetry`, `agent_harness.evals`, and
@@ -119,6 +123,13 @@ runtime, and records `runtime_adapter.json` plus a `runtime_adapter_selected`
 event. It proves the framework boundary can share policy and audit artifacts
 without making LangGraph the primary runtime.
 
+The V9 MCP plan treats MCP as a read-only evidence boundary, not as a runtime
+adapter. SDK-independent URI parsing, resource lookup, prompt rendering, policy
+filtering, and access logging should stay usable by CLI inspection commands even
+when the optional MCP SDK is absent. The stdio server may depend on the SDK, but
+it should delegate to the same resource and prompt registries and advertise only
+resources and prompts.
+
 ## Compatibility And Roadmap Boundaries
 
 The v1.0.0 compatibility and deprecation policy is defined in
@@ -127,4 +138,7 @@ them, enterprise readiness, compliance readiness, MCP support, multi-agent
 orchestration, production Qdrant server mode, external catalogs, hosted web/API
 platform behavior, and cloud deployment remain roadmap scope. V6 narrows the
 near-term platform direction to loopback-only local operator inspection and
-approval over existing artifacts.
+approval over existing artifacts. V9 narrows the MCP direction to local stdio,
+read-only resources, prompts, and access evidence; MCP tools, write-capable MCP,
+HTTP transports, hosted MCP, remote gateways, enterprise registries, and MCP
+runtime adapter behavior remain future-only.
