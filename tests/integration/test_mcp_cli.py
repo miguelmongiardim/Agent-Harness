@@ -9,6 +9,7 @@ import pytest
 
 import agent_harness.cli as cli
 from agent_harness.cli import main
+from tests.conftest import seed_project
 
 
 def test_mcp_optional_extra_is_declared() -> None:
@@ -67,8 +68,7 @@ def test_mcp_resources_read_returns_safe_run_summary_and_context_envelopes(
     run_id = run_summary["run_id"]
 
     assert (
-        main(["mcp", "resources", "read", f"agent-harness://runs/{run_id}/summary", "--json"])
-        == 0
+        main(["mcp", "resources", "read", f"agent-harness://runs/{run_id}/summary", "--json"]) == 0
     )
     summary_envelope = json.loads(capsys.readouterr().out)
 
@@ -85,8 +85,7 @@ def test_mcp_resources_read_returns_safe_run_summary_and_context_envelopes(
     assert str(workspace) not in json.dumps(summary_envelope)
 
     assert (
-        main(["mcp", "resources", "read", f"agent-harness://runs/{run_id}/context", "--json"])
-        == 0
+        main(["mcp", "resources", "read", f"agent-harness://runs/{run_id}/context", "--json"]) == 0
     )
     context_envelope = json.loads(capsys.readouterr().out)
 
@@ -116,8 +115,7 @@ def test_mcp_allowed_resource_read_appends_metadata_only_access_log(
     run_id = run_summary["run_id"]
 
     assert (
-        main(["mcp", "resources", "read", f"agent-harness://runs/{run_id}/summary", "--json"])
-        == 0
+        main(["mcp", "resources", "read", f"agent-harness://runs/{run_id}/summary", "--json"]) == 0
     )
     envelope = json.loads(capsys.readouterr().out)
     log_path = workspace / ".agent-harness" / "mcp" / "access-log.jsonl"
@@ -183,6 +181,112 @@ def test_mcp_resource_read_records_selected_profile(
     assert envelope["policy_profile"] == "reviewer"
     assert record["policy_profile"] == "reviewer"
     assert record["result"] == "allowed"
+
+
+def test_mcp_template_resources_read_through_template_registry(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    seed_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["mcp", "resources", "list", "--json"]) == 0
+    listed = json.loads(capsys.readouterr().out)
+    resource_uris = {resource["uri"] for resource in listed["resources"]}
+
+    assert "agent-harness://templates" in resource_uris
+    assert "agent-harness://templates/python-lib" in resource_uris
+
+    assert main(["mcp", "resources", "read", "agent-harness://templates", "--json"]) == 0
+    collection = json.loads(capsys.readouterr().out)
+
+    assert collection["schema_version"] == "mcp_resource_envelope.v1"
+    assert collection["resource_type"] == "template_collection"
+    assert collection["source_schema_version"] == "template_registry_record.v1"
+    assert collection["denial_status"] == "allowed"
+    assert collection["content"]["schema_version"] == "mcp_template_collection.v1"
+    assert "python-lib" in {
+        template["template_id"] for template in collection["content"]["templates"]
+    }
+    assert str(tmp_path) not in json.dumps(collection)
+
+    assert main(["mcp", "resources", "read", "agent-harness://templates/python-lib", "--json"]) == 0
+    detail = json.loads(capsys.readouterr().out)
+
+    assert detail["resource_type"] == "template_detail"
+    assert detail["source_artifact"] == "bundled_templates/python-lib/template.v2.toml"
+    assert detail["source_schema_version"] == "template.v2"
+    assert detail["content"]["schema_version"] == "template_detail.v1"
+    assert detail["content"]["template_id"] == "python-lib"
+    assert "README.md" in {file["path"] for file in detail["content"]["files"]}
+    assert str(tmp_path) not in json.dumps(detail)
+
+
+def test_mcp_skill_resources_read_through_skill_registry(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    seed_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["mcp", "resources", "list", "--json"]) == 0
+    listed = json.loads(capsys.readouterr().out)
+    resource_uris = {resource["uri"] for resource in listed["resources"]}
+
+    assert "agent-harness://skills" in resource_uris
+    assert "agent-harness://skills/tdd" in resource_uris
+
+    assert main(["mcp", "resources", "read", "agent-harness://skills", "--json"]) == 0
+    collection = json.loads(capsys.readouterr().out)
+
+    assert collection["resource_type"] == "skill_collection"
+    assert collection["source_schema_version"] == "skill_registry_record.v1"
+    assert collection["content"]["schema_version"] == "mcp_skill_collection.v1"
+    assert "tdd" in {skill["skill_id"] for skill in collection["content"]["skills"]}
+    assert str(tmp_path) not in json.dumps(collection)
+
+    assert main(["mcp", "resources", "read", "agent-harness://skills/tdd", "--json"]) == 0
+    detail = json.loads(capsys.readouterr().out)
+
+    assert detail["resource_type"] == "skill_detail"
+    assert detail["source_artifact"] == "bundled_skills/tdd/SKILL.md"
+    assert detail["source_schema_version"] == "skill_detail.v1"
+    assert detail["content"]["schema_version"] == "skill_detail.v1"
+    assert detail["content"]["skill_id"] == "tdd"
+    assert detail["content"]["name"] == "Test-Driven Development"
+    assert detail["content"]["validation_status"] == "passed"
+    assert detail["content"]["body_summary"].startswith("# Test-Driven Development")
+    assert str(tmp_path) not in json.dumps(detail)
+
+
+def test_mcp_policy_resource_reads_summary_through_policy_service(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    seed_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["mcp", "resources", "list", "--json"]) == 0
+    listed = json.loads(capsys.readouterr().out)
+    resource_uris = {resource["uri"] for resource in listed["resources"]}
+
+    assert "agent-harness://policies/default" in resource_uris
+
+    assert main(["mcp", "resources", "read", "agent-harness://policies/default", "--json"]) == 0
+    envelope = json.loads(capsys.readouterr().out)
+
+    assert envelope["resource_type"] == "policy_summary"
+    assert envelope["source_artifact"] == "policies/default.json"
+    assert envelope["source_schema_version"] == "policy.v2"
+    assert envelope["policy_profile"] == "default"
+    assert envelope["content"]["schema_version"] == "mcp_policy_summary.v1"
+    assert envelope["content"]["name"] == "default"
+    assert "read_file" in envelope["content"]["allowed_tools"]
+    assert envelope["content"]["template_capabilities"]["default_action"] == "deny"
+    assert str(tmp_path) not in json.dumps(envelope)
 
 
 def test_mcp_serve_reports_missing_optional_sdk(

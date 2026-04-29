@@ -249,14 +249,28 @@ public boundaries.
 
 ### Acceptance criteria
 
-- [ ] Template list resource works.
-- [ ] Template detail resource works.
-- [ ] Skill list resource works.
-- [ ] Skill detail or safe rendered skill resource works.
-- [ ] Policy summary resource works.
-- [ ] Resource responses record source artifact and source schema version where
+- [x] Template list resource works.
+- [x] Template detail resource works.
+- [x] Skill list resource works.
+- [x] Skill detail or safe rendered skill resource works.
+- [x] Policy summary resource works.
+- [x] Resource responses record source artifact and source schema version where
       available.
-- [ ] No resource reads raw filesystem paths directly.
+- [x] No resource reads raw filesystem paths directly.
+
+### Phase 3 implementation notes
+
+- Extended the SDK-independent MCP resource registry with template, skill, and
+  policy resources.
+- `agent-harness://templates` and `agent-harness://templates/{template_id}`
+  read through `agent_harness.templates` registry/detail services.
+- `agent-harness://skills` and `agent-harness://skills/{skill_id}` read
+  through `agent_harness.skills` registry/detail services and expose safe skill
+  detail summaries, not rendered authority.
+- `agent-harness://policies/{profile}` reads through the policy loader with
+  schema evidence and returns a bounded policy summary.
+- New resources keep the existing `mcp_resource_envelope.v1` and
+  metadata-only `mcp_access_log.v1` behavior.
 
 ### Out of scope
 
