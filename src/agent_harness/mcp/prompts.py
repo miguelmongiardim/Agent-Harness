@@ -59,7 +59,11 @@ PROMPT_DEFINITIONS: dict[str, PromptDefinition] = {
 }
 
 
-def list_mcp_prompts(project_root: Path | None = None) -> dict[str, Any]:
+def list_mcp_prompts(
+    project_root: Path | None = None,
+    *,
+    transport: str = "cli",
+) -> dict[str, Any]:
     prompts = [
         {
             "name": name,
@@ -78,6 +82,7 @@ def list_mcp_prompts(project_root: Path | None = None) -> dict[str, Any]:
         append_mcp_access_log(
             _artifact_root(project_root),
             request_type="prompt_list",
+            transport=transport,
             result="allowed",
             artifact_type="prompt_registry",
         )
@@ -89,6 +94,7 @@ def get_mcp_prompt(
     arguments: dict[str, str] | None = None,
     *,
     project_root: Path | None = None,
+    transport: str = "cli",
 ) -> dict[str, Any]:
     prompt_arguments = dict(arguments or {})
     definition = PROMPT_DEFINITIONS.get(name)
@@ -99,7 +105,7 @@ def get_mcp_prompt(
             description=None,
             reason="unknown_prompt",
         )
-        _log_prompt_get(project_root, name, response)
+        _log_prompt_get(project_root, name, response, transport=transport)
         return response
     allowed_arguments = set(definition["allowed_arguments"])
     for argument in sorted(prompt_arguments):
@@ -111,7 +117,7 @@ def get_mcp_prompt(
                 reason="unsupported_argument",
                 metadata={"argument": argument},
             )
-            _log_prompt_get(project_root, name, response)
+            _log_prompt_get(project_root, name, response, transport=transport)
             return response
     resources = _resource_references(name, prompt_arguments)
     messages = [
@@ -144,7 +150,7 @@ def get_mcp_prompt(
         "denial_status": "allowed",
         "metadata": {},
     }
-    _log_prompt_get(project_root, name, response)
+    _log_prompt_get(project_root, name, response, transport=transport)
     return response
 
 
@@ -223,6 +229,8 @@ def _log_prompt_get(
     project_root: Path | None,
     name: str,
     response: dict[str, Any],
+    *,
+    transport: str,
 ) -> None:
     if project_root is None:
         return
@@ -236,6 +244,7 @@ def _log_prompt_get(
         _artifact_root(project_root),
         request_type="prompt_get",
         prompt_name=name,
+        transport=transport,
         result="denied" if response.get("denial_status") == "denied" else "allowed",
         artifact_type="prompt_response",
         denial_reason=denial_reason,

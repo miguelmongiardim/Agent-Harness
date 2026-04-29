@@ -23,10 +23,10 @@ runtime around explicit ownership boundaries.
   Runtime context assembly consumes resolved skill guidance as policy-mediated
   context evidence, and the same boundary constructs `skill_manifest.v1` run
   evidence from resolution plus context-manifest decisions.
-- The planned V9 MCP work belongs under `agent_harness.mcp` as a read-only
-  interoperability boundary over existing evidence. It should own MCP URI
-  parsing, resource and prompt registries, response envelopes, access evidence,
-  and stdio SDK integration without becoming a runtime.
+- The V9 MCP work belongs under `agent_harness.mcp` as a read-only
+  interoperability boundary over existing evidence. It owns MCP URI parsing,
+  resource and prompt registries, response envelopes, access evidence, and
+  stdio SDK integration without becoming a runtime.
 - `agent_harness.release` owns local release-readiness evidence collection.
 - `agent_harness.model`, `agent_harness.runtimes`, `agent_harness.storage`,
   `agent_harness.telemetry`, `agent_harness.evals`, and

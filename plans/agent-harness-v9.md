@@ -436,16 +436,29 @@ stdio transport and protocol handlers backed by the existing registries.
 
 ### Acceptance criteria
 
-- [ ] Server declares resources/prompts only.
-- [ ] Server does not declare tools.
-- [ ] Server responds to resources/list.
-- [ ] Server responds to resources/read.
-- [ ] Server responds to prompts/list.
-- [ ] Server responds to prompts/get.
-- [ ] Server emits only valid MCP messages on stdout.
-- [ ] Diagnostics go to stderr.
-- [ ] No HTTP transport exists in V9.
-- [ ] SDK-specific code remains isolated under `agent_harness.mcp`.
+- [x] Server declares resources/prompts only.
+- [x] Server does not declare tools.
+- [x] Server responds to resources/list.
+- [x] Server responds to resources/read.
+- [x] Server responds to prompts/list.
+- [x] Server responds to prompts/get.
+- [x] Server emits only valid MCP messages on stdout.
+- [x] Diagnostics go to stderr.
+- [x] No HTTP transport exists in V9.
+- [x] SDK-specific code remains isolated under `agent_harness.mcp`.
+
+### Phase 6 implementation notes
+
+- Added `agent_harness.mcp.server` as the only SDK-dependent V9 module.
+- `agent-harness mcp serve` now starts the official MCP SDK stdio server when
+  `agent-harness[mcp]` is installed and keeps the existing missing-SDK install
+  hint in base environments.
+- Protocol handlers delegate to the SDK-independent resource and prompt
+  registries used by CLI inspection commands.
+- The server registers resources and prompts only; it does not register tools
+  and therefore advertises no tool capability.
+- Resource reads and prompt requests through stdio append metadata-only access
+  log records with `transport: stdio`.
 
 ### Out of scope
 

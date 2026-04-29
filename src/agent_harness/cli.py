@@ -697,7 +697,6 @@ def cmd_mcp_prompts_get(args: argparse.Namespace) -> int:
 
 
 def cmd_mcp_serve(args: argparse.Namespace) -> int:
-    del args
     if not _mcp_sdk_available():
         print(
             "error: MCP SDK is not installed; install with "
@@ -705,11 +704,10 @@ def cmd_mcp_serve(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 1
-    print(
-        "error: MCP stdio server is planned for a later V9 phase",
-        file=sys.stderr,
-    )
-    return 1
+    from agent_harness.mcp.server import run_mcp_stdio_server
+
+    run_mcp_stdio_server(Path.cwd(), profile=args.profile)
+    return 0
 
 
 def cmd_retrieval_index_build(args: argparse.Namespace) -> int:

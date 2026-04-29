@@ -255,13 +255,13 @@ governance, network installation, and automatic execution from skills remain
 future-only scope. The V8 path includes the skills workflow demo and
 release-readiness gates for local skill evidence.
 
-V9 is planned as the MCP Boundary track:
+V9 is the MCP Boundary track:
 [docs/mcp-boundary.md](docs/mcp-boundary.md),
 [docs/prd-agent-harness-v9.md](docs/prd-agent-harness-v9.md), and
-[plans/agent-harness-v9.md](plans/agent-harness-v9.md). The target is a local,
-optional, read-only MCP boundary over existing Agent Harness evidence. It is
-planned under `agent_harness.mcp`, not as a runtime adapter, and keeps MCP tools,
-write actions, approval mutation, provider execution, run creation, arbitrary
+[plans/agent-harness-v9.md](plans/agent-harness-v9.md). The implementation is a
+local, optional, read-only MCP boundary over existing Agent Harness evidence
+under `agent_harness.mcp`, not a runtime adapter. It keeps MCP tools, write
+actions, approval mutation, provider execution, run creation, arbitrary
 filesystem resources, HTTP transport, hosted MCP service, remote gateways, and
 enterprise registries future-only.
 

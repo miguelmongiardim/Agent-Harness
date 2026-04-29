@@ -11,6 +11,7 @@ def append_mcp_access_log(
     *,
     request_type: str,
     result: str,
+    transport: str = "cli",
     profile: str = "default",
     uri: str | None = None,
     prompt_name: str | None = None,
@@ -22,7 +23,7 @@ def append_mcp_access_log(
     record = {
         "schema_version": "mcp_access_log.v1",
         "timestamp": now_utc().isoformat(),
-        "transport": "cli",
+        "transport": transport,
         "request_type": request_type,
         "resource_uri": uri,
         "prompt_name": prompt_name,

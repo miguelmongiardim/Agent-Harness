@@ -1,12 +1,11 @@
 # MCP Boundary
 
-This document defines the V9 MCP Boundary target for `v1.6.0`. It is planning
-documentation until the V9 implementation lands.
+This document defines the V9 MCP Boundary target for `v1.6.0` and the
+implemented local read-only MCP behavior as the V9 phases land.
 
 ## Implemented in V9
 
-When V9 is complete, Agent Harness will expose a local, read-only MCP boundary
-under:
+Agent Harness exposes a local, read-only MCP boundary under:
 
 ```text
 agent_harness.mcp
@@ -17,7 +16,7 @@ not a runtime adapter and it does not replace the CLI, runtime, policy engine,
 approval service, storage layer, operator UI, template system, skill system, or
 provider gateway.
 
-The V9 target supports:
+The V9 implementation supports:
 
 - read-only MCP resources
 - MCP prompts
@@ -35,7 +34,7 @@ SDK-independent.
 
 ## CLI Contract
 
-The planned CLI surface is:
+The CLI surface is:
 
 ```bash
 agent-harness mcp serve [--profile PROFILE]
@@ -45,9 +44,9 @@ agent-harness mcp prompts list [--json]
 agent-harness mcp prompts get <name> [--arg key=value] [--json]
 ```
 
-Resource and prompt inspection commands should work without the MCP SDK. The
-stdio server command should fail with a clear `agent-harness[mcp]` install hint
-when the SDK is missing.
+Resource and prompt inspection commands work without the MCP SDK. The stdio
+server command starts a local MCP server when `agent-harness[mcp]` is installed
+and fails with a clear install hint when the SDK is missing.
 
 ## Resource Surface
 

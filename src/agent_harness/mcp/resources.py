@@ -166,7 +166,13 @@ def list_mcp_resources(project_root: Path, profile: str = "default") -> dict[str
     }
 
 
-def read_mcp_resource(project_root: Path, uri: str, profile: str = "default") -> dict[str, Any]:
+def read_mcp_resource(
+    project_root: Path,
+    uri: str,
+    profile: str = "default",
+    *,
+    transport: str = "cli",
+) -> dict[str, Any]:
     root = project_root.resolve()
     artifact_root = root / load_config(root).artifact_root
     try:
@@ -177,6 +183,7 @@ def read_mcp_resource(project_root: Path, uri: str, profile: str = "default") ->
             artifact_root,
             uri=uri,
             profile=profile,
+            transport=transport,
             result="denied",
             denial_reason="unknown_profile",
         )
@@ -190,6 +197,7 @@ def read_mcp_resource(project_root: Path, uri: str, profile: str = "default") ->
             artifact_root,
             uri=uri,
             profile=profile,
+            transport=transport,
             result="denied",
             denial_reason=reason,
         )
@@ -213,6 +221,7 @@ def read_mcp_resource(project_root: Path, uri: str, profile: str = "default") ->
             artifact_root,
             uri=uri,
             profile=profile,
+            transport=transport,
             result="allowed",
             artifact_type="template_collection",
         )
@@ -233,6 +242,7 @@ def read_mcp_resource(project_root: Path, uri: str, profile: str = "default") ->
             artifact_root,
             uri=uri,
             profile=profile,
+            transport=transport,
             result="allowed",
             artifact_type="template_detail",
         )
@@ -256,6 +266,7 @@ def read_mcp_resource(project_root: Path, uri: str, profile: str = "default") ->
             artifact_root,
             uri=uri,
             profile=profile,
+            transport=transport,
             result="allowed",
             artifact_type="skill_collection",
         )
@@ -276,6 +287,7 @@ def read_mcp_resource(project_root: Path, uri: str, profile: str = "default") ->
             artifact_root,
             uri=uri,
             profile=profile,
+            transport=transport,
             result="allowed",
             artifact_type="skill_detail",
         )
@@ -290,6 +302,7 @@ def read_mcp_resource(project_root: Path, uri: str, profile: str = "default") ->
                 artifact_root,
                 uri=uri,
                 profile=profile,
+                transport=transport,
                 result="denied",
                 denial_reason="unknown_profile",
             )
@@ -307,6 +320,7 @@ def read_mcp_resource(project_root: Path, uri: str, profile: str = "default") ->
             artifact_root,
             uri=uri,
             profile=profile,
+            transport=transport,
             result="allowed",
             artifact_type="policy_summary",
         )
@@ -326,6 +340,7 @@ def read_mcp_resource(project_root: Path, uri: str, profile: str = "default") ->
             artifact_root,
             uri=uri,
             profile=profile,
+            transport=transport,
             result=_access_result(envelope),
             run_id=run_id,
             artifact_type="run_provider_evidence",
@@ -337,6 +352,7 @@ def read_mcp_resource(project_root: Path, uri: str, profile: str = "default") ->
             artifact_root,
             uri=uri,
             profile=profile,
+            transport=transport,
             result=_access_result(envelope),
             run_id=run_id,
             artifact_type="run_events",
@@ -357,6 +373,7 @@ def read_mcp_resource(project_root: Path, uri: str, profile: str = "default") ->
             artifact_root,
             uri=uri,
             profile=profile,
+            transport=transport,
             result=_access_result(envelope),
             run_id=run_id,
             artifact_type="run_tools",
@@ -377,6 +394,7 @@ def read_mcp_resource(project_root: Path, uri: str, profile: str = "default") ->
             artifact_root,
             uri=uri,
             profile=profile,
+            transport=transport,
             result=_access_result(envelope),
             run_id=run_id,
             artifact_type="run_approvals",
@@ -393,6 +411,7 @@ def read_mcp_resource(project_root: Path, uri: str, profile: str = "default") ->
             artifact_root,
             uri=uri,
             profile=profile,
+            transport=transport,
             result=_access_result(envelope),
             run_id=run_id,
             artifact_type=resource_type,
@@ -414,6 +433,7 @@ def read_mcp_resource(project_root: Path, uri: str, profile: str = "default") ->
         artifact_root,
         uri=uri,
         profile=profile,
+        transport=transport,
         result="allowed",
         run_id=run_id,
         artifact_type=resource_type,
@@ -882,6 +902,7 @@ def _append_access_log(
     uri: str,
     profile: str,
     result: str,
+    transport: str = "cli",
     run_id: str | None = None,
     artifact_type: str | None = None,
     denial_reason: str | None = None,
@@ -891,6 +912,7 @@ def _append_access_log(
         request_type="resource_read",
         uri=uri,
         profile=profile,
+        transport=transport,
         result=result,
         run_id=run_id,
         artifact_type=artifact_type,
