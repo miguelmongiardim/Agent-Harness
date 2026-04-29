@@ -188,18 +188,28 @@ and append-only MCP access logging for resource reads.
 
 ### Acceptance criteria
 
-- [ ] Unknown resource URI fails clearly.
-- [ ] Path traversal fails.
-- [ ] Arbitrary `file://` URI fails.
-- [ ] Absolute path attempts fail.
-- [ ] Query and fragment abuse fails.
-- [ ] Unsafe run ids fail.
-- [ ] Unknown profiles fail clearly.
-- [ ] Selected profiles are recorded in access evidence.
-- [ ] Allowed reads are logged.
-- [ ] Denied reads are logged.
-- [ ] Logs omit raw returned content, secrets, env values, and provider raw
+- [x] Unknown resource URI fails clearly.
+- [x] Path traversal fails.
+- [x] Arbitrary `file://` URI fails.
+- [x] Absolute path attempts fail.
+- [x] Query and fragment abuse fails.
+- [x] Unsafe run ids fail.
+- [x] Unknown profiles fail clearly.
+- [x] Selected profiles are recorded in access evidence.
+- [x] Allowed reads are logged.
+- [x] Denied reads are logged.
+- [x] Logs omit raw returned content, secrets, env values, and provider raw
       payloads.
+
+### Phase 2 implementation notes
+
+- Added safe denial envelopes for unsupported URI schemes, unknown resource
+  shapes, query or fragment abuse, unsafe run ids, and unknown policy profiles.
+- Added append-only `.agent-harness/mcp/access-log.jsonl` records for allowed
+  and denied resource reads.
+- Access logs record metadata only: transport, request type, URI, run id when
+  applicable, artifact type, policy profile, result, redaction status, and
+  denial reason without returned content.
 
 ### Out of scope
 

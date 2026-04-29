@@ -101,6 +101,90 @@ def test_mcp_resources_read_returns_safe_run_summary_and_context_envelopes(
     assert str(workspace) not in json.dumps(context_envelope)
 
 
+def test_mcp_allowed_resource_read_appends_metadata_only_access_log(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    workspace, run_summary = _run_provider_audit_workspace(
+        tmp_path,
+        monkeypatch,
+        capsys,
+        run_id="run-mcp-allowed-log",
+        fixed_time="2026-04-29T13:05:00Z",
+    )
+    run_id = run_summary["run_id"]
+
+    assert (
+        main(["mcp", "resources", "read", f"agent-harness://runs/{run_id}/summary", "--json"])
+        == 0
+    )
+    envelope = json.loads(capsys.readouterr().out)
+    log_path = workspace / ".agent-harness" / "mcp" / "access-log.jsonl"
+    records = [json.loads(line) for line in log_path.read_text(encoding="utf-8").splitlines()]
+
+    assert envelope["content"]["run_id"] == run_id
+    assert len(records) == 1
+    assert records[0]["schema_version"] == "mcp_access_log.v1"
+    assert records[0]["transport"] == "cli"
+    assert records[0]["request_type"] == "resource_read"
+    assert records[0]["resource_uri"] == f"agent-harness://runs/{run_id}/summary"
+    assert records[0]["run_id"] == run_id
+    assert records[0]["artifact_type"] == "run_summary"
+    assert records[0]["policy_profile"] == "default"
+    assert records[0]["result"] == "allowed"
+    assert records[0]["redaction_applied"] is False
+    assert records[0]["denial_reason"] is None
+    assert "content" not in records[0]
+    assert "Provider Audit Demo" not in json.dumps(records[0])
+
+
+def test_mcp_resource_read_records_selected_profile(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    workspace, run_summary = _run_provider_audit_workspace(
+        tmp_path,
+        monkeypatch,
+        capsys,
+        run_id="run-mcp-profile",
+        fixed_time="2026-04-29T13:20:00Z",
+    )
+    run_id = run_summary["run_id"]
+    reviewer_policy = json.loads(
+        (workspace / "policies" / "default.json").read_text(encoding="utf-8")
+    )
+    reviewer_policy["name"] = "reviewer"
+    (workspace / "policies" / "reviewer.json").write_text(
+        json.dumps(reviewer_policy, indent=2),
+        encoding="utf-8",
+    )
+
+    assert (
+        main(
+            [
+                "mcp",
+                "resources",
+                "read",
+                f"agent-harness://runs/{run_id}/summary",
+                "--profile",
+                "reviewer",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    envelope = json.loads(capsys.readouterr().out)
+    record = json.loads(
+        (workspace / ".agent-harness" / "mcp" / "access-log.jsonl").read_text(encoding="utf-8")
+    )
+
+    assert envelope["policy_profile"] == "reviewer"
+    assert record["policy_profile"] == "reviewer"
+    assert record["result"] == "allowed"
+
+
 def test_mcp_serve_reports_missing_optional_sdk(
     tmp_path: Path,
     monkeypatch,

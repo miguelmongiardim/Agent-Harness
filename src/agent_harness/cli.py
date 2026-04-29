@@ -640,8 +640,9 @@ def cmd_mcp_resources_read(args: argparse.Namespace) -> int:
     if args.json:
         print(json.dumps(payload, indent=2))
     else:
-        print(json.dumps(payload["content"], indent=2))
-    return 0
+        content = payload["content"] if payload["content"] is not None else payload
+        print(json.dumps(content, indent=2))
+    return 1 if payload.get("denial_status") == "denied" else 0
 
 
 def cmd_mcp_serve(args: argparse.Namespace) -> int:
