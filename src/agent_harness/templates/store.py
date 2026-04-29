@@ -9,7 +9,7 @@ from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Any
 
-from agent_harness.schemas import TemplateRegistryRecord, TemplateSpec
+from agent_harness.templates.schema import TemplateRegistryRecord, TemplateSpec
 
 _BUNDLED_TEMPLATES = resources.files("agent_harness").joinpath("bundled_templates")
 _REGISTRY_PATH = _BUNDLED_TEMPLATES.joinpath("registry.sqlite3")

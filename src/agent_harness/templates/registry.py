@@ -9,7 +9,7 @@ from typing import Any
 
 from agent_harness import __version__
 from agent_harness.config import load_config
-from agent_harness.schemas import TemplateDetail, TemplateRegistryRecord, TemplateSpec
+from agent_harness.templates.schema import TemplateDetail, TemplateRegistryRecord, TemplateSpec
 from agent_harness.templates.store import (
     bundled_template_source,
     load_template_spec,

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from agent_harness.cli import main
-from agent_harness.schemas import TemplateDetail
+from agent_harness.templates.schema import TemplateDetail
 from tests.conftest import seed_project
 
 

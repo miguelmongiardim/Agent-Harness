@@ -19,10 +19,10 @@ from agent_harness.schemas import (
     HarnessConfig,
     PolicyProfile,
     TaskSpec,
-    TemplateRegistryRecord,
 )
 from agent_harness.templates.apply import render_template, resolve_template_parameters
 from agent_harness.templates.registry import list_templates, load_template
+from agent_harness.templates.schema import TemplateRegistryRecord
 from agent_harness.utils import now_utc, write_json
 
 _BUNDLED_TEMPLATES = resources.files("agent_harness").joinpath("bundled_templates")

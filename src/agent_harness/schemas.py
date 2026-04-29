@@ -8,7 +8,17 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from agent_harness.templates import schema as _template_schema
 from agent_harness.utils import normalize_relative_path, now_utc, sha256_json
+
+TemplateApplyRecord = _template_schema.TemplateApplyRecord
+TemplateCompatibilityStatus = _template_schema.TemplateCompatibilityStatus
+TemplateDetail = _template_schema.TemplateDetail
+TemplateFile = _template_schema.TemplateFile
+TemplateProposedWrite = _template_schema.TemplateProposedWrite
+TemplateRegistryRecord = _template_schema.TemplateRegistryRecord
+TemplateSourceType = _template_schema.TemplateSourceType
+TemplateSpec = _template_schema.TemplateSpec
 
 ToolName = Literal[
     "read_file",
@@ -57,8 +67,6 @@ SecuritySeverity = Literal["critical", "high", "medium", "low", "info"]
 SecurityPolicyAction = Literal["block", "report"]
 RuntimeAdapterId = Literal["langgraph"]
 RuntimeExecutionBoundary = Literal["native_runtime_delegate"]
-TemplateSourceType = Literal["bundled_json", "bundled_pack", "local_pack"]
-TemplateCompatibilityStatus = Literal["compatible", "incompatible"]
 SkillSourceType = Literal["bundled", "local", "direct_path"]
 SkillCompatibilityStatus = Literal["compatible", "incompatible"]
 
@@ -978,18 +986,6 @@ class RunSummary(StrictModel):
     message: str = ""
 
 
-class TemplateFile(StrictModel):
-    model_config = ConfigDict(extra="forbid", strict=True, str_strip_whitespace=False)
-
-    path: str
-    content: str
-
-    @field_validator("path")
-    @classmethod
-    def validate_path(cls, value: str) -> str:
-        return normalize_relative_path(value)
-
-
 class SkillSpec(StrictModel):
     schema_version: Literal["skill.v1"]
     skill_id: str
@@ -1124,127 +1120,6 @@ class SkillManifest(StrictModel):
     context_manifest_id: str | None = None
     skills: list[SkillManifestRecord] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=now_utc)
-
-
-class TemplateSpec(StrictModel):
-    schema_version: Literal["template.v1", "template.v2"]
-    name: str
-    version: str = ""
-    title: str = ""
-    description: str
-    minimum_agent_harness_version: str | None = None
-    maximum_agent_harness_version: str | None = None
-    required_capabilities: list[str] = Field(default_factory=list)
-    parameters: dict[str, dict[str, Any]] = Field(default_factory=dict)
-    generated_schema_versions: dict[str, str] = Field(default_factory=dict)
-    provider_requirements: dict[str, Any] = Field(default_factory=dict)
-    policy_requirements: dict[str, Any] = Field(default_factory=dict)
-    retrieval_assumptions: dict[str, Any] = Field(default_factory=dict)
-    eval_or_demo_metadata: dict[str, Any] = Field(default_factory=dict)
-    recommended_skills: list[str] = Field(default_factory=list)
-    files: list[TemplateFile]
-
-    @field_validator("recommended_skills")
-    @classmethod
-    def validate_recommended_skills(cls, values: list[str]) -> list[str]:
-        return _validate_skill_id_list(values, "recommended_skills")
-
-    @model_validator(mode="after")
-    def validate_template_contract(self) -> TemplateSpec:
-        if self.schema_version == "template.v2":
-            missing = [
-                name
-                for name in (
-                    "minimum_agent_harness_version",
-                    "required_capabilities",
-                    "generated_schema_versions",
-                    "provider_requirements",
-                    "policy_requirements",
-                    "retrieval_assumptions",
-                    "eval_or_demo_metadata",
-                )
-                if _is_missing_template_metadata(getattr(self, name))
-            ]
-            if missing:
-                raise ValueError(f"template.v2 missing required metadata: {', '.join(missing)}")
-        return self
-
-
-def _is_missing_template_metadata(value: object) -> bool:
-    return value is None or value == {} or value == []
-
-
-class TemplateRegistryRecord(StrictModel):
-    schema_version: Literal["template_registry_record.v1"] = "template_registry_record.v1"
-    template_id: str
-    version: str
-    title: str
-    description: str
-    bundle_path: str
-    source_type: TemplateSourceType = "bundled_json"
-    compatibility_status: TemplateCompatibilityStatus = "compatible"
-    tags: list[str] = Field(default_factory=list)
-
-    @field_validator("bundle_path")
-    @classmethod
-    def validate_bundle_path(cls, value: str) -> str:
-        return normalize_relative_path(value)
-
-
-class TemplateDetail(StrictModel):
-    schema_version: Literal["template_detail.v1"] = "template_detail.v1"
-    template_id: str
-    version: str
-    title: str
-    description: str
-    bundle_path: str
-    source_type: TemplateSourceType = "bundled_json"
-    compatibility_status: TemplateCompatibilityStatus = "compatible"
-    tags: list[str] = Field(default_factory=list)
-    template_schema_version: Literal["template.v1", "template.v2"] = "template.v1"
-    minimum_agent_harness_version: str | None = None
-    maximum_agent_harness_version: str | None = None
-    required_capabilities: list[str] = Field(default_factory=list)
-    parameters: dict[str, dict[str, Any]] = Field(default_factory=dict)
-    generated_schema_versions: dict[str, str] = Field(default_factory=dict)
-    provider_requirements: dict[str, Any] = Field(default_factory=dict)
-    policy_requirements: dict[str, Any] = Field(default_factory=dict)
-    retrieval_assumptions: dict[str, Any] = Field(default_factory=dict)
-    eval_or_demo_metadata: dict[str, Any] = Field(default_factory=dict)
-    recommended_skills: list[str] = Field(default_factory=list)
-    files: list[TemplateFile]
-
-
-class TemplateProposedWrite(StrictModel):
-    model_config = ConfigDict(extra="forbid", strict=True, str_strip_whitespace=False)
-
-    path: str
-    before_hash: str
-    after_hash: str
-    diff: str
-    proposed_content: str
-
-    @field_validator("path")
-    @classmethod
-    def validate_path(cls, value: str) -> str:
-        return normalize_relative_path(value)
-
-
-class TemplateApplyRecord(StrictModel):
-    schema_version: Literal["template_apply.v1"] = "template_apply.v1"
-    template_id: str
-    version: str
-    title: str
-    description: str
-    destination: str
-    proposed_writes: list[TemplateProposedWrite]
-    force: bool = False
-    recommended_skills: list[str] = Field(default_factory=list)
-
-    @field_validator("destination")
-    @classmethod
-    def validate_destination(cls, value: str) -> str:
-        return normalize_relative_path(value)
 
 
 class AppliedTemplateRecord(StrictModel):

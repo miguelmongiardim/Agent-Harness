@@ -5,7 +5,7 @@ from pathlib import Path
 
 from agent_harness.cli import main
 from agent_harness.defaults import DEFAULT_POLICY
-from agent_harness.schemas import TemplateSpec
+from agent_harness.templates.schema import TemplateSpec
 from tests.conftest import seed_project
 
 

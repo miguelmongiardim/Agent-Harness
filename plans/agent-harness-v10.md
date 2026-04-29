@@ -62,10 +62,10 @@ failure. Do not move schemas in this phase.
 
 ### Acceptance criteria
 
-- [ ] The V10 PRD exists and follows the PRD template.
-- [ ] The V10 plan exists and uses vertical slices.
-- [ ] The import-boundary test fails against the current root schema module.
-- [ ] No production code is changed in the planning-only branch.
+- [x] The V10 PRD exists and follows the PRD template.
+- [x] The V10 plan exists and uses vertical slices.
+- [x] The import-boundary test fails against the current root schema module.
+- [x] No production code is changed in the planning-only branch.
 
 ### Out of scope
 
@@ -102,11 +102,11 @@ imports, and keep generated template evidence identical.
 
 ### Acceptance criteria
 
-- [ ] Template catalog tests pass.
-- [ ] Template validation and apply planning tests pass.
-- [ ] `TemplateSpec`, `TemplateDetail`, and template application records are
+- [x] Template catalog tests pass.
+- [x] Template validation and apply planning tests pass.
+- [x] `TemplateSpec`, `TemplateDetail`, and template application records are
       imported from `agent_harness.templates.schema`.
-- [ ] No template JSON manifest schema version changes.
+- [x] No template JSON manifest schema version changes.
 
 ### Out of scope
 
