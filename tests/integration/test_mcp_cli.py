@@ -289,6 +289,201 @@ def test_mcp_policy_resource_reads_summary_through_policy_service(
     assert str(tmp_path) not in json.dumps(envelope)
 
 
+def test_mcp_provider_evidence_resource_returns_redacted_metadata_only(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    workspace, run_summary = _run_provider_audit_workspace(
+        tmp_path,
+        monkeypatch,
+        capsys,
+        run_id="run-mcp-provider-evidence",
+        fixed_time="2026-04-29T14:00:00Z",
+    )
+    run_id = run_summary["run_id"]
+
+    assert main(["mcp", "resources", "list", "--json"]) == 0
+    listed = json.loads(capsys.readouterr().out)
+    resource_uris = {resource["uri"] for resource in listed["resources"]}
+
+    assert f"agent-harness://runs/{run_id}/provider-evidence" in resource_uris
+
+    assert (
+        main(
+            [
+                "mcp",
+                "resources",
+                "read",
+                f"agent-harness://runs/{run_id}/provider-evidence",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    envelope = json.loads(capsys.readouterr().out)
+    serialized = json.dumps(envelope)
+
+    assert envelope["schema_version"] == "mcp_resource_envelope.v1"
+    assert envelope["resource_type"] == "run_provider_evidence"
+    assert envelope["source_artifact"] == f".agent-harness/runs/{run_id}/provider_calls.json"
+    assert envelope["source_schema_version"] == "provider_calls.v1"
+    assert envelope["content"]["schema_version"] == "mcp_provider_evidence.v1"
+    assert envelope["content"]["run_id"] == run_id
+    assert envelope["content"]["provider"]["provider_profile_id"] == "provider-audit"
+    assert envelope["content"]["calls"]
+    first_call = envelope["content"]["calls"][0]
+    assert first_call["redacted_prompt_artifact"].startswith("provider/")
+    assert first_call["redacted_response_artifact"].startswith("provider/")
+    assert first_call["redacted_prompt_summary"]["included_records"] == 1
+    assert first_call["redacted_response_summary"]["kind"] == "tool_calls"
+    assert first_call["prompt_hash"]
+    assert first_call["response_hash"]
+    assert "raw_request" not in serialized
+    assert "raw_response" not in serialized
+    assert "text" not in serialized
+    assert "safe to include" not in serialized
+    assert "provider-audit-test-secret" not in serialized
+    assert str(workspace) not in serialized
+
+
+def test_mcp_run_evidence_resources_read_existing_artifacts(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    workspace, run_summary = _run_provider_audit_workspace(
+        tmp_path,
+        monkeypatch,
+        capsys,
+        run_id="run-mcp-evidence-resources",
+        fixed_time="2026-04-29T14:20:00Z",
+    )
+    run_id = run_summary["run_id"]
+    run_dir = workspace / ".agent-harness" / "runs" / run_id
+    security_findings = {"schema_version": "security_findings.v1", "findings": []}
+    eval_results = {"schema_version": "eval_results.v1", "results": []}
+    retrieval_scorecards = {
+        "schema_version": "operator_retrieval_scorecards.v1",
+        "scorecards": [{"schema_version": "retrieval_scorecard.v1", "status": "passed"}],
+    }
+    (run_dir / "security_findings.json").write_text(
+        json.dumps(security_findings),
+        encoding="utf-8",
+    )
+    (run_dir / "eval_results.json").write_text(json.dumps(eval_results), encoding="utf-8")
+    (run_dir / "retrieval_scorecards.json").write_text(
+        json.dumps(retrieval_scorecards),
+        encoding="utf-8",
+    )
+
+    assert main(["mcp", "resources", "list", "--json"]) == 0
+    listed = json.loads(capsys.readouterr().out)
+    resource_uris = {resource["uri"] for resource in listed["resources"]}
+
+    expected = {
+        f"agent-harness://runs/{run_id}/events",
+        f"agent-harness://runs/{run_id}/tools",
+        f"agent-harness://runs/{run_id}/approvals",
+        f"agent-harness://runs/{run_id}/security-findings",
+        f"agent-harness://runs/{run_id}/eval",
+        f"agent-harness://runs/{run_id}/retrieval-scorecard",
+    }
+    assert expected <= resource_uris
+
+    read = {}
+    for uri in sorted(expected):
+        assert main(["mcp", "resources", "read", uri, "--json"]) == 0
+        envelope = json.loads(capsys.readouterr().out)
+        read[uri.rsplit("/", 1)[-1]] = envelope
+        assert envelope["schema_version"] == "mcp_resource_envelope.v1"
+        assert envelope["denial_status"] == "allowed"
+        assert str(workspace) not in json.dumps(envelope)
+
+    assert read["events"]["resource_type"] == "run_events"
+    assert read["events"]["source_artifact"] == f".agent-harness/runs/{run_id}/events.jsonl"
+    assert read["events"]["content"]["schema_version"] == "mcp_run_events.v1"
+    assert any(
+        event["type"] == "provider_call_recorded" for event in read["events"]["content"]["events"]
+    )
+
+    assert read["tools"]["resource_type"] == "run_tools"
+    assert read["tools"]["content"]["schema_version"] == "mcp_run_tools.v1"
+    assert read["tools"]["content"]["actions"]
+
+    assert read["approvals"]["resource_type"] == "run_approvals"
+    assert read["approvals"]["content"]["schema_version"] == "mcp_run_approvals.v1"
+    assert read["approvals"]["content"]["approvals"][0]["status"] == "approved"
+
+    assert read["security-findings"]["content"] == security_findings
+    assert read["eval"]["content"] == eval_results
+    assert read["retrieval-scorecard"]["content"] == retrieval_scorecards
+
+
+def test_mcp_run_resource_missing_and_malformed_artifacts_return_safe_envelopes(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    workspace, run_summary = _run_provider_audit_workspace(
+        tmp_path,
+        monkeypatch,
+        capsys,
+        run_id="run-mcp-safe-artifact-status",
+        fixed_time="2026-04-29T14:40:00Z",
+    )
+    run_id = run_summary["run_id"]
+    run_dir = workspace / ".agent-harness" / "runs" / run_id
+    summary_path = run_dir / "summary.json"
+    artifact_index_path = run_dir / "artifact-index.json"
+    summary_before = summary_path.read_text(encoding="utf-8")
+    artifact_index_before = artifact_index_path.read_text(encoding="utf-8")
+
+    assert main(["mcp", "resources", "read", f"agent-harness://runs/{run_id}/eval", "--json"]) == 0
+    missing = json.loads(capsys.readouterr().out)
+
+    assert missing["resource_type"] == "missing_artifact"
+    assert missing["source_artifact"] == f".agent-harness/runs/{run_id}/eval_results.json"
+    assert missing["source_schema_version"] is None
+    assert missing["content"] == {
+        "schema_version": "mcp_artifact_status.v1",
+        "status": "missing",
+        "artifact_type": "run_eval_results",
+        "detail": "run artifact is missing",
+    }
+    assert str(workspace) not in json.dumps(missing)
+
+    (run_dir / "security_findings.json").write_text("{not-json", encoding="utf-8")
+
+    assert (
+        main(
+            [
+                "mcp",
+                "resources",
+                "read",
+                f"agent-harness://runs/{run_id}/security-findings",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    malformed = json.loads(capsys.readouterr().out)
+
+    assert malformed["resource_type"] == "malformed_artifact"
+    assert malformed["source_artifact"] == f".agent-harness/runs/{run_id}/security_findings.json"
+    assert malformed["source_schema_version"] is None
+    assert malformed["content"] == {
+        "schema_version": "mcp_artifact_status.v1",
+        "status": "malformed",
+        "artifact_type": "run_security_findings",
+        "detail": "run artifact is malformed",
+    }
+    assert str(workspace) not in json.dumps(malformed)
+
+    assert summary_path.read_text(encoding="utf-8") == summary_before
+    assert artifact_index_path.read_text(encoding="utf-8") == artifact_index_before
+
+
 def test_mcp_serve_reports_missing_optional_sdk(
     tmp_path: Path,
     monkeypatch,

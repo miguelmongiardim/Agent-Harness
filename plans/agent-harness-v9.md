@@ -309,16 +309,31 @@ redacted artifacts, summaries, hashes, policy decision ids, and metadata.
 
 ### Acceptance criteria
 
-- [ ] Events resource works where available.
-- [ ] Tool calls resource works where available.
-- [ ] Approval resource works where available.
-- [ ] Provider evidence resource returns redacted evidence only.
-- [ ] Security findings resource works.
-- [ ] Eval resource works where available.
-- [ ] Retrieval scorecard resource works where available.
-- [ ] Missing artifacts return safe envelopes.
-- [ ] Malformed artifacts return safe diagnostics.
-- [ ] Resource reads do not mutate run summaries or artifact indexes.
+- [x] Events resource works where available.
+- [x] Tool calls resource works where available.
+- [x] Approval resource works where available.
+- [x] Provider evidence resource returns redacted evidence only.
+- [x] Security findings resource works.
+- [x] Eval resource works where available.
+- [x] Retrieval scorecard resource works where available.
+- [x] Missing artifacts return safe envelopes.
+- [x] Malformed artifacts return safe diagnostics.
+- [x] Resource reads do not mutate run summaries or artifact indexes.
+
+### Phase 4 implementation notes
+
+- Extended run resource listing and reads for events, tool/action evidence,
+  approvals, provider evidence, security findings, eval results, and retrieval
+  scorecards.
+- Provider evidence returns bounded metadata from `provider.json`,
+  `provider_input.json` summaries, and `provider_calls.json` call audit fields;
+  raw provider requests, raw provider responses, provider input text, and API
+  key values are not exposed.
+- Missing or malformed run artifacts return `mcp_artifact_status.v1` envelopes
+  with safe project-relative artifact paths and do not mutate run summaries or
+  artifact indexes.
+- Existing append-only `mcp_access_log.v1` records now distinguish `allowed`,
+  `missing`, and `malformed` resource-read results.
 
 ### Out of scope
 

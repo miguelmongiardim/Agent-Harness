@@ -102,6 +102,62 @@ def list_mcp_resources(project_root: Path, profile: str = "default") -> dict[str
                         run_dir / "context_manifest.json",
                     )
                 )
+            if (run_dir / "provider_calls.json").exists():
+                resources.append(
+                    _resource_descriptor(
+                        root,
+                        run_dir.name,
+                        "provider-evidence",
+                        "run_provider_evidence",
+                        run_dir / "provider_calls.json",
+                    )
+                )
+            if (run_dir / "events.jsonl").exists():
+                resources.append(
+                    _resource_descriptor(
+                        root,
+                        run_dir.name,
+                        "events",
+                        "run_events",
+                        run_dir / "events.jsonl",
+                    )
+                )
+            if any((run_dir / "actions").glob("*.json")):
+                resources.append(
+                    _resource_descriptor(
+                        root,
+                        run_dir.name,
+                        "tools",
+                        "run_tools",
+                        run_dir / "actions",
+                    )
+                )
+            if any((run_dir / "approvals").glob("*.json")):
+                resources.append(
+                    _resource_descriptor(
+                        root,
+                        run_dir.name,
+                        "approvals",
+                        "run_approvals",
+                        run_dir / "approvals",
+                    )
+                )
+            for resource_name, resource_type, relative in (
+                ("security-findings", "run_security_findings", "security_findings.json"),
+                ("eval", "run_eval_results", "eval_results.json"),
+                ("retrieval-scorecard", "run_retrieval_scorecard", "retrieval_scorecards.json"),
+            ):
+                artifact_path = run_dir / relative
+                if artifact_path.exists():
+                    resources.append(
+                        _resource_descriptor(
+                            root,
+                            run_dir.name,
+                            resource_name,
+                            resource_type,
+                            artifact_path,
+                        )
+                    )
     return {
         "schema_version": "mcp_resource_list.v1",
         "profile": profile,
@@ -264,6 +320,84 @@ def read_mcp_resource(project_root: Path, uri: str, profile: str = "default") ->
     elif resource_name == "context":
         relative = "context_manifest.json"
         resource_type = "run_context"
+    elif resource_name == "provider-evidence":
+        envelope = _provider_evidence_envelope(root, artifact_root, store, uri, profile)
+        _append_access_log(
+            artifact_root,
+            uri=uri,
+            profile=profile,
+            result=_access_result(envelope),
+            run_id=run_id,
+            artifact_type="run_provider_evidence",
+        )
+        return envelope
+    elif resource_name == "events":
+        envelope = _events_envelope(root, store, uri, profile)
+        _append_access_log(
+            artifact_root,
+            uri=uri,
+            profile=profile,
+            result=_access_result(envelope),
+            run_id=run_id,
+            artifact_type="run_events",
+        )
+        return envelope
+    elif resource_name == "tools":
+        envelope = _directory_json_envelope(
+            root,
+            store,
+            uri,
+            profile,
+            directory="actions",
+            resource_type="run_tools",
+            content_schema="mcp_run_tools.v1",
+            content_key="actions",
+        )
+        _append_access_log(
+            artifact_root,
+            uri=uri,
+            profile=profile,
+            result=_access_result(envelope),
+            run_id=run_id,
+            artifact_type="run_tools",
+        )
+        return envelope
+    elif resource_name == "approvals":
+        envelope = _directory_json_envelope(
+            root,
+            store,
+            uri,
+            profile,
+            directory="approvals",
+            resource_type="run_approvals",
+            content_schema="mcp_run_approvals.v1",
+            content_key="approvals",
+        )
+        _append_access_log(
+            artifact_root,
+            uri=uri,
+            profile=profile,
+            result=_access_result(envelope),
+            run_id=run_id,
+            artifact_type="run_approvals",
+        )
+        return envelope
+    elif resource_name in {"security-findings", "eval", "retrieval-scorecard"}:
+        relative, resource_type = {
+            "security-findings": ("security_findings.json", "run_security_findings"),
+            "eval": ("eval_results.json", "run_eval_results"),
+            "retrieval-scorecard": ("retrieval_scorecards.json", "run_retrieval_scorecard"),
+        }[resource_name]
+        envelope = _json_artifact_envelope(root, store, uri, profile, relative, resource_type)
+        _append_access_log(
+            artifact_root,
+            uri=uri,
+            profile=profile,
+            result=_access_result(envelope),
+            run_id=run_id,
+            artifact_type=resource_type,
+        )
+        return envelope
     else:
         raise ValueError(f"unsupported MCP run resource: {resource_name}")
     content = store.read_data(relative)
@@ -336,7 +470,17 @@ def _parse_resource_uri(uri: str) -> dict[str, str]:
     run_id, resource_name = parts
     if RUN_ID_PATTERN.fullmatch(run_id) is None:
         raise ValueError("unsafe_run_id")
-    if resource_name not in {"summary", "context"}:
+    if resource_name not in {
+        "summary",
+        "context",
+        "provider-evidence",
+        "events",
+        "tools",
+        "approvals",
+        "security-findings",
+        "eval",
+        "retrieval-scorecard",
+    }:
         raise ValueError("unknown_resource")
     return {"kind": "run_resource", "run_id": run_id, "resource_name": resource_name}
 
@@ -389,6 +533,330 @@ def _policy_summary(policy: Any) -> dict[str, Any]:
         "provider_input_policy": dict(policy.provider_input_policy),
         "hard_deny_sensitivities": list(policy.hard_deny_sensitivities),
     }
+
+
+def _provider_evidence_envelope(
+    project_root: Path,
+    artifact_root: Path,
+    store: RunStore,
+    uri: str,
+    profile: str,
+) -> dict[str, Any]:
+    try:
+        provider_calls = store.read_data("provider_calls.json")
+    except FileNotFoundError:
+        return _artifact_status_envelope(
+            project_root,
+            store,
+            uri,
+            profile,
+            relative="provider_calls.json",
+            artifact_type="run_provider_evidence",
+            status="missing",
+        )
+    except (json.JSONDecodeError, ValueError):
+        return _artifact_status_envelope(
+            project_root,
+            store,
+            uri,
+            profile,
+            relative="provider_calls.json",
+            artifact_type="run_provider_evidence",
+            status="malformed",
+        )
+    try:
+        provider = _read_optional_data(store, "provider.json")
+    except (json.JSONDecodeError, ValueError):
+        return _artifact_status_envelope(
+            project_root,
+            store,
+            uri,
+            profile,
+            relative="provider.json",
+            artifact_type="run_provider_evidence",
+            status="malformed",
+        )
+    try:
+        provider_input = _read_optional_data(store, "provider_input.json")
+    except (json.JSONDecodeError, ValueError):
+        return _artifact_status_envelope(
+            project_root,
+            store,
+            uri,
+            profile,
+            relative="provider_input.json",
+            artifact_type="run_provider_evidence",
+            status="malformed",
+        )
+    content = {
+        "schema_version": "mcp_provider_evidence.v1",
+        "run_id": store.run_id,
+        "provider": provider,
+        "provider_input": _provider_input_summary(provider_input),
+        "calls": [_provider_call_summary(call) for call in provider_calls.get("calls", [])],
+        "call_count": len(provider_calls.get("calls", [])),
+    }
+    return _allowed_envelope(
+        uri,
+        profile,
+        resource_type="run_provider_evidence",
+        source_artifact=_safe_project_relative(
+            project_root,
+            artifact_root / "runs" / store.run_id / "provider_calls.json",
+        ),
+        source_schema_version=provider_calls.get("schema_version"),
+        content=content,
+        metadata={"run_id": store.run_id},
+    )
+
+
+def _events_envelope(
+    project_root: Path,
+    store: RunStore,
+    uri: str,
+    profile: str,
+) -> dict[str, Any]:
+    if not store.events_path.exists():
+        return _artifact_status_envelope(
+            project_root,
+            store,
+            uri,
+            profile,
+            relative="events.jsonl",
+            artifact_type="run_events",
+            status="missing",
+        )
+    try:
+        events = store.events()
+    except json.JSONDecodeError:
+        return _artifact_status_envelope(
+            project_root,
+            store,
+            uri,
+            profile,
+            relative="events.jsonl",
+            artifact_type="run_events",
+            status="malformed",
+        )
+    return _allowed_envelope(
+        uri,
+        profile,
+        resource_type="run_events",
+        source_artifact=_safe_project_relative(project_root, store.events_path),
+        source_schema_version="run_event.v1",
+        content={
+            "schema_version": "mcp_run_events.v1",
+            "run_id": store.run_id,
+            "events": events,
+            "count": len(events),
+        },
+        metadata={"run_id": store.run_id},
+    )
+
+
+def _directory_json_envelope(
+    project_root: Path,
+    store: RunStore,
+    uri: str,
+    profile: str,
+    *,
+    directory: str,
+    resource_type: str,
+    content_schema: str,
+    content_key: str,
+) -> dict[str, Any]:
+    directory_path = store.run_dir / directory
+    if not directory_path.exists():
+        return _artifact_status_envelope(
+            project_root,
+            store,
+            uri,
+            profile,
+            relative=directory,
+            artifact_type=resource_type,
+            status="missing",
+        )
+    try:
+        items = [
+            store.read_data(f"{directory}/{path.name}")
+            for path in sorted(directory_path.glob("*.json"))
+        ]
+    except (json.JSONDecodeError, ValueError):
+        return _artifact_status_envelope(
+            project_root,
+            store,
+            uri,
+            profile,
+            relative=directory,
+            artifact_type=resource_type,
+            status="malformed",
+        )
+    return _allowed_envelope(
+        uri,
+        profile,
+        resource_type=resource_type,
+        source_artifact=_safe_project_relative(project_root, directory_path),
+        source_schema_version=None,
+        content={
+            "schema_version": content_schema,
+            "run_id": store.run_id,
+            content_key: items,
+            "count": len(items),
+        },
+        metadata={"run_id": store.run_id},
+    )
+
+
+def _json_artifact_envelope(
+    project_root: Path,
+    store: RunStore,
+    uri: str,
+    profile: str,
+    relative: str,
+    resource_type: str,
+) -> dict[str, Any]:
+    try:
+        content = store.read_data(relative)
+    except FileNotFoundError:
+        return _artifact_status_envelope(
+            project_root,
+            store,
+            uri,
+            profile,
+            relative=relative,
+            artifact_type=resource_type,
+            status="missing",
+        )
+    except (json.JSONDecodeError, ValueError):
+        return _artifact_status_envelope(
+            project_root,
+            store,
+            uri,
+            profile,
+            relative=relative,
+            artifact_type=resource_type,
+            status="malformed",
+        )
+    return _allowed_envelope(
+        uri,
+        profile,
+        resource_type=resource_type,
+        source_artifact=_safe_project_relative(project_root, store.run_dir / relative),
+        source_schema_version=content.get("schema_version"),
+        content=content,
+        metadata={"run_id": store.run_id},
+    )
+
+
+def _artifact_status_envelope(
+    project_root: Path,
+    store: RunStore,
+    uri: str,
+    profile: str,
+    *,
+    relative: str,
+    artifact_type: str,
+    status: str,
+) -> dict[str, Any]:
+    detail = f"run artifact is {status}"
+    return _allowed_envelope(
+        uri,
+        profile,
+        resource_type=f"{status}_artifact",
+        source_artifact=_safe_project_relative(project_root, store.run_dir / relative),
+        source_schema_version=None,
+        content={
+            "schema_version": "mcp_artifact_status.v1",
+            "status": status,
+            "artifact_type": artifact_type,
+            "detail": detail,
+        },
+        metadata={"run_id": store.run_id},
+    )
+
+
+def _access_result(envelope: dict[str, Any]) -> str:
+    content = envelope.get("content")
+    if isinstance(content, dict) and content.get("schema_version") == "mcp_artifact_status.v1":
+        status = content.get("status")
+        if isinstance(status, str):
+            return status
+    return "allowed"
+
+
+def _provider_call_summary(call: object) -> dict[str, Any]:
+    if not isinstance(call, dict):
+        return {"schema_version": "mcp_provider_call_summary.v1", "malformed": True}
+    allowed_fields = {
+        "audit_id",
+        "run_id",
+        "task_id",
+        "provider_profile_id",
+        "transport",
+        "trust_zone",
+        "model",
+        "endpoint_identity",
+        "network",
+        "phase",
+        "mode",
+        "fixture_id",
+        "approval_ids",
+        "action_count",
+        "actions_hash",
+        "provider_input_hash",
+        "action_envelope_hash",
+        "checkpoint_hash",
+        "prompt_hash",
+        "response_hash",
+        "redacted_prompt_artifact",
+        "redacted_response_artifact",
+        "redacted_prompt_summary",
+        "redacted_response_summary",
+        "latency_ms",
+        "token_metrics",
+        "policy_decision_ids",
+        "created_at",
+    }
+    summary = {
+        key: value
+        for key, value in call.items()
+        if key in allowed_fields and key not in {"raw_request", "raw_response"}
+    }
+    summary["schema_version"] = "mcp_provider_call_summary.v1"
+    return summary
+
+
+def _provider_input_summary(provider_input: dict[str, Any] | None) -> dict[str, Any] | None:
+    if provider_input is None:
+        return None
+    raw_records = provider_input.get("records", [])
+    records = raw_records if isinstance(raw_records, list) else []
+    included_records = [
+        record for record in records if isinstance(record, dict) and record.get("included")
+    ]
+    policy_decision_ids = sorted(
+        {
+            record["policy_decision_id"]
+            for record in records
+            if isinstance(record, dict) and isinstance(record.get("policy_decision_id"), str)
+        }
+    )
+    return {
+        "schema_version": "mcp_provider_input_summary.v1",
+        "run_id": provider_input.get("run_id"),
+        "task_id": provider_input.get("task_id"),
+        "provider_profile_id": provider_input.get("provider_profile_id"),
+        "trust_zone": provider_input.get("trust_zone"),
+        "record_count": len(records),
+        "included_count": len(included_records),
+        "policy_decision_ids": policy_decision_ids,
+    }
+
+
+def _read_optional_data(store: RunStore, relative: str) -> dict[str, Any] | None:
+    if not (store.run_dir / relative).exists():
+        return None
+    return store.read_data(relative)
 
 
 def _denial_envelope(uri: str, profile: str, reason: str) -> dict[str, Any]:
