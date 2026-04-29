@@ -1,7 +1,7 @@
 # MCP Boundary
 
-This document defines the V9 MCP Boundary target for `v1.6.0` and the
-implemented local read-only MCP behavior as the V9 phases land.
+This document defines the V9 MCP Boundary release for `v1.6.0` and the
+implemented local read-only MCP behavior.
 
 ## Implemented in V9
 

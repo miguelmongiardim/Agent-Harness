@@ -118,21 +118,23 @@ services, enterprise skill registries, organization-wide skill governance,
 centralized skill governance, skill installation from network locations, and
 automatic execution from skills remain future-only and are not V8 behavior.
 
-## v1.6.0 Target
+## v1.6.0 Status
 
-v1.6.0 is planned as the V9 MCP Boundary release:
+v1.6.0 is the V9 MCP Boundary release:
 [docs/mcp-boundary.md](mcp-boundary.md),
 [docs/prd-agent-harness-v9.md](prd-agent-harness-v9.md), and
-[plans/agent-harness-v9.md](../plans/agent-harness-v9.md). The target is a
-local, optional, read-only MCP boundary under `agent_harness.mcp` for exposing
-selected Agent Harness evidence through MCP resources and review prompts.
+[plans/agent-harness-v9.md](../plans/agent-harness-v9.md). The implemented
+track adds a local, optional, read-only MCP boundary under `agent_harness.mcp`
+for exposing selected Agent Harness evidence through MCP resources and review
+prompts.
 
 V9 is not a runtime adapter. The existing `agent_harness.runtimes.mcp_adapter`
-can remain unsupported while V9 proves resources, prompts, stdio transport,
-policy-filtered artifacts, and MCP access evidence. MCP tools,
-write-capable MCP, MCP approval actions, MCP run execution, MCP provider
-execution, Streamable HTTP MCP, hosted MCP service, remote MCP gateways,
-enterprise MCP registries, and multi-agent orchestration remain future-only.
+remains unsupported while V9 proves resources, prompts, stdio transport,
+policy-filtered artifacts, release-readiness gates, and MCP access evidence.
+MCP tools, write-capable MCP, MCP approval actions, MCP run execution, MCP
+provider execution, Streamable HTTP MCP, hosted MCP service, remote MCP
+gateways, enterprise MCP registries, and multi-agent orchestration remain
+future-only.
 
 ## Release Maintenance Priorities
 

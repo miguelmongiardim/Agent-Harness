@@ -9,7 +9,7 @@ The command defaults to `[project].version` from `pyproject.toml`. Release
 managers can still bind the report to an explicit version and CI run:
 
 ```powershell
-agent-harness release readiness --version 1.5.0 --ci-run-id <run-id>
+agent-harness release readiness --version 1.6.0 --ci-run-id <run-id>
 ```
 
 When GitHub CLI is authenticated, the command attempts to discover the latest
@@ -198,7 +198,7 @@ Before tagging the current release:
 14. Run `uv sync --extra mcp`.
 15. Run the MCP boundary golden path in `examples/mcp_boundary/`.
 16. Run `agent-harness eval`.
-17. Run `agent-harness release readiness --version 1.5.0`.
+17. Run `agent-harness release readiness --version 1.6.0`.
 18. Confirm CI passes for the release commit.
 
 ## Tag Process
@@ -207,9 +207,9 @@ Create the release tag only after the release commit is pushed and required CI
 has passed for that exact commit:
 
 ```powershell
-git tag -a v1.5.0 -m "v1.5.0"
-git push origin v1.5.0
-agent-harness release readiness --version 1.5.0 --ci-run-id <run-id>
+git tag -a v1.6.0 -m "v1.6.0"
+git push origin v1.6.0
+agent-harness release readiness --version 1.6.0 --ci-run-id <run-id>
 ```
 
 The readiness report binds the tag target commit to the recorded GitHub Actions
@@ -222,12 +222,12 @@ different commit.
 hashes in `.agent-harness/release/package-check.json` and supporting evidence
 files under `.agent-harness/release/evidence/`. Reviewers should verify that:
 
-- `dist/agent_harness-1.5.0-*.whl` exists.
-- `dist/agent_harness-1.5.0.tar.gz` exists.
+- `dist/agent_harness-1.6.0-*.whl` exists.
+- `dist/agent_harness-1.6.0.tar.gz` exists.
 - package-check evidence reports `status: passed`.
 - clean-install evidence reports `status: passed`.
 - console-script evidence reports `status: passed`.
-- the final readiness report is generated for `version: 1.5.0`.
+- the final readiness report is generated for `version: 1.6.0`.
 
 ## Roadmap
 

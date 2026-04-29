@@ -6,6 +6,22 @@ All notable changes to this project will be documented in this file.
 
 - No changes yet.
 
+## [1.6.0] - 2026-04-29
+
+V9 MCP Boundary release.
+
+- Added a local, optional, read-only MCP boundary under `agent_harness.mcp`
+  exposing policy-filtered resources and deterministic review prompts.
+- Added SDK-independent MCP CLI inspection for resources and prompts, with
+  safe denial envelopes and metadata-only `mcp_access_log.v1` evidence.
+- Added an optional stdio MCP server backed by the existing resource and prompt
+  registries, advertising resources and prompts only with no tools capability.
+- Added `examples/mcp_boundary/` as the V9 golden path with expected resource,
+  prompt, and denied-resource examples.
+- Expanded release readiness and CI to verify the MCP extra, CLI behavior,
+  denied resources, access evidence, and stdio resources/prompts-only protocol
+  behavior.
+
 ## [1.5.0] - 2026-04-28
 
 V8 Skills System release.
