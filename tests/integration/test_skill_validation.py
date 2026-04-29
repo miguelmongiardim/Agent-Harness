@@ -307,7 +307,7 @@ def test_skill_show_reports_metadata_hash_and_body_summary(capsys) -> None:  # t
     assert detail["validation_status"] == "passed"
     assert detail["diagnostics"] == []
     assert re.fullmatch(r"[a-f0-9]{64}", detail["skill_hash"])
-    assert "requirements to vertical" in detail["body_summary"]
+    assert "non-trivial system" in detail["body_summary"]
     assert detail["related_skills"] == ["write-a-prd", "prd-to-plan", "tdd"]
 
 
@@ -320,8 +320,8 @@ def test_skill_render_outputs_metadata_header_and_markdown_body(capsys) -> None:
     assert "version: 1.0.0" in rendered
     assert "source: bundled_skills/prd-plan-tdd-workflow/SKILL.md" in rendered
     assert "skill_hash: " in rendered
-    assert "# PRD Plan TDD Workflow" in rendered
-    assert "move from requirements to vertical" in rendered
+    assert "# PRD -> Plan -> TDD Workflow" in rendered
+    assert "vertical tracer-bullet phases" in rendered
 
 
 def test_skill_pack_validate_reports_all_skills_without_mutation(
