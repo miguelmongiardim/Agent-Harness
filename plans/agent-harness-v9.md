@@ -71,16 +71,26 @@ scope and guarded future language.
 
 ### Acceptance criteria
 
-- [ ] `docs/prd-agent-harness-v9.md` exists and follows the PRD template.
-- [ ] `plans/agent-harness-v9.md` exists and uses vertical slices.
-- [ ] `docs/mcp-boundary.md` explains the V9 boundary.
-- [ ] README and roadmap link to the V9 docs without claiming current MCP
+- [x] `docs/prd-agent-harness-v9.md` exists and follows the PRD template.
+- [x] `plans/agent-harness-v9.md` exists and uses vertical slices.
+- [x] `docs/mcp-boundary.md` explains the V9 boundary.
+- [x] README and roadmap link to the V9 docs without claiming current MCP
       support.
-- [ ] Architecture docs identify `agent_harness.mcp` as the planned boundary
+- [x] Architecture docs identify `agent_harness.mcp` as the planned boundary
       and keep `runtimes.mcp_adapter` out of V9.
-- [ ] Security docs state the planned V9 read-only MCP boundary and exclusions.
-- [ ] Release-readiness docs name planned MCP gates.
-- [ ] Docs check passes.
+- [x] Security docs state the planned V9 read-only MCP boundary and exclusions.
+- [x] Release-readiness docs name planned MCP gates.
+- [x] Docs check passes.
+
+### Phase 0 implementation notes
+
+- Added docs-check coverage for unsupported V9 MCP implemented-scope claims via
+  `unsupported_mcp_scope_claim`.
+- Guarded MCP tools, write-capable MCP, HTTP/Streamable HTTP MCP, hosted MCP,
+  and MCP runtime adapter behavior outside roadmap, out-of-scope,
+  not-implemented, and future sections.
+- Verified current docs still pass `agent-harness docs check` with zero
+  findings.
 
 ### Out of scope
 

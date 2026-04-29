@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from agent_harness.cli import main
 from tests.conftest import seed_project
 
@@ -279,6 +281,59 @@ def test_docs_check_rejects_remote_skill_claims_outside_roadmap(
     assert skill_claims[0]["path"] == "docs/skills.md"
     assert skill_claims[0]["line"] == 5
     assert "remote skill catalog" in skill_claims[0]["text"]
+
+
+@pytest.mark.parametrize(
+    ("claim", "label"),
+    [
+        ("Agent Harness provides MCP tools.", "MCP tools"),
+        ("Agent Harness supports write-capable MCP.", "write-capable MCP"),
+        ("Agent Harness offers HTTP MCP.", "HTTP MCP"),
+        ("Agent Harness includes a hosted MCP service.", "hosted MCP"),
+        ("Agent Harness provides MCP runtime adapter behavior.", "MCP runtime adapter behavior"),
+    ],
+)
+def test_docs_check_rejects_mcp_scope_claims_outside_roadmap(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+    claim: str,
+    label: str,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    docs = tmp_path / "docs"
+    docs.mkdir(exist_ok=True)
+    (docs / "mcp.md").write_text(
+        "\n".join(
+            [
+                "# MCP",
+                "",
+                "## Current Capabilities",
+                "",
+                claim,
+                "",
+                "## Roadmap / Not implemented yet",
+                "",
+                f"{label} remains future-only.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["docs", "check"]) == 1
+    report = json.loads(capsys.readouterr().out)
+    mcp_claims = [
+        finding
+        for finding in report["findings"]
+        if finding["rule_id"] == "unsupported_mcp_scope_claim"
+    ]
+
+    assert mcp_claims
+    assert mcp_claims[0]["path"] == "docs/mcp.md"
+    assert mcp_claims[0]["line"] == 5
+    assert label in mcp_claims[0]["text"]
 
 
 def test_ci_runs_docs_check() -> None:

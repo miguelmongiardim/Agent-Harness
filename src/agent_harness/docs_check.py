@@ -20,6 +20,9 @@ TEMPLATE_PACK_DOC_SUBJECT_PATTERN = (
 SKILL_DOC_SUBJECT_PATTERN = (
     r"(?:Agent Harness|This repo|The current implementation|V8|The V8 implementation)"
 )
+MCP_DOC_SUBJECT_PATTERN = (
+    r"(?:Agent Harness|This repo|The current implementation|V9|The V9 implementation)"
+)
 
 
 def _unsupported_doc_pattern(claim: str, *, uses_is: bool = False) -> re.Pattern[str]:
@@ -297,6 +300,48 @@ UNSUPPORTED_SKILL_SCOPE_CLAIMS = [
         ),
     ),
 ]
+UNSUPPORTED_MCP_SCOPE_CLAIMS = [
+    (
+        "MCP tools",
+        re.compile(
+            rf"\b{MCP_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bMCP tools?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "write-capable MCP",
+        re.compile(
+            rf"\b{MCP_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bwrite-capable MCP\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "HTTP MCP",
+        re.compile(
+            rf"\b{MCP_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\b(?:HTTP MCP|Streamable HTTP MCP|MCP HTTP)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "hosted MCP",
+        re.compile(
+            rf"\b{MCP_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bhosted MCP(?: service)?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "MCP runtime adapter behavior",
+        re.compile(
+            rf"\b{MCP_DOC_SUBJECT_PATTERN}\s+{DOC_CAPABILITY_VERB_PATTERN}"
+            r"\b.*\bMCP runtime adapter(?: behavior)?\b",
+            re.IGNORECASE,
+        ),
+    ),
+]
 RETRIEVAL_ROADMAP_HEADINGS = (
     "roadmap",
     "out of scope",
@@ -308,6 +353,7 @@ RETRIEVAL_ROADMAP_HEADINGS = (
 OPERATOR_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 TEMPLATE_PACK_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 SKILL_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
+MCP_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 
 IMPLEMENTED_SECTION_MARKERS = (
     "## What This Repo Proves",
@@ -365,6 +411,7 @@ def run_docs_check(project_root: Path) -> dict[str, Any]:
         findings.extend(_unsupported_operator_scope_findings(relative, lines))
         findings.extend(_unsupported_template_pack_scope_findings(relative, lines))
         findings.extend(_unsupported_skill_scope_findings(relative, lines))
+        findings.extend(_unsupported_mcp_scope_findings(relative, lines))
         findings.extend(_required_section_findings(relative, text))
         findings.extend(_internal_link_findings(project_root, path, relative, lines))
         findings.extend(_citation_placeholder_findings(relative, lines))
@@ -626,6 +673,43 @@ def _denies_unsupported_skill_scope(line: str, label: str) -> bool:
         re.search(
             rf"\b(?:without|no|not)\s+{phrase}\b"
             rf"|\bdoes\s+not\s+(?:use|support|provide|include|ship|offer)\s+{phrase}\b",
+            line,
+            re.IGNORECASE,
+        )
+    )
+
+
+def _unsupported_mcp_scope_findings(relative: str, lines: list[str]) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    in_roadmap_scope = False
+    for line_number, line in enumerate(lines, start=1):
+        heading = re.match(r"^#{1,6}\s+(.+?)\s*$", line)
+        if heading is not None:
+            heading_text = heading.group(1).lower()
+            in_roadmap_scope = any(marker in heading_text for marker in MCP_ROADMAP_HEADINGS)
+        if in_roadmap_scope:
+            continue
+        for label, pattern in UNSUPPORTED_MCP_SCOPE_CLAIMS:
+            if pattern.search(line) and not _denies_unsupported_mcp_scope(line, label):
+                findings.append(
+                    _finding(
+                        "unsupported_mcp_scope_claim",
+                        relative,
+                        line_number,
+                        f"Docs claim unsupported V9 MCP behavior as available: {label}",
+                        line,
+                    )
+                )
+    return findings
+
+
+def _denies_unsupported_mcp_scope(line: str, label: str) -> bool:
+    phrase = re.escape(label).replace(r"\ ", r"\s+")
+    return bool(
+        re.search(
+            rf"\b(?:without|no|not)\s+{phrase}\b"
+            rf"|\bdoes\s+not\s+(?:use|support|provide|include|ship|offer)\s+{phrase}\b"
+            rf"|\b{phrase}\s+remain(?:s)?\s+future-only\b",
             line,
             re.IGNORECASE,
         )
