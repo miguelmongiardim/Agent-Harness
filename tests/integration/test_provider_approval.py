@@ -6,7 +6,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from agent_harness.defaults import DEFAULT_POLICY
+
+pytestmark = pytest.mark.slow
 
 
 def _seed_project_with_default_provider(root: Path) -> None:

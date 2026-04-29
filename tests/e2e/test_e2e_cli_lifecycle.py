@@ -3,8 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from agent_harness.cli import main
 from tests.conftest import seed_project
+
+pytestmark = [pytest.mark.slow, pytest.mark.golden_path]
 
 
 def test_cli_run_approve_inspect_and_export_completes_full_lifecycle(

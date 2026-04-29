@@ -13,6 +13,8 @@ from agent_harness.cli import main
 from agent_harness.defaults import DEFAULT_POLICY
 from tests.conftest import seed_project
 
+pytestmark = [pytest.mark.slow, pytest.mark.release_gate]
+
 
 def test_release_readiness_report_requires_docs_checks_ci_advisories_and_changelog(
     capsys: pytest.CaptureFixture[str],

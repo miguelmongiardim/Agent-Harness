@@ -74,9 +74,13 @@ strict = true
 packages = ["agent_harness"]
 
 [tool.pytest.ini_options]
+addopts = "-m 'not slow'"
 pythonpath = [".", "src"]
 testpaths = ["tests"]
 markers = [
   "live_provider: opt-in live provider smoke tests; require AGENT_HARNESS_RUN_LIVE_PROVIDER_TESTS=1 and explicit pytest -m live_provider",
   "retrieval_optional: opt-in retrieval tests requiring agent-harness[retrieval] optional dependencies such as fastembed and qdrant-client",
+  "slow: excluded from the default pytest profile; run explicitly with pytest -m slow",
+  "release_gate: release-readiness, package, demo, or CI evidence tests for release validation",
+  "golden_path: end-to-end workflow examples and demo walkthroughs",
 ]

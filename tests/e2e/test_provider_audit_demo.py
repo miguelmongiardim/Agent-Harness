@@ -7,6 +7,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
+pytestmark = [pytest.mark.slow, pytest.mark.golden_path]
+
 
 def test_provider_audit_demo_command_returns_inspectable_run_id() -> None:
     repo_root = Path(__file__).resolve().parents[2]

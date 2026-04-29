@@ -3,8 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from agent_harness.runtimes.native import HarnessRuntime, approve_action
 from tests.conftest import seed_project
+
+pytestmark = [pytest.mark.slow, pytest.mark.golden_path]
 
 
 def test_approve_action_completes_paused_run_and_updates_audit_artifacts(

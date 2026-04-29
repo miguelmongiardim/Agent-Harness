@@ -21,6 +21,8 @@ from agent_harness.schemas import (
     ToolObservation,
 )
 
+pytestmark = pytest.mark.slow
+
 
 def _seed_project_with_recorded_openai_provider(root: Path) -> None:
     config = {

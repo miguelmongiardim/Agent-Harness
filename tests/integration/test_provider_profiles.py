@@ -11,6 +11,8 @@ import pytest
 
 from agent_harness.defaults import DEFAULT_POLICY
 
+pytestmark = pytest.mark.slow
+
 
 def _seed_project_with_provider_profiles(root: Path) -> None:
     config = {

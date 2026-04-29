@@ -183,23 +183,25 @@ Before tagging the current release:
 
 1. Run `uv sync --extra dev`.
 2. Run `python -m pre_commit run --all-files`.
-3. Run `python -m pytest -q`.
-4. Run `agent-harness release package-check`.
-5. Run `agent-harness demo provider-audit`.
-6. Run `agent-harness run examples/tasks/python_refactor.json --dry-run`.
-7. Run `agent-harness template validate --all`.
-8. Run the template-pack golden path in `examples/template_pack_system/`.
-9. Run the local retrieval index build and scorecard commands above.
-10. Run `uv sync --extra operator`.
-11. Run `uv run agent-harness demo provider-audit`.
-12. Run `uv run agent-harness serve --host 127.0.0.1 --port 8765` and verify
+3. Run `python -m pytest -q` for the fast default profile.
+4. Run `python -m pytest -q -m slow` for slow provider, retrieval,
+   release-evidence, and golden-path tests.
+5. Run `agent-harness release package-check`.
+6. Run `agent-harness demo provider-audit`.
+7. Run `agent-harness run examples/tasks/python_refactor.json --dry-run`.
+8. Run `agent-harness template validate --all`.
+9. Run the template-pack golden path in `examples/template_pack_system/`.
+10. Run the local retrieval index build and scorecard commands above.
+11. Run `uv sync --extra operator`.
+12. Run `uv run agent-harness demo provider-audit`.
+13. Run `uv run agent-harness serve --host 127.0.0.1 --port 8765` and verify
     the local UI with the generated token.
-13. Run the skills workflow golden path in `examples/skills_workflow/`.
-14. Run `uv sync --extra mcp`.
-15. Run the MCP boundary golden path in `examples/mcp_boundary/`.
-16. Run `agent-harness eval`.
-17. Run `agent-harness release readiness --version 1.6.0`.
-18. Confirm CI passes for the release commit.
+14. Run the skills workflow golden path in `examples/skills_workflow/`.
+15. Run `uv sync --extra mcp`.
+16. Run the MCP boundary golden path in `examples/mcp_boundary/`.
+17. Run `agent-harness eval`.
+18. Run `agent-harness release readiness --version 1.6.0`.
+19. Confirm CI passes for the release commit.
 
 ## Tag Process
 

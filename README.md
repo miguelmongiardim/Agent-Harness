@@ -53,9 +53,14 @@ Run the local checks with:
 ```powershell
 uv run python -m pre_commit run --all-files
 uv run pytest
+uv run pytest -m slow
 uv run agent-harness eval
 uv run agent-harness release readiness
 ```
+
+`uv run pytest` uses the fast default profile and skips tests marked `slow`.
+Run `uv run pytest -m slow` before release work or when changing provider,
+retrieval, release-evidence, or end-to-end demo behavior.
 
 The local pre-commit config runs Ruff lint/format checks, mypy, docs check,
 compileall, a large file guard, and a private key guard.

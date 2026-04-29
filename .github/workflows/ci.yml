@@ -87,7 +87,9 @@ jobs:
       - name: Eval scorecard
         run: python -m agent_harness eval
       - name: Operator and MCP release gates
-        run: python -m pytest tests/integration/test_operator_cli.py tests/integration/test_operator_api.py tests/integration/test_operator_ui.py tests/integration/test_mcp_protocol.py tests/integration/test_release_evidence.py -q
+        run: python -m pytest tests/integration/test_operator_cli.py tests/integration/test_operator_api.py tests/integration/test_operator_ui.py tests/integration/test_mcp_protocol.py -q
+      - name: Slow release evidence tests
+        run: python -m pytest tests/integration/test_release_evidence.py -q -m "slow and release_gate"
       - name: Release readiness report
         run: python -m agent_harness release readiness --ci-run-id ${{ github.run_id }}
       - name: Upload release evidence

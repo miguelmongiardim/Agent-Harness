@@ -15,6 +15,8 @@ from agent_harness.cli import main
 from agent_harness.context.qdrant_local import optional_qdrant_local_dependencies_available
 from agent_harness.defaults import DEFAULT_POLICY
 
+pytestmark = pytest.mark.slow
+
 
 @pytest.mark.parametrize(
     "endpoint",

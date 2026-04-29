@@ -4,7 +4,11 @@ import json
 import shutil
 from pathlib import Path
 
+import pytest
+
 from agent_harness.cli import main
+
+pytestmark = pytest.mark.slow
 
 
 def test_release_readiness_reports_retrieval_demo_and_rejects_remote_defaults(

@@ -10,7 +10,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from agent_harness.cli import main
+
+pytestmark = [pytest.mark.slow, pytest.mark.golden_path]
 
 
 def test_retrieval_quality_demo_golden_path_runs_with_local_qdrant_fixture(
