@@ -15,9 +15,7 @@ from pydantic import ValidationError
 from agent_harness import __version__
 from agent_harness.config import load_config
 from agent_harness.core.runtime import approve_action
-from agent_harness.policy import PolicyError, load_policy
-from agent_harness.schemas import (
-    ApprovalRecord,
+from agent_harness.operator.schema import (
     OperatorApprovalDecisionRequest,
     OperatorApprovalDecisionResponse,
     OperatorApprovalListResponse,
@@ -28,7 +26,9 @@ from agent_harness.schemas import (
     OperatorRunDetailResponse,
     OperatorRunListResponse,
 )
+from agent_harness.policy import PolicyError, load_policy
 from agent_harness.storage import RunStore
+from agent_harness.storage.schema import ApprovalRecord
 from agent_harness.utils import load_json, normalize_relative_path
 
 OPERATOR_TOKEN_HEADER = "X-Agent-Harness-Operator-Token"

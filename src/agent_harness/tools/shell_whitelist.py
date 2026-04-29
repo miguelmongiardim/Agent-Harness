@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from agent_harness.schemas import PolicyProfile, TaskSpec
+from agent_harness.policy.schema import PolicyProfile
+from agent_harness.tasks.schema import TaskSpec
 
 
 def test_command_allowed(

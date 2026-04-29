@@ -3,8 +3,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from agent_harness.schemas import ToolCall, ToolObservation
 from agent_harness.tools.registry import ToolArgs
+from agent_harness.tools.schema import ToolCall, ToolObservation
 from agent_harness.utils import truncate
 
 

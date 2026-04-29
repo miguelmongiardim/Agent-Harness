@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from agent_harness.schemas import (
+from agent_harness.benchmarks.schema import (
     BenchmarkAdapterEvidence,
     BenchmarkAdapterId,
     BenchmarkCaseRecord,

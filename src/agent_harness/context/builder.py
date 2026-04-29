@@ -8,17 +8,16 @@ from agent_harness.context.chunking import RetrievedChunk, chunk_text
 from agent_harness.context.manifest import manifest_chunk, manifest_item, merged_candidate_item
 from agent_harness.context.provenance import MergedRetrievedChunk, merge_candidate
 from agent_harness.context.retrieval import DenseRetriever, Retriever
-from agent_harness.policy import PolicyEngine
-from agent_harness.schemas import (
+from agent_harness.context.schema import (
     ContextChunk,
     ContextManifest,
     ContextManifestItem,
     ContextSource,
-    PolicyDecision,
     RetrievalBackendManifest,
-    Sensitivity,
-    TaskSpec,
 )
+from agent_harness.policy import PolicyEngine
+from agent_harness.policy.schema import PolicyDecision, Sensitivity
+from agent_harness.tasks.schema import TaskSpec
 from agent_harness.utils import sha256_text, stable_id
 
 

@@ -14,9 +14,11 @@ from agent_harness.context.retrieval import ingest_documents
 from agent_harness.core.runtime import HarnessRuntime, approve_action
 from agent_harness.defaults import DEFAULT_POLICY
 from agent_harness.demos import PROVIDER_AUDIT_WORKSPACE, run_provider_audit_demo
+from agent_harness.evals.schema import EvalInvariant, EvalResult, EvalSpec
 from agent_harness.policy import PolicyEngine, load_policy
-from agent_harness.schemas import EvalInvariant, EvalResult, EvalSpec, RunSummary, TaskSpec
 from agent_harness.storage import RunStore
+from agent_harness.storage.schema import RunSummary
+from agent_harness.tasks.schema import TaskSpec
 from agent_harness.utils import load_json, now_utc, write_json
 
 BUILTIN_EVALS = [

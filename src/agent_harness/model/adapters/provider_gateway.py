@@ -10,9 +10,9 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from agent_harness.context.schema import ContextManifest
 from agent_harness.model.mock import DeterministicMockModel
-from agent_harness.schemas import (
-    ContextManifest,
+from agent_harness.model.schema import (
     ProviderActionEnvelope,
     ProviderCallAudit,
     ProviderCallPhase,
@@ -20,13 +20,12 @@ from agent_harness.schemas import (
     ProviderProfileConfig,
     ProviderTransport,
     RunProviderRecord,
-    TaskSpec,
-    ToolCall,
-    ToolObservation,
 )
+from agent_harness.tasks.schema import TaskSpec
 from agent_harness.tools.patch_file import PatchFileArgs
 from agent_harness.tools.read_file import ReadFileArgs
 from agent_harness.tools.run_tests import RunTestsArgs
+from agent_harness.tools.schema import ToolCall, ToolObservation
 from agent_harness.tools.search_code import SearchCodeArgs
 from agent_harness.utils import sha256_json, stable_id
 

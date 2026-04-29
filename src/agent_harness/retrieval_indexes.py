@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Literal
 
 from agent_harness import __version__
+from agent_harness.config.schema import HarnessConfig
 from agent_harness.context.chunking import chunk_text
 from agent_harness.context.qdrant_local import (
     FASTEMBED_DEFAULT_MODEL,
@@ -17,14 +18,13 @@ from agent_harness.context.qdrant_local import (
     query_qdrant_local_collection,
     query_qdrant_server_collection,
 )
-from agent_harness.policy import PolicyEngine
-from agent_harness.schemas import (
-    HarnessConfig,
+from agent_harness.context.schema import (
     RetrievalBackendManifest,
     RetrievalIndexChunk,
     RetrievalIndexManifest,
     RetrievalIndexSource,
 )
+from agent_harness.policy import PolicyEngine
 from agent_harness.utils import sha256_json, sha256_text, stable_id, write_json
 
 LEXICAL_CHUNK_MAX_CHARS = 1200

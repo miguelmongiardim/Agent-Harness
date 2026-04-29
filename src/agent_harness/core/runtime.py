@@ -11,6 +11,7 @@ from agent_harness.config import (
     load_model,
     load_public_model_with_schema_evidence,
 )
+from agent_harness.config.schema import HarnessConfig
 from agent_harness.context.builder import SkillContextGuidance, build_context_manifest
 from agent_harness.context.retrieval import (
     DenseRetriever,
@@ -22,44 +23,30 @@ from agent_harness.context.retrieval import (
     Retriever,
     optional_dense_dependencies_available,
 )
+from agent_harness.context.schema import (
+    ContextManifest,
+    RetrievalBackendManifest,
+    RetrievalIndexManifest,
+)
 from agent_harness.core.models import DeterministicMockModel
 from agent_harness.model.adapters import ProviderEnvelopeValidationError, ProviderGateway
 from agent_harness.model.profiles import (
     ProviderProfileValidationError,
     validate_provider_profile_for_use,
 )
-from agent_harness.policy import PolicyEngine, load_policy, load_policy_with_schema_evidence
-from agent_harness.provider_input import build_provider_input_manifest
-from agent_harness.retrieval_indexes import load_index
-from agent_harness.schemas import (
-    AppliedTemplateRecord,
-    ApprovalRecord,
-    Checkpoint,
-    ContextManifest,
-    GitCommitPlan,
-    HarnessConfig,
-    PolicyProfile,
+from agent_harness.model.schema import (
     ProviderCallAudit,
     ProviderCallAuditManifest,
     ProviderInputManifest,
     ProviderProfileConfig,
     ProviderUseApprovalBinding,
-    RetrievalBackendManifest,
-    RetrievalIndexManifest,
     RunProviderRecord,
-    RunStatus,
-    RunSummary,
-    RuntimeAdapterRecord,
-    Sensitivity,
-    SkillResolutionReport,
-    TaskSpec,
-    TemplateApplyRecord,
-    TemplateProposedWrite,
-    TemplateSkillRecommendationRecord,
-    ToolCall,
-    ToolObservation,
-    WorkspaceMetadata,
 )
+from agent_harness.policy import PolicyEngine, load_policy, load_policy_with_schema_evidence
+from agent_harness.policy.schema import PolicyProfile, Sensitivity
+from agent_harness.provider_input import build_provider_input_manifest
+from agent_harness.retrieval_indexes import load_index
+from agent_harness.runtimes.schema import RuntimeAdapterRecord
 from agent_harness.security import collect_advisory_reports, scan_task_security
 from agent_harness.skills import (
     build_skill_manifest,
@@ -67,12 +54,24 @@ from agent_harness.skills import (
     render_skill,
     resolve_task_skills,
 )
+from agent_harness.skills.schema import SkillResolutionReport
 from agent_harness.storage import RunStore, make_event
+from agent_harness.storage.schema import (
+    AppliedTemplateRecord,
+    ApprovalRecord,
+    Checkpoint,
+    RunStatus,
+    RunSummary,
+    TemplateSkillRecommendationRecord,
+    WorkspaceMetadata,
+)
+from agent_harness.tasks.schema import TaskSpec
 from agent_harness.templates import load_template, plan_template_apply
 from agent_harness.templates.apply import (
     build_template_application_evidence,
     resolve_template_parameters,
 )
+from agent_harness.templates.schema import TemplateApplyRecord, TemplateProposedWrite
 from agent_harness.tools.executor import ToolExecutor
 from agent_harness.tools.git_commit import (
     bind_committed_hash,
@@ -80,6 +79,7 @@ from agent_harness.tools.git_commit import (
     plan_git_commit,
     validate_git_commit_approval,
 )
+from agent_harness.tools.schema import GitCommitPlan, ToolCall, ToolObservation
 from agent_harness.utils import (
     hash_file,
     new_run_id,

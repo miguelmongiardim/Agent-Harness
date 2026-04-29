@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import Literal
 
-from agent_harness.schemas import (
-    ContextManifest,
-    ContextManifestItem,
+from agent_harness.context.schema import ContextManifest, ContextManifestItem
+from agent_harness.skills.schema import (
     SkillManifest,
     SkillManifestRecord,
     SkillResolutionRecord,

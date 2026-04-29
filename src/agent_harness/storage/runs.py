@@ -7,7 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from agent_harness.schemas import ApprovalRecord, RunEvent, RunSummary
+from agent_harness.storage.schema import ApprovalRecord, RunEvent, RunSummary
 from agent_harness.utils import load_json, sha256_text, stable_id, write_json
 
 

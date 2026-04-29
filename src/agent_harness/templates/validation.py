@@ -11,15 +11,13 @@ from pathlib import Path
 from typing import Any
 
 from agent_harness.config import write_default_config
+from agent_harness.config.schema import HarnessConfig
 from agent_harness.core.runtime import HarnessRuntime
 from agent_harness.defaults import DEFAULT_POLICY
+from agent_harness.evals.schema import EvalSpec
+from agent_harness.policy.schema import PolicyProfile
 from agent_harness.release import RELEASE_EVIDENCE_DIR
-from agent_harness.schemas import (
-    EvalSpec,
-    HarnessConfig,
-    PolicyProfile,
-    TaskSpec,
-)
+from agent_harness.tasks.schema import TaskSpec
 from agent_harness.templates.apply import render_template, resolve_template_parameters
 from agent_harness.templates.registry import list_templates, load_template
 from agent_harness.templates.schema import TemplateRegistryRecord

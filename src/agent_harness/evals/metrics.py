@@ -1,4 +1,4 @@
-from agent_harness.schemas import EvalInvariant
+from agent_harness.evals.schema import EvalInvariant
 
 
 def all_invariants_passed(invariants: list[EvalInvariant]) -> bool:

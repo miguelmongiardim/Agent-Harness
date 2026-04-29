@@ -6,8 +6,8 @@ from typing import Any
 from pydantic import Field
 
 from agent_harness.policy import PolicyEngine
-from agent_harness.schemas import ToolCall, ToolObservation
 from agent_harness.tools.registry import ToolArgs
+from agent_harness.tools.schema import ToolCall, ToolObservation
 
 
 class SearchCodeArgs(ToolArgs):

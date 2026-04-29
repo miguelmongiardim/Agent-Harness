@@ -3,13 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from agent_harness.policy import PolicyEngine
-from agent_harness.schemas import (
-    ApprovalRecord,
-    PolicyDecision,
-    TaskSpec,
-    ToolCall,
-    ToolObservation,
-)
+from agent_harness.policy.schema import PolicyDecision
+from agent_harness.storage.schema import ApprovalRecord
+from agent_harness.tasks.schema import TaskSpec
 from agent_harness.tools.git_status import execute_git_status
 from agent_harness.tools.patch_file import (
     PatchFileArgs,
@@ -19,6 +15,7 @@ from agent_harness.tools.patch_file import (
 )
 from agent_harness.tools.read_file import ReadFileArgs, execute_read_file
 from agent_harness.tools.run_tests import RunTestsArgs, execute_run_tests
+from agent_harness.tools.schema import ToolCall, ToolObservation
 from agent_harness.tools.search_code import SearchCodeArgs, execute_search_code
 from agent_harness.utils import sha256_text
 

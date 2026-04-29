@@ -4,13 +4,10 @@ from pathlib import Path
 from typing import Any, Literal
 
 from agent_harness.config import load_mapping
+from agent_harness.config.schema import HarnessConfig
+from agent_harness.context.schema import RetrievalScorecardFixture, RetrievalScorecardQuery
 from agent_harness.policy import PolicyEngine
 from agent_harness.retrieval_indexes import query_index
-from agent_harness.schemas import (
-    HarnessConfig,
-    RetrievalScorecardFixture,
-    RetrievalScorecardQuery,
-)
 from agent_harness.utils import now_utc, write_json
 
 RetrievalScorecardMode = Literal["lexical", "dense", "hybrid"]

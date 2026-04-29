@@ -3,7 +3,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from agent_harness.schemas import ToolCall, ToolObservation
+from agent_harness.tools.schema import ToolCall, ToolObservation
 
 
 def execute_git_status(call: ToolCall, project_root: Path) -> ToolObservation:

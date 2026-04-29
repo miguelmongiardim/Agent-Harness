@@ -48,7 +48,6 @@ from agent_harness.retrieval_indexes import (
     query_index,
 )
 from agent_harness.retrieval_scorecards import run_retrieval_scorecard
-from agent_harness.schemas import TaskSpec, TemplateDetail
 from agent_harness.skills import (
     list_skills,
     load_skill_detail,
@@ -59,11 +58,13 @@ from agent_harness.skills import (
     validate_skill_pack_path,
 )
 from agent_harness.storage import RunStore
+from agent_harness.tasks.schema import TaskSpec
 from agent_harness.templates import list_templates, load_template
 from agent_harness.templates.apply import (
     build_template_application_evidence,
     resolve_template_parameters,
 )
+from agent_harness.templates.schema import TemplateDetail
 from agent_harness.templates.validation import (
     validate_bundled_template_pack,
     validate_template_pack_path,

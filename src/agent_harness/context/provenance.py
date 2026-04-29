@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 from agent_harness.context.chunking import RetrievedChunk
-from agent_harness.schemas import RetrievalProvenance
+from agent_harness.context.schema import RetrievalProvenance
 from agent_harness.utils import sha256_text, stable_id
 
 

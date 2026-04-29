@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from agent_harness.mcp.schema import McpAccessLogRecord
 from agent_harness.utils import now_utc
 
 
@@ -20,22 +21,19 @@ def append_mcp_access_log(
     denial_reason: str | None = None,
     prompt_hash: str | None = None,
 ) -> None:
-    record = {
-        "schema_version": "mcp_access_log.v1",
-        "timestamp": now_utc().isoformat(),
-        "transport": transport,
-        "request_type": request_type,
-        "resource_uri": uri,
-        "prompt_name": prompt_name,
-        "run_id": run_id,
-        "artifact_type": artifact_type,
-        "policy_profile": profile,
-        "policy_decision_id": None,
-        "result": result,
-        "redaction_applied": False,
-        "denial_reason": denial_reason,
-        "prompt_hash": prompt_hash,
-    }
+    record = McpAccessLogRecord(
+        timestamp=now_utc().isoformat(),
+        transport=transport,
+        request_type=request_type,
+        resource_uri=uri,
+        prompt_name=prompt_name,
+        run_id=run_id,
+        artifact_type=artifact_type,
+        policy_profile=profile,
+        result=result,
+        denial_reason=denial_reason,
+        prompt_hash=prompt_hash,
+    ).model_dump(mode="json")
     path = artifact_root / "mcp" / "access-log.jsonl"
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:

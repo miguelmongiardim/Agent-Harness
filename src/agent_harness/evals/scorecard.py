@@ -1,4 +1,4 @@
-from agent_harness.schemas import EvalResult
+from agent_harness.evals.schema import EvalResult
 
 
 def scorecard_status(results: list[EvalResult]) -> str:

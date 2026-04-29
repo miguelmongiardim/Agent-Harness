@@ -6,6 +6,12 @@ from typing import Any, TypedDict
 
 from agent_harness.config import load_config
 from agent_harness.mcp.access_log import append_mcp_access_log
+from agent_harness.mcp.schema import (
+    McpPromptDescriptor,
+    McpPromptList,
+    McpPromptMessage,
+    McpPromptResponse,
+)
 from agent_harness.utils import sha256_text
 
 
@@ -73,11 +79,10 @@ def list_mcp_prompts(
         }
         for name, definition in PROMPT_DEFINITIONS.items()
     ]
-    payload = {
-        "schema_version": "mcp_prompt_list.v1",
-        "prompts": prompts,
-        "count": len(prompts),
-    }
+    prompt_models = [McpPromptDescriptor.model_validate(prompt) for prompt in prompts]
+    payload = McpPromptList(prompts=prompt_models, count=len(prompt_models)).model_dump(
+        mode="json"
+    )
     if project_root is not None:
         append_mcp_access_log(
             _artifact_root(project_root),
@@ -121,35 +126,34 @@ def get_mcp_prompt(
             return response
     resources = _resource_references(name, prompt_arguments)
     messages = [
-        {
-            "role": "user",
-            "content": _render_prompt(definition["topic"], resources),
-        }
+        McpPromptMessage(
+            role="user",
+            content=_render_prompt(definition["topic"], resources),
+        )
     ]
+    message_payloads = [message.model_dump(mode="json") for message in messages]
     prompt_hash = sha256_text(
         json.dumps(
             {
                 "name": name,
                 "arguments": prompt_arguments,
                 "resource_references": resources,
-                "messages": messages,
+                "messages": message_payloads,
             },
             sort_keys=True,
             separators=(",", ":"),
         )
     )
-    response = {
-        "schema_version": "mcp_prompt_response.v1",
-        "name": name,
-        "description": definition["description"],
-        "mime_type": "text/markdown",
-        "arguments": prompt_arguments,
-        "resource_references": resources,
-        "messages": messages,
-        "prompt_hash": prompt_hash,
-        "denial_status": "allowed",
-        "metadata": {},
-    }
+    response = McpPromptResponse(
+        name=name,
+        description=definition["description"],
+        arguments=prompt_arguments,
+        resource_references=resources,
+        messages=messages,
+        prompt_hash=prompt_hash,
+        denial_status="allowed",
+        metadata={},
+    ).model_dump(mode="json")
     _log_prompt_get(project_root, name, response, transport=transport)
     return response
 
@@ -164,18 +168,16 @@ def _denied_prompt_response(
 ) -> dict[str, Any]:
     denial_metadata: dict[str, object] = {"denial_reason": reason}
     denial_metadata.update(metadata or {})
-    return {
-        "schema_version": "mcp_prompt_response.v1",
-        "name": name,
-        "description": description,
-        "mime_type": "text/markdown",
-        "arguments": arguments,
-        "resource_references": [],
-        "messages": [],
-        "prompt_hash": None,
-        "denial_status": "denied",
-        "metadata": denial_metadata,
-    }
+    return McpPromptResponse(
+        name=name,
+        description=description,
+        arguments=arguments,
+        resource_references=[],
+        messages=[],
+        prompt_hash=None,
+        denial_status="denied",
+        metadata=denial_metadata,
+    ).model_dump(mode="json")
 
 
 def _resource_references(name: str, arguments: dict[str, str]) -> list[str]:

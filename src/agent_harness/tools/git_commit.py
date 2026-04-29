@@ -6,8 +6,10 @@ from pathlib import Path
 from typing import Any
 
 from agent_harness.policy import PolicyEngine
-from agent_harness.schemas import ApprovalRecord, GitCommitPlan, TaskSpec, ToolCall
 from agent_harness.storage import RunStore
+from agent_harness.storage.schema import ApprovalRecord
+from agent_harness.tasks.schema import TaskSpec
+from agent_harness.tools.schema import GitCommitPlan, ToolCall
 from agent_harness.utils import hash_file, now_utc, sha256_json, sha256_text, stable_id
 
 

@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 from agent_harness import __version__
 from agent_harness.config import load_config
-from agent_harness.schemas import (
+from agent_harness.skills.schema import (
     SkillDetail,
     SkillRegistryRecord,
     SkillSpec,

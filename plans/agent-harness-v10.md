@@ -145,12 +145,12 @@ contracts where applicable.
 
 ### Acceptance criteria
 
-- [ ] Skill validation, resolution, and manifest tests pass.
-- [ ] Operator API tests pass.
-- [ ] Eval and benchmark tests pass.
-- [ ] Security scanner/export behavior remains unchanged.
-- [ ] Runtime adapter record behavior remains unchanged.
-- [ ] No owner module is only a schema re-export facade.
+- [x] Skill validation, resolution, and manifest tests pass.
+- [x] Operator API tests pass.
+- [x] Eval and benchmark tests pass.
+- [x] Security scanner/export behavior remains unchanged.
+- [x] Runtime adapter record behavior remains unchanged.
+- [x] No owner module is only a schema re-export facade.
 
 ### Out of scope
 
@@ -193,13 +193,13 @@ harness config while importing provider config from model.
 
 ### Acceptance criteria
 
-- [ ] Config loading and schema-evidence tests pass.
-- [ ] Runtime unit, integration, and adversarial tests pass for the moved
+- [x] Config loading and schema-evidence tests pass.
+- [x] Runtime unit, integration, and adversarial tests pass for the moved
       contracts.
-- [ ] Migration tests pass without serialized schema-version drift.
-- [ ] Provider gateway, provider input, retrieval, storage, policy, and tool
+- [x] Migration tests pass without serialized schema-version drift.
+- [x] Provider gateway, provider input, retrieval, storage, policy, and tool
       tests pass.
-- [ ] No foundational package imports a higher-level package solely for schema
+- [x] No foundational package imports a higher-level package solely for schema
       definitions.
 
 ### Out of scope

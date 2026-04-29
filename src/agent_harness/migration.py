@@ -6,8 +6,11 @@ from typing import Any
 from pydantic import BaseModel, ValidationError
 
 from agent_harness.config import EFFECTIVE_PUBLIC_SCHEMA_VERSIONS, load_mapping
+from agent_harness.config.schema import HarnessConfig
 from agent_harness.defaults import DEFAULT_POLICY
-from agent_harness.schemas import HarnessConfig, PolicyProfile, TaskSpec, TemplateSpec
+from agent_harness.policy.schema import PolicyProfile
+from agent_harness.tasks.schema import TaskSpec
+from agent_harness.templates.schema import TemplateSpec
 from agent_harness.utils import write_json
 
 _EXCLUDED_DIRS = {

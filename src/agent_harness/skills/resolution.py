@@ -6,14 +6,14 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from agent_harness.config import load_mapping
-from agent_harness.schemas import (
+from agent_harness.skills.schema import (
     SkillRequestedBy,
     SkillResolutionRecord,
     SkillResolutionReport,
-    TaskSpec,
-    WorkspaceMetadata,
 )
 from agent_harness.skills.validation import load_skill_detail
+from agent_harness.storage.schema import WorkspaceMetadata
+from agent_harness.tasks.schema import TaskSpec
 
 
 def resolve_task_skills(task_path: Path, project_root: Path | None = None) -> SkillResolutionReport:

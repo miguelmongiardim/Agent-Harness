@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from agent_harness.schemas import ContextManifest, TaskSpec, ToolCall, ToolObservation
+from agent_harness.context.schema import ContextManifest
+from agent_harness.tasks.schema import TaskSpec
+from agent_harness.tools.schema import ToolCall, ToolObservation
 
 
 class ModelClient(Protocol):

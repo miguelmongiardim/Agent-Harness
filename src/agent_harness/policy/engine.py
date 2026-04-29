@@ -4,19 +4,19 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from agent_harness.config import load_public_model, load_public_model_with_schema_evidence
+from agent_harness.model.schema import RunProviderRecord
 from agent_harness.policy.approvals import provider_use_approval
 from agent_harness.policy.classifiers import classify_path
 from agent_harness.policy.path_sandbox import denied_glob, is_within_roots, resolve_relative
 from agent_harness.policy.redaction import compile_redaction_patterns, redact_text
-from agent_harness.schemas import (
+from agent_harness.policy.schema import (
     PolicyDecision,
     PolicyProfile,
     ProviderInputRuleAction,
-    RunProviderRecord,
     Sensitivity,
-    TaskSpec,
-    ToolCall,
 )
+from agent_harness.tasks.schema import TaskSpec
+from agent_harness.tools.schema import ToolCall
 from agent_harness.utils import normalize_relative_path, sha256_json, stable_id
 
 

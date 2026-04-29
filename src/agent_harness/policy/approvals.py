@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from agent_harness.schemas import RunProviderRecord
+from agent_harness.model.schema import RunProviderRecord
 
 
 def provider_use_approval(provider: RunProviderRecord, trust_action: str) -> tuple[bool, str]:

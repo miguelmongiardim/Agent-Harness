@@ -4,13 +4,13 @@ from typing import Literal
 
 from agent_harness.context.chunking import RetrievedChunk
 from agent_harness.context.provenance import MergedRetrievedChunk
-from agent_harness.policy import PolicyEngine
-from agent_harness.schemas import (
+from agent_harness.context.schema import (
     ContextChunk,
     ContextManifestItem,
-    PolicyDecision,
     RetrievalProvenance,
 )
+from agent_harness.policy import PolicyEngine
+from agent_harness.policy.schema import PolicyDecision
 from agent_harness.utils import sha256_text, stable_id
 
 

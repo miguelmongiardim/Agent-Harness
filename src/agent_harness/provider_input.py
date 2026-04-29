@@ -2,16 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agent_harness.policy import PolicyEngine
-from agent_harness.schemas import (
-    ContextManifest,
-    ContextManifestItem,
-    PolicyDecision,
+from agent_harness.context.schema import ContextManifest, ContextManifestItem
+from agent_harness.model.schema import (
     ProviderInputManifest,
     ProviderInputRecord,
     RunProviderRecord,
-    Sensitivity,
 )
+from agent_harness.policy import PolicyEngine
+from agent_harness.policy.schema import PolicyDecision, Sensitivity
 from agent_harness.utils import sha256_text, stable_id
 
 

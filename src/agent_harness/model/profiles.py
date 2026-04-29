@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import os
 
-from agent_harness.schemas import PolicyProfile, ProviderProfileConfig
+from agent_harness.model.schema import ProviderProfileConfig
+from agent_harness.policy.schema import PolicyProfile
 
 
 class ProviderProfileValidationError(ValueError):

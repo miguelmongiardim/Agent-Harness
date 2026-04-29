@@ -620,7 +620,10 @@ def _generated_template_examples_evidence(
     summary: dict[str, Any],
 ) -> dict[str, Any]:
     del summary
-    from agent_harness.schemas import EvalSpec, HarnessConfig, PolicyProfile, TaskSpec
+    from agent_harness.config.schema import HarnessConfig
+    from agent_harness.evals.schema import EvalSpec
+    from agent_harness.policy.schema import PolicyProfile
+    from agent_harness.tasks.schema import TaskSpec
 
     models: dict[str, type[Any]] = {
         "config.v2": HarnessConfig,
@@ -1512,7 +1515,7 @@ def _skills_workflow_files_evidence(demo_root: Path) -> dict[str, Any]:
 
 
 def _skills_workflow_task_evidence(demo_root: Path) -> dict[str, Any]:
-    from agent_harness.schemas import TaskSpec
+    from agent_harness.tasks.schema import TaskSpec
 
     task_path = demo_root / "task.yaml"
     if not task_path.exists():
@@ -1545,7 +1548,8 @@ def _skills_workflow_task_evidence(demo_root: Path) -> dict[str, Any]:
 
 
 def _skills_workflow_expected_artifacts_evidence(demo_root: Path) -> dict[str, Any]:
-    from agent_harness.schemas import ContextManifest, SkillManifest
+    from agent_harness.context.schema import ContextManifest
+    from agent_harness.skills.schema import SkillManifest
 
     context_path = demo_root / "expected" / "context_manifest.json"
     skill_path = demo_root / "expected" / "skill_manifest.json"

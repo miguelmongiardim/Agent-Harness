@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import fnmatch
 
-from agent_harness.schemas import PolicyProfile
+from agent_harness.policy.schema import PolicyProfile
 
 
 def classify_path(profile: PolicyProfile, path: str | None) -> str:

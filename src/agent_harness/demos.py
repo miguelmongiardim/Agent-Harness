@@ -8,7 +8,7 @@ from typing import Any
 
 from agent_harness.core.runtime import HarnessRuntime
 from agent_harness.release import RELEASE_EVIDENCE_DIR
-from agent_harness.schemas import RunSummary
+from agent_harness.storage.schema import RunSummary
 from agent_harness.utils import now_utc, write_json
 
 PROVIDER_AUDIT_DEMO_ID = "provider-audit"

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from agent_harness.core.exceptions import UnsupportedAdapterError
 from agent_harness.core.runtime import HarnessRuntime
-from agent_harness.schemas import RunSummary
+from agent_harness.storage.schema import RunSummary
 
 
 def run_langgraph_adapter(

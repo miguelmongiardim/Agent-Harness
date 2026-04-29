@@ -8,6 +8,11 @@ from urllib.parse import urlparse
 
 from agent_harness.config import load_config
 from agent_harness.mcp.access_log import append_mcp_access_log
+from agent_harness.mcp.schema import (
+    McpResourceDescriptor,
+    McpResourceEnvelope,
+    McpResourceList,
+)
 from agent_harness.policy import PolicyError, load_policy, load_policy_with_schema_evidence
 from agent_harness.skills import list_skills, load_skill_detail
 from agent_harness.storage import RunStore
@@ -158,12 +163,12 @@ def list_mcp_resources(project_root: Path, profile: str = "default") -> dict[str
                             artifact_path,
                         )
                     )
-    return {
-        "schema_version": "mcp_resource_list.v1",
-        "profile": profile,
-        "resources": resources,
-        "count": len(resources),
-    }
+    resource_models = [McpResourceDescriptor.model_validate(resource) for resource in resources]
+    return McpResourceList(
+        profile=profile,
+        resources=resource_models,
+        count=len(resource_models),
+    ).model_dump(mode="json", exclude_none=True)
 
 
 def read_mcp_resource(
@@ -448,13 +453,13 @@ def _resource_descriptor(
     resource_type: str,
     artifact_path: Path,
 ) -> dict[str, str]:
-    return {
-        "uri": f"agent-harness://runs/{run_id}/{name}",
-        "resource_type": resource_type,
-        "mime_type": "application/json",
-        "name": f"{run_id}/{name}",
-        "source_artifact": _safe_project_relative(project_root, artifact_path),
-    }
+    return McpResourceDescriptor(
+        uri=f"agent-harness://runs/{run_id}/{name}",
+        resource_type=resource_type,
+        mime_type="application/json",
+        name=f"{run_id}/{name}",
+        source_artifact=_safe_project_relative(project_root, artifact_path),
+    ).model_dump(mode="json", exclude_none=True)
 
 
 def _parse_resource_uri(uri: str) -> dict[str, str]:
@@ -515,20 +520,16 @@ def _allowed_envelope(
     content: object,
     metadata: dict[str, object],
 ) -> dict[str, Any]:
-    return {
-        "schema_version": "mcp_resource_envelope.v1",
-        "uri": uri,
-        "mime_type": "application/json",
-        "resource_type": resource_type,
-        "source_artifact": source_artifact,
-        "source_schema_version": source_schema_version,
-        "policy_profile": profile,
-        "policy_decision_id": None,
-        "redaction_applied": False,
-        "denial_status": "allowed",
-        "content": content,
-        "metadata": metadata,
-    }
+    return McpResourceEnvelope(
+        uri=uri,
+        resource_type=resource_type,
+        source_artifact=source_artifact,
+        source_schema_version=source_schema_version,
+        policy_profile=profile,
+        denial_status="allowed",
+        content=content,
+        metadata=metadata,
+    ).model_dump(mode="json")
 
 
 def _policy_summary(policy: Any) -> dict[str, Any]:
@@ -880,20 +881,16 @@ def _read_optional_data(store: RunStore, relative: str) -> dict[str, Any] | None
 
 
 def _denial_envelope(uri: str, profile: str, reason: str) -> dict[str, Any]:
-    return {
-        "schema_version": "mcp_resource_envelope.v1",
-        "uri": uri,
-        "mime_type": "application/json",
-        "resource_type": "denial",
-        "source_artifact": None,
-        "source_schema_version": None,
-        "policy_profile": profile,
-        "policy_decision_id": None,
-        "redaction_applied": False,
-        "denial_status": "denied",
-        "content": None,
-        "metadata": {"denial_reason": reason},
-    }
+    return McpResourceEnvelope(
+        uri=uri,
+        resource_type="denial",
+        source_artifact=None,
+        source_schema_version=None,
+        policy_profile=profile,
+        denial_status="denied",
+        content=None,
+        metadata={"denial_reason": reason},
+    ).model_dump(mode="json")
 
 
 def _append_access_log(

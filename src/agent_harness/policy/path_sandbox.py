@@ -4,7 +4,7 @@ import fnmatch
 import os
 from pathlib import Path
 
-from agent_harness.schemas import PolicyProfile
+from agent_harness.policy.schema import PolicyProfile
 from agent_harness.utils import normalize_relative_path
 
 

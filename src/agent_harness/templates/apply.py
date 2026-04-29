@@ -8,13 +8,13 @@ from pathlib import Path
 from typing import Any
 
 from agent_harness.policy import PolicyEngine
-from agent_harness.schemas import ToolCall
 from agent_harness.templates.schema import (
     TemplateApplyRecord,
     TemplateDetail,
     TemplateFile,
     TemplateProposedWrite,
 )
+from agent_harness.tools.schema import ToolCall
 from agent_harness.utils import (
     normalize_relative_path,
     sha256_json,

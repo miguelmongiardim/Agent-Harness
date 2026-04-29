@@ -12,8 +12,8 @@ from agent_harness.context.qdrant_local import (
     query_qdrant_local_collection,
     query_qdrant_server_collection,
 )
+from agent_harness.context.schema import DenseRetrievalMetadata
 from agent_harness.policy import PolicyEngine
-from agent_harness.schemas import DenseRetrievalMetadata
 from agent_harness.utils import sha256_text, stable_id
 
 

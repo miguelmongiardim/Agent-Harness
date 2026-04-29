@@ -4,13 +4,13 @@ import re
 from pathlib import Path
 
 from agent_harness.policy import PolicyEngine
-from agent_harness.schemas import (
+from agent_harness.security.schema import (
     SecurityFinding,
     SecurityFindingsReport,
     SecurityGateDecision,
     SecuritySeverity,
-    TaskSpec,
 )
+from agent_harness.tasks.schema import TaskSpec
 from agent_harness.utils import stable_id
 
 SCANNER_ID = "first_party_static"

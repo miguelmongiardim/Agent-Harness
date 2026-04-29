@@ -6,21 +6,20 @@ from pathlib import Path
 from typing import Any, cast
 
 from agent_harness.benchmarks.adapters import BenchmarkAdapterContext, adapter_for_case
+from agent_harness.benchmarks.schema import (
+    BenchmarkCaseRecord,
+    BenchmarkPackRecord,
+    BenchmarkResult,
+)
 from agent_harness.config import dump_model, write_default_config
 from agent_harness.context.retrieval import ingest_documents
 from agent_harness.core.runtime import HarnessRuntime, approve_action
 from agent_harness.defaults import DEFAULT_POLICY
 from agent_harness.exporters import export_json
 from agent_harness.policy import PolicyEngine
-from agent_harness.schemas import (
-    ApprovalRecord,
-    BenchmarkCaseRecord,
-    BenchmarkPackRecord,
-    BenchmarkResult,
-    PolicyProfile,
-    RunSummary,
-)
+from agent_harness.policy.schema import PolicyProfile
 from agent_harness.storage import RunStore
+from agent_harness.storage.schema import ApprovalRecord, RunSummary
 from agent_harness.utils import load_json, write_json
 
 BUNDLED_PACKS = {"local-samples": "local-samples.json"}
