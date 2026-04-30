@@ -6,6 +6,7 @@ from agent_harness.orchestration.policy import (
 )
 from agent_harness.orchestration.runner import (
     approve_orchestration_plan,
+    export_orchestration,
     inspect_orchestration,
     resume_orchestration,
     run_orchestration,
@@ -18,6 +19,7 @@ __all__ = [
     "OrchestrationPolicyError",
     "OrchestrationSpec",
     "approve_orchestration_plan",
+    "export_orchestration",
     "inspect_orchestration",
     "load_orchestration_spec",
     "require_orchestration_policy",

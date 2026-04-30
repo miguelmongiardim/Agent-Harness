@@ -149,10 +149,11 @@ artifacts, records aggregate orchestration evidence, enforces role ceilings,
 pauses risky plans for supervisor approval, writes generated dependency
 handoffs, prevents provider default inheritance, uses existing provider gates
 for explicit provider children, stops on child pause/failure, and resumes
-without rerunning completed children. Orchestration export, read-only MCP
-orchestration resources, release-readiness gates, parallel execution, nested
-orchestration, MCP execution, hosted APIs, operator UI support, and enterprise
-governance remain future-only.
+without rerunning completed children. It also writes stable orchestration JSON
+exports and exposes read-only MCP resources for orchestration summary, manifest,
+events, children, and handoffs with metadata-only access logs. Release-readiness
+gates, parallel execution, nested orchestration, MCP execution, hosted APIs,
+operator UI support, and enterprise governance remain future-only.
 
 ## Release Maintenance Priorities
 
@@ -172,7 +173,8 @@ governance remain future-only.
   complete and audited.
 - Add external template catalogs and remote template discovery.
 - Expand optional LangGraph coverage beyond the current boundary proof.
-- Add policy-mediated multi-agent support.
+- Expand policy-mediated orchestration beyond the current local sequential
+  dry-run supervisor.
 - Add pluggable DLP and redaction backends.
 - Add OpenTelemetry dashboards.
 - Add cloud or production Qdrant modes and deployment-scale retrieval tuning.

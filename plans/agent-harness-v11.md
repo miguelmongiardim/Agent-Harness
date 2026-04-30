@@ -406,7 +406,7 @@ orchestration summary, and support resume after child-run approvals complete.
 - [x] Child failure stops downstream scheduling.
 - [x] Resume does not rerun completed children.
 - [x] Handoffs and aggregate evidence never include raw provider payloads;
-      orchestration export remains Phase 6 scope.
+      orchestration export is covered by Phase 6.
 
 ### Phase 5 implementation notes
 
@@ -468,13 +468,29 @@ artifacts.
 
 ### Acceptance criteria
 
-- [ ] Export references child artifacts without copying raw sensitive provider
+- [x] Export references child artifacts without copying raw sensitive provider
       payloads.
-- [ ] MCP list/read covers orchestration collection and core artifacts.
-- [ ] MCP denial behavior covers unsafe ids and unsupported mutation shapes.
-- [ ] MCP access logs include request type, orchestration id when applicable,
+- [x] MCP list/read covers orchestration collection and core artifacts.
+- [x] MCP denial behavior covers unsafe ids and unsupported mutation shapes.
+- [x] MCP access logs include request type, orchestration id when applicable,
       profile, result, redaction status, and denial reason.
-- [ ] MCP still advertises no tools.
+- [x] MCP still advertises no tools.
+
+### Phase 6 implementation notes
+
+- Added `agent-harness orchestration export <id>` for stable
+  `orchestration_export.v1` JSON evidence under `.agent-harness/exports/`.
+- Exports include aggregate summary, manifest, events, approvals, handoffs,
+  artifact index, and child artifact references; they do not copy raw child
+  provider payload artifacts.
+- Extended MCP resources with the orchestration collection plus summary,
+  manifest, events, children, and handoffs.
+- MCP orchestration reads return normal resource envelopes with safe relative
+  source artifacts, metadata-only access logs, and `orchestration_id` when
+  applicable.
+- Unsafe orchestration ids and mutation-shaped resource names such as `run`,
+  `approve`, and `resume` return denial envelopes. MCP still advertises no
+  tools and does not execute orchestration operations.
 
 ### Out of scope
 

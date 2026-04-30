@@ -79,6 +79,7 @@ class McpAccessLogRecord(StrictModel):
     resource_uri: str | None = None
     prompt_name: str | None = None
     run_id: str | None = None
+    orchestration_id: str | None = None
     artifact_type: str | None = None
     policy_profile: str
     policy_decision_id: str | None = None

@@ -13,13 +13,16 @@ from agent_harness.mcp.schema import (
     McpResourceEnvelope,
     McpResourceList,
 )
+from agent_harness.orchestration.store import OrchestrationStore
 from agent_harness.policy import PolicyError, load_policy, load_policy_with_schema_evidence
 from agent_harness.skills import list_skills, load_skill_detail
 from agent_harness.storage import RunStore
 from agent_harness.templates import list_templates, load_template
 
 RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+ORCHESTRATION_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_.-]*$")
 RESOURCE_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+ORCHESTRATION_MUTATION_RESOURCES = {"approve", "resume", "run"}
 
 
 def list_mcp_resources(project_root: Path, profile: str = "default") -> dict[str, Any]:
@@ -82,6 +85,72 @@ def list_mcp_resources(project_root: Path, profile: str = "default") -> dict[str
                 "source_artifact": skill.source,
             }
         )
+    orchestrations_root = artifact_root / "orchestrations"
+    if orchestrations_root.exists():
+        resources.append(
+            {
+                "uri": "agent-harness://orchestrations",
+                "resource_type": "orchestration_collection",
+                "mime_type": "application/json",
+                "name": "orchestrations",
+                "description": "Available Agent Harness orchestrations.",
+            }
+        )
+        for orchestration_dir in sorted(orchestrations_root.iterdir()):
+            if (
+                not orchestration_dir.is_dir()
+                or ORCHESTRATION_ID_PATTERN.fullmatch(orchestration_dir.name) is None
+            ):
+                continue
+            if (orchestration_dir / "summary.json").exists():
+                resources.append(
+                    _orchestration_resource_descriptor(
+                        root,
+                        orchestration_dir.name,
+                        "summary",
+                        "orchestration_summary",
+                        orchestration_dir / "summary.json",
+                    )
+                )
+                resources.append(
+                    _orchestration_resource_descriptor(
+                        root,
+                        orchestration_dir.name,
+                        "children",
+                        "orchestration_children",
+                        orchestration_dir / "summary.json",
+                    )
+                )
+            if (orchestration_dir / "manifest.json").exists():
+                resources.append(
+                    _orchestration_resource_descriptor(
+                        root,
+                        orchestration_dir.name,
+                        "manifest",
+                        "orchestration_manifest",
+                        orchestration_dir / "manifest.json",
+                    )
+                )
+            if (orchestration_dir / "events.jsonl").exists():
+                resources.append(
+                    _orchestration_resource_descriptor(
+                        root,
+                        orchestration_dir.name,
+                        "events",
+                        "orchestration_events",
+                        orchestration_dir / "events.jsonl",
+                    )
+                )
+            if (orchestration_dir / "handoffs").exists():
+                resources.append(
+                    _orchestration_resource_descriptor(
+                        root,
+                        orchestration_dir.name,
+                        "handoffs",
+                        "orchestration_handoffs",
+                        orchestration_dir / "handoffs",
+                    )
+                )
     runs_root = artifact_root / "runs"
     if runs_root.exists():
         for run_dir in sorted(runs_root.iterdir()):
@@ -190,6 +259,7 @@ def read_mcp_resource(
             profile=profile,
             transport=transport,
             result="denied",
+            orchestration_id=_safe_orchestration_id_from_uri(uri),
             denial_reason="unknown_profile",
         )
         return envelope
@@ -204,6 +274,7 @@ def read_mcp_resource(
             profile=profile,
             transport=transport,
             result="denied",
+            orchestration_id=_safe_orchestration_id_from_uri(uri),
             denial_reason=reason,
         )
         return envelope
@@ -328,6 +399,55 @@ def read_mcp_resource(
             transport=transport,
             result="allowed",
             artifact_type="policy_summary",
+        )
+        return envelope
+    if resource["kind"] == "orchestration_collection":
+        orchestration_records = _orchestration_collection_records(root, artifact_root)
+        envelope = _allowed_envelope(
+            uri,
+            profile,
+            resource_type="orchestration_collection",
+            source_artifact=None,
+            source_schema_version="orchestration_summary.v1",
+            content={
+                "schema_version": "mcp_orchestration_collection.v1",
+                "orchestrations": orchestration_records,
+                "count": len(orchestration_records),
+            },
+            metadata={},
+        )
+        _append_access_log(
+            artifact_root,
+            uri=uri,
+            profile=profile,
+            transport=transport,
+            result="allowed",
+            artifact_type="orchestration_collection",
+        )
+        return envelope
+    if resource["kind"] == "orchestration_resource":
+        orchestration_id = resource["orchestration_id"]
+        resource_name = resource["resource_name"]
+        orchestration_store = OrchestrationStore.open_existing(
+            root,
+            artifact_root,
+            orchestration_id,
+        )
+        envelope = _orchestration_resource_envelope(
+            root,
+            orchestration_store,
+            uri,
+            profile,
+            resource_name,
+        )
+        _append_access_log(
+            artifact_root,
+            uri=uri,
+            profile=profile,
+            transport=transport,
+            result="allowed",
+            orchestration_id=orchestration_id,
+            artifact_type=envelope["resource_type"],
         )
         return envelope
     run_id = resource["run_id"]
@@ -462,6 +582,146 @@ def _resource_descriptor(
     ).model_dump(mode="json", exclude_none=True)
 
 
+def _orchestration_resource_descriptor(
+    project_root: Path,
+    orchestration_id: str,
+    name: str,
+    resource_type: str,
+    artifact_path: Path,
+) -> dict[str, str]:
+    return McpResourceDescriptor(
+        uri=f"agent-harness://orchestrations/{orchestration_id}/{name}",
+        resource_type=resource_type,
+        mime_type="application/json",
+        name=f"{orchestration_id}/{name}",
+        source_artifact=_safe_project_relative(project_root, artifact_path),
+    ).model_dump(mode="json", exclude_none=True)
+
+
+def _orchestration_collection_records(
+    project_root: Path,
+    artifact_root: Path,
+) -> list[dict[str, str]]:
+    orchestrations_root = artifact_root / "orchestrations"
+    if not orchestrations_root.exists():
+        return []
+    records: list[dict[str, str]] = []
+    for orchestration_dir in sorted(orchestrations_root.iterdir()):
+        summary_path = orchestration_dir / "summary.json"
+        if (
+            not orchestration_dir.is_dir()
+            or ORCHESTRATION_ID_PATTERN.fullmatch(orchestration_dir.name) is None
+            or not summary_path.exists()
+        ):
+            continue
+        records.append(
+            {
+                "orchestration_id": orchestration_dir.name,
+                "summary_resource": (
+                    f"agent-harness://orchestrations/{orchestration_dir.name}/summary"
+                ),
+                "source_artifact": _safe_project_relative(project_root, summary_path),
+            }
+        )
+    return records
+
+
+def _orchestration_resource_envelope(
+    project_root: Path,
+    store: OrchestrationStore,
+    uri: str,
+    profile: str,
+    resource_name: str,
+) -> dict[str, Any]:
+    metadata: dict[str, object] = {"orchestration_id": store.orchestration_id}
+    if resource_name == "summary":
+        content = store.read_data("summary.json")
+        return _allowed_envelope(
+            uri,
+            profile,
+            resource_type="orchestration_summary",
+            source_artifact=_safe_project_relative(
+                project_root,
+                store.orchestration_dir / "summary.json",
+            ),
+            source_schema_version=content.get("schema_version"),
+            content=content,
+            metadata=metadata,
+        )
+    if resource_name == "manifest":
+        content = store.read_data("manifest.json")
+        return _allowed_envelope(
+            uri,
+            profile,
+            resource_type="orchestration_manifest",
+            source_artifact=_safe_project_relative(
+                project_root,
+                store.orchestration_dir / "manifest.json",
+            ),
+            source_schema_version=content.get("schema_version"),
+            content=content,
+            metadata=metadata,
+        )
+    if resource_name == "events":
+        events = store.events()
+        return _allowed_envelope(
+            uri,
+            profile,
+            resource_type="orchestration_events",
+            source_artifact=_safe_project_relative(project_root, store.events_path),
+            source_schema_version="orchestration_event.v1",
+            content={
+                "schema_version": "mcp_orchestration_events.v1",
+                "orchestration_id": store.orchestration_id,
+                "events": events,
+                "count": len(events),
+            },
+            metadata=metadata,
+        )
+    if resource_name == "children":
+        summary = store.read_data("summary.json")
+        children = summary.get("children", [])
+        if not isinstance(children, list):
+            children = []
+        return _allowed_envelope(
+            uri,
+            profile,
+            resource_type="orchestration_children",
+            source_artifact=_safe_project_relative(
+                project_root,
+                store.orchestration_dir / "summary.json",
+            ),
+            source_schema_version=summary.get("schema_version"),
+            content={
+                "schema_version": "mcp_orchestration_children.v1",
+                "orchestration_id": store.orchestration_id,
+                "children": children,
+                "count": len(children),
+            },
+            metadata=metadata,
+        )
+    if resource_name == "handoffs":
+        handoffs = store.read_handoffs()
+        return _allowed_envelope(
+            uri,
+            profile,
+            resource_type="orchestration_handoffs",
+            source_artifact=_safe_project_relative(
+                project_root,
+                store.orchestration_dir / "handoffs",
+            ),
+            source_schema_version="orchestration_handoff.v1",
+            content={
+                "schema_version": "mcp_orchestration_handoffs.v1",
+                "orchestration_id": store.orchestration_id,
+                "handoffs": handoffs,
+                "count": len(handoffs),
+            },
+            metadata=metadata,
+        )
+    raise ValueError(f"unsupported MCP orchestration resource: {resource_name}")
+
+
 def _parse_resource_uri(uri: str) -> dict[str, str]:
     parsed = urlparse(uri)
     if parsed.scheme != "agent-harness":
@@ -487,6 +747,24 @@ def _parse_resource_uri(uri: str) -> dict[str, str]:
         if len(parts) == 1 and RESOURCE_ID_PATTERN.fullmatch(parts[0]) is not None:
             return {"kind": "policy_summary", "profile": parts[0]}
         raise ValueError("unknown_resource")
+    if parsed.netloc == "orchestrations":
+        parts = [part for part in parsed.path.split("/") if part]
+        if not parts:
+            return {"kind": "orchestration_collection"}
+        if len(parts) != 2:
+            raise ValueError("unknown_resource")
+        orchestration_id, resource_name = parts
+        if ORCHESTRATION_ID_PATTERN.fullmatch(orchestration_id) is None:
+            raise ValueError("unsafe_orchestration_id")
+        if resource_name in ORCHESTRATION_MUTATION_RESOURCES:
+            raise ValueError("unsupported_orchestration_mutation")
+        if resource_name not in {"summary", "manifest", "events", "children", "handoffs"}:
+            raise ValueError("unknown_resource")
+        return {
+            "kind": "orchestration_resource",
+            "orchestration_id": orchestration_id,
+            "resource_name": resource_name,
+        }
     if parsed.netloc != "runs":
         raise ValueError("unknown_resource")
     parts = parsed.path.lstrip("/").split("/")
@@ -893,6 +1171,16 @@ def _denial_envelope(uri: str, profile: str, reason: str) -> dict[str, Any]:
     ).model_dump(mode="json")
 
 
+def _safe_orchestration_id_from_uri(uri: str) -> str | None:
+    parsed = urlparse(uri)
+    if parsed.scheme != "agent-harness" or parsed.netloc != "orchestrations":
+        return None
+    parts = [part for part in parsed.path.split("/") if part]
+    if not parts or ORCHESTRATION_ID_PATTERN.fullmatch(parts[0]) is None:
+        return None
+    return parts[0]
+
+
 def _append_access_log(
     artifact_root: Path,
     *,
@@ -901,6 +1189,7 @@ def _append_access_log(
     result: str,
     transport: str = "cli",
     run_id: str | None = None,
+    orchestration_id: str | None = None,
     artifact_type: str | None = None,
     denial_reason: str | None = None,
 ) -> None:
@@ -912,6 +1201,7 @@ def _append_access_log(
         transport=transport,
         result=result,
         run_id=run_id,
+        orchestration_id=orchestration_id,
         artifact_type=artifact_type,
         denial_reason=denial_reason,
     )

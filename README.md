@@ -128,6 +128,11 @@ agent-harness task validate examples/tasks/python_refactor.json
 agent-harness demo provider-audit
 agent-harness run examples/tasks/python_refactor.json --dry-run
 agent-harness run examples/tasks/python_refactor.json --runtime langgraph --dry-run
+agent-harness orchestration run orchestration.json --dry-run
+agent-harness orchestration inspect <orchestration-id>
+agent-harness orchestration export <orchestration-id>
+agent-harness orchestration approve <orchestration-id> <action-id> --decision approve
+agent-harness orchestration resume <orchestration-id>
 agent-harness approve <run-id> <action-id> --decision approve
 agent-harness commit propose <run-id> --message "refactor: update approved files"
 agent-harness benchmark list
@@ -277,10 +282,11 @@ implementation supports local, sequential, policy-mediated
 `agent-harness orchestration run <spec> --dry-run` workflows with explicit
 `policy.v2.orchestration` enablement, role ceilings, supervisor plan approvals,
 normal child `task.v2` run artifacts, generated dependency handoffs, child
-provider gates, child pause/failure propagation, and approval-bound resume.
-Orchestration export, read-only MCP orchestration resources, release-readiness
-gates, parallel execution, nested orchestration, MCP execution, hosted APIs, and
-operator UI support remain future scope.
+provider gates, child pause/failure propagation, approval-bound resume,
+`orchestration export`, and read-only MCP resources for orchestration summary,
+manifest, events, children, and handoffs. Release-readiness gates, parallel
+execution, nested orchestration, MCP execution, hosted APIs, and operator UI
+support remain future scope.
 
 ## Documentation
 

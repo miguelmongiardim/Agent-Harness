@@ -61,17 +61,21 @@ The security model is built around explicit policy mediation:
 
 The current implementation intentionally excludes production identity, remote
 provider controls, centralized secrets management, hardened sandbox isolation,
-enterprise DLP, fixture capture tooling, hosted API/UI surfaces, MCP support,
-multi-agent execution, retention profiles, retrieval redesign, Anthropic live
-support, compliance readiness, enterprise claims, and multi-tenant guarantees.
-Those belong in future roadmap work.
+enterprise DLP, fixture capture tooling, hosted API/UI surfaces, MCP tools or
+execution, write-capable MCP, parallel or nested multi-agent execution,
+retention profiles, retrieval redesign, Anthropic live support, compliance
+readiness, enterprise claims, and multi-tenant guarantees. Those belong in
+future roadmap work.
 
 The V9 MCP plan narrows future MCP scope to local stdio, read-only resources,
 review prompts, policy-filtered evidence, and append-only MCP access evidence.
-It keeps MCP tools, write-capable MCP, MCP approval actions, MCP run execution,
-MCP provider execution, arbitrary filesystem resources, raw provider payload
-resources, Streamable HTTP MCP, hosted MCP service, remote MCP gateways,
-enterprise MCP registries, and MCP runtime adapter behavior out of V9.
+V11 adds read-only orchestration evidence resources for aggregate summaries,
+manifests, events, children, and handoffs. MCP still keeps tools,
+write-capable MCP, MCP approval actions, MCP run execution, MCP provider
+execution, orchestration run/approve/resume, arbitrary filesystem resources,
+raw provider payload resources, Streamable HTTP MCP, hosted MCP service,
+remote MCP gateways, enterprise MCP registries, and MCP runtime adapter
+behavior out of scope.
 
 V6 is a narrower local operator surface. Its security boundary is loopback-only
 serving, token-protected local API routes, allowlisted run artifact access, and

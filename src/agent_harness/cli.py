@@ -36,6 +36,7 @@ from agent_harness.mcp import (
 from agent_harness.migration import migrate_schemas
 from agent_harness.orchestration import (
     approve_orchestration_plan,
+    export_orchestration,
     inspect_orchestration,
     resume_orchestration,
     run_orchestration,
@@ -223,6 +224,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     orchestration_inspect.add_argument("orchestration_id")
     orchestration_inspect.set_defaults(func=cmd_orchestration_inspect)
+    orchestration_export = orchestration_sub.add_parser(
+        "export",
+        description="Export aggregate local orchestration evidence as stable JSON.",
+    )
+    orchestration_export.add_argument("orchestration_id")
+    orchestration_export.add_argument("--output")
+    orchestration_export.set_defaults(func=cmd_orchestration_export)
     orchestration_approve = orchestration_sub.add_parser(
         "approve",
         description="Approve or deny a pending orchestration-level approval.",
@@ -642,6 +650,13 @@ def cmd_orchestration_inspect(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_orchestration_export(args: argparse.Namespace) -> int:
+    output = Path(args.output) if args.output else None
+    path = export_orchestration(Path.cwd(), args.orchestration_id, output=output)
+    print(_display_path(Path.cwd(), path))
+    return 0
+
+
 def cmd_orchestration_approve(args: argparse.Namespace) -> int:
     approval = approve_orchestration_plan(
         Path.cwd(),
@@ -1012,6 +1027,13 @@ def _export_output(
     if output:
         return Path(output)
     return root / artifact_root / "exports" / f"{run_id}{suffix}"
+
+
+def _display_path(root: Path, path: Path) -> str:
+    try:
+        return path.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return str(path)
 
 
 def _is_operator_loopback_host(host: str) -> bool:

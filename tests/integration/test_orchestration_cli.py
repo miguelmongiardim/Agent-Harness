@@ -10,7 +10,7 @@ from tests.conftest import seed_project
 
 
 def _write_orchestration_policy(root: Path, *, classify_sample: bool = False) -> None:
-    (root / "policies").mkdir()
+    (root / "policies").mkdir(exist_ok=True)
     policy = copy.deepcopy(DEFAULT_POLICY)
     policy["orchestration"] = {
         "enabled": True,
@@ -294,6 +294,280 @@ def test_orchestration_run_and_inspect_one_readonly_planner_child(
     assert len(inspected["events"]) == summary["events_count"]
     assert inspected["events"][0]["type"] == "orchestration_started"
     assert inspected["events"][-1]["type"] == "orchestration_finished"
+
+
+def test_orchestration_export_references_child_artifacts_without_raw_provider_payloads(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-v11-phase6-export")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-30T13:00:00Z")
+    seed_project(tmp_path)
+    _write_orchestration_policy(tmp_path)
+    _write_sample_py(tmp_path)
+    spec_path = tmp_path / "export-orchestration.json"
+    spec_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "orchestration.v1",
+                "orchestration_id": "export-safe",
+                "title": "Export safe orchestration",
+                "children": [
+                    {
+                        "child_id": "planner",
+                        "role": "planner",
+                        "title": "Inspect target",
+                        "intent": "Inspect the target without changing files.",
+                        "target_paths": ["sample.py"],
+                        "allowed_tools": ["read_file"],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["orchestration", "run", str(spec_path), "--dry-run"]) == 0
+    summary = json.loads(capsys.readouterr().out)
+    child_run_id = summary["children"][0]["run_id"]
+    child_run_dir = tmp_path / ".agent-harness" / "runs" / child_run_id
+    (child_run_dir / "provider_calls.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "provider_calls.v1",
+                "calls": [
+                    {
+                        "raw_request": {"messages": ["do-not-copy-export-secret"]},
+                        "raw_response": {"text": "do-not-copy-export-secret"},
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["orchestration", "export", "export-safe"]) == 0
+    export_path = Path(capsys.readouterr().out.strip())
+    exported = json.loads((tmp_path / export_path).read_text(encoding="utf-8"))
+    serialized = json.dumps(exported)
+
+    assert export_path.as_posix() == ".agent-harness/exports/export-safe.orchestration.json"
+    assert exported["schema_version"] == "orchestration_export.v1"
+    assert exported["orchestration_id"] == "export-safe"
+    assert exported["summary"]["schema_version"] == "orchestration_summary.v1"
+    assert exported["manifest"]["schema_version"] == "orchestration_manifest.v1"
+    assert exported["artifact_index"]["schema_version"] == "orchestration_artifact_index.v1"
+    assert exported["child_artifacts"] == [
+        {
+            "child_id": "planner",
+            "run_id": child_run_id,
+            "run_summary_artifact": f".agent-harness/runs/{child_run_id}/summary.json",
+            "run_artifact_index": f".agent-harness/runs/{child_run_id}/artifact-index.json",
+            "materialized_task_path": (
+                ".agent-harness/orchestrations/export-safe/children/planner.task.json"
+            ),
+        }
+    ]
+    assert "provider_calls" not in serialized
+    assert "raw_request" not in serialized
+    assert "raw_response" not in serialized
+    assert "do-not-copy-export-secret" not in serialized
+    assert str(tmp_path) not in serialized
+
+
+def test_orchestration_mcp_resources_list_and_read_safe_summary(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-v11-phase6-mcp-summary")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-30T13:30:00Z")
+    seed_project(tmp_path)
+    _write_orchestration_policy(tmp_path)
+    _write_sample_py(tmp_path)
+    spec_path = tmp_path / "mcp-summary-orchestration.json"
+    spec_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "orchestration.v1",
+                "orchestration_id": "mcp-summary",
+                "title": "MCP summary orchestration",
+                "children": [
+                    {
+                        "child_id": "planner",
+                        "role": "planner",
+                        "title": "Inspect target",
+                        "intent": "Inspect the target without changing files.",
+                        "target_paths": ["sample.py"],
+                        "allowed_tools": ["read_file"],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["orchestration", "run", str(spec_path), "--dry-run"]) == 0
+    summary = json.loads(capsys.readouterr().out)
+
+    assert main(["mcp", "resources", "list", "--json"]) == 0
+    listed = json.loads(capsys.readouterr().out)
+    resource_uris = {resource["uri"] for resource in listed["resources"]}
+
+    assert "agent-harness://orchestrations" in resource_uris
+    assert "agent-harness://orchestrations/mcp-summary/summary" in resource_uris
+    assert "agent-harness://orchestrations/mcp-summary/tools" not in resource_uris
+
+    assert (
+        main(
+            [
+                "mcp",
+                "resources",
+                "read",
+                "agent-harness://orchestrations/mcp-summary/summary",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    envelope = json.loads(capsys.readouterr().out)
+    record = json.loads(
+        (tmp_path / ".agent-harness" / "mcp" / "access-log.jsonl").read_text(encoding="utf-8")
+    )
+
+    assert envelope["schema_version"] == "mcp_resource_envelope.v1"
+    assert envelope["uri"] == "agent-harness://orchestrations/mcp-summary/summary"
+    assert envelope["resource_type"] == "orchestration_summary"
+    assert envelope["source_artifact"] == ".agent-harness/orchestrations/mcp-summary/summary.json"
+    assert envelope["source_schema_version"] == "orchestration_summary.v1"
+    assert envelope["policy_profile"] == "default"
+    assert envelope["denial_status"] == "allowed"
+    assert envelope["content"] == summary
+    assert envelope["metadata"]["orchestration_id"] == "mcp-summary"
+    assert str(tmp_path) not in json.dumps(envelope)
+
+    assert record["schema_version"] == "mcp_access_log.v1"
+    assert record["request_type"] == "resource_read"
+    assert record["resource_uri"] == "agent-harness://orchestrations/mcp-summary/summary"
+    assert record["orchestration_id"] == "mcp-summary"
+    assert record["artifact_type"] == "orchestration_summary"
+    assert record["policy_profile"] == "default"
+    assert record["result"] == "allowed"
+    assert record["redaction_applied"] is False
+    assert record["denial_reason"] is None
+    assert "content" not in record
+    assert "MCP summary orchestration" not in json.dumps(record)
+
+
+def test_orchestration_mcp_reads_core_artifacts_as_safe_envelopes(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-30T14:00:00Z")
+    seed_project(tmp_path)
+    _write_orchestration_policy(tmp_path)
+    _write_sample_py(tmp_path)
+    spec_path = tmp_path / "mcp-core-orchestration.json"
+    spec_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "orchestration.v1",
+                "orchestration_id": "mcp-core",
+                "title": "MCP core orchestration",
+                "children": [
+                    {
+                        "child_id": "reviewer",
+                        "role": "reviewer",
+                        "title": "Review handoff",
+                        "intent": "Review the generated handoff.",
+                        "target_paths": ["sample.py"],
+                        "allowed_tools": ["read_file"],
+                        "depends_on": ["planner"],
+                    },
+                    {
+                        "child_id": "planner",
+                        "role": "planner",
+                        "title": "Plan work",
+                        "intent": "Inspect the target and produce a handoff.",
+                        "target_paths": ["sample.py"],
+                        "allowed_tools": ["read_file"],
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["orchestration", "run", str(spec_path), "--dry-run"]) == 0
+    summary = json.loads(capsys.readouterr().out)
+    assert main(["mcp", "resources", "list", "--json"]) == 0
+    listed = json.loads(capsys.readouterr().out)
+    resource_uris = {resource["uri"] for resource in listed["resources"]}
+    expected = {
+        "agent-harness://orchestrations/mcp-core/manifest",
+        "agent-harness://orchestrations/mcp-core/events",
+        "agent-harness://orchestrations/mcp-core/children",
+        "agent-harness://orchestrations/mcp-core/handoffs",
+    }
+
+    assert expected <= resource_uris
+
+    read = {}
+    for uri in sorted(expected):
+        assert main(["mcp", "resources", "read", uri, "--json"]) == 0
+        envelope = json.loads(capsys.readouterr().out)
+        read[uri.rsplit("/", 1)[-1]] = envelope
+        assert envelope["schema_version"] == "mcp_resource_envelope.v1"
+        assert envelope["denial_status"] == "allowed"
+        assert envelope["metadata"]["orchestration_id"] == "mcp-core"
+        assert str(tmp_path) not in json.dumps(envelope)
+
+    assert read["manifest"]["resource_type"] == "orchestration_manifest"
+    assert read["manifest"]["source_schema_version"] == "orchestration_manifest.v1"
+    assert read["manifest"]["content"]["orchestration_id"] == "mcp-core"
+
+    assert read["events"]["resource_type"] == "orchestration_events"
+    assert read["events"]["source_schema_version"] == "orchestration_event.v1"
+    assert read["events"]["content"]["schema_version"] == "mcp_orchestration_events.v1"
+    assert read["events"]["content"]["orchestration_id"] == "mcp-core"
+    assert read["events"]["content"]["count"] == summary["events_count"]
+    assert any(event["type"] == "handoff_created" for event in read["events"]["content"]["events"])
+
+    assert read["children"]["resource_type"] == "orchestration_children"
+    assert read["children"]["content"] == {
+        "schema_version": "mcp_orchestration_children.v1",
+        "orchestration_id": "mcp-core",
+        "children": summary["children"],
+        "count": 2,
+    }
+
+    assert read["handoffs"]["resource_type"] == "orchestration_handoffs"
+    assert read["handoffs"]["content"]["schema_version"] == "mcp_orchestration_handoffs.v1"
+    assert read["handoffs"]["content"]["orchestration_id"] == "mcp-core"
+    assert read["handoffs"]["content"]["count"] == 1
+    assert read["handoffs"]["content"]["handoffs"][0]["from_child_id"] == "planner"
+
+    records = [
+        json.loads(line)
+        for line in (tmp_path / ".agent-harness" / "mcp" / "access-log.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ]
+    assert {record["orchestration_id"] for record in records} == {"mcp-core"}
+    assert {record["artifact_type"] for record in records} == {
+        "orchestration_manifest",
+        "orchestration_events",
+        "orchestration_children",
+        "orchestration_handoffs",
+    }
+    assert all(record["redaction_applied"] is False for record in records)
+    assert all(record["denial_reason"] is None for record in records)
+    assert "MCP core orchestration" not in json.dumps(records)
 
 
 def test_orchestration_dependency_handoff_enters_downstream_context(

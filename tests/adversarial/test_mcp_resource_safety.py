@@ -74,9 +74,7 @@ def test_mcp_unsafe_resource_uri_returns_denial_envelope_and_log(
     assert main(["mcp", "resources", "read", uri, "--json"]) == 1
     envelope = json.loads(capsys.readouterr().out)
     record = json.loads(
-        (tmp_path / ".agent-harness" / "mcp" / "access-log.jsonl").read_text(
-            encoding="utf-8"
-        )
+        (tmp_path / ".agent-harness" / "mcp" / "access-log.jsonl").read_text(encoding="utf-8")
     )
 
     assert envelope["denial_status"] == "denied"
@@ -86,6 +84,59 @@ def test_mcp_unsafe_resource_uri_returns_denial_envelope_and_log(
     assert record["result"] == "denied"
     assert record["denial_reason"] == reason
     assert record["resource_uri"] == uri
+    assert "content" not in record
+
+
+@pytest.mark.parametrize(
+    ("uri", "reason", "orchestration_id"),
+    [
+        ("agent-harness://orchestrations/../summary", "unsafe_orchestration_id", None),
+        ("agent-harness://orchestrations/orch$bad/summary", "unsafe_orchestration_id", None),
+        (
+            "agent-harness://orchestrations/review-flow/run",
+            "unsupported_orchestration_mutation",
+            "review-flow",
+        ),
+        (
+            "agent-harness://orchestrations/review-flow/approve",
+            "unsupported_orchestration_mutation",
+            "review-flow",
+        ),
+        (
+            "agent-harness://orchestrations/review-flow/resume",
+            "unsupported_orchestration_mutation",
+            "review-flow",
+        ),
+    ],
+)
+def test_mcp_unsafe_orchestration_resource_uri_returns_denial_envelope_and_log(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+    uri: str,
+    reason: str,
+    orchestration_id: str | None,
+) -> None:  # type: ignore[no-untyped-def]
+    seed_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-30T14:30:00Z")
+
+    assert main(["mcp", "resources", "read", uri, "--json"]) == 1
+    envelope = json.loads(capsys.readouterr().out)
+    record = json.loads(
+        (tmp_path / ".agent-harness" / "mcp" / "access-log.jsonl").read_text(encoding="utf-8")
+    )
+
+    assert envelope["denial_status"] == "denied"
+    assert envelope["metadata"]["denial_reason"] == reason
+    assert envelope["content"] is None
+    assert str(tmp_path) not in json.dumps(envelope)
+    assert record["request_type"] == "resource_read"
+    assert record["resource_uri"] == uri
+    assert record["orchestration_id"] == orchestration_id
+    assert record["result"] == "denied"
+    assert record["redaction_applied"] is False
+    assert record["denial_reason"] == reason
     assert "content" not in record
 
 
@@ -102,9 +153,7 @@ def test_mcp_unknown_profile_returns_denial_envelope_and_log(
     assert main(["mcp", "resources", "read", uri, "--profile", "missing", "--json"]) == 1
     envelope = json.loads(capsys.readouterr().out)
     record = json.loads(
-        (tmp_path / ".agent-harness" / "mcp" / "access-log.jsonl").read_text(
-            encoding="utf-8"
-        )
+        (tmp_path / ".agent-harness" / "mcp" / "access-log.jsonl").read_text(encoding="utf-8")
     )
 
     assert envelope["denial_status"] == "denied"

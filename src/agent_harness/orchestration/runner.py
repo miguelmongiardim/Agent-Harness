@@ -11,7 +11,9 @@ from agent_harness.orchestration.schema import (
     OrchestrationApprovalRecord,
     OrchestrationAuthority,
     OrchestrationChild,
+    OrchestrationChildArtifactReference,
     OrchestrationChildRun,
+    OrchestrationExport,
     OrchestrationHandoff,
     OrchestrationManifest,
     OrchestrationManifestChild,
@@ -29,7 +31,7 @@ from agent_harness.storage import RunStore
 from agent_harness.storage.schema import RunSummary
 from agent_harness.tasks.schema import TaskSpec
 from agent_harness.tools.schema import ToolName
-from agent_harness.utils import hash_file, now_utc, sha256_text
+from agent_harness.utils import hash_file, now_utc, sha256_text, write_json
 
 TOOL_ORDER: list[ToolName] = [
     "read_file",
@@ -496,6 +498,72 @@ def inspect_orchestration(project_root: Path, orchestration_id: str) -> dict[str
         "approvals": store.approvals(),
         "artifact_index": store.read_data("artifact-index.json"),
     }
+
+
+def export_orchestration(
+    project_root: Path,
+    orchestration_id: str,
+    *,
+    output: Path | None = None,
+) -> Path:
+    root = project_root.resolve()
+    config = load_config(root)
+    artifact_root = root / config.artifact_root
+    store = OrchestrationStore.open_existing(root, artifact_root, orchestration_id)
+    summary = store.read_data("summary.json")
+    export_path = output or artifact_root / "exports" / f"{orchestration_id}.orchestration.json"
+    export = OrchestrationExport(
+        orchestration_id=orchestration_id,
+        status=summary["status"],
+        policy_profile=summary["policy_profile"],
+        summary=summary,
+        manifest=store.read_data("manifest.json"),
+        events=store.events(),
+        handoffs=store.read_handoffs(),
+        approvals=store.approvals(),
+        artifact_index=store.read_data("artifact-index.json"),
+        child_artifacts=_child_artifact_references(root, artifact_root, summary),
+    )
+    write_json(export_path, export.model_dump(mode="json"))
+    return export_path
+
+
+def _child_artifact_references(
+    root: Path,
+    artifact_root: Path,
+    summary: dict[str, Any],
+) -> list[OrchestrationChildArtifactReference]:
+    records: list[OrchestrationChildArtifactReference] = []
+    for child in summary.get("children", []):
+        if not isinstance(child, dict):
+            continue
+        child_id = child.get("child_id")
+        run_id = child.get("run_id")
+        run_summary_artifact = child.get("run_summary_artifact")
+        materialized_task_path = child.get("materialized_task_path")
+        if (
+            not isinstance(child_id, str)
+            or not isinstance(run_id, str)
+            or not isinstance(run_summary_artifact, str)
+            or not isinstance(materialized_task_path, str)
+        ):
+            continue
+        run_artifact_index_path = artifact_root / "runs" / run_id / "artifact-index.json"
+        run_artifact_index = (
+            run_artifact_index_path.resolve().relative_to(root).as_posix()
+            if run_artifact_index_path.exists()
+            else None
+        )
+        records.append(
+            OrchestrationChildArtifactReference(
+                child_id=child_id,
+                run_id=run_id,
+                run_summary_artifact=run_summary_artifact,
+                run_artifact_index=run_artifact_index,
+                materialized_task_path=materialized_task_path,
+            )
+        )
+    return records
 
 
 def _materialize_child_task(

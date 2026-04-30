@@ -223,3 +223,26 @@ class OrchestrationArtifactIndex(StrictModel):
     orchestration_id: str
     artifacts: dict[str, str]
     artifact_hashes: dict[str, str]
+
+
+class OrchestrationChildArtifactReference(StrictModel):
+    child_id: str
+    run_id: str
+    run_summary_artifact: str
+    run_artifact_index: str | None = None
+    materialized_task_path: str
+
+
+class OrchestrationExport(StrictModel):
+    schema_version: Literal["orchestration_export.v1"] = "orchestration_export.v1"
+    orchestration_id: str
+    status: OrchestrationStatus
+    policy_profile: str
+    exported_at: datetime = Field(default_factory=now_utc)
+    summary: dict[str, Any]
+    manifest: dict[str, Any]
+    events: list[dict[str, Any]]
+    handoffs: list[dict[str, Any]] = Field(default_factory=list)
+    approvals: list[dict[str, Any]] = Field(default_factory=list)
+    artifact_index: dict[str, Any]
+    child_artifacts: list[OrchestrationChildArtifactReference] = Field(default_factory=list)

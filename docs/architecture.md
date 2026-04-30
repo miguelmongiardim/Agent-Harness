@@ -35,7 +35,9 @@ runtime around explicit ownership boundaries.
   summary/events/manifest/index evidence, deterministic dependency ordering,
   generated handoff records for direct dependencies, role-ceiling authority
   narrowing, supervisor plan approvals, approval-bound resume, and
-  `orchestration inspect`.
+  `orchestration inspect`/`orchestration export`. Read-only MCP exposure of
+  orchestration evidence still belongs to `agent_harness.mcp`, which delegates
+  to orchestration artifacts without becoming an execution surface.
 - `agent_harness.release` owns local release-readiness evidence collection.
 - `agent_harness.model`, `agent_harness.runtimes`, `agent_harness.storage`,
   `agent_harness.telemetry`, `agent_harness.evals`, and
@@ -153,10 +155,13 @@ orchestration children do not inherit the project default provider profile.
 Provider-backed children use normal provider gates and child-run artifacts, and
 the supervisor stops on child pause or failure with a blocked child recorded in
 the aggregate summary. Resume refreshes existing child run summaries and skips
-already-started children after child approvals complete. Later V11 phases should
-keep orchestration export, MCP resources, and release gates inside
-`agent_harness.orchestration` while preserving native runtime delegation for
-child execution.
+already-started children after child approvals complete. Orchestration export
+now writes aggregate JSON evidence with child artifact references rather than
+copying raw provider payloads, and MCP exposes read-only orchestration
+collection, summary, manifest, events, children, and handoff resources with
+metadata-only access logs. Later V11 phases should keep release gates inside
+the release boundary while preserving native runtime delegation for child
+execution.
 
 ## Compatibility And Roadmap Boundaries
 

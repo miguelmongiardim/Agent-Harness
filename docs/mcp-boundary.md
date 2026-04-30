@@ -1,7 +1,8 @@
 # MCP Boundary
 
 This document defines the V9 MCP Boundary release for `v1.6.0` and the
-implemented local read-only MCP behavior.
+implemented local read-only MCP behavior. V11 adds read-only orchestration
+evidence resources to the same boundary without adding MCP tools or execution.
 
 ## Implemented in V9
 
@@ -50,7 +51,7 @@ and fails with a clear install hint when the SDK is missing.
 
 ## Resource Surface
 
-The V9 allowlist is:
+The implemented allowlist is:
 
 ```text
 agent-harness://runs
@@ -68,11 +69,18 @@ agent-harness://templates/{template_id}
 agent-harness://skills
 agent-harness://skills/{skill_id}
 agent-harness://policies/{profile}
+agent-harness://orchestrations
+agent-harness://orchestrations/{orchestration_id}/summary
+agent-harness://orchestrations/{orchestration_id}/manifest
+agent-harness://orchestrations/{orchestration_id}/events
+agent-harness://orchestrations/{orchestration_id}/children
+agent-harness://orchestrations/{orchestration_id}/handoffs
 ```
 
 The resource registry must reject arbitrary URI schemes, filesystem paths,
-traversal, unsafe identifiers, query and fragment abuse, and unknown resource
-shapes.
+traversal, unsafe identifiers, query and fragment abuse, unknown resource
+shapes, and mutation-shaped orchestration resource requests such as run,
+approve, or resume.
 
 Resource responses should use only:
 
@@ -163,6 +171,7 @@ client_id if available
 request_type
 resource_uri or prompt_name
 run_id if applicable
+orchestration_id if applicable
 artifact_type
 policy_profile
 policy_decision_id
@@ -187,6 +196,7 @@ The following remain future-only and must not be described as V9 behavior:
 - MCP provider execution
 - patch application through MCP
 - git commit through MCP
+- orchestration run/approve/resume through MCP
 - template application through MCP
 - skill mutation through MCP
 - arbitrary filesystem resources
@@ -197,7 +207,7 @@ The following remain future-only and must not be described as V9 behavior:
 - remote MCP gateway
 - enterprise MCP registry
 - MCP runtime adapter behavior
-- multi-agent orchestration
+- parallel, nested, hosted, or write-capable MCP orchestration
 
 The existing `agent_harness.runtimes.mcp_adapter` can remain unsupported for V9.
 If a later release implements MCP runtime behavior, it needs its own PRD, plan,
