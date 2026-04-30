@@ -159,6 +159,15 @@ future-only. V11 does not support hosted APIs. Parallel multi-agent
 orchestration remains future-only. Nested orchestration remains future-only.
 MCP execution for multi-agent orchestration remains future-only.
 
+The V11 multi-agent complexity benchmark is planned separately in
+[docs/prd-agent-harness-v11-multi-agent-complexity-benchmark.md](prd-agent-harness-v11-multi-agent-complexity-benchmark.md)
+and
+[plans/agent-harness-v11-multi-agent-complexity-benchmark.md](../plans/agent-harness-v11-multi-agent-complexity-benchmark.md).
+It is not current behavior: `agent-harness benchmark compare`, comparison
+schemas, metric aggregation, handoff usefulness scoring, role recommendations,
+and role-default promotion remain future scope. Role-count expansion requires
+comparative outcome evidence before recommendation or promotion.
+
 ## Release Maintenance Priorities
 
 - Preserve the v1.0.0 compatibility and deprecation contract.

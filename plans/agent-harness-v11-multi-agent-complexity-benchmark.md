@@ -45,7 +45,8 @@ Durable decisions that apply across all phases:
 - Story 1: release maintainer requires a baseline for every orchestration
   fixture.
 - Story 8: role recommendations are evidence-only.
-- Story 9: docs avoid claiming more agents are better by default.
+- Story 9: docs avoid presenting role-count expansion as an improvement without
+  comparison evidence.
 
 **Observable behaviors**
 
@@ -57,9 +58,10 @@ Durable decisions that apply across all phases:
 
 **First RED test**
 
-- Add a docs-check test that fails when current capability docs claim
-  multi-agent roles improve outcomes by default or imply benchmark-backed role
-  defaults before comparison evidence exists.
+- Add a docs-check test that fails when current capability docs present
+  expanded multi-agent role chains as preferred without comparison evidence or
+  imply evidence-backed default role selection before comparison evidence
+  exists.
 
 ### What to build
 
@@ -69,11 +71,11 @@ phase unless a docs-check behavior needs a constant or test fixture.
 
 ### Acceptance criteria
 
-- [ ] The PRD exists and follows the repo PRD template.
-- [ ] The plan exists and uses vertical tracer-bullet phases.
-- [ ] Docs checks reject unsupported "more agents are better" claims.
-- [ ] README and roadmap mention comparison only as planned or future behavior.
-- [ ] No benchmark comparison runtime or CLI behavior is implemented.
+- [x] The PRD exists and follows the repo PRD template.
+- [x] The plan exists and uses vertical tracer-bullet phases.
+- [x] Docs checks reject unsupported role-count improvement claims.
+- [x] README and roadmap mention comparison only as planned or future behavior.
+- [x] No benchmark comparison runtime or CLI behavior is implemented.
 
 ### Out of scope
 
@@ -81,6 +83,19 @@ phase unless a docs-check behavior needs a constant or test fixture.
 - `benchmark compare`.
 - Metric aggregation.
 - Orchestration spec generation.
+
+### Implementation notes
+
+- Added `unsupported_benchmark_comparison_claim` docs-check coverage for
+  current-capability claims that expanded role chains are preferred without
+  comparison evidence or that default role selection is evidence-backed before
+  comparison evidence exists.
+- README and roadmap now link the benchmark PRD and plan as planned/future work
+  and explicitly keep `agent-harness benchmark compare`, comparison schemas,
+  metric aggregation, handoff usefulness scoring, role recommendations, and
+  default-role promotion out of current behavior.
+- No benchmark comparison runtime, CLI, schema, metric, or orchestration spec
+  generation behavior was added.
 
 ---
 
@@ -311,8 +326,8 @@ than public benchmark comparability.
 - [ ] Per-case failures remain inspectable and are not collapsed into a vague
       aggregate status.
 - [ ] Eval coverage enforces the baseline requirement.
-- [ ] Docs state that more agents are not assumed better and that explicit
-      broader-pack allowlists remain roadmap scope.
+- [ ] Docs state that role-count expansion requires comparison evidence and
+      that explicit broader-pack allowlists remain roadmap scope.
 
 ### Out of scope
 

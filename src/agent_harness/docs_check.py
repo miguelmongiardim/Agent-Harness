@@ -381,6 +381,29 @@ UNSUPPORTED_ORCHESTRATION_SCOPE_CLAIMS = [
         _orchestration_scope_pattern("enterprise", r"(?:multi-agent|orchestration)"),
     ),
 ]
+UNSUPPORTED_BENCHMARK_COMPARISON_CLAIMS = [
+    (
+        "unsubstantiated role-count improvement",
+        re.compile(
+            r"\b(?:expanded|additional)\s+(?:multi-agent\s+)?"
+            r"(?:role\s+chains?|roles?|agents?)\b[^\n]*"
+            r"\b(?:preferred|recommended|superior|preferable|improve(?:s)?|increase(?:s)?)\b"
+            r"|\brole-count\s+(?:expansion|increases?)\b[^\n]*"
+            r"\b(?:preferred|recommended|superior|preferable|improve(?:s)?|increase(?:s)?)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "evidence-backed default role selection",
+        re.compile(
+            r"\b(?:benchmark|comparison|evidence)-backed\s+"
+            r"(?:default\s+)?(?:role\s+)?(?:selection|defaults?)\b"
+            r"|\bdefault\s+(?:orchestration\s+)?(?:role\s+)?(?:selection|defaults?)\b[^\n]*"
+            r"\b(?:benchmark|comparison|evidence)-backed\b",
+            re.IGNORECASE,
+        ),
+    ),
+]
 RETRIEVAL_ROADMAP_HEADINGS = (
     "roadmap",
     "out of scope",
@@ -394,6 +417,7 @@ TEMPLATE_PACK_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 SKILL_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 MCP_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 ORCHESTRATION_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
+BENCHMARK_COMPARISON_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 
 IMPLEMENTED_SECTION_MARKERS = (
     "## What This Repo Proves",
@@ -453,6 +477,7 @@ def run_docs_check(project_root: Path) -> dict[str, Any]:
         findings.extend(_unsupported_skill_scope_findings(relative, lines))
         findings.extend(_unsupported_mcp_scope_findings(relative, lines))
         findings.extend(_unsupported_orchestration_scope_findings(relative, lines))
+        findings.extend(_unsupported_benchmark_comparison_findings(relative, lines))
         findings.extend(_required_section_findings(relative, text))
         findings.extend(_internal_link_findings(project_root, path, relative, lines))
         findings.extend(_citation_placeholder_findings(relative, lines))
@@ -792,6 +817,49 @@ def _denies_unsupported_orchestration_scope(line: str, label: str) -> bool:
             rf"\b(?:without|no|not)\s+{phrase}\b"
             rf"|\bdoes\s+not\s+(?:use|support|provide|include|ship|offer)\s+{phrase}\b"
             rf"|\b{phrase}\s+remain(?:s)?\s+(?:future-only|roadmap-only)\b",
+            line,
+            re.IGNORECASE,
+        )
+    )
+
+
+def _unsupported_benchmark_comparison_findings(
+    relative: str, lines: list[str]
+) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    in_roadmap_scope = False
+    for line_number, line in enumerate(lines, start=1):
+        heading = re.match(r"^#{1,6}\s+(.+?)\s*$", line)
+        if heading is not None:
+            heading_text = heading.group(1).lower()
+            in_roadmap_scope = any(
+                marker in heading_text for marker in BENCHMARK_COMPARISON_ROADMAP_HEADINGS
+            )
+        if in_roadmap_scope:
+            continue
+        for label, pattern in UNSUPPORTED_BENCHMARK_COMPARISON_CLAIMS:
+            if pattern.search(line) and not _denies_unsupported_benchmark_comparison_claim(line):
+                findings.append(
+                    _finding(
+                        "unsupported_benchmark_comparison_claim",
+                        relative,
+                        line_number,
+                        "Docs claim unsupported benchmark comparison behavior "
+                        f"as available: {label}",
+                        line,
+                    )
+                )
+    return findings
+
+
+def _denies_unsupported_benchmark_comparison_claim(line: str) -> bool:
+    return bool(
+        re.search(
+            r"\b(?:avoid|avoids|prevent|prevents|reject|rejects)\s+"
+            r"(?:claiming|claims?)\b"
+            r"|\b(?:do|does)\s+not\s+claim\b"
+            r"|\bnot\s+(?:assumed|necessarily)\s+beneficial\b"
+            r"|\bwithout\s+claiming\b",
             line,
             re.IGNORECASE,
         )

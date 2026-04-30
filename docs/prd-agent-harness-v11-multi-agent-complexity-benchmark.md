@@ -14,10 +14,11 @@ by policy, approvals, generated handoffs, and auditable child evidence. Without
 a comparative benchmark, however, orchestration can still become a source of
 unmeasured complexity.
 
-More child agents can add extra handoffs, tool calls, approvals, artifacts, and
-runtime cost. Those costs may be justified when a role catches defects, improves
-approval correctness, clarifies failure attribution, or produces more complete
-evidence. They are not justified simply because the workflow has more roles.
+Additional child agents can add extra handoffs, tool calls, approvals,
+artifacts, and runtime cost. Those costs may be justified when a role catches
+defects, improves approval correctness, clarifies failure attribution, or
+produces more complete evidence. They are not justified simply because the
+workflow has additional roles.
 
 Today benchmark sample packs prove that local cases can import into workspaces,
 run through the native runtime, and export evidence-backed results. They do not
@@ -89,8 +90,9 @@ changes.
    so that added roles are credited only for observable quality improvements.
 8. As a maintainer, I want role recommendations to be evidence-only, so that
    defaults are not changed automatically by one benchmark result.
-9. As a documentation reviewer, I want docs to avoid claiming that more agents
-   are better by default, so that public capability claims stay honest.
+9. As a documentation reviewer, I want docs to avoid presenting role-count
+   expansion as an improvement without comparison evidence, so that public
+   capability claims stay honest.
 10. As a security reviewer, I want downstream child runs to receive only
     policy-filtered generated handoffs, so that raw child memory never becomes
     shared state.
@@ -198,8 +200,8 @@ changes.
   links, and unavailable cost metrics.
 - Eval coverage should fail when an orchestration fixture lacks a single-agent
   baseline or when comparison evidence is missing required links.
-- Documentation checks should prevent current docs from claiming that more
-  agents improve outcomes by default.
+- Documentation checks should prevent current docs from presenting role-count
+  expansion as an improvement without comparison evidence.
 - Tests should not assert private helper names or private file layout beyond
   public artifact contracts.
 
@@ -227,6 +229,7 @@ without improving quality or governance, the benchmark should make that visible.
 
 The highest implementation risks are accidental authority widening during
 generated orchestration specs, treating dry-run test skips as real test passes,
-shared state leakage between child runs, and vague failure attribution. The plan
-should therefore start with a small comparison artifact that proves the baseline
-requirement before adding richer metric interpretation.
+shared state leakage between child runs, vague failure attribution, and
+unsubstantiated role-count improvement claims. The plan should therefore start
+with a small comparison artifact that proves the baseline requirement before
+adding richer metric interpretation.

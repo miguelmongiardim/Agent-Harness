@@ -293,6 +293,15 @@ future-only. Nested orchestration remains future-only. MCP execution for
 multi-agent orchestration remains future-only. V11 does not support hosted
 APIs.
 
+The V11 multi-agent complexity benchmark is planned separately in
+[`docs/prd-agent-harness-v11-multi-agent-complexity-benchmark.md`](docs/prd-agent-harness-v11-multi-agent-complexity-benchmark.md)
+and
+[`plans/agent-harness-v11-multi-agent-complexity-benchmark.md`](plans/agent-harness-v11-multi-agent-complexity-benchmark.md).
+It remains future work: `agent-harness benchmark compare`, comparison schemas,
+metric aggregation, handoff usefulness scoring, role recommendations, and
+default-role promotion are not implemented. Role-count expansion requires
+comparative outcome evidence before recommendation or promotion.
+
 ## Documentation
 
 - [Architecture](docs/architecture.md)
@@ -316,12 +325,14 @@ APIs.
 - [V8 Skills System PRD](docs/prd-agent-harness-v8.md)
 - [V9 MCP Boundary PRD](docs/prd-agent-harness-v9.md)
 - [V11 Policy-Mediated Multi-Agent Orchestration PRD](docs/prd-agent-harness-v11.md)
+- [V11 Multi-Agent Complexity Benchmark PRD](docs/prd-agent-harness-v11-multi-agent-complexity-benchmark.md)
 - [V5 implementation plan](plans/agent-harness-v5.md)
 - [V6 implementation plan](plans/agent-harness-v6.md)
 - [V7 implementation plan](plans/agent-harness-v7.md)
 - [V8 implementation plan](plans/agent-harness-v8.md)
 - [V9 implementation plan](plans/agent-harness-v9.md)
 - [V11 implementation plan](plans/agent-harness-v11.md)
+- [V11 multi-agent complexity benchmark plan](plans/agent-harness-v11-multi-agent-complexity-benchmark.md)
 - [Roadmap](docs/roadmap.md)
 
 ## License

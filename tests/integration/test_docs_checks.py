@@ -402,6 +402,64 @@ def test_docs_check_rejects_v11_orchestration_claims_outside_roadmap(
     assert label in orchestration_claims[0]["text"]
 
 
+@pytest.mark.parametrize(
+    ("claim", "label"),
+    [
+        (
+            "Agent Harness treats expanded multi-agent role chains as the "
+            "preferred benchmark mode without comparison evidence.",
+            "expanded multi-agent role chains",
+        ),
+        (
+            "Agent Harness provides evidence-backed default role selection for "
+            "planner, reviewer, and tester.",
+            "evidence-backed default role selection",
+        ),
+    ],
+)
+def test_docs_check_rejects_benchmark_comparison_claims_outside_roadmap(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+    claim: str,
+    label: str,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    docs = tmp_path / "docs"
+    docs.mkdir(exist_ok=True)
+    (docs / "benchmark.md").write_text(
+        "\n".join(
+            [
+                "# Benchmark",
+                "",
+                "## Current Capabilities",
+                "",
+                claim,
+                "",
+                "## Roadmap / Not implemented yet",
+                "",
+                "Benchmark comparison remains future-only.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["docs", "check"]) == 1
+    report = json.loads(capsys.readouterr().out)
+    comparison_claims = [
+        finding
+        for finding in report["findings"]
+        if finding["rule_id"] == "unsupported_benchmark_comparison_claim"
+    ]
+
+    assert comparison_claims
+    assert comparison_claims[0]["path"] == "docs/benchmark.md"
+    assert comparison_claims[0]["line"] == 5
+    assert label in comparison_claims[0]["text"]
+
+
 def test_ci_runs_docs_check() -> None:
     workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
     assert "python -m agent_harness docs check" in workflow
