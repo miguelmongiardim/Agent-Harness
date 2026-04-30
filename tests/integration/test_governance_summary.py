@@ -9,13 +9,14 @@ from agent_harness.cli import main
 from tests.conftest import seed_project
 
 
-def test_governance_help_exposes_summary_command(capsys) -> None:  # type: ignore[no-untyped-def]
+def test_governance_help_exposes_summary_and_check_commands(capsys) -> None:  # type: ignore[no-untyped-def]
     with pytest.raises(SystemExit) as exc:
         main(["governance", "--help"])
 
     assert exc.value.code == 0
     help_text = capsys.readouterr().out
     assert "summary" in help_text
+    assert "check" in help_text
 
 
 def test_governance_summary_reports_policy_runs_and_absent_optional_domains(

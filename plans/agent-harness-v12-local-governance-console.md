@@ -222,15 +222,29 @@ public artifacts.
 
 ### Acceptance criteria
 
-- [ ] Exit code `0` means no blocking findings.
-- [ ] Exit code `1` means blocking findings exist.
-- [ ] Exit code `2` means invalid input, config, or artifact root.
-- [ ] Exit code `3` means internal error.
-- [ ] Critical findings block release by default.
-- [ ] Raw provider payload contents, API keys, env var values, raw headers, and
+- [x] Exit code `0` means no blocking findings.
+- [x] Exit code `1` means blocking findings exist.
+- [x] Exit code `2` means invalid input, config, or artifact root.
+- [x] Exit code `3` means internal error.
+- [x] Critical findings block release by default.
+- [x] Raw provider payload contents, API keys, env var values, raw headers, and
       unredacted sensitive context do not appear in output.
-- [ ] Unsafe artifact references are rejected and mapped to
+- [x] Unsafe artifact references are rejected and mapped to
       `governance_finding.v1`.
+
+### Phase 2 implementation notes
+
+- Added `agent-harness governance check`, which emits `governance_check.v1`
+  JSON and maps exit codes `0`, `1`, `2`, and `3`.
+- Added redaction-safe blocking findings for raw provider payload artifacts and
+  unsafe run-summary artifact references without reading or copying raw payload
+  contents.
+- Existing docs-check findings are carried as visible advisory findings and do
+  not fail the command unless a future phase marks them blocking.
+- Invalid config or artifact-root input returns a generic redaction-safe
+  diagnostic instead of exposing raw config values or machine-local paths.
+- Scope stayed Phase 2-only: no report, export, operator API/UI, or
+  release-readiness governance behavior was added.
 
 ### Out of scope
 

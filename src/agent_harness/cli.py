@@ -29,7 +29,8 @@ from agent_harness.docs_check import write_docs_check_report
 from agent_harness.doctor import doctor
 from agent_harness.evals import run_builtin_evals, write_eval_report
 from agent_harness.exporters import export_json, export_markdown, export_sarif
-from agent_harness.governance import build_governance_summary
+from agent_harness.governance import build_governance_summary, run_governance_check
+from agent_harness.governance.schema import GovernanceCheckResult, GovernanceDiagnostic
 from agent_harness.mcp import (
     get_mcp_prompt,
     list_mcp_prompts,
@@ -293,6 +294,8 @@ def build_parser() -> argparse.ArgumentParser:
     governance_sub = governance.add_subparsers(required=True)
     governance_summary = governance_sub.add_parser("summary")
     governance_summary.set_defaults(func=cmd_governance_summary)
+    governance_check = governance_sub.add_parser("check")
+    governance_check.set_defaults(func=cmd_governance_check)
 
     mcp = sub.add_parser(
         "mcp",
@@ -771,6 +774,26 @@ def cmd_governance_summary(args: argparse.Namespace) -> int:
     summary = build_governance_summary(Path.cwd())
     print(summary.model_dump_json(indent=2))
     return 0
+
+
+def cmd_governance_check(args: argparse.Namespace) -> int:
+    del args
+    try:
+        result = run_governance_check(Path.cwd())
+    except Exception:
+        result = GovernanceCheckResult(
+            status="internal_error",
+            exit_code=3,
+            diagnostics=[
+                GovernanceDiagnostic(
+                    severity="error",
+                    domain="governance",
+                    message="governance check failed with an internal error",
+                )
+            ],
+        )
+    print(result.model_dump_json(indent=2))
+    return result.exit_code
 
 
 def cmd_mcp_resources_list(args: argparse.Namespace) -> int:

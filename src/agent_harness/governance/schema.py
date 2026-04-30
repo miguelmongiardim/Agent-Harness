@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import PureWindowsPath
 from typing import Literal
 
 from pydantic import Field
@@ -18,6 +19,7 @@ DomainStatus = Literal[
 ]
 FindingSeverity = Literal["critical", "high", "medium", "low", "info"]
 DiagnosticSeverity = Literal["info", "warning", "error"]
+CheckStatus = Literal["passed", "failed", "invalid", "internal_error"]
 
 
 class GovernanceDomainSummary(StrictModel):
@@ -89,5 +91,18 @@ class GovernanceSummary(StrictModel):
     diagnostics: list[GovernanceDiagnostic] = Field(default_factory=list)
 
 
+class GovernanceCheckResult(StrictModel):
+    schema_version: Literal["governance_check.v1"] = "governance_check.v1"
+    generated_at: datetime = Field(default_factory=now_utc)
+    status: CheckStatus
+    exit_code: int
+    blocking_findings: int = 0
+    advisory_findings: int = 0
+    findings: list[GovernanceFinding] = Field(default_factory=list)
+    diagnostics: list[GovernanceDiagnostic] = Field(default_factory=list)
+
+
 def safe_artifact_reference(reference: str) -> str:
+    if PureWindowsPath(reference).is_absolute():
+        raise ValueError("absolute paths are not allowed")
     return normalize_relative_path(reference)

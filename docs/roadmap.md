@@ -192,18 +192,22 @@ promotion.
 
 ## v1.8.0 In Progress
 
-V12 implementation has started with a minimal local governance summary.
+V12 implementation has started with a local governance summary and blocking
+governance check.
 
 The V12 Local Governance Console planning artifacts are
 [docs/prd-agent-harness-v12-local-governance-console.md](prd-agent-harness-v12-local-governance-console.md)
 and
 [plans/agent-harness-v12-local-governance-console.md](../plans/agent-harness-v12-local-governance-console.md).
-Phase 1 implements `agent-harness governance summary`. The command emits
-`governance_summary.v1` data from local config, default policy, run-summary
-artifacts, domain status classification, run counts, initial finding counts,
-safe diagnostics, and project-relative evidence references. Governance report,
-check, explicit export, operator API, operator UI, and release-readiness gates
-remain future-only.
+Phase 2 implements `agent-harness governance summary` and
+`agent-harness governance check`. The summary emits `governance_summary.v1`
+data from local config, default policy, run-summary artifacts, domain status
+classification, run counts, initial finding counts, safe diagnostics, and
+project-relative evidence references. The check emits `governance_check.v1`,
+returns documented blocking/advisory exit codes, rejects unsafe artifact
+references, and reports raw provider payload artifacts without exposing their
+contents. Governance report, explicit export, operator API, operator UI, and
+release-readiness gates remain future-only.
 Hosted governance, enterprise governance control planes, multi-tenant admin,
 cloud deployment, compliance readiness, SOC2 readiness, ISO readiness, and
 formal certification remain future-only.
