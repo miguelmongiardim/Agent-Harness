@@ -192,22 +192,25 @@ promotion.
 
 ## v1.8.0 In Progress
 
-V12 implementation has started with a local governance summary and blocking
-governance check.
+V12 implementation has started with a local governance summary, blocking
+governance check, report generation, and explicit export writing.
 
 The V12 Local Governance Console planning artifacts are
 [docs/prd-agent-harness-v12-local-governance-console.md](prd-agent-harness-v12-local-governance-console.md)
 and
 [plans/agent-harness-v12-local-governance-console.md](../plans/agent-harness-v12-local-governance-console.md).
-Phase 2 implements `agent-harness governance summary` and
-`agent-harness governance check`. The summary emits `governance_summary.v1`
-data from local config, default policy, run-summary artifacts, domain status
-classification, run counts, initial finding counts, safe diagnostics, and
-project-relative evidence references. The check emits `governance_check.v1`,
-returns documented blocking/advisory exit codes, rejects unsafe artifact
-references, and reports raw provider payload artifacts without exposing their
-contents. Governance report, explicit export, operator API, operator UI, and
-release-readiness gates remain future-only.
+Phase 3 implements `agent-harness governance summary`, `check`, `report`, and
+`export`. The summary emits `governance_summary.v1` data from local config,
+default policy, run-summary artifacts, domain status classification, run
+counts, initial finding counts, safe diagnostics, and project-relative evidence
+references. The check emits `governance_check.v1`, returns documented
+blocking/advisory exit codes, rejects unsafe artifact references, and reports
+raw provider payload artifacts without exposing their contents. The report and
+export commands emit `governance_report.v1`, `governance_index.v1`, and
+`governance_findings.v1` artifacts with safe project-relative evidence refs,
+content hashes for included evidence, and raw provider payload artifacts marked
+excluded. Operator API, operator UI, and release-readiness gates remain
+future-only.
 Hosted governance, enterprise governance control planes, multi-tenant admin,
 cloud deployment, compliance readiness, SOC2 readiness, ISO readiness, and
 formal certification remain future-only.

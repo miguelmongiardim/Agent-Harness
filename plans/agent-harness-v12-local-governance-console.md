@@ -294,18 +294,36 @@ pipeline as summary and check.
 
 ### Acceptance criteria
 
-- [ ] Markdown report includes policy, run, approval, provider, retrieval,
+- [x] Markdown report includes policy, run, approval, provider, retrieval,
       template, skill, MCP, multi-agent, security, release readiness, and
       unsupported claim sections.
-- [ ] JSON report validates as `governance_report.v1`.
-- [ ] Export writes `governance_summary.v1.json`,
+- [x] JSON report validates as `governance_report.v1`.
+- [x] Export writes `governance_summary.v1.json`,
       `governance_report.v1.md`, `governance_report.v1.json`,
       `governance_index.v1.json`, and `governance_findings.v1.json`.
-- [ ] `governance_index.v1` entries include artifact type, safe path, content
+- [x] `governance_index.v1` entries include artifact type, safe path, content
       hash, source run id where applicable, schema version, redaction status,
       and inclusion status.
-- [ ] Exports do not copy or expose raw provider payloads, secrets, absolute
+- [x] Exports do not copy or expose raw provider payloads, secrets, absolute
       local paths, raw Qdrant internals, or arbitrary workspace files.
+
+### Phase 3 implementation notes
+
+- Added `agent-harness governance report --format markdown|json`, backed by
+  the same summary and check aggregation used by earlier phases.
+- Added `agent-harness governance export --output <path>`, which writes the
+  documented five-file layout only when explicitly requested.
+- Added `governance_report.v1`, `governance_index.v1`,
+  `governance_findings.v1`, and export result contracts under the governance
+  boundary.
+- Governance index entries cover known safe config, policy, run, provider,
+  docs-check, and redacted provider evidence with project-relative paths,
+  hashes for included evidence, source run ids where applicable, schema
+  versions where present, redaction status, and inclusion status.
+- Raw provider payload artifacts are represented as excluded metadata and are
+  not copied into exports or rendered into report contents.
+- Scope stayed Phase 3-only: no operator API/UI, release-readiness gate, or
+  compliance control mapping was added.
 
 ### Out of scope
 

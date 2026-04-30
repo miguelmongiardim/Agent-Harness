@@ -153,6 +153,9 @@ agent-harness inspect context <run-id>
 agent-harness inspect policy default
 agent-harness governance summary
 agent-harness governance check
+agent-harness governance report --format markdown
+agent-harness governance report --format json
+agent-harness governance export --output .agent-harness/governance/
 agent-harness eval
 agent-harness release package-check
 agent-harness release readiness
@@ -326,14 +329,17 @@ V12 local governance evidence surface:
 [docs/prd-agent-harness-v12-local-governance-console.md](docs/prd-agent-harness-v12-local-governance-console.md)
 and
 [plans/agent-harness-v12-local-governance-console.md](plans/agent-harness-v12-local-governance-console.md).
-Phase 2 implements `agent-harness governance summary` and
-`agent-harness governance check` as local, read-only views over config,
-policy, run-summary artifacts, docs-check evidence, and provider payload
-artifact risk. The summary emits `governance_summary.v1`; the check emits
-`governance_check.v1`, returns documented blocking/advisory exit codes, rejects
-unsafe artifact references, and reports raw provider payload artifacts without
-exposing their contents. Governance report, export, operator API/UI, and
-release-readiness gates remain future-only.
+Phase 3 implements `agent-harness governance summary`,
+`agent-harness governance check`, `agent-harness governance report`, and
+`agent-harness governance export` as local, read-only views over config,
+policy, run-summary artifacts, docs-check evidence, provider payload artifact
+risk, and safe governance export metadata. The commands emit
+`governance_summary.v1`, `governance_check.v1`, `governance_report.v1`,
+`governance_index.v1`, and
+`governance_findings.v1` data, reject unsafe artifact references, report raw
+provider payload artifacts without exposing their contents, and write exports
+only when explicitly requested. Operator API/UI and release-readiness gates
+remain future-only.
 Compliance readiness and formal certification remain future-only.
 
 ## Documentation

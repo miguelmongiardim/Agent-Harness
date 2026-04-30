@@ -29,7 +29,13 @@ from agent_harness.docs_check import write_docs_check_report
 from agent_harness.doctor import doctor
 from agent_harness.evals import run_builtin_evals, write_eval_report
 from agent_harness.exporters import export_json, export_markdown, export_sarif
-from agent_harness.governance import build_governance_summary, run_governance_check
+from agent_harness.governance import (
+    build_governance_report,
+    build_governance_summary,
+    export_governance,
+    render_governance_report_markdown,
+    run_governance_check,
+)
 from agent_harness.governance.schema import GovernanceCheckResult, GovernanceDiagnostic
 from agent_harness.mcp import (
     get_mcp_prompt,
@@ -296,6 +302,12 @@ def build_parser() -> argparse.ArgumentParser:
     governance_summary.set_defaults(func=cmd_governance_summary)
     governance_check = governance_sub.add_parser("check")
     governance_check.set_defaults(func=cmd_governance_check)
+    governance_report = governance_sub.add_parser("report")
+    governance_report.add_argument("--format", choices=["markdown", "json"], default="markdown")
+    governance_report.set_defaults(func=cmd_governance_report)
+    governance_export = governance_sub.add_parser("export")
+    governance_export.add_argument("--output", required=True)
+    governance_export.set_defaults(func=cmd_governance_export)
 
     mcp = sub.add_parser(
         "mcp",
@@ -794,6 +806,21 @@ def cmd_governance_check(args: argparse.Namespace) -> int:
         )
     print(result.model_dump_json(indent=2))
     return result.exit_code
+
+
+def cmd_governance_report(args: argparse.Namespace) -> int:
+    report = build_governance_report(Path.cwd())
+    if args.format == "json":
+        print(report.model_dump_json(indent=2))
+    else:
+        print(render_governance_report_markdown(report), end="")
+    return 0
+
+
+def cmd_governance_export(args: argparse.Namespace) -> int:
+    result = export_governance(Path.cwd(), Path(args.output))
+    print(result.model_dump_json(indent=2))
+    return 0
 
 
 def cmd_mcp_resources_list(args: argparse.Namespace) -> int:

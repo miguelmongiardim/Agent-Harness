@@ -20,6 +20,14 @@ DomainStatus = Literal[
 FindingSeverity = Literal["critical", "high", "medium", "low", "info"]
 DiagnosticSeverity = Literal["info", "warning", "error"]
 CheckStatus = Literal["passed", "failed", "invalid", "internal_error"]
+EvidenceRedactionStatus = Literal[
+    "safe",
+    "redacted",
+    "metadata_only",
+    "excluded_raw",
+    "unknown",
+]
+EvidenceInclusionStatus = Literal["included", "excluded", "missing", "malformed"]
 
 
 class GovernanceDomainSummary(StrictModel):
@@ -100,6 +108,53 @@ class GovernanceCheckResult(StrictModel):
     advisory_findings: int = 0
     findings: list[GovernanceFinding] = Field(default_factory=list)
     diagnostics: list[GovernanceDiagnostic] = Field(default_factory=list)
+
+
+class GovernanceReportSection(StrictModel):
+    section_id: str
+    title: str
+    status: DomainStatus | CheckStatus | str
+    message: str = ""
+    evidence_refs: list[str] = Field(default_factory=list)
+
+
+class GovernanceReport(StrictModel):
+    schema_version: Literal["governance_report.v1"] = "governance_report.v1"
+    generated_at: datetime = Field(default_factory=now_utc)
+    summary: GovernanceSummary
+    check: GovernanceCheckResult
+    sections: list[GovernanceReportSection] = Field(default_factory=list)
+    findings: list[GovernanceFinding] = Field(default_factory=list)
+    diagnostics: list[GovernanceDiagnostic] = Field(default_factory=list)
+
+
+class GovernanceIndexEntry(StrictModel):
+    artifact_type: str
+    path: str
+    content_hash: str | None = None
+    source_run_id: str | None = None
+    schema_version: str | None = None
+    redaction_status: EvidenceRedactionStatus = "unknown"
+    inclusion_status: EvidenceInclusionStatus = "included"
+
+
+class GovernanceIndex(StrictModel):
+    schema_version: Literal["governance_index.v1"] = "governance_index.v1"
+    generated_at: datetime = Field(default_factory=now_utc)
+    entries: list[GovernanceIndexEntry] = Field(default_factory=list)
+
+
+class GovernanceFindingsExport(StrictModel):
+    schema_version: Literal["governance_findings.v1"] = "governance_findings.v1"
+    generated_at: datetime = Field(default_factory=now_utc)
+    counts: GovernanceFindingCounts = Field(default_factory=GovernanceFindingCounts)
+    findings: list[GovernanceFinding] = Field(default_factory=list)
+
+
+class GovernanceExportResult(StrictModel):
+    schema_version: Literal["governance_export.v1"] = "governance_export.v1"
+    output_path: str
+    files: list[str] = Field(default_factory=list)
 
 
 def safe_artifact_reference(reference: str) -> str:
