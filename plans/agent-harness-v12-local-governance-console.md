@@ -149,15 +149,30 @@ are not needed yet.
 
 ### Acceptance criteria
 
-- [ ] `agent-harness governance --help` exposes the command family.
-- [ ] `governance summary` returns valid `governance_summary.v1` data.
-- [ ] Policy and run domains aggregate from existing config, policy, and run
+- [x] `agent-harness governance --help` exposes the command family.
+- [x] `governance summary` returns valid `governance_summary.v1` data.
+- [x] Policy and run domains aggregate from existing config, policy, and run
       storage.
-- [ ] Optional absent domains report `not_present`.
-- [ ] Missing and malformed required artifacts become diagnostics and
+- [x] Optional absent domains report `not_present`.
+- [x] Missing and malformed required artifacts become diagnostics and
       findings without crashing.
-- [ ] Artifact paths in summary-adjacent diagnostics are safe project-relative
+- [x] Artifact paths in summary-adjacent diagnostics are safe project-relative
       paths.
+
+### Phase 1 implementation notes
+
+- Added `agent_harness.governance` with boundary-owned schema models and a
+  minimal summary aggregator.
+- Added `agent-harness governance summary`, which emits
+  `governance_summary.v1` JSON from local config, default policy, and known
+  run-summary artifacts.
+- Optional absent domains report `not_present`; empty security finding files
+  do not make security governance present.
+- Missing policy evidence and malformed run summaries produce safe diagnostics
+  and `governance_finding.v1` records without leaking raw artifact contents or
+  absolute machine-local paths.
+- Scope stayed Phase 1-only: no report, check, export, operator API/UI, or
+  release-readiness governance behavior was added.
 
 ### Out of scope
 

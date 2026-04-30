@@ -29,6 +29,7 @@ from agent_harness.docs_check import write_docs_check_report
 from agent_harness.doctor import doctor
 from agent_harness.evals import run_builtin_evals, write_eval_report
 from agent_harness.exporters import export_json, export_markdown, export_sarif
+from agent_harness.governance import build_governance_summary
 from agent_harness.mcp import (
     get_mcp_prompt,
     list_mcp_prompts,
@@ -287,6 +288,11 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_compare.add_argument("pack_id")
     benchmark_compare.add_argument("case_id", nargs="?")
     benchmark_compare.set_defaults(func=cmd_benchmark_compare)
+
+    governance = sub.add_parser("governance")
+    governance_sub = governance.add_subparsers(required=True)
+    governance_summary = governance_sub.add_parser("summary")
+    governance_summary.set_defaults(func=cmd_governance_summary)
 
     mcp = sub.add_parser(
         "mcp",
@@ -757,6 +763,13 @@ def cmd_benchmark_compare(args: argparse.Namespace) -> int:
         else run_benchmark_comparison_suite(Path.cwd(), args.pack_id)
     )
     print(result.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_governance_summary(args: argparse.Namespace) -> int:
+    del args
+    summary = build_governance_summary(Path.cwd())
+    print(summary.model_dump_json(indent=2))
     return 0
 
 

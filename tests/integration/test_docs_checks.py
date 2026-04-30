@@ -527,7 +527,7 @@ def test_ci_runs_docs_check() -> None:
     assert "python -m agent_harness docs check" in workflow
 
 
-def test_v12_governance_scope_is_planned_in_public_docs() -> None:
+def test_v12_governance_summary_scope_is_current_in_public_docs() -> None:
     readme = Path("README.md").read_text(encoding="utf-8")
     roadmap = Path("docs/roadmap.md").read_text(encoding="utf-8")
     prd_link = "docs/prd-agent-harness-v12-local-governance-console.md"
@@ -535,21 +535,20 @@ def test_v12_governance_scope_is_planned_in_public_docs() -> None:
 
     assert prd_link in readme
     assert plan_link in readme
-    assert "V12 planned local governance evidence surface" in readme
+    assert "V12 local governance evidence surface" in readme
+    assert "`agent-harness governance summary`" in readme
     assert (
-        "No governance CLI, API, UI, release-readiness, or export behavior is implemented yet."
+        "Governance report, check, export, operator API/UI, and release-readiness gates"
         in readme
     )
     assert "Compliance readiness and formal certification remain future-only." in readme
 
     assert "prd-agent-harness-v12-local-governance-console.md" in roadmap
     assert "agent-harness-v12-local-governance-console.md" in roadmap
-    assert "v1.8.0 Planned Scope" in roadmap
-    assert "V12 is planned, not implemented." in roadmap
-    assert (
-        "compliance readiness, SOC2 readiness, ISO readiness, and formal certification"
-        in roadmap
-    )
+    assert "v1.8.0 In Progress" in roadmap
+    assert "Phase 1 implements `agent-harness governance summary`." in roadmap
+    assert "compliance readiness, SOC2 readiness, ISO readiness" in roadmap
+    assert "formal certification remain future-only." in roadmap
 
 
 def test_docs_check_rejects_stale_v3_scope_for_agent_harness_repo(

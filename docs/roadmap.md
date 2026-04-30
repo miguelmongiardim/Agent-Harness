@@ -190,21 +190,23 @@ as release evidence only. It does not add hosted benchmark execution, external
 datasets, configurable broader-pack allowlists, or automatic role-default
 promotion.
 
-## v1.8.0 Planned Scope
+## v1.8.0 In Progress
 
-V12 is planned, not implemented.
+V12 implementation has started with a minimal local governance summary.
 
 The V12 Local Governance Console planning artifacts are
 [docs/prd-agent-harness-v12-local-governance-console.md](prd-agent-harness-v12-local-governance-console.md)
 and
 [plans/agent-harness-v12-local-governance-console.md](../plans/agent-harness-v12-local-governance-console.md).
-The planned scope is a local, read-only governance evidence surface over
-existing Agent Harness artifacts, with future commands for summary, report,
-check, and explicit export. No governance CLI, operator API, operator UI,
-release-readiness gate, or governance export behavior is implemented yet.
-Hosted governance, enterprise governance control planes, multi-tenant admin,
-cloud deployment, compliance readiness, SOC2 readiness, ISO readiness, and formal certification
+Phase 1 implements `agent-harness governance summary`. The command emits
+`governance_summary.v1` data from local config, default policy, run-summary
+artifacts, domain status classification, run counts, initial finding counts,
+safe diagnostics, and project-relative evidence references. Governance report,
+check, explicit export, operator API, operator UI, and release-readiness gates
 remain future-only.
+Hosted governance, enterprise governance control planes, multi-tenant admin,
+cloud deployment, compliance readiness, SOC2 readiness, ISO readiness, and
+formal certification remain future-only.
 
 ## Release Maintenance Priorities
 

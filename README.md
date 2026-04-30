@@ -151,6 +151,7 @@ agent-harness retrieval index delete local-docs
 agent-harness inspect run <run-id>
 agent-harness inspect context <run-id>
 agent-harness inspect policy default
+agent-harness governance summary
 agent-harness eval
 agent-harness release package-check
 agent-harness release readiness
@@ -320,13 +321,16 @@ allowlists and automatic default-role promotion remain future scope.
 Role-count expansion requires comparative outcome evidence before
 recommendation or promotion.
 
-V12 planned local governance evidence surface:
+V12 local governance evidence surface:
 [docs/prd-agent-harness-v12-local-governance-console.md](docs/prd-agent-harness-v12-local-governance-console.md)
 and
 [plans/agent-harness-v12-local-governance-console.md](plans/agent-harness-v12-local-governance-console.md).
-V12 is planned as a local, read-only governance summary/report/check/export
-surface over existing Agent Harness artifacts.
-No governance CLI, API, UI, release-readiness, or export behavior is implemented yet.
+Phase 1 implements `agent-harness governance summary` as a local, read-only
+`governance_summary.v1` view over config, policy, and run-summary artifacts.
+It reports policy/run domain status, optional absent-domain status, run counts,
+initial finding counts, and safe project-relative evidence references.
+Governance report, check, export, operator API/UI, and release-readiness gates
+remain future-only.
 Compliance readiness and formal certification remain future-only.
 
 ## Documentation
