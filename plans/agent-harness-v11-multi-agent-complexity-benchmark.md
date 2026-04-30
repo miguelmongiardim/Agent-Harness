@@ -395,12 +395,12 @@ than public benchmark comparability.
 
 ### Acceptance criteria
 
-- [ ] Pack-level compare writes a suite artifact.
-- [ ] Suite artifacts link to all per-case comparison artifacts.
-- [ ] Per-case failures remain inspectable and are not collapsed into a vague
+- [x] Pack-level compare writes a suite artifact.
+- [x] Suite artifacts link to all per-case comparison artifacts.
+- [x] Per-case failures remain inspectable and are not collapsed into a vague
       aggregate status.
-- [ ] Eval coverage enforces the baseline requirement.
-- [ ] Docs state that role-count expansion requires comparison evidence and
+- [x] Eval coverage enforces the baseline requirement.
+- [x] Docs state that role-count expansion requires comparison evidence and
       that explicit broader-pack allowlists remain roadmap scope.
 
 ### Out of scope
@@ -408,6 +408,24 @@ than public benchmark comparability.
 - External benchmark datasets.
 - Configurable benchmark allowlists.
 - Release-readiness hard gates unless a later release plan requires them.
+
+### Implementation notes
+
+- Added `agent-harness benchmark compare <pack_id>` for bundled pack-level
+  comparison. It writes `benchmark_comparison_suite.v1` under
+  `.agent-harness/benchmarks/comparisons/<pack_id>.json`.
+- Suite cases link to their per-case `benchmark_comparison_result.v1`
+  artifacts and include per-mode status, pass, eligibility, and skip reason
+  records so skipped or failed modes stay inspectable.
+- Suite execution records case-level errors instead of aborting the whole pack,
+  preserving the failed case id and error message for review.
+- Added the `benchmark-comparison-baseline-required` eval. It runs the bundled
+  comparison suite in an isolated eval workspace, verifies every compared case
+  has an inspectable single-agent baseline, and confirms skipped mode evidence
+  remains visible.
+- Docs now describe comparison as local evidence only; broader-pack allowlists,
+  external datasets, release hard gates, and automatic role-default promotion
+  remain later scope.
 
 ## Cross-Phase Invariants
 

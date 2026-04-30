@@ -22,6 +22,8 @@ The bundled eval suite focuses on:
 - benchmark adapter evidence for task import, workspace preparation, policy
   selection, run execution, eval result mapping, export paths, and retrieval
   backend evidence when present
+- pack-level benchmark comparison evidence that verifies each compared local
+  sample has an inspectable single-agent baseline before orchestration modes
 - a local dense-retrieval benchmark scenario that uses deterministic fixture
   behavior rather than public dataset downloads
 - optional LangGraph boundary compatibility through the same native policy and
@@ -39,6 +41,12 @@ task, policy, approval, runtime, and export paths as normal Agent Harness runs,
 and produce `benchmark_result.v1` artifacts that point back to run exports.
 The bundled adapters prove local import/run/export behavior only; they are not
 full SWE-bench or Terminal-Bench executions.
+
+Benchmark comparison evals are local evidence checks. They run the bundled
+sample pack through `benchmark_comparison_suite.v1`, verify that every per-case
+comparison links an inspectable single-agent baseline, and preserve skipped
+mode evidence. They do not claim external benchmark comparability or promote
+role defaults.
 
 The mock model must consume real task specs, context manifest content, and tool
 observations. Tests intentionally verify that changing observations changes

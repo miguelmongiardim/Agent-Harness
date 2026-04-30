@@ -22,6 +22,10 @@ from agent_harness.benchmarks.schema import (
     BenchmarkComparisonModeId,
     BenchmarkComparisonModeResult,
     BenchmarkComparisonResult,
+    BenchmarkComparisonSuiteCaseResult,
+    BenchmarkComparisonSuiteModeStatus,
+    BenchmarkComparisonSuiteResult,
+    BenchmarkComparisonSuiteStatus,
     BenchmarkPackRecord,
     BenchmarkResult,
 )
@@ -95,6 +99,64 @@ def run_benchmark_comparison(
     )
     write_json(result_path, result.model_dump(mode="json"))
     return result
+
+
+def run_benchmark_comparison_suite(
+    project_root: Path,
+    pack_id: str,
+) -> BenchmarkComparisonSuiteResult:
+    root = project_root.resolve()
+    pack = load_benchmark_pack(pack_id)
+    cases = [_suite_case_result(root, pack, case) for case in pack.cases]
+    result_path = root / ".agent-harness" / "benchmarks" / "comparisons" / f"{pack.pack_id}.json"
+    status: BenchmarkComparisonSuiteStatus = (
+        "completed" if all(case.status == "completed" for case in cases) else "failed"
+    )
+    result = BenchmarkComparisonSuiteResult(
+        pack_id=pack.pack_id,
+        version=pack.version,
+        status=status,
+        passed=all(case.passed for case in cases),
+        result_artifact=_project_relative(root, result_path),
+        case_count=len(cases),
+        cases=cases,
+    )
+    write_json(result_path, result.model_dump(mode="json"))
+    return result
+
+
+def _suite_case_result(
+    root: Path,
+    pack: BenchmarkPackRecord,
+    case: BenchmarkCaseRecord,
+) -> BenchmarkComparisonSuiteCaseResult:
+    try:
+        comparison = run_benchmark_comparison(root, pack.pack_id, case.case_id)
+    except Exception as exc:
+        return BenchmarkComparisonSuiteCaseResult(
+            case_id=case.case_id,
+            benchmark_kind=case.benchmark_kind,
+            status="failed",
+            passed=False,
+            error=str(exc),
+        )
+    return BenchmarkComparisonSuiteCaseResult(
+        case_id=case.case_id,
+        benchmark_kind=case.benchmark_kind,
+        status="completed",
+        passed=all(mode.passed for mode in comparison.modes if mode.eligible),
+        comparison_result=comparison.result_artifact,
+        mode_statuses=[
+            BenchmarkComparisonSuiteModeStatus(
+                mode_id=mode.mode_id,
+                eligible=mode.eligible,
+                status=mode.status,
+                passed=mode.passed,
+                skip_reason=mode.skip_reason,
+            )
+            for mode in comparison.modes
+        ],
+    )
 
 
 def _baseline_mode(

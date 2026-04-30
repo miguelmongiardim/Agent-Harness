@@ -15,6 +15,7 @@ from agent_harness.benchmarks import (
     load_benchmark_pack,
     run_benchmark_case,
     run_benchmark_comparison,
+    run_benchmark_comparison_suite,
 )
 from agent_harness.config import load_config, load_public_model, write_default_config
 from agent_harness.context.retrieval import ingest_documents
@@ -284,7 +285,7 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_run.set_defaults(func=cmd_benchmark_run)
     benchmark_compare = benchmark_sub.add_parser("compare")
     benchmark_compare.add_argument("pack_id")
-    benchmark_compare.add_argument("case_id")
+    benchmark_compare.add_argument("case_id", nargs="?")
     benchmark_compare.set_defaults(func=cmd_benchmark_compare)
 
     mcp = sub.add_parser(
@@ -750,7 +751,11 @@ def cmd_benchmark_run(args: argparse.Namespace) -> int:
 
 
 def cmd_benchmark_compare(args: argparse.Namespace) -> int:
-    result = run_benchmark_comparison(Path.cwd(), args.pack_id, args.case_id)
+    result = (
+        run_benchmark_comparison(Path.cwd(), args.pack_id, args.case_id)
+        if args.case_id is not None
+        else run_benchmark_comparison_suite(Path.cwd(), args.pack_id)
+    )
     print(result.model_dump_json(indent=2))
     return 0
 

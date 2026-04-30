@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, cast
 
-from agent_harness.benchmarks import run_benchmark_case
+from agent_harness.benchmarks import run_benchmark_case, run_benchmark_comparison_suite
 from agent_harness.config import load_model, write_default_config
 from agent_harness.context.retrieval import ingest_documents
 from agent_harness.core.runtime import HarnessRuntime, approve_action
@@ -45,6 +45,7 @@ ADVANCED_EVAL_RUNNERS = [
     "_run_approval_flow_eval",
     "_run_reproducible_replay_eval",
     "_run_benchmark_sample_pack_eval",
+    "_run_benchmark_comparison_eval",
     "_run_provider_audit_demo_eval",
     "_run_provider_core_deterministic_eval",
 ]
@@ -599,6 +600,78 @@ def _run_benchmark_sample_pack_eval(project_root: Path) -> EvalResult:
         message=_invariant_summary(invariants),
         artifacts=artifacts,
         invariants=invariants,
+    )
+
+
+def _run_benchmark_comparison_eval(project_root: Path) -> EvalResult:
+    eval_id = "benchmark-comparison-baseline-required"
+    title = "Benchmark comparison suite requires inspectable baselines"
+    sandbox = _prepare_eval_workspace(project_root, eval_id)
+    suite = run_benchmark_comparison_suite(sandbox, "local-samples")
+    suite_path = sandbox / suite.result_artifact
+    baseline_checks = [_comparison_case_has_baseline(sandbox, case) for case in suite.cases]
+    skipped_modes = [
+        mode
+        for case in suite.cases
+        for mode in case.mode_statuses
+        if not mode.eligible and mode.status == "skipped"
+    ]
+    invariants = [
+        EvalInvariant(
+            name="suite_artifact_written",
+            passed=suite_path.exists() and suite.status == "completed",
+            message=(
+                "comparison suite artifact was written"
+                if suite_path.exists() and suite.status == "completed"
+                else "comparison suite artifact was missing or failed"
+            ),
+        ),
+        EvalInvariant(
+            name="every_case_has_baseline",
+            passed=all(baseline_checks),
+            message=(
+                "every compared case has an inspectable single-agent baseline"
+                if all(baseline_checks)
+                else "at least one compared case lacks an inspectable baseline"
+            ),
+        ),
+        EvalInvariant(
+            name="mode_statuses_preserve_skips",
+            passed=bool(skipped_modes),
+            message=(
+                "suite preserves skipped mode status evidence"
+                if skipped_modes
+                else "suite did not expose skipped mode status evidence"
+            ),
+        ),
+    ]
+    return EvalResult(
+        eval_id=eval_id,
+        title=title,
+        passed=all(invariant.passed for invariant in invariants),
+        message=_invariant_summary(invariants),
+        artifacts={"comparison_suite": _artifact_link(project_root, suite_path)},
+        invariants=invariants,
+    )
+
+
+def _comparison_case_has_baseline(project_root: Path, case: Any) -> bool:
+    if case.comparison_result is None:
+        return False
+    comparison_path = project_root / case.comparison_result
+    if not comparison_path.exists():
+        return False
+    comparison = cast(dict[str, Any], load_json(comparison_path))
+    modes = comparison.get("modes")
+    if not isinstance(modes, list) or not modes:
+        return False
+    baseline = modes[0]
+    return (
+        isinstance(baseline, dict)
+        and comparison.get("baseline_mode_id") == "single_agent_baseline"
+        and baseline.get("mode_id") == "single_agent_baseline"
+        and baseline.get("status") == "completed"
+        and isinstance(baseline.get("run_export"), str)
     )
 
 

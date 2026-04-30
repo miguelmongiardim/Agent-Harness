@@ -23,6 +23,8 @@ BenchmarkComparisonModeId = Literal[
 ]
 BenchmarkComparisonModeStatus = Literal["completed", "paused", "failed", "dry_run", "skipped"]
 BenchmarkComparisonMetricStatus = Literal["available", "unavailable", "not_applicable"]
+BenchmarkComparisonSuiteCaseStatus = Literal["completed", "failed"]
+BenchmarkComparisonSuiteStatus = Literal["completed", "failed"]
 BenchmarkComparisonRole = Literal["planner", "implementer", "reviewer", "tester"]
 BenchmarkComparisonRoleRecommendationAction = Literal["retain", "neutral", "remove_candidate"]
 BenchmarkComparisonDefaultRecommendation = Literal["not_recommended", "candidate"]
@@ -197,4 +199,37 @@ class BenchmarkComparisonResult(StrictModel):
     role_recommendations: list[BenchmarkComparisonRoleRecommendation] = Field(
         default_factory=list
     )
+    created_at: datetime = Field(default_factory=now_utc)
+
+
+class BenchmarkComparisonSuiteModeStatus(StrictModel):
+    mode_id: BenchmarkComparisonModeId
+    eligible: bool
+    status: BenchmarkComparisonModeStatus
+    passed: bool
+    skip_reason: str | None = None
+
+
+class BenchmarkComparisonSuiteCaseResult(StrictModel):
+    schema_version: Literal["benchmark_comparison_suite_case.v1"] = (
+        "benchmark_comparison_suite_case.v1"
+    )
+    case_id: str
+    benchmark_kind: BenchmarkKind
+    status: BenchmarkComparisonSuiteCaseStatus
+    passed: bool
+    comparison_result: str | None = None
+    error: str | None = None
+    mode_statuses: list[BenchmarkComparisonSuiteModeStatus] = Field(default_factory=list)
+
+
+class BenchmarkComparisonSuiteResult(StrictModel):
+    schema_version: Literal["benchmark_comparison_suite.v1"] = "benchmark_comparison_suite.v1"
+    pack_id: str
+    version: str
+    status: BenchmarkComparisonSuiteStatus
+    passed: bool
+    result_artifact: str
+    case_count: int
+    cases: list[BenchmarkComparisonSuiteCaseResult]
     created_at: datetime = Field(default_factory=now_utc)

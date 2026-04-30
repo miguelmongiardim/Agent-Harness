@@ -298,22 +298,25 @@ The V11 multi-agent complexity benchmark is planned separately in
 [`docs/prd-agent-harness-v11-multi-agent-complexity-benchmark.md`](docs/prd-agent-harness-v11-multi-agent-complexity-benchmark.md)
 and
 [`plans/agent-harness-v11-multi-agent-complexity-benchmark.md`](plans/agent-harness-v11-multi-agent-complexity-benchmark.md).
-The implemented single-case comparison path supports
-`agent-harness benchmark compare local-samples terminal-readonly-inspect`,
-which runs a single-agent baseline first, then sequential planner ->
+The implemented comparison path supports
+`agent-harness benchmark compare local-samples terminal-readonly-inspect` for a
+single case and `agent-harness benchmark compare local-samples` for the bundled
+pack. It runs a single-agent baseline first, then sequential planner ->
 implementer and planner -> implementer -> reviewer orchestration dry runs. It
 also records planner -> implementer -> reviewer -> tester mode as skipped when
 the case lacks executable `test_commands`, and runs that tester mode for
 test-enabled bundled cases. Comparison artifacts use
-`benchmark_comparison_result.v1` under
-`.agent-harness/benchmarks/comparisons/` and include evidence-derived metrics
+`benchmark_comparison_result.v1` and `benchmark_comparison_suite.v1` under
+`.agent-harness/benchmarks/comparisons/`, link per-case evidence, preserve
+per-mode statuses, and include evidence-derived metrics
 for task success, test evidence, policy violations, approval state, child/tool
 and handoff counts, handoff size, coordination overhead, artifact completeness,
 failure attribution, handoff usefulness, conservative role recommendations,
 and explicit unavailable token/runtime/cost values. Role recommendations include
 reason codes and supporting metric names, and they do not alter policy defaults
-or generated orchestration role lists. Pack-level comparison and automatic
-default-role promotion remain future scope.
+or generated orchestration role lists. `agent-harness eval` includes a local
+comparison eval that enforces inspectable baseline evidence. Broader-pack
+allowlists and automatic default-role promotion remain future scope.
 Role-count expansion requires comparative outcome evidence before
 recommendation or promotion.
 

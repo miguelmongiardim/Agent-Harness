@@ -105,7 +105,10 @@ artifact indexes rather than private runtime objects. Comparison interpretation
 also stays in the benchmark boundary: generated handoffs are classified from
 downstream context-manifest evidence, and role recommendations are deterministic
 records with reason codes and supporting metric names rather than policy or
-role-list mutations.
+role-list mutations. Pack-level comparison writes a suite artifact that links
+each per-case comparison result and preserves individual mode statuses, so
+skips or failures remain inspectable. Eval coverage consumes that public suite
+artifact to enforce the baseline requirement.
 
 Provider transports live under `agent_harness.model.adapters` behind
 `ProviderGateway`; they call the deterministic model contract or recorded

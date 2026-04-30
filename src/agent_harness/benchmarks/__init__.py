@@ -6,6 +6,7 @@ __all__ = [
     "list_benchmark_packs",
     "load_benchmark_pack",
     "run_benchmark_comparison",
+    "run_benchmark_comparison_suite",
     "run_benchmark_case",
 ]
 
@@ -15,6 +16,10 @@ _LAZY_EXPORTS = {
     "run_benchmark_comparison": (
         "agent_harness.benchmarks.comparison",
         "run_benchmark_comparison",
+    ),
+    "run_benchmark_comparison_suite": (
+        "agent_harness.benchmarks.comparison",
+        "run_benchmark_comparison_suite",
     ),
     "run_benchmark_case": ("agent_harness.benchmarks.packs", "run_benchmark_case"),
 }
