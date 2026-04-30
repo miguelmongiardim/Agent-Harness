@@ -1,0 +1,94 @@
+{
+  "schema_version": "policy.v2",
+  "name": "default",
+  "description": "Default local policy ceiling for the V11 orchestration workflow demo.",
+  "profile_kind": "default",
+  "documented": true,
+  "deliberate_selection_required": true,
+  "trust_zones": {
+    "rules": {
+      "mock": "allow",
+      "local_process": "allow",
+      "local_endpoint": "approval_required",
+      "private_network": "approval_required",
+      "hosted_provider": "approval_required"
+    }
+  },
+  "provider_input": {
+    "rules": {
+      "public": "allow",
+      "generated": "allow_untrusted",
+      "internal": "approval_required",
+      "confidential": "deny",
+      "restricted": "deny",
+      "secret": "deny",
+      "credential": "deny",
+      "pii": "deny",
+      "customer": "deny",
+      "unknown": "deny"
+    },
+    "hard_deny_sensitivities": ["secret", "credential", "pii", "customer"],
+    "redact_reclassify": {}
+  },
+  "approvals": {
+    "required_tools": ["patch_file", "git_commit"]
+  },
+  "scanner": {
+    "fail_threshold": "high",
+    "external_reports": "advisory"
+  },
+  "template_capabilities": {
+    "allowed_capabilities": [],
+    "default_action": "deny"
+  },
+  "migration": {
+    "safe_writes": true,
+    "preserve_or_tighten": true,
+    "allow_loose_rewrites": false
+  },
+  "orchestration": {
+    "enabled": true,
+    "execution": "sequential",
+    "allowed_roles": ["planner", "implementer", "reviewer", "tester"],
+    "allow_nested": false
+  },
+  "allowed_tools": [
+    "read_file",
+    "search_code",
+    "run_tests",
+    "patch_file",
+    "git_status",
+    "git_commit"
+  ],
+  "read_roots": ["."],
+  "write_roots": ["."],
+  "deny_globs": [
+    ".git/**",
+    ".venv/**",
+    "**/.env",
+    "**/*.key",
+    "**/*secret*",
+    ".agent-harness/approvals/**",
+    ".agent-harness/indexes/**"
+  ],
+  "approval_required_tools": ["patch_file", "git_commit"],
+  "allowed_test_commands": [
+    ["python", "-m", "pytest"],
+    ["python", "-m", "pytest", "tests"],
+    ["python", "-m", "compileall", "src"],
+    ["python", "-m", "compileall", "tests"]
+  ],
+  "allow_network": false,
+  "max_context_bytes": 20000,
+  "security_fail_threshold": "high",
+  "sensitivity_rules": [
+    {"pattern": "src/calculator.py", "classification": "public"},
+    {"pattern": "**/.env", "classification": "secret"},
+    {"pattern": "**/*secret*", "classification": "secret"},
+    {"pattern": "**/*.key", "classification": "secret"},
+    {"pattern": ".git/**", "classification": "internal"}
+  ],
+  "redaction_patterns": [
+    "(?i)(api[_-]?key|token|secret|password)\\s*[:=]\\s*[^\\s]+"
+  ]
+}

@@ -151,9 +151,13 @@ handoffs, prevents provider default inheritance, uses existing provider gates
 for explicit provider children, stops on child pause/failure, and resumes
 without rerunning completed children. It also writes stable orchestration JSON
 exports and exposes read-only MCP resources for orchestration summary, manifest,
-events, children, and handoffs with metadata-only access logs. Release-readiness
-gates, parallel execution, nested orchestration, MCP execution, hosted APIs,
-operator UI support, and enterprise governance remain future-only.
+events, children, and handoffs with metadata-only access logs. The V11 golden
+path lives in `examples/orchestration_workflow/`, and release readiness verifies
+orchestration demo, policy, artifact, inspect/export, MCP resource-read, and
+access-log gates. Operator UI support and enterprise governance remain
+future-only. V11 does not support hosted APIs. Parallel multi-agent
+orchestration remains future-only. Nested orchestration remains future-only.
+MCP execution for multi-agent orchestration remains future-only.
 
 ## Release Maintenance Priorities
 

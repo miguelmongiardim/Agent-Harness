@@ -82,6 +82,10 @@ traversal, unsafe identifiers, query and fragment abuse, unknown resource
 shapes, and mutation-shaped orchestration resource requests such as run,
 approve, or resume.
 
+V11 release readiness reads the orchestration summary and handoff resources
+from `examples/orchestration_workflow/` and verifies metadata-only access-log
+records for those reads.
+
 Resource responses should use only:
 
 ```text

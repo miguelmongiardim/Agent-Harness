@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -57,6 +58,13 @@ SKILLS_WORKFLOW_REQUIRED_FILES = (
     "expected/context_manifest.json",
     "expected/skill_manifest.json",
 )
+ORCHESTRATION_WORKFLOW_REQUIRED_FILES = (
+    "README.md",
+    "agent-harness.yaml",
+    "policies/default.json",
+    "orchestration.json",
+    "src/calculator.py",
+)
 
 
 def build_release_readiness_report(
@@ -84,6 +92,7 @@ def build_release_readiness_report(
     operator = _operator_evidence(project_root)
     skills = _skills_evidence(project_root, docs_report)
     mcp = _mcp_evidence(project_root)
+    orchestration = _orchestration_evidence(project_root)
     release_artifacts = _release_artifact_evidence(project_root, normalized_version)
     diagnostics = _diagnostics(
         package=package,
@@ -94,6 +103,7 @@ def build_release_readiness_report(
         operator=operator,
         skills=skills,
         mcp=mcp,
+        orchestration=orchestration,
         release_artifacts=release_artifacts,
         changelog_present=changelog_present,
         tag_exists=tag_exists,
@@ -140,6 +150,7 @@ def build_release_readiness_report(
         "operator": operator,
         "skills": skills,
         "mcp": mcp,
+        "orchestration": orchestration,
         "release_artifacts": release_artifacts,
         "local_checks": {
             name: {
@@ -875,6 +886,397 @@ def _mcp_evidence(project_root: Path) -> dict[str, Any]:
             smoke_workspace if isinstance(smoke_workspace, Path) else None
         ),
     }
+
+
+def _orchestration_evidence(project_root: Path) -> dict[str, Any]:
+    demo = _orchestration_demo_evidence(project_root)
+    if demo["status"] != "passed":
+        return {
+            "demo": demo,
+            **_orchestration_failed_smoke_gates("V11 orchestration workflow demo is missing."),
+        }
+
+    try:
+        workspace = _prepare_orchestration_smoke_workspace(project_root)
+        run_result, summary = _orchestration_json_command(
+            workspace,
+            ["orchestration", "run", "orchestration.json", "--dry-run"],
+        )
+        inspect_result, inspected = _orchestration_json_command(
+            workspace,
+            ["orchestration", "inspect", "workflow-demo"],
+        )
+        export_result = _run_command(
+            [
+                sys.executable,
+                "-m",
+                "agent_harness",
+                "orchestration",
+                "export",
+                "workflow-demo",
+            ],
+            cwd=workspace,
+            timeout_seconds=120,
+        )
+        export_payload = _load_orchestration_export(workspace, export_result)
+        mcp_list_result, mcp_listing = _orchestration_json_command(
+            workspace,
+            ["mcp", "resources", "list", "--json"],
+        )
+        mcp_summary_result, summary_envelope = _orchestration_json_command(
+            workspace,
+            [
+                "mcp",
+                "resources",
+                "read",
+                "agent-harness://orchestrations/workflow-demo/summary",
+                "--json",
+            ],
+        )
+        mcp_handoffs_result, handoffs_envelope = _orchestration_json_command(
+            workspace,
+            [
+                "mcp",
+                "resources",
+                "read",
+                "agent-harness://orchestrations/workflow-demo/handoffs",
+                "--json",
+            ],
+        )
+    except Exception as exc:
+        return {
+            "demo": demo,
+            **_orchestration_failed_smoke_gates(_safe_error(exc)),
+        }
+
+    return {
+        "demo": demo,
+        "policy_gates": _orchestration_policy_gate_evidence(run_result, summary, workspace),
+        "artifact_checks": _orchestration_artifact_evidence(workspace, summary, inspected),
+        "inspect_export": _orchestration_inspect_export_evidence(
+            workspace,
+            inspect_result,
+            inspected,
+            export_result,
+            export_payload,
+        ),
+        "mcp_resource_reads": _orchestration_mcp_resource_reads_evidence(
+            mcp_list_result,
+            mcp_listing,
+            mcp_summary_result,
+            summary_envelope,
+            mcp_handoffs_result,
+            handoffs_envelope,
+        ),
+        "mcp_access_log": _orchestration_mcp_access_log_evidence(workspace),
+        "smoke_workspace": {
+            "path": _project_relative(project_root, workspace),
+            "orchestration_id": "workflow-demo",
+        },
+    }
+
+
+def _orchestration_demo_evidence(project_root: Path) -> dict[str, Any]:
+    demo_root = project_root / "examples" / "orchestration_workflow"
+    missing = [
+        relative
+        for relative in ORCHESTRATION_WORKFLOW_REQUIRED_FILES
+        if not (demo_root / relative).exists()
+    ]
+    return {
+        "path": "examples/orchestration_workflow",
+        "status": "passed" if demo_root.exists() and not missing else "missing_evidence",
+        "required_files": list(ORCHESTRATION_WORKFLOW_REQUIRED_FILES),
+        "missing_files": missing,
+        "action": (
+            "Add the V11 orchestration workflow demo README, local policy, "
+            "orchestration spec, and fixture."
+        ),
+    }
+
+
+def _orchestration_failed_smoke_gates(detail: str) -> dict[str, Any]:
+    action = (
+        "Run the V11 orchestration workflow demo and verify release-readiness "
+        "policy, artifact, inspect/export, MCP, and access-log gates."
+    )
+    return {
+        "policy_gates": {"status": "missing_evidence", "detail": detail, "action": action},
+        "artifact_checks": {"status": "missing_evidence", "detail": detail, "action": action},
+        "inspect_export": {"status": "missing_evidence", "detail": detail, "action": action},
+        "mcp_resource_reads": {"status": "missing_evidence", "detail": detail, "action": action},
+        "mcp_access_log": {"status": "missing_evidence", "detail": detail, "action": action},
+    }
+
+
+def _prepare_orchestration_smoke_workspace(project_root: Path) -> Path:
+    release_root = project_root / ".agent-harness" / "release"
+    release_root.mkdir(parents=True, exist_ok=True)
+    workspace = Path(tempfile.mkdtemp(prefix="orchestration-workflow-", dir=release_root))
+    shutil.copytree(
+        project_root / "examples" / "orchestration_workflow",
+        workspace,
+        dirs_exist_ok=True,
+        ignore=shutil.ignore_patterns(".agent-harness"),
+    )
+    return workspace
+
+
+def _orchestration_json_command(
+    workspace: Path,
+    args: list[str],
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    result = _run_command(
+        [sys.executable, "-m", "agent_harness", *args],
+        cwd=workspace,
+        timeout_seconds=120,
+    )
+    try:
+        payload = json.loads(str(result.get("stdout", "")))
+    except json.JSONDecodeError:
+        payload = None
+    return result, payload if isinstance(payload, dict) else None
+
+
+def _orchestration_policy_gate_evidence(
+    run_result: dict[str, Any],
+    summary: dict[str, Any] | None,
+    workspace: Path,
+) -> dict[str, Any]:
+    expected_roles = ["planner", "implementer", "reviewer", "tester"]
+    policy = _load_json_file(workspace / "policies" / "default.json")
+    orchestration_policy = policy.get("orchestration") if isinstance(policy, dict) else None
+    authority = summary.get("authority", []) if isinstance(summary, dict) else []
+    roles = [entry.get("role") for entry in authority if isinstance(entry, dict)]
+    denied_children = [
+        str(entry.get("child_id"))
+        for entry in authority
+        if isinstance(entry, dict) and entry.get("denied_tools")
+    ]
+    status = (
+        "passed"
+        if run_result["status"] == "passed"
+        and isinstance(summary, dict)
+        and summary.get("schema_version") == "orchestration_summary.v1"
+        and summary.get("status") == "dry_run"
+        and summary.get("policy_profile") == "default"
+        and isinstance(orchestration_policy, dict)
+        and orchestration_policy.get("enabled") is True
+        and orchestration_policy.get("execution") == "sequential"
+        and orchestration_policy.get("allow_nested") is False
+        and roles == expected_roles
+        and not denied_children
+        else "failed"
+    )
+    return {
+        "command": "agent-harness orchestration run orchestration.json --dry-run",
+        "status": status,
+        "roles": roles,
+        "policy_profile": summary.get("policy_profile") if isinstance(summary, dict) else None,
+        "orchestration_policy": orchestration_policy,
+        "denied_children": denied_children,
+        "action": "Verify V11 orchestration policy enablement and effective role authority.",
+    }
+
+
+def _orchestration_artifact_evidence(
+    workspace: Path,
+    summary: dict[str, Any] | None,
+    inspected: dict[str, Any] | None,
+) -> dict[str, Any]:
+    artifacts = summary.get("artifacts", {}) if isinstance(summary, dict) else {}
+    children = summary.get("children", []) if isinstance(summary, dict) else []
+    handoffs = inspected.get("handoffs", []) if isinstance(inspected, dict) else []
+    required_artifacts = ["summary", "events", "manifest", "artifact_index", "orchestration_plan"]
+    missing_artifacts = [
+        name
+        for name in required_artifacts
+        if not isinstance(artifacts.get(name), str) or not (workspace / artifacts[name]).exists()
+    ]
+    missing_child_artifacts: list[str] = []
+    for child in children if isinstance(children, list) else []:
+        if not isinstance(child, dict):
+            continue
+        for key in ("materialized_task_path", "run_summary_artifact"):
+            value = child.get(key)
+            if not isinstance(value, str) or not (workspace / value).exists():
+                missing_child_artifacts.append(f"{child.get('child_id')}:{key}")
+    missing_handoffs = [
+        str(handoff.get("handoff_id"))
+        for handoff in handoffs
+        if not isinstance(handoff, dict)
+        or not isinstance(handoff.get("artifact"), str)
+        or not (workspace / handoff["artifact"]).exists()
+    ]
+    status = (
+        "passed"
+        if isinstance(summary, dict)
+        and isinstance(inspected, dict)
+        and len(children) == 4
+        and len(handoffs) == 3
+        and not missing_artifacts
+        and not missing_child_artifacts
+        and not missing_handoffs
+        else "failed"
+    )
+    return {
+        "status": status,
+        "child_count": len(children) if isinstance(children, list) else 0,
+        "handoff_count": len(handoffs) if isinstance(handoffs, list) else 0,
+        "missing_artifacts": missing_artifacts,
+        "missing_child_artifacts": missing_child_artifacts,
+        "missing_handoffs": missing_handoffs,
+        "action": "Verify aggregate, child, and generated handoff artifacts exist.",
+    }
+
+
+def _orchestration_inspect_export_evidence(
+    workspace: Path,
+    inspect_result: dict[str, Any],
+    inspected: dict[str, Any] | None,
+    export_result: dict[str, Any],
+    export_payload: dict[str, Any] | None,
+) -> dict[str, Any]:
+    serialized_export = json.dumps(export_payload) if isinstance(export_payload, dict) else ""
+    status = (
+        "passed"
+        if inspect_result["status"] == "passed"
+        and export_result["status"] == "passed"
+        and isinstance(inspected, dict)
+        and inspected.get("schema_version") == "orchestration_inspection.v1"
+        and isinstance(export_payload, dict)
+        and export_payload.get("schema_version") == "orchestration_export.v1"
+        and export_payload.get("orchestration_id") == "workflow-demo"
+        and "raw_request" not in serialized_export
+        and "raw_response" not in serialized_export
+        and str(workspace) not in serialized_export
+        else "failed"
+    )
+    return {
+        "command": "agent-harness orchestration inspect/export workflow-demo",
+        "status": status,
+        "inspect_schema": inspected.get("schema_version") if isinstance(inspected, dict) else None,
+        "export_schema": (
+            export_payload.get("schema_version") if isinstance(export_payload, dict) else None
+        ),
+        "export_path": str(export_result.get("stdout", "")).strip(),
+        "raw_provider_payload_copied": (
+            "raw_request" in serialized_export or "raw_response" in serialized_export
+        ),
+        "absolute_workspace_path_copied": str(workspace) in serialized_export,
+        "action": "Verify inspect and export return stable safe orchestration evidence.",
+    }
+
+
+def _load_orchestration_export(
+    workspace: Path,
+    export_result: dict[str, Any],
+) -> dict[str, Any] | None:
+    export_path = str(export_result.get("stdout", "")).strip()
+    if not export_path:
+        return None
+    loaded = _load_json_file(workspace / export_path)
+    return loaded if isinstance(loaded, dict) else None
+
+
+def _orchestration_mcp_resource_reads_evidence(
+    list_result: dict[str, Any],
+    listing: dict[str, Any] | None,
+    summary_result: dict[str, Any],
+    summary_envelope: dict[str, Any] | None,
+    handoffs_result: dict[str, Any],
+    handoffs_envelope: dict[str, Any] | None,
+) -> dict[str, Any]:
+    resources = listing.get("resources", []) if isinstance(listing, dict) else []
+    resource_uris = (
+        {str(resource.get("uri")) for resource in resources if isinstance(resource, dict)}
+        if isinstance(resources, list)
+        else set()
+    )
+    expected_uris = {
+        "agent-harness://orchestrations",
+        "agent-harness://orchestrations/workflow-demo/summary",
+        "agent-harness://orchestrations/workflow-demo/manifest",
+        "agent-harness://orchestrations/workflow-demo/events",
+        "agent-harness://orchestrations/workflow-demo/children",
+        "agent-harness://orchestrations/workflow-demo/handoffs",
+    }
+    status = (
+        "passed"
+        if list_result["status"] == "passed"
+        and summary_result["status"] == "passed"
+        and handoffs_result["status"] == "passed"
+        and expected_uris <= resource_uris
+        and isinstance(summary_envelope, dict)
+        and isinstance(handoffs_envelope, dict)
+        and summary_envelope.get("denial_status") == "allowed"
+        and handoffs_envelope.get("denial_status") == "allowed"
+        and summary_envelope.get("resource_type") == "orchestration_summary"
+        and handoffs_envelope.get("resource_type") == "orchestration_handoffs"
+        and summary_envelope.get("metadata", {}).get("orchestration_id") == "workflow-demo"
+        and handoffs_envelope.get("metadata", {}).get("orchestration_id") == "workflow-demo"
+        else "failed"
+    )
+    return {
+        "command": "agent-harness mcp resources list/read orchestration resources",
+        "status": status,
+        "missing_uris": sorted(expected_uris - resource_uris),
+        "summary_resource_type": (
+            summary_envelope.get("resource_type") if isinstance(summary_envelope, dict) else None
+        ),
+        "handoffs_resource_type": (
+            handoffs_envelope.get("resource_type") if isinstance(handoffs_envelope, dict) else None
+        ),
+        "action": "Verify read-only MCP resources expose orchestration evidence.",
+    }
+
+
+def _orchestration_mcp_access_log_evidence(workspace: Path) -> dict[str, Any]:
+    log_path = workspace / ".agent-harness" / "mcp" / "access-log.jsonl"
+    if not log_path.exists():
+        return {
+            "status": "missing_evidence",
+            "path": ".agent-harness/mcp/access-log.jsonl",
+            "action": "MCP orchestration reads must append metadata-only access logs.",
+        }
+    records: list[dict[str, Any]] = []
+    diagnostics: list[str] = []
+    for line in log_path.read_text(encoding="utf-8").splitlines():
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError as exc:
+            diagnostics.append(_safe_error(exc))
+            continue
+        if isinstance(record, dict):
+            records.append(record)
+    observed = {
+        str(record.get("artifact_type"))
+        for record in records
+        if record.get("request_type") == "resource_read"
+        and record.get("result") == "allowed"
+        and record.get("orchestration_id") == "workflow-demo"
+    }
+    required = {"orchestration_summary", "orchestration_handoffs"}
+    leaked_content = any("content" in record for record in records)
+    status = (
+        "passed" if required <= observed and not diagnostics and not leaked_content else "failed"
+    )
+    return {
+        "status": status,
+        "path": ".agent-harness/mcp/access-log.jsonl",
+        "record_count": len(records),
+        "missing_records": sorted(required - observed),
+        "leaked_content": leaked_content,
+        "diagnostics": diagnostics,
+        "action": "Verify orchestration MCP access logs are metadata-only.",
+    }
+
+
+def _load_json_file(path: Path) -> Any:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
 
 
 def _mcp_demo_evidence(project_root: Path) -> dict[str, Any]:
@@ -2472,6 +2874,7 @@ def _diagnostics(
     operator: dict[str, Any],
     skills: dict[str, Any],
     mcp: dict[str, Any],
+    orchestration: dict[str, Any],
     release_artifacts: dict[str, Any],
     changelog_present: bool,
     tag_exists: bool,
@@ -2487,6 +2890,7 @@ def _diagnostics(
     _collect_status_diagnostics(diagnostics, "operator", operator)
     _collect_status_diagnostics(diagnostics, "skills", skills)
     _collect_status_diagnostics(diagnostics, "mcp", mcp)
+    _collect_status_diagnostics(diagnostics, "orchestration", orchestration)
     _collect_status_diagnostics(diagnostics, "release_artifacts", release_artifacts)
     if not changelog_present:
         diagnostics.append(

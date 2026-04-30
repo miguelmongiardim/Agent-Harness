@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import shutil
 import tomllib
@@ -299,6 +300,61 @@ def test_release_readiness_requires_v9_mcp_boundary_evidence(
     }
 
 
+def test_release_readiness_requires_v11_orchestration_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    _write_release_ready_project(tmp_path, "9.9.9", include_orchestration=False)
+    monkeypatch.setattr(release, "_tag_exists", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_pushed", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_target_commit", lambda project_root, tag_name: "abc123")
+    monkeypatch.setattr(release, "_remote_ci_evidence", _passing_remote_ci)
+
+    assert main(["release", "readiness"]) == 0
+    report = json.loads(capsys.readouterr().out)
+
+    assert report["status"] == "pending"
+    assert report["orchestration"]["demo"]["status"] == "missing_evidence"
+    assert "orchestration.demo" in {entry["gate"] for entry in report["diagnostics"]}
+
+
+def test_release_readiness_verifies_v11_orchestration_gates(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    _write_release_ready_project(tmp_path, "9.9.9", include_orchestration=False)
+    _write_inline_orchestration_workflow_demo(tmp_path)
+    monkeypatch.setattr(release, "_tag_exists", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_pushed", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_target_commit", lambda project_root, tag_name: "abc123")
+    monkeypatch.setattr(release, "_remote_ci_evidence", _passing_remote_ci)
+
+    assert main(["release", "readiness"]) == 0
+    report = json.loads(capsys.readouterr().out)
+
+    assert report["status"] == "ready", report["diagnostics"]
+    orchestration = report["orchestration"]
+    assert orchestration["demo"]["status"] == "passed"
+    assert orchestration["policy_gates"]["status"] == "passed"
+    assert orchestration["policy_gates"]["roles"] == [
+        "planner",
+        "implementer",
+        "reviewer",
+        "tester",
+    ]
+    assert orchestration["artifact_checks"]["status"] == "passed"
+    assert orchestration["artifact_checks"]["handoff_count"] == 3
+    assert orchestration["inspect_export"]["status"] == "passed"
+    assert orchestration["mcp_resource_reads"]["status"] == "passed"
+    assert orchestration["mcp_access_log"]["status"] == "passed"
+
+
 def test_release_readiness_verifies_v9_mcp_gates(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -559,6 +615,113 @@ def test_v9_mcp_boundary_golden_path_example_and_cli_sequence(
     }
 
 
+def test_v11_orchestration_workflow_golden_path_example_and_cli_sequence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    readme = repo_root / "examples" / "orchestration_workflow" / "README.md"
+    assert readme.exists()
+    text = readme.read_text(encoding="utf-8")
+
+    for command in (
+        "uv run agent-harness orchestration run orchestration.json --dry-run",
+        "uv run agent-harness orchestration inspect workflow-demo",
+        "uv run agent-harness orchestration export workflow-demo",
+        "uv run agent-harness mcp resources list --json",
+        (
+            "uv run agent-harness mcp resources read "
+            "agent-harness://orchestrations/workflow-demo/summary --json"
+        ),
+        (
+            "uv run agent-harness mcp resources read "
+            "agent-harness://orchestrations/workflow-demo/handoffs --json"
+        ),
+        "uv run agent-harness release readiness --version 1.7.0",
+    ):
+        assert command in text
+
+    source = repo_root / "examples" / "orchestration_workflow"
+    workspace = tmp_path / "examples" / "orchestration_workflow"
+    shutil.copytree(source, workspace, ignore=shutil.ignore_patterns(".agent-harness"))
+    monkeypatch.chdir(workspace)
+
+    assert main(["orchestration", "run", "orchestration.json", "--dry-run"]) == 0
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["schema_version"] == "orchestration_summary.v1"
+    assert summary["orchestration_id"] == "workflow-demo"
+    assert summary["status"] == "dry_run"
+    assert [child["role"] for child in summary["children"]] == [
+        "planner",
+        "implementer",
+        "reviewer",
+        "tester",
+    ]
+
+    assert main(["orchestration", "inspect", "workflow-demo"]) == 0
+    inspected = json.loads(capsys.readouterr().out)
+    assert inspected["schema_version"] == "orchestration_inspection.v1"
+    assert len(inspected["handoffs"]) == 3
+
+    assert main(["orchestration", "export", "workflow-demo"]) == 0
+    export_path = Path(capsys.readouterr().out.strip())
+    exported = json.loads((workspace / export_path).read_text(encoding="utf-8"))
+    assert exported["schema_version"] == "orchestration_export.v1"
+    assert exported["orchestration_id"] == "workflow-demo"
+
+    assert main(["mcp", "resources", "list", "--json"]) == 0
+    resources = json.loads(capsys.readouterr().out)
+    resource_uris = {resource["uri"] for resource in resources["resources"]}
+    assert "agent-harness://orchestrations/workflow-demo/summary" in resource_uris
+    assert "agent-harness://orchestrations/workflow-demo/handoffs" in resource_uris
+
+    assert (
+        main(
+            [
+                "mcp",
+                "resources",
+                "read",
+                "agent-harness://orchestrations/workflow-demo/summary",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    summary_envelope = json.loads(capsys.readouterr().out)
+    assert summary_envelope["denial_status"] == "allowed"
+    assert summary_envelope["resource_type"] == "orchestration_summary"
+
+    assert (
+        main(
+            [
+                "mcp",
+                "resources",
+                "read",
+                "agent-harness://orchestrations/workflow-demo/handoffs",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    handoffs_envelope = json.loads(capsys.readouterr().out)
+    assert handoffs_envelope["denial_status"] == "allowed"
+    assert handoffs_envelope["resource_type"] == "orchestration_handoffs"
+
+    records = [
+        json.loads(line)
+        for line in (workspace / ".agent-harness" / "mcp" / "access-log.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ]
+    assert {
+        record["artifact_type"]
+        for record in records
+        if record["orchestration_id"] == "workflow-demo"
+    } >= {"orchestration_summary", "orchestration_handoffs"}
+    assert all("content" not in record for record in records)
+
+
 def test_release_readiness_rejects_remote_template_catalog_defaults(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -637,10 +800,11 @@ def test_release_readiness_requires_v1_release_closure_docs(
 
 def test_current_release_metadata_and_v1_closure_docs_are_complete() -> None:
     pyproject = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
-    assert pyproject["project"]["version"] == "1.6.1"
-    assert __version__ == "1.6.1"
+    assert pyproject["project"]["version"] == "1.7.0"
+    assert __version__ == "1.7.0"
 
     changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+    assert "## [1.7.0]" in changelog
     assert "## [1.6.1]" in changelog
     assert "## [1.6.0]" in changelog
     assert "## [1.5.0]" in changelog
@@ -668,6 +832,7 @@ def test_ci_installs_operator_extra_and_runs_operator_release_gates() -> None:
     assert "tests/integration/test_operator_api.py" in workflow
     assert "tests/integration/test_operator_ui.py" in workflow
     assert "tests/integration/test_mcp_protocol.py" in workflow
+    assert "tests/integration/test_orchestration_cli.py" in workflow
     assert "tests/integration/test_release_evidence.py" in workflow
 
 
@@ -699,6 +864,30 @@ def test_mcp_release_docs_cover_v9_golden_path_and_evidence() -> None:
     assert "mcp.extra_install" in release_docs
     assert "mcp.stdio_protocol" in release_docs
     assert "Planned V9 MCP Gates" not in release_docs
+
+
+def test_orchestration_release_docs_cover_v11_golden_path_and_evidence() -> None:
+    release_docs = Path("docs/release-readiness.md").read_text(encoding="utf-8")
+    orchestration_example = Path("examples/orchestration_workflow/README.md").read_text(
+        encoding="utf-8"
+    )
+    combined = f"{release_docs}\n{orchestration_example}"
+
+    assert "examples/orchestration_workflow" in release_docs
+    assert "agent-harness orchestration run orchestration.json --dry-run" in combined
+    assert "agent-harness orchestration inspect workflow-demo" in combined
+    assert "agent-harness orchestration export workflow-demo" in combined
+    assert (
+        "agent-harness mcp resources read agent-harness://orchestrations/workflow-demo/summary"
+    ) in combined
+    assert "orchestration.policy_gates" in release_docs
+    assert "orchestration.artifact_checks" in release_docs
+    assert "orchestration.inspect_export" in release_docs
+    assert "orchestration.mcp_resource_reads" in release_docs
+    assert "orchestration.mcp_access_log" in release_docs
+    assert "Parallel execution" in combined
+    assert "hosted APIs" in combined
+    assert "Planned V11" not in release_docs
 
 
 def test_release_package_check_builds_installs_and_records_evidence(
@@ -813,6 +1002,7 @@ def _write_release_ready_project(
     *,
     include_skills: bool = True,
     include_mcp: bool = True,
+    include_orchestration: bool = True,
 ) -> None:
     if not (root / "agent-harness.yaml").exists():
         (root / "agent-harness.yaml").write_text(
@@ -1004,6 +1194,8 @@ def _write_release_ready_project(
     if include_mcp:
         _write_mcp_boundary_demo(root)
         _write_mcp_ci_workflow(root)
+    if include_orchestration:
+        _write_orchestration_workflow_demo(root)
 
 
 def _passing_remote_ci(
@@ -1086,6 +1278,102 @@ def _write_mcp_ci_workflow(root: Path) -> None:
         ),
         encoding="utf-8",
     )
+
+
+def _write_orchestration_workflow_demo(root: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    source = repo_root / "examples" / "orchestration_workflow"
+    target = root / "examples" / "orchestration_workflow"
+    shutil.copytree(source, target, dirs_exist_ok=True)
+
+
+def _write_inline_orchestration_workflow_demo(root: Path) -> None:
+    demo = root / "examples" / "orchestration_workflow"
+    (demo / "policies").mkdir(parents=True, exist_ok=True)
+    (demo / "src").mkdir(parents=True, exist_ok=True)
+    (demo / "README.md").write_text("V11 orchestration workflow demo\n", encoding="utf-8")
+    (demo / "agent-harness.yaml").write_text(
+        "\n".join(
+            [
+                "schema_version: config.v2",
+                "project_name: orchestration-workflow-demo",
+                "artifact_root: .agent-harness",
+                "default_policy: default",
+                "retrieval_backend: lexical",
+                "template_catalog: bundled",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    policy = copy.deepcopy(DEFAULT_POLICY)
+    policy["orchestration"] = {
+        "enabled": True,
+        "execution": "sequential",
+        "allowed_roles": ["planner", "implementer", "reviewer", "tester"],
+        "allow_nested": False,
+    }
+    policy["sensitivity_rules"] = [
+        *policy["sensitivity_rules"],
+        {"pattern": "src/calculator.py", "classification": "public"},
+    ]
+    (demo / "policies" / "default.json").write_text(
+        json.dumps(policy, indent=2),
+        encoding="utf-8",
+    )
+    (demo / "src" / "calculator.py").write_text(
+        "def add(a: int, b: int) -> int:\n    return a + b\n",
+        encoding="utf-8",
+    )
+    (demo / "orchestration.json").write_text(
+        json.dumps(_orchestration_workflow_spec(), indent=2),
+        encoding="utf-8",
+    )
+
+
+def _orchestration_workflow_spec() -> dict[str, Any]:
+    return {
+        "schema_version": "orchestration.v1",
+        "orchestration_id": "workflow-demo",
+        "title": "V11 local orchestration workflow",
+        "children": [
+            {
+                "child_id": "planner",
+                "role": "planner",
+                "title": "Plan the calculator review",
+                "intent": "Inspect the calculator fixture and plan the follow-up checks.",
+                "target_paths": ["src/calculator.py"],
+                "allowed_tools": ["read_file", "search_code"],
+            },
+            {
+                "child_id": "implementer",
+                "role": "implementer",
+                "title": "Assess implementation change",
+                "intent": "Review the implementation path without mutating files.",
+                "target_paths": ["src/calculator.py"],
+                "allowed_tools": ["read_file", "search_code"],
+                "depends_on": ["planner"],
+            },
+            {
+                "child_id": "reviewer",
+                "role": "reviewer",
+                "title": "Review the candidate change",
+                "intent": "Review the implementation assessment and source fixture.",
+                "target_paths": ["src/calculator.py"],
+                "allowed_tools": ["read_file", "search_code", "git_status"],
+                "depends_on": ["implementer"],
+            },
+            {
+                "child_id": "tester",
+                "role": "tester",
+                "title": "Plan deterministic tests",
+                "intent": "Inspect the reviewer handoff and identify deterministic checks.",
+                "target_paths": ["src/calculator.py"],
+                "allowed_tools": ["read_file", "search_code", "run_tests"],
+                "depends_on": ["reviewer"],
+            },
+        ],
+    }
 
 
 def _write_release_project_without_evidence(root: Path, version: str) -> None:

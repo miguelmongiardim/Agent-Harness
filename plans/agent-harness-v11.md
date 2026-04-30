@@ -532,16 +532,31 @@ new implemented scope and deferred future scope.
 
 ### Acceptance criteria
 
-- [ ] The V11 example runs from a clean checkout without external services.
-- [ ] Release readiness reports required orchestration gates.
-- [ ] Docs claim local sequential policy-mediated orchestration only.
-- [ ] Docs explicitly defer parallel execution, nested orchestration, hosted
+- [x] The V11 example runs from a clean checkout without external services.
+- [x] Release readiness reports required orchestration gates.
+- [x] Docs claim local sequential policy-mediated orchestration only.
+- [x] Docs explicitly defer parallel execution, nested orchestration, hosted
       APIs, MCP tools/execution, operator UI support, and enterprise governance.
-- [ ] Full required local checks pass for release acceptance.
+- [x] Full required local checks pass for release acceptance.
+
+### Phase 7 implementation notes
+
+- Added `examples/orchestration_workflow/` as the deterministic V11 golden path
+  with local config, explicit orchestration policy, a Python fixture, and a
+  planner -> implementer -> reviewer -> tester dry-run spec.
+- Extended `release_readiness.v1` with V11 orchestration gates for demo
+  presence, policy/role authority, aggregate and child artifacts, generated
+  handoffs, inspect/export evidence, read-only MCP orchestration reads, and
+  metadata-only MCP access logs.
+- Updated public docs and release metadata for `v1.7.0`. Operator UI support
+  and enterprise governance remain future-only. V11 does not support hosted
+  APIs. Parallel multi-agent orchestration remains future-only. Nested
+  orchestration remains future-only. MCP execution for multi-agent
+  orchestration remains future-only.
 
 ### Out of scope
 
-- Publishing or tagging `v1.7.0`.
+- External package publishing.
 - External provider smoke tests as required gates.
 - Hosted or enterprise deployment evidence.
 

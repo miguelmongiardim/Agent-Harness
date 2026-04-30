@@ -9,7 +9,7 @@ The command defaults to `[project].version` from `pyproject.toml`. Release
 managers can still bind the report to an explicit version and CI run:
 
 ```powershell
-agent-harness release readiness --version 1.6.1 --ci-run-id <run-id>
+agent-harness release readiness --version 1.7.0 --ci-run-id <run-id>
 ```
 
 When GitHub CLI is authenticated, the command attempts to discover the latest
@@ -115,6 +115,8 @@ The report represents:
   skills docs evidence
 - V9 MCP boundary demo, optional extra, CI install, CLI resource and prompt,
   denial, access log, and stdio resources/prompts-only evidence
+- V11 orchestration workflow demo, policy, artifact, inspect/export, read-only
+  MCP resource, and metadata-only MCP access-log evidence
 - release artifact presence
 - local check commands
 - remote CI run evidence for the target commit
@@ -128,7 +130,7 @@ The report represents:
 The command is evidence collection, not release automation. A report is `ready`
 only when required package, install, console script, demo, docs, changelog,
 template, retrieval scorecard, retrieval demo/config, operator, skills, MCP,
-artifact, tag, and remote CI evidence is present and passing.
+orchestration, artifact, tag, and remote CI evidence is present and passing.
 
 For V7 template packs, release readiness refreshes `template validate --all`
 evidence, then validates every bundled pack through a temporary release
@@ -177,6 +179,34 @@ MCP tools, write-capable MCP, Streamable HTTP MCP, hosted MCP service, remote
 gateways, enterprise registries, and MCP runtime adapter behavior remain outside
 implemented scope.
 
+## V11 Orchestration Gates
+
+For V11, release readiness verifies the local sequential orchestration
+workflow. The golden-path example lives at `examples/orchestration_workflow/`
+and documents the dry-run, inspect, export, read-only MCP resource, and
+release-readiness commands.
+
+The report records:
+
+- `orchestration.demo` for the `examples/orchestration_workflow/` README,
+  local config, policy, orchestration spec, and Python fixture.
+- `orchestration.policy_gates` for explicit `policy.v2.orchestration`
+  enablement, sequential execution, disabled nested orchestration, role
+  ceilings, and no denied child authority.
+- `orchestration.artifact_checks` for aggregate summary, events, manifest,
+  artifact index, child task/run artifacts, and generated handoff artifacts.
+- `orchestration.inspect_export` for public inspect/export commands and
+  exports that avoid raw provider payloads and absolute workspace paths.
+- `orchestration.mcp_resource_reads` for read-only MCP orchestration summary
+  and handoff resource envelopes.
+- `orchestration.mcp_access_log` for metadata-only MCP access records tied to
+  the orchestration id.
+
+V11 does not support hosted APIs. It does not support parallel multi-agent
+orchestration, nested orchestration, or MCP execution for multi-agent
+orchestration. Operator UI support and enterprise governance remain
+future-only.
+
 ## Release Checklist
 
 Before tagging the current release:
@@ -199,9 +229,11 @@ Before tagging the current release:
 14. Run the skills workflow golden path in `examples/skills_workflow/`.
 15. Run `uv sync --extra mcp`.
 16. Run the MCP boundary golden path in `examples/mcp_boundary/`.
-17. Run `agent-harness eval`.
-18. Run `agent-harness release readiness --version 1.6.1`.
-19. Confirm CI passes for the release commit.
+17. Run the orchestration workflow golden path in
+    `examples/orchestration_workflow/`.
+18. Run `agent-harness eval`.
+19. Run `agent-harness release readiness --version 1.7.0`.
+20. Confirm CI passes for the release commit.
 
 ## Tag Process
 
@@ -209,9 +241,9 @@ Create the release tag only after the release commit is pushed and required CI
 has passed for that exact commit:
 
 ```powershell
-git tag -a v1.6.1 -m "v1.6.1"
-git push origin v1.6.1
-agent-harness release readiness --version 1.6.1 --ci-run-id <run-id>
+git tag -a v1.7.0 -m "v1.7.0"
+git push origin v1.7.0
+agent-harness release readiness --version 1.7.0 --ci-run-id <run-id>
 ```
 
 The readiness report binds the tag target commit to the recorded GitHub Actions
@@ -224,12 +256,12 @@ different commit.
 hashes in `.agent-harness/release/package-check.json` and supporting evidence
 files under `.agent-harness/release/evidence/`. Reviewers should verify that:
 
-- `dist/agent_harness-1.6.1-*.whl` exists.
-- `dist/agent_harness-1.6.1.tar.gz` exists.
+- `dist/agent_harness-1.7.0-*.whl` exists.
+- `dist/agent_harness-1.7.0.tar.gz` exists.
 - package-check evidence reports `status: passed`.
 - clean-install evidence reports `status: passed`.
 - console-script evidence reports `status: passed`.
-- the final readiness report is generated for `version: 1.6.1`.
+- the final readiness report is generated for `version: 1.7.0`.
 
 ## Roadmap
 

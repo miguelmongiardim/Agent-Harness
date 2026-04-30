@@ -75,7 +75,11 @@ write-capable MCP, MCP approval actions, MCP run execution, MCP provider
 execution, orchestration run/approve/resume, arbitrary filesystem resources,
 raw provider payload resources, Streamable HTTP MCP, hosted MCP service,
 remote MCP gateways, enterprise MCP registries, and MCP runtime adapter
-behavior out of scope.
+behavior out of scope. Release readiness verifies the V11 local orchestration
+demo, policy gates, artifacts, inspect/export evidence, read-only MCP reads,
+and metadata-only MCP access logs without making parallel, nested, hosted,
+operator UI, or enterprise governance claims. V11 does not support hosted
+APIs.
 
 V6 is a narrower local operator surface. Its security boundary is loopback-only
 serving, token-protected local API routes, allowlisted run artifact access, and

@@ -34,11 +34,14 @@ runtime around explicit ownership boundaries.
   dry-run path, materialized child `task.v2` artifacts, aggregate orchestration
   summary/events/manifest/index evidence, deterministic dependency ordering,
   generated handoff records for direct dependencies, role-ceiling authority
-  narrowing, supervisor plan approvals, approval-bound resume, and
-  `orchestration inspect`/`orchestration export`. Read-only MCP exposure of
-  orchestration evidence still belongs to `agent_harness.mcp`, which delegates
-  to orchestration artifacts without becoming an execution surface.
-- `agent_harness.release` owns local release-readiness evidence collection.
+  narrowing, supervisor plan approvals, child pause/failure propagation,
+  approval-bound resume, and `orchestration inspect`/`orchestration export`.
+  Read-only MCP exposure of orchestration evidence still belongs to
+  `agent_harness.mcp`, which delegates to orchestration artifacts without
+  becoming an execution surface.
+- `agent_harness.release` owns local release-readiness evidence collection,
+  including V11 orchestration demo, policy, artifact, inspect/export, MCP
+  resource-read, and access-log gates.
 - `agent_harness.model`, `agent_harness.runtimes`, `agent_harness.storage`,
   `agent_harness.telemetry`, `agent_harness.evals`, and
   `agent_harness.exporters` provide the report's package-level structural

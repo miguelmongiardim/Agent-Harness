@@ -284,9 +284,14 @@ implementation supports local, sequential, policy-mediated
 normal child `task.v2` run artifacts, generated dependency handoffs, child
 provider gates, child pause/failure propagation, approval-bound resume,
 `orchestration export`, and read-only MCP resources for orchestration summary,
-manifest, events, children, and handoffs. Release-readiness gates, parallel
-execution, nested orchestration, MCP execution, hosted APIs, and operator UI
-support remain future scope.
+manifest, events, children, and handoffs. The V11 golden path lives in
+`examples/orchestration_workflow/`, and release readiness verifies the
+orchestration demo, policy gates, artifacts, inspect/export, MCP resource
+reads, and MCP access-log evidence. Operator UI support and enterprise
+governance remain future scope. Parallel multi-agent orchestration remains
+future-only. Nested orchestration remains future-only. MCP execution for
+multi-agent orchestration remains future-only. V11 does not support hosted
+APIs.
 
 ## Documentation
 

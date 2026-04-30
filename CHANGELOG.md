@@ -6,6 +6,24 @@ All notable changes to this project will be documented in this file.
 
 - No changes yet.
 
+## [1.7.0] - 2026-04-30
+
+V11 Policy-Mediated Multi-Agent Orchestration release.
+
+- Added local, sequential `orchestration.v1` supervision over normal child
+  `task.v2` dry-run executions, with explicit `policy.v2.orchestration`
+  enablement and role ceilings for planner, implementer, reviewer, and tester.
+- Added aggregate orchestration evidence for summaries, events, manifests,
+  artifact indexes, generated dependency handoffs, effective child authority,
+  supervisor plan approvals, approval-bound resume, child pause/failure
+  propagation, and safe JSON exports.
+- Added read-only MCP resources for orchestration summary, manifest, events,
+  children, and handoffs, with metadata-only access logs and no MCP tools or
+  execution surface.
+- Added `examples/orchestration_workflow/` as the V11 golden path and expanded
+  release readiness to verify orchestration demo, policy, artifacts,
+  inspect/export, MCP resource reads, and MCP access-log evidence.
+
 ## [1.6.1] - 2026-04-29
 
 V10 Schema Boundary maintenance release.

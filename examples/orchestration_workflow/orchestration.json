@@ -1,0 +1,42 @@
+{
+  "schema_version": "orchestration.v1",
+  "orchestration_id": "workflow-demo",
+  "title": "V11 local orchestration workflow",
+  "children": [
+    {
+      "child_id": "planner",
+      "role": "planner",
+      "title": "Plan the calculator review",
+      "intent": "Inspect the calculator fixture and plan the follow-up checks.",
+      "target_paths": ["src/calculator.py"],
+      "allowed_tools": ["read_file", "search_code"]
+    },
+    {
+      "child_id": "implementer",
+      "role": "implementer",
+      "title": "Assess implementation change",
+      "intent": "Review the implementation path without mutating files.",
+      "target_paths": ["src/calculator.py"],
+      "allowed_tools": ["read_file", "search_code"],
+      "depends_on": ["planner"]
+    },
+    {
+      "child_id": "reviewer",
+      "role": "reviewer",
+      "title": "Review the candidate change",
+      "intent": "Review the implementation assessment and source fixture.",
+      "target_paths": ["src/calculator.py"],
+      "allowed_tools": ["read_file", "search_code", "git_status"],
+      "depends_on": ["implementer"]
+    },
+    {
+      "child_id": "tester",
+      "role": "tester",
+      "title": "Plan deterministic tests",
+      "intent": "Inspect the reviewer handoff and identify deterministic checks.",
+      "target_paths": ["src/calculator.py"],
+      "allowed_tools": ["read_file", "search_code", "run_tests"],
+      "depends_on": ["reviewer"]
+    }
+  ]
+}
