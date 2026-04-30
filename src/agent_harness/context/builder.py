@@ -35,10 +35,22 @@ class SkillContextGuidance:
 
 
 @dataclass(frozen=True)
+class GeneratedHandoffContext:
+    handoff_id: str
+    orchestration_id: str
+    upstream_child_id: str
+    upstream_run_id: str
+    source: str
+    text: str
+    content_hash: str
+
+
+@dataclass(frozen=True)
 class ContextBuildResult:
     manifest: ContextManifest
     retrieval_decisions: list[tuple[str, str, PolicyDecision]]
     skill_decisions: list[tuple[str, str, PolicyDecision]]
+    handoff_decisions: list[tuple[str, str, PolicyDecision]]
 
 
 def build_context_manifest(
@@ -50,6 +62,7 @@ def build_context_manifest(
     dense_retriever: DenseRetriever | None = None,
     retrieval: RetrievalBackendManifest | None = None,
     skill_guidance: list[SkillContextGuidance] | None = None,
+    generated_handoffs: list[GeneratedHandoffContext] | None = None,
 ) -> ContextBuildResult:
     sources: dict[str, ContextSource] = {}
     chunks: list[ContextChunk] = []
@@ -57,8 +70,91 @@ def build_context_manifest(
     rejected_items: list[ContextManifestItem] = []
     retrieval_decisions: list[tuple[str, str, PolicyDecision]] = []
     skill_decisions: list[tuple[str, str, PolicyDecision]] = []
+    handoff_decisions: list[tuple[str, str, PolicyDecision]] = []
     budget = policy.profile.max_context_bytes
     used = 0
+
+    for handoff in generated_handoffs or []:
+        decision = policy.evaluate_generated_context(source=handoff.source)
+        handoff_decisions.append((handoff.handoff_id, handoff.source, decision))
+        source_id = stable_id(
+            "source",
+            "orchestration_handoff",
+            handoff.orchestration_id,
+            handoff.handoff_id,
+            handoff.content_hash,
+        )
+        chunk_id = stable_id("chunk", source_id, handoff.content_hash)
+        end_line = max(1, len(handoff.text.splitlines()))
+        if not decision.allowed or used + len(handoff.text) > budget:
+            rejected_items.append(
+                manifest_item(
+                    source_id=source_id,
+                    chunk_id=chunk_id,
+                    source_kind="orchestration_handoff",
+                    path=handoff.source,
+                    content_hash=handoff.content_hash,
+                    text=None,
+                    start_line=1,
+                    end_line=end_line,
+                    sensitivity="generated",
+                    retrieval_method="direct",
+                    provenance=[],
+                    scores={},
+                    decision=decision,
+                    handoff_id=handoff.handoff_id,
+                    orchestration_id=handoff.orchestration_id,
+                    upstream_child_id=handoff.upstream_child_id,
+                    upstream_run_id=handoff.upstream_run_id,
+                )
+            )
+            continue
+        sources[source_id] = ContextSource(
+            source_id=source_id,
+            kind="orchestration_handoff",
+            path=handoff.source,
+            content_hash=handoff.content_hash,
+            sensitivity="generated",
+            policy_decision_id=decision.decision_id,
+            handoff_id=handoff.handoff_id,
+            orchestration_id=handoff.orchestration_id,
+            upstream_child_id=handoff.upstream_child_id,
+            upstream_run_id=handoff.upstream_run_id,
+        )
+        chunks.append(
+            ContextChunk(
+                chunk_id=chunk_id,
+                source_id=source_id,
+                text=handoff.text,
+                content_hash=handoff.content_hash,
+                start_line=1,
+                end_line=end_line,
+                score=1.0,
+                sensitivity="generated",
+            )
+        )
+        items.append(
+            manifest_item(
+                source_id=source_id,
+                chunk_id=chunk_id,
+                source_kind="orchestration_handoff",
+                path=handoff.source,
+                content_hash=handoff.content_hash,
+                text=handoff.text,
+                start_line=1,
+                end_line=end_line,
+                sensitivity="generated",
+                retrieval_method="direct",
+                provenance=[],
+                scores={},
+                decision=decision,
+                handoff_id=handoff.handoff_id,
+                orchestration_id=handoff.orchestration_id,
+                upstream_child_id=handoff.upstream_child_id,
+                upstream_run_id=handoff.upstream_run_id,
+            )
+        )
+        used += len(handoff.text)
 
     for skill in skill_guidance or []:
         decision = policy.evaluate_skill_context(
@@ -287,4 +383,5 @@ def build_context_manifest(
         ),
         retrieval_decisions=retrieval_decisions,
         skill_decisions=skill_decisions,
+        handoff_decisions=handoff_decisions,
     )

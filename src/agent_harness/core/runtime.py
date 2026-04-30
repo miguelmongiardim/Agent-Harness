@@ -12,7 +12,11 @@ from agent_harness.config import (
     load_public_model_with_schema_evidence,
 )
 from agent_harness.config.schema import HarnessConfig
-from agent_harness.context.builder import SkillContextGuidance, build_context_manifest
+from agent_harness.context.builder import (
+    GeneratedHandoffContext,
+    SkillContextGuidance,
+    build_context_manifest,
+)
 from agent_harness.context.retrieval import (
     DenseRetriever,
     FakeRetriever,
@@ -108,6 +112,7 @@ class HarnessRuntime:
         auto_approve: bool = False,
         dry_run: bool = False,
         runtime_adapter: str | None = None,
+        generated_handoffs: list[GeneratedHandoffContext] | None = None,
     ) -> RunSummary:
         task, task_schema_evidence = load_public_model_with_schema_evidence(task_path, TaskSpec)
         if runtime_adapter not in {None, "langgraph"}:
@@ -225,6 +230,7 @@ class HarnessRuntime:
             dense_retriever=dense_retriever,
             retrieval=retrieval,
             skill_guidance=skill_guidance,
+            generated_handoffs=generated_handoffs,
         )
         manifest = context.manifest
         store.write_model("context_manifest.json", manifest)
@@ -261,6 +267,19 @@ class HarnessRuntime:
                     {
                         "operation": "skill_context",
                         "skill_id": skill_id,
+                        "source": source,
+                        "decision": decision.model_dump(mode="json"),
+                    },
+                )
+            )
+        for handoff_id, source, decision in context.handoff_decisions:
+            store.append_event(
+                make_event(
+                    run_id,
+                    "policy_decision",
+                    {
+                        "operation": "orchestration_handoff_context",
+                        "handoff_id": handoff_id,
                         "source": source,
                         "decision": decision.model_dump(mode="json"),
                     },

@@ -25,6 +25,8 @@ Sensitivity = Literal[
 ]
 ProviderUseRuleAction = Literal["allow", "approval_required", "deny"]
 ProviderInputRuleAction = Literal["allow", "allow_untrusted", "approval_required", "redact", "deny"]
+OrchestrationExecutionMode = Literal["sequential"]
+OrchestrationRolePolicyName = Literal["planner", "implementer", "reviewer", "tester"]
 
 
 class SensitivityRule(StrictModel):
@@ -62,6 +64,30 @@ class MigrationPolicyContract(StrictModel):
     allow_loose_rewrites: bool = False
 
 
+def _default_orchestration_roles() -> list[OrchestrationRolePolicyName]:
+    return ["planner", "implementer", "reviewer", "tester"]
+
+
+class OrchestrationPolicyContract(StrictModel):
+    enabled: bool = False
+    execution: OrchestrationExecutionMode = "sequential"
+    allowed_roles: list[OrchestrationRolePolicyName] = Field(
+        default_factory=_default_orchestration_roles
+    )
+    allow_nested: bool = False
+
+    @field_validator("allowed_roles")
+    @classmethod
+    def validate_allowed_roles(
+        cls, values: list[OrchestrationRolePolicyName]
+    ) -> list[OrchestrationRolePolicyName]:
+        if not values:
+            raise ValueError("orchestration.allowed_roles must not be empty")
+        if len(values) != len(set(values)):
+            raise ValueError("orchestration.allowed_roles values must be unique")
+        return values
+
+
 def _default_allowed_context_classes() -> list[Sensitivity]:
     return ["public", "internal", "generated"]
 
@@ -79,6 +105,7 @@ class PolicyProfile(StrictModel):
     scanner: ScannerPolicyContract | None = None
     template_capabilities: TemplateCapabilityPolicyContract | None = None
     migration: MigrationPolicyContract | None = None
+    orchestration: OrchestrationPolicyContract | None = None
     allowed_tools: list[ToolName] = Field(default_factory=list)
     read_roots: list[str] = Field(default_factory=lambda: ["."])
     write_roots: list[str] = Field(default_factory=list)
@@ -112,9 +139,7 @@ class PolicyProfile(StrictModel):
         if "provider_input_policy" in hydrated:
             provider_input = dict(hydrated.get("provider_input") or {})
             provider_input["rules"] = hydrated["provider_input_policy"]
-            provider_input["hard_deny_sensitivities"] = hydrated.get(
-                "hard_deny_sensitivities", []
-            )
+            provider_input["hard_deny_sensitivities"] = hydrated.get("hard_deny_sensitivities", [])
             provider_input["redact_reclassify"] = hydrated.get(
                 "provider_input_redact_reclassify", {}
             )

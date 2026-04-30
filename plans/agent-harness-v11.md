@@ -193,12 +193,27 @@ inspect output.
 
 ### Acceptance criteria
 
-- [ ] One planner child completes through `HarnessRuntime` in dry-run mode.
-- [ ] Child run artifacts are normal run artifacts under `.agent-harness/runs/`.
-- [ ] Aggregate orchestration artifacts live under `.agent-harness/orchestrations/`.
-- [ ] Inspect output references child artifacts without copying raw run content.
-- [ ] No provider, write, handoff, approval, MCP, or release behavior is needed
+- [x] One planner child completes through `HarnessRuntime` in dry-run mode.
+- [x] Child run artifacts are normal run artifacts under `.agent-harness/runs/`.
+- [x] Aggregate orchestration artifacts live under `.agent-harness/orchestrations/`.
+- [x] Inspect output references child artifacts without copying raw run content.
+- [x] No provider, write, handoff, approval, MCP, or release behavior is needed
       for this phase.
+
+### Phase 2 implementation notes
+
+- Added explicit `policy.v2.orchestration` parsing with enabled sequential
+  local orchestration policy.
+- Added boundary-owned orchestration summary, event, manifest, and artifact
+  index evidence under `.agent-harness/orchestrations/<orchestration-id>/`.
+- Added `agent-harness orchestration run <spec> --dry-run` for exactly one
+  read-only child in this phase, materializing that child as `task.v2` before
+  delegating to `HarnessRuntime`.
+- Added `agent-harness orchestration inspect <id>` to return aggregate evidence
+  and child artifact references without loading raw child run content.
+- Multiple children, dependencies, handoffs, risky approvals, resume behavior,
+  provider-backed children, MCP resources, and release gates remain later V11
+  phases.
 
 ### Out of scope
 
@@ -244,12 +259,28 @@ free.
 
 ### Acceptance criteria
 
-- [ ] Dependency cycles are rejected with clear validation errors.
-- [ ] Children run in dependency order.
-- [ ] Handoffs are written under the orchestration artifact directory.
-- [ ] Downstream child context includes direct dependency handoffs only.
-- [ ] Handoffs exclude raw provider prompts, raw provider responses, secrets,
+- [x] Dependency cycles are rejected with clear validation errors.
+- [x] Children run in dependency order.
+- [x] Handoffs are written under the orchestration artifact directory.
+- [x] Downstream child context includes direct dependency handoffs only.
+- [x] Handoffs exclude raw provider prompts, raw provider responses, secrets,
       credentials, and denied context text.
+
+### Phase 3 implementation notes
+
+- Added deterministic dependency ordering for `orchestration.v1` children and
+  validation-time dependency-cycle rejection before policy or artifact work.
+- Added generated `orchestration_handoff.v1` records under
+  `.agent-harness/orchestrations/<id>/handoffs/` after upstream child
+  completion.
+- Added generated handoff context injection into downstream child runs via the
+  native runtime and context builder, with sensitivity `generated` and policy
+  decision provenance recorded in the downstream `context_manifest.v2`.
+- Added aggregate inspect output for handoff records and artifact-index
+  references without copying raw child run content.
+- Handoffs are deterministic summaries from safe child metadata only; provider
+  prompts, provider responses, secrets, credentials, and denied context text
+  are not included.
 
 ### Out of scope
 
@@ -298,13 +329,33 @@ detection, orchestration-plan approval records, exact binding validation,
 
 ### Acceptance criteria
 
-- [ ] Role ceilings are enforced for all four V11 roles.
-- [ ] Effective authority records are inspectable in orchestration evidence.
-- [ ] Risky plans pause before any child starts.
-- [ ] Approved risky plans resume only when bindings still match.
-- [ ] Child patch approvals remain separate child-run approvals.
-- [ ] Multiple write-capable children may appear only under sequential execution;
+- [x] Role ceilings are enforced for all four V11 roles.
+- [x] Effective authority records are inspectable in orchestration evidence.
+- [x] Risky plans pause before any child starts.
+- [x] Approved risky plans resume only when bindings still match.
+- [x] Child patch approvals remain separate child-run approvals.
+- [x] Multiple write-capable children may appear only under sequential execution;
       no more than one writer is active at a time.
+
+### Phase 4 implementation notes
+
+- Added fixed V11 role ceilings for planner, implementer, reviewer, and tester;
+  child-declared tools outside the role ceiling are rejected before artifacts
+  or child runs are created.
+- Added effective child authority records to orchestration summaries and
+  `orchestration_plan.v1` evidence.
+- Added risky-plan detection for write-capable children and provider-declaring
+  children; risky plans pause with `orchestration_plan` approval before any
+  child task materialization or child run creation.
+- Added `agent-harness orchestration approve` and `agent-harness orchestration
+  resume` for supervisor approvals. Resume validates the approved binding
+  against the stored plan, current spec, and current policy before launching
+  children.
+- Child mutation remains delegated to normal child runs. A resumed dry-run
+  implementer that proposes `patch_file` records the existing child-run
+  `patch_file` approval and leaves files unchanged.
+- Execution remains deterministic and sequential, so write-capable children do
+  not overlap.
 
 ### Out of scope
 

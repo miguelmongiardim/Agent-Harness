@@ -98,6 +98,28 @@ class PolicyEngine:
             )
         return self._decision(True, False, f"{sensitivity} allowed for context", matched)
 
+    def evaluate_generated_context(
+        self,
+        *,
+        source: str,
+        sensitivity: Sensitivity = "generated",
+    ) -> PolicyDecision:
+        matched = ["generated_context", f"source:{source}", f"sensitivity:{sensitivity}"]
+        if sensitivity not in self.profile.allowed_context_classes:
+            return self._decision(
+                False,
+                False,
+                f"{sensitivity} generated context denied by policy context classes",
+                [*matched, "generated_context:policy_context_class_deny"],
+            )
+        sensitivity_decision = self.evaluate_context_sensitivity(sensitivity, source)
+        return sensitivity_decision.model_copy(
+            update={
+                "decision_id": stable_id("policy", "generated_context", source, sensitivity),
+                "matched_rules": [*matched, *sensitivity_decision.matched_rules],
+            }
+        )
+
     def evaluate_skill_context(
         self,
         *,

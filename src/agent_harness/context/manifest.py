@@ -60,7 +60,7 @@ def manifest_item(
     *,
     source_id: str,
     chunk_id: str,
-    source_kind: Literal["file", "retrieval", "skill"],
+    source_kind: Literal["file", "retrieval", "skill", "orchestration_handoff"],
     path: str | None,
     content_hash: str | None,
     text: str | None,
@@ -76,6 +76,10 @@ def manifest_item(
     skill_source: str | None = None,
     skill_hash: str | None = None,
     inclusion_mode: Literal["task_required", "template_recommended"] | None = None,
+    handoff_id: str | None = None,
+    orchestration_id: str | None = None,
+    upstream_child_id: str | None = None,
+    upstream_run_id: str | None = None,
 ) -> ContextManifestItem:
     return ContextManifestItem(
         item_id=stable_id(
@@ -105,4 +109,8 @@ def manifest_item(
         skill_source=skill_source,
         skill_hash=skill_hash,
         inclusion_mode=inclusion_mode,
+        handoff_id=handoff_id,
+        orchestration_id=orchestration_id,
+        upstream_child_id=upstream_child_id,
+        upstream_run_id=upstream_run_id,
     )

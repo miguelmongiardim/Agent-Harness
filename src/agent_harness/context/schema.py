@@ -15,7 +15,7 @@ RetrievalEvidenceMethod = Literal["lexical", "dense"]
 
 class ContextSource(StrictModel):
     source_id: str
-    kind: Literal["file", "ingested_doc", "retrieval", "skill"]
+    kind: Literal["file", "ingested_doc", "retrieval", "skill", "orchestration_handoff"]
     path: str | None = None
     uri: str | None = None
     content_hash: str
@@ -25,6 +25,10 @@ class ContextSource(StrictModel):
     skill_version: str | None = None
     skill_source: str | None = None
     skill_hash: str | None = None
+    handoff_id: str | None = None
+    orchestration_id: str | None = None
+    upstream_child_id: str | None = None
+    upstream_run_id: str | None = None
 
 
 class ContextChunk(StrictModel):
@@ -50,9 +54,7 @@ class DenseRetrievalMetadata(StrictModel):
 
 
 class RetrievalBackendManifest(StrictModel):
-    schema_version: Literal["retrieval_backend.v1", "retrieval_backend.v2"] = (
-        "retrieval_backend.v2"
-    )
+    schema_version: Literal["retrieval_backend.v1", "retrieval_backend.v2"] = "retrieval_backend.v2"
     requested_backend: Literal["fake", "lexical", "qdrant", "dense", "hybrid"]
     active_backend: str
     backend: str
@@ -142,9 +144,7 @@ def _default_retrieval_scorecard_modes() -> list[Literal["lexical", "dense", "hy
 
 
 class RetrievalScorecardFixture(StrictModel):
-    schema_version: Literal["retrieval_scorecard_fixture.v1"] = (
-        "retrieval_scorecard_fixture.v1"
-    )
+    schema_version: Literal["retrieval_scorecard_fixture.v1"] = "retrieval_scorecard_fixture.v1"
     queries: list[RetrievalScorecardQuery] = Field(min_length=1)
     compared_modes: list[Literal["lexical", "dense", "hybrid"]] = Field(
         default_factory=_default_retrieval_scorecard_modes,
@@ -158,7 +158,7 @@ class ContextManifestItem(StrictModel):
     item_id: str
     source_id: str
     chunk_id: str
-    source_kind: Literal["file", "retrieval", "skill"]
+    source_kind: Literal["file", "retrieval", "skill", "orchestration_handoff"]
     path: str | None = None
     content_hash: str | None = None
     text: str | None = None
@@ -176,12 +176,14 @@ class ContextManifestItem(StrictModel):
     skill_source: str | None = None
     skill_hash: str | None = None
     inclusion_mode: Literal["task_required", "template_recommended"] | None = None
+    handoff_id: str | None = None
+    orchestration_id: str | None = None
+    upstream_child_id: str | None = None
+    upstream_run_id: str | None = None
 
 
 class ContextManifest(StrictModel):
-    schema_version: Literal["context_manifest.v1", "context_manifest.v2"] = (
-        "context_manifest.v2"
-    )
+    schema_version: Literal["context_manifest.v1", "context_manifest.v2"] = "context_manifest.v2"
     manifest_id: str
     run_id: str
     task_id: str

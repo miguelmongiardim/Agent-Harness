@@ -30,8 +30,12 @@ runtime around explicit ownership boundaries.
 - The V11 orchestration work belongs under `agent_harness.orchestration`. The
   current implementation owns `orchestration.v1` spec loading/validation and
   the denial-first policy gate that requires explicit `policy.v2.orchestration`
-  before any child run can start; successful child scheduling and aggregate
-  artifacts remain future work.
+  before any child run can start. It also owns the minimal one-child read-only
+  dry-run path, materialized child `task.v2` artifacts, aggregate orchestration
+  summary/events/manifest/index evidence, deterministic dependency ordering,
+  generated handoff records for direct dependencies, role-ceiling authority
+  narrowing, supervisor plan approvals, approval-bound resume, and
+  `orchestration inspect`.
 - `agent_harness.release` owns local release-readiness evidence collection.
 - `agent_harness.model`, `agent_harness.runtimes`, `agent_harness.storage`,
   `agent_harness.telemetry`, `agent_harness.evals`, and
@@ -135,21 +139,27 @@ when the optional MCP SDK is absent. The stdio server may depend on the SDK, but
 it should delegate to the same resource and prompt registries and advertise only
 resources and prompts.
 
-The V11 orchestration path starts as a policy-denial gate rather than a second
-runtime. The CLI can load and validate an `orchestration.v1` spec, load the
-selected policy, and reject policies without explicit orchestration enablement
-before creating child runs, aggregate orchestration directories, or mutation
-artifacts. Later V11 phases should keep scheduling and handoff behavior inside
-`agent_harness.orchestration` while delegating child execution to the native
-runtime.
+The V11 orchestration path remains a supervisor over the native runtime rather
+than a second runtime. The CLI can load and validate an `orchestration.v1` spec,
+reject policies without explicit orchestration enablement before creating child
+runs, run read-only children in deterministic dependency order by materializing
+normal `task.v2` files before delegating to `HarnessRuntime`, and inject direct
+dependency handoffs as generated, policy-mediated context. Risky plans that
+include write-capable children pause for an orchestration-plan approval before
+child launch; resume validates the approved binding before delegating to the
+native runtime, and child patch approvals remain normal child-run approvals.
+Later V11 phases should keep provider-child controls, child pause/failure
+resume, MCP resources, and release gates inside `agent_harness.orchestration`
+while preserving native runtime delegation for child execution.
 
 ## Compatibility And Roadmap Boundaries
 
 The v1.0.0 compatibility and deprecation policy is defined in
 [the V3 PRD](prd-agent-harness-v3.md). Until later phases implement and test
-them, enterprise readiness, compliance readiness, successful multi-agent
-orchestration, production Qdrant server mode, external catalogs, hosted web/API
-platform behavior, and cloud deployment remain roadmap scope. V6 narrows the
+them, enterprise readiness, compliance readiness, parallel or nested
+orchestration, MCP execution, production Qdrant server mode, external catalogs,
+hosted web/API platform behavior, and cloud deployment remain roadmap scope.
+V6 narrows the
 near-term platform direction to loopback-only local operator inspection and
 approval over existing artifacts. V9 narrows the MCP direction to local stdio,
 read-only resources, prompts, and access evidence; MCP tools, write-capable MCP,

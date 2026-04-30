@@ -34,7 +34,12 @@ from agent_harness.mcp import (
     read_mcp_resource,
 )
 from agent_harness.migration import migrate_schemas
-from agent_harness.orchestration import load_orchestration_spec, require_orchestration_policy
+from agent_harness.orchestration import (
+    approve_orchestration_plan,
+    inspect_orchestration,
+    resume_orchestration,
+    run_orchestration,
+)
 from agent_harness.policy import PolicyEngine, load_policy
 from agent_harness.release import (
     build_release_package_check_report,
@@ -212,6 +217,28 @@ def build_parser() -> argparse.ArgumentParser:
     orchestration_run.add_argument("--profile")
     orchestration_run.add_argument("--dry-run", action="store_true")
     orchestration_run.set_defaults(func=cmd_orchestration_run)
+    orchestration_inspect = orchestration_sub.add_parser(
+        "inspect",
+        description="Inspect aggregate local orchestration evidence.",
+    )
+    orchestration_inspect.add_argument("orchestration_id")
+    orchestration_inspect.set_defaults(func=cmd_orchestration_inspect)
+    orchestration_approve = orchestration_sub.add_parser(
+        "approve",
+        description="Approve or deny a pending orchestration-level approval.",
+    )
+    orchestration_approve.add_argument("orchestration_id")
+    orchestration_approve.add_argument("action_id")
+    orchestration_approve.add_argument("--decision", choices=["approve", "deny"], required=True)
+    orchestration_approve.add_argument("--actor", default="cli")
+    orchestration_approve.add_argument("--reason")
+    orchestration_approve.set_defaults(func=cmd_orchestration_approve)
+    orchestration_resume = orchestration_sub.add_parser(
+        "resume",
+        description="Resume a paused local orchestration after supervisor approval.",
+    )
+    orchestration_resume.add_argument("orchestration_id")
+    orchestration_resume.set_defaults(func=cmd_orchestration_resume)
 
     approve = sub.add_parser("approve")
     approve.add_argument("run_id")
@@ -599,13 +626,39 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 
 def cmd_orchestration_run(args: argparse.Namespace) -> int:
-    root = Path.cwd()
-    load_orchestration_spec(Path(args.spec_path))
-    config = load_config(root)
-    profile_name = args.profile or config.default_policy
-    policy = load_policy(root, profile_name)
-    require_orchestration_policy(policy)
-    raise ValueError("orchestration execution requires a policy.v2.orchestration section")
+    summary = run_orchestration(
+        Path.cwd(),
+        Path(args.spec_path),
+        profile_name=args.profile,
+        dry_run=args.dry_run,
+    )
+    print(summary.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_orchestration_inspect(args: argparse.Namespace) -> int:
+    payload = inspect_orchestration(Path.cwd(), args.orchestration_id)
+    print(json.dumps(payload, indent=2))
+    return 0
+
+
+def cmd_orchestration_approve(args: argparse.Namespace) -> int:
+    approval = approve_orchestration_plan(
+        Path.cwd(),
+        args.orchestration_id,
+        args.action_id,
+        decision=args.decision,
+        actor=args.actor,
+        reason=args.reason,
+    )
+    print(approval.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_orchestration_resume(args: argparse.Namespace) -> int:
+    summary = resume_orchestration(Path.cwd(), args.orchestration_id)
+    print(summary.model_dump_json(indent=2))
+    return 0
 
 
 def cmd_approve(args: argparse.Namespace) -> int:
