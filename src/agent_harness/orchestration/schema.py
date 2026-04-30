@@ -19,6 +19,8 @@ class OrchestrationChild(StrictModel):
     title: str = Field(min_length=1)
     intent: str = Field(min_length=1)
     target_paths: list[str] = Field(default_factory=list)
+    context_queries: list[str] = Field(default_factory=list)
+    test_commands: list[list[str]] = Field(default_factory=list)
     allowed_tools: list[ToolName] | None = None
     depends_on: list[str] = Field(default_factory=list)
     provider_profile: str | None = None
@@ -34,6 +36,14 @@ class OrchestrationChild(StrictModel):
     @classmethod
     def validate_target_paths(cls, values: list[str]) -> list[str]:
         return [normalize_relative_path(value) for value in values]
+
+    @field_validator("test_commands")
+    @classmethod
+    def validate_test_commands(cls, commands: list[list[str]]) -> list[list[str]]:
+        for command in commands:
+            if not command or any(not part for part in command):
+                raise ValueError("test commands must be non-empty argv arrays")
+        return commands
 
 
 class OrchestrationSpec(StrictModel):

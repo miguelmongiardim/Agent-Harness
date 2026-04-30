@@ -15,6 +15,14 @@ if TYPE_CHECKING:
 BenchmarkKind = Literal["swe_bench_style", "terminal_task"]
 BenchmarkAdapterId = Literal["swebench_style", "terminal_bench_style"]
 RunStatus = Literal["completed", "paused", "failed", "dry_run"]
+BenchmarkComparisonModeId = Literal[
+    "single_agent_baseline",
+    "planner_implementer",
+    "planner_implementer_reviewer",
+    "planner_implementer_reviewer_tester",
+]
+BenchmarkComparisonModeStatus = Literal["completed", "paused", "failed", "dry_run", "skipped"]
+BenchmarkComparisonMetricStatus = Literal["available", "unavailable", "not_applicable"]
 
 
 class BenchmarkCaseRecord(StrictModel):
@@ -90,4 +98,60 @@ class BenchmarkResult(StrictModel):
     run_artifacts: dict[str, str]
     adapter_evidence: BenchmarkAdapterEvidence
     approval_ids: list[str] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=now_utc)
+
+
+class BenchmarkComparisonChildRun(StrictModel):
+    child_id: str
+    role: str
+    run_id: str
+    status: RunStatus
+    run_summary_artifact: str
+
+
+class BenchmarkComparisonMetric(StrictModel):
+    schema_version: Literal["benchmark_comparison_metric.v1"] = "benchmark_comparison_metric.v1"
+    name: str = Field(min_length=1)
+    status: BenchmarkComparisonMetricStatus
+    value: Any = None
+    unit: str | None = None
+    reason: str | None = None
+    evidence: list[str] = Field(default_factory=list)
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+class BenchmarkComparisonModeResult(StrictModel):
+    schema_version: Literal["benchmark_comparison_mode_result.v1"] = (
+        "benchmark_comparison_mode_result.v1"
+    )
+    mode_id: BenchmarkComparisonModeId
+    label: str
+    execution_order: int
+    status: BenchmarkComparisonModeStatus
+    passed: bool
+    eligible: bool = True
+    skip_reason: str | None = None
+    run_id: str | None = None
+    benchmark_result: str | None = None
+    run_export: str | None = None
+    orchestration_id: str | None = None
+    orchestration_export: str | None = None
+    orchestration_summary: str | None = None
+    child_runs: list[BenchmarkComparisonChildRun] = Field(default_factory=list)
+    child_run_count: int = 0
+    tool_call_count: int = 0
+    handoff_count: int = 0
+    artifact_completeness: dict[str, bool] = Field(default_factory=dict)
+    metrics: list[BenchmarkComparisonMetric] = Field(default_factory=list)
+
+
+class BenchmarkComparisonResult(StrictModel):
+    schema_version: Literal["benchmark_comparison_result.v1"] = "benchmark_comparison_result.v1"
+    pack_id: str
+    version: str
+    case_id: str
+    benchmark_kind: BenchmarkKind
+    baseline_mode_id: Literal["single_agent_baseline"] = "single_agent_baseline"
+    result_artifact: str
+    modes: list[BenchmarkComparisonModeResult]
     created_at: datetime = Field(default_factory=now_utc)

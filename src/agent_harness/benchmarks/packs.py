@@ -114,27 +114,31 @@ def _prepare_benchmark_workspace(
     project_root: Path,
     pack: BenchmarkPackRecord,
     case: BenchmarkCaseRecord,
+    *,
+    workspace: Path | None = None,
+    policy: dict[str, Any] | None = None,
 ) -> Path:
-    workspace = (
+    selected_workspace = workspace or (
         project_root / ".agent-harness" / "benchmarks" / "workspaces" / pack.pack_id / case.case_id
     )
-    if workspace.exists():
-        shutil.rmtree(workspace)
-    workspace.mkdir(parents=True, exist_ok=True)
-    _write_benchmark_config(workspace, pack, case)
-    write_json(workspace / "policies" / "default.json", DEFAULT_POLICY)
+    if selected_workspace.exists():
+        shutil.rmtree(selected_workspace)
+    selected_workspace.mkdir(parents=True, exist_ok=True)
+    _write_benchmark_config(selected_workspace, pack, case)
+    write_json(selected_workspace / "policies" / "default.json", policy or DEFAULT_POLICY)
     for file in case.workspace_files:
-        path = workspace / file.path
+        path = selected_workspace / file.path
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(file.content, encoding="utf-8")
     if case.ingest_paths:
+        selected_policy = PolicyProfile.model_validate(policy or DEFAULT_POLICY)
         ingest_documents(
-            workspace,
-            workspace / ".agent-harness",
+            selected_workspace,
+            selected_workspace / ".agent-harness",
             case.ingest_paths,
-            PolicyEngine(workspace, PolicyProfile.model_validate(DEFAULT_POLICY)),
+            PolicyEngine(selected_workspace, selected_policy),
         )
-    return workspace
+    return selected_workspace
 
 
 def _write_benchmark_config(

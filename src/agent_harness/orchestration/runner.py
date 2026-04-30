@@ -581,6 +581,8 @@ def _materialize_child_task(
         provider_profile=child.provider_profile,
         target_paths=list(child.target_paths),
         allowed_tools=effective_tools,
+        context_queries=list(child.context_queries),
+        test_commands=[list(command) for command in child.test_commands],
         max_steps=8,
     )
 

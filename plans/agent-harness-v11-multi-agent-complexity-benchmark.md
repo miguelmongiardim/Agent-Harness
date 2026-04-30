@@ -133,13 +133,13 @@ child-run count, tool-call count, handoff count, and artifact completeness.
 
 ### Acceptance criteria
 
-- [ ] The CLI prints the comparison artifact path or JSON result consistently
+- [x] The CLI prints the comparison artifact path or JSON result consistently
       with existing benchmark commands.
-- [ ] Baseline evidence is produced before orchestrated mode evidence.
-- [ ] The comparison result links to the baseline run export.
-- [ ] The comparison result links to the orchestration export and child run
+- [x] Baseline evidence is produced before orchestrated mode evidence.
+- [x] The comparison result links to the baseline run export.
+- [x] The comparison result links to the orchestration export and child run
       summaries.
-- [ ] No raw child memory or provider payload is copied into comparison
+- [x] No raw child memory or provider payload is copied into comparison
       artifacts.
 
 ### Out of scope
@@ -148,6 +148,25 @@ child-run count, tool-call count, handoff count, and artifact completeness.
 - Pack-level comparison.
 - Role recommendations.
 - Runtime/cost metrics beyond explicit unavailable fields.
+
+### Implementation notes
+
+- Added `agent-harness benchmark compare <pack_id> <case_id>` for the first
+  bundled case path, with Phase 1 coverage for
+  `local-samples terminal-readonly-inspect`.
+- The comparison runner stages separate baseline and planner -> implementer
+  workspaces, runs the baseline through the existing benchmark path first,
+  then runs a generated sequential orchestration dry run through the existing
+  orchestration boundary.
+- Added `benchmark_comparison_result.v1` and
+  `benchmark_comparison_mode_result.v1` records under the benchmark schema
+  boundary. The artifact links to the baseline run export, the orchestration
+  export, and child run summaries using project-relative paths.
+- The Phase 1 mode evidence records basic pass/status, child run count, tool
+  observation count, handoff count, and artifact completeness without copying
+  raw child memory or provider payloads.
+- Pack-level comparison, reviewer/tester modes, role recommendations, and
+  richer metric interpretation remain later phases.
 
 ---
 
@@ -183,17 +202,35 @@ existing orchestration boundary.
 
 ### Acceptance criteria
 
-- [ ] Required modes are generated deterministically.
-- [ ] Tester mode is skipped unless executable tests exist.
-- [ ] Generated children use role-appropriate allowed tools.
-- [ ] No child receives handoffs outside its direct dependencies.
-- [ ] Comparison evidence records mode eligibility and skip reasons.
+- [x] Required modes are generated deterministically.
+- [x] Tester mode is skipped unless executable tests exist.
+- [x] Generated children use role-appropriate allowed tools.
+- [x] No child receives handoffs outside its direct dependencies.
+- [x] Comparison evidence records mode eligibility and skip reasons.
 
 ### Out of scope
 
 - Parallel scheduling.
 - Explicit user-authored orchestration specs for benchmark cases.
 - External benchmark pack allowlists.
+
+### Implementation notes
+
+- Extended `benchmark compare <pack_id> <case_id>` to emit baseline,
+  planner -> implementer, planner -> implementer -> reviewer, and
+  planner -> implementer -> reviewer -> tester mode records in deterministic
+  order.
+- Tester mode records `eligible=false`, `status=skipped`, and a clear skip
+  reason unless the benchmark task declares executable `test_commands` and
+  allows `run_tests`.
+- Added the bundled `terminal-test-runner` fixture to prove tester-mode
+  generation without pack-level comparison.
+- Generated orchestration children carry role-appropriate tools, context
+  queries, and tester `test_commands` into materialized child `task.v2`
+  artifacts while preserving existing role ceilings and policy-filtered
+  direct-dependency handoffs.
+- Pack-level comparison, metric interpretation, handoff usefulness scoring,
+  and recommendations remain later phases.
 
 ---
 
@@ -230,19 +267,39 @@ benchmark boundary and avoid private runtime state.
 
 ### Acceptance criteria
 
-- [ ] Required metrics are present for every executed mode.
-- [ ] Dry-run test skips do not count as passed tests.
-- [ ] Policy violations are derived from policy decisions and denied tool
+- [x] Required metrics are present for every executed mode.
+- [x] Dry-run test skips do not count as passed tests.
+- [x] Policy violations are derived from policy decisions and denied tool
       observations.
-- [ ] Approval correctness distinguishes pending, approved, denied, and
+- [x] Approval correctness distinguishes pending, approved, denied, and
       binding-drift cases.
-- [ ] Artifact completeness reports missing links with artifact names.
+- [x] Artifact completeness reports missing links with artifact names.
 
 ### Out of scope
 
 - Estimated token or cost values when no evidence exists.
 - Model-quality scoring beyond observed benchmark outcomes.
 - Automatic release gating.
+
+### Implementation notes
+
+- Added `benchmark_comparison_metric.v1` records to each executed comparison
+  mode. Required Phase 3 metric names are emitted for baseline and generated
+  orchestration modes.
+- Metrics are derived from linked run exports, child event logs, orchestration
+  exports, handoff records, approval records/events, and artifact-completeness
+  maps inside the benchmark boundary.
+- `tests_passed` requires successful `run_tests` observations for declared
+  `test_commands`; absent or dry-run-only test evidence is not counted as
+  passed.
+- Policy-violation metrics count denied policy decisions, denied tool
+  observations, and orchestration authority failures when present.
+- Approval metrics report pending, approved, denied, and binding-drift counts;
+  the SWE-style fixture proves approved baseline patch evidence.
+- Token, runtime, and cost metrics are explicitly marked unavailable when the
+  linked evidence does not expose those values.
+- Defect-catch metrics are present as deterministic zero counts until Phase 4
+  interpretation adds handoff usefulness and role recommendation logic.
 
 ---
 

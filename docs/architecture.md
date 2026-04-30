@@ -13,7 +13,8 @@ runtime around explicit ownership boundaries.
 - `agent_harness.tools` owns typed tool arguments, policy-mediated tool
   execution, and the exact-state `git_commit` planning/execution boundary.
 - `agent_harness.benchmarks` owns packaged local benchmark sample packs,
-  workspace staging, result mapping, and evidence-backed benchmark exports.
+  workspace staging, result mapping, evidence-backed benchmark exports, and
+  baseline-first comparison artifacts for benchmark cases.
 - `agent_harness.templates` owns bundled template catalog behavior today and is
   the V7 boundary for local pack source discovery, manifest loading,
   validation, deterministic rendering, planning, application evidence, and
@@ -92,7 +93,15 @@ separate git commit approval.
 Benchmark adapters are deliberately thin. They prepare local sample workspaces,
 map SWE-bench-style or terminal-task adapter evidence, and then call the native
 runtime, approval path, and JSON exporter; benchmark results are pointers to
-real run evidence rather than independent synthetic reports.
+real run evidence rather than independent synthetic reports. Benchmark
+comparison stays in this boundary as a coordinator over existing benchmark and
+orchestration execution paths: it stages isolated workspaces, runs the
+single-agent baseline first, runs deterministic sequential generated
+orchestration modes through `agent_harness.orchestration`, records tester-mode
+eligibility from executable `test_commands`, and stores project-relative links
+instead of copying raw child evidence. Metric derivation stays in the benchmark
+boundary and reads linked exports, event logs, handoff records, approvals, and
+artifact indexes rather than private runtime objects.
 
 Provider transports live under `agent_harness.model.adapters` behind
 `ProviderGateway`; they call the deterministic model contract or recorded

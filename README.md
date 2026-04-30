@@ -137,6 +137,7 @@ agent-harness approve <run-id> <action-id> --decision approve
 agent-harness commit propose <run-id> --message "refactor: update approved files"
 agent-harness benchmark list
 agent-harness benchmark run local-samples swebench-python-refactor
+agent-harness benchmark compare local-samples terminal-readonly-inspect
 agent-harness retrieval index build --index-id local-docs --paths docs --mode lexical
 agent-harness retrieval index build --index-id dense-docs --paths docs --mode dense --dense-backend deterministic
 agent-harness retrieval index build --index-id qdrant-docs --paths docs --mode dense --dense-backend qdrant-local
@@ -297,10 +298,22 @@ The V11 multi-agent complexity benchmark is planned separately in
 [`docs/prd-agent-harness-v11-multi-agent-complexity-benchmark.md`](docs/prd-agent-harness-v11-multi-agent-complexity-benchmark.md)
 and
 [`plans/agent-harness-v11-multi-agent-complexity-benchmark.md`](plans/agent-harness-v11-multi-agent-complexity-benchmark.md).
-It remains future work: `agent-harness benchmark compare`, comparison schemas,
-metric aggregation, handoff usefulness scoring, role recommendations, and
-default-role promotion are not implemented. Role-count expansion requires
-comparative outcome evidence before recommendation or promotion.
+The implemented single-case comparison path supports
+`agent-harness benchmark compare local-samples terminal-readonly-inspect`,
+which runs a single-agent baseline first, then sequential planner ->
+implementer and planner -> implementer -> reviewer orchestration dry runs. It
+also records planner -> implementer -> reviewer -> tester mode as skipped when
+the case lacks executable `test_commands`, and runs that tester mode for
+test-enabled bundled cases. Comparison artifacts use
+`benchmark_comparison_result.v1` under
+`.agent-harness/benchmarks/comparisons/` and include evidence-derived metrics
+for task success, test evidence, policy violations, approval state, child/tool
+and handoff counts, handoff size, coordination overhead, artifact completeness,
+failure attribution, and explicit unavailable token/runtime/cost values.
+Pack-level comparison, handoff usefulness scoring, role recommendations, and
+default-role promotion remain future scope.
+Role-count expansion requires comparative outcome evidence before
+recommendation or promotion.
 
 ## Documentation
 

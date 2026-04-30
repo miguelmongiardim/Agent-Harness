@@ -8,7 +8,8 @@ configured provider profiles; provider-input policy gates; strict provider
 action envelopes; opt-in OpenAI-compatible live smoke; redacted provider-call
 evidence; local retrieval indexes, hybrid retrieval, qdrant-local evidence,
 retrieval scorecards, approval-bound template application, separate
-`git_commit` approval, packaged benchmark adapters, validated bundled and
+`git_commit` approval, packaged benchmark adapters, a single-case benchmark
+comparison artifact for the local terminal sample, validated bundled and
 configured local skill discovery, task-requested skill resolution,
 template-recommended skill evidence, policy-gated skill context evidence,
 skill manifest run evidence, a skills workflow demo, V8 skill release gates,
@@ -163,10 +164,21 @@ The V11 multi-agent complexity benchmark is planned separately in
 [docs/prd-agent-harness-v11-multi-agent-complexity-benchmark.md](prd-agent-harness-v11-multi-agent-complexity-benchmark.md)
 and
 [plans/agent-harness-v11-multi-agent-complexity-benchmark.md](../plans/agent-harness-v11-multi-agent-complexity-benchmark.md).
-It is not current behavior: `agent-harness benchmark compare`, comparison
-schemas, metric aggregation, handoff usefulness scoring, role recommendations,
-and role-default promotion remain future scope. Role-count expansion requires
-comparative outcome evidence before recommendation or promotion.
+The implemented single-case comparison path supports
+`agent-harness benchmark compare local-samples terminal-readonly-inspect` for a
+baseline-first comparison against sequential generated orchestration modes:
+planner -> implementer, planner -> implementer -> reviewer, and tester mode
+only for bundled cases with executable `test_commands`. It writes
+`benchmark_comparison_result.v1` with links to the baseline run export,
+orchestration export, and child run summaries, plus mode eligibility and skip
+reasons. It also records evidence-derived metrics for task success, test
+evidence, policy violations, approval state, child/tool and handoff counts,
+handoff size, coordination overhead, artifact completeness, failure
+attribution, and explicit unavailable token/runtime/cost values. Pack-level
+comparison, handoff usefulness scoring, role recommendations, and role-default
+promotion remain future scope.
+Role-count expansion requires comparative outcome evidence before
+recommendation or promotion.
 
 ## Release Maintenance Priorities
 

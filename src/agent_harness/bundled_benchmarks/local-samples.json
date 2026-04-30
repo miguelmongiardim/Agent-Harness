@@ -52,6 +52,34 @@
       "expected_status": "completed"
     },
     {
+      "case_id": "terminal-test-runner",
+      "title": "Terminal-task-style test runner",
+      "benchmark_kind": "terminal_task",
+      "description": "Terminal-task-shaped case that declares executable tests for tester-mode comparison.",
+      "workspace_files": [
+        {
+          "path": "workspace/README.md",
+          "content": "# Local Terminal Test Sample\n\nInspect this file and keep test commands available.\n"
+        },
+        {
+          "path": "tests/test_sample.py",
+          "content": "def test_sample_workspace():\n    assert True\n"
+        }
+      ],
+      "task": {
+        "schema_version": "task.v2",
+        "task_id": "benchmark-terminal-test-runner",
+        "title": "Inspect terminal workspace with tests",
+        "intent": "Inspect the terminal workspace and preserve executable test evidence.",
+        "target_paths": ["workspace/README.md"],
+        "allowed_tools": ["read_file", "run_tests"],
+        "test_commands": [["python", "-m", "pytest", "tests"]],
+        "max_steps": 3
+      },
+      "auto_approve_patches": false,
+      "expected_status": "completed"
+    },
+    {
       "case_id": "swebench-dense-retrieval",
       "title": "SWE-bench-style dense retrieval fixture",
       "benchmark_kind": "swe_bench_style",
