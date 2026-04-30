@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from agent_harness.benchmarks.interpretation import recommend_roles
 from agent_harness.benchmarks.packs import (
     _case_by_id,
     _prepare_benchmark_workspace,
@@ -15,6 +16,8 @@ from agent_harness.benchmarks.packs import (
 from agent_harness.benchmarks.schema import (
     BenchmarkCaseRecord,
     BenchmarkComparisonChildRun,
+    BenchmarkComparisonHandoffClassification,
+    BenchmarkComparisonHandoffUsefulness,
     BenchmarkComparisonMetric,
     BenchmarkComparisonModeId,
     BenchmarkComparisonModeResult,
@@ -24,6 +27,7 @@ from agent_harness.benchmarks.schema import (
 )
 from agent_harness.defaults import DEFAULT_POLICY
 from agent_harness.orchestration import export_orchestration, run_orchestration
+from agent_harness.orchestration.schema import OrchestrationChildRun
 from agent_harness.tools.schema import ToolName
 from agent_harness.utils import load_json, write_json
 
@@ -71,6 +75,7 @@ def run_benchmark_comparison(
     baseline = run_benchmark_case(root, pack_id, case_id)
     baseline_mode = _baseline_mode(root, case, baseline)
     orchestration_modes = _orchestration_modes(root, pack, case)
+    modes = [baseline_mode, *orchestration_modes]
 
     result_path = (
         root
@@ -85,7 +90,8 @@ def run_benchmark_comparison(
         case_id=case.case_id,
         benchmark_kind=case.benchmark_kind,
         result_artifact=_project_relative(root, result_path),
-        modes=[baseline_mode, *orchestration_modes],
+        modes=modes,
+        role_recommendations=recommend_roles(modes),
     )
     write_json(result_path, result.model_dump(mode="json"))
     return result
@@ -231,6 +237,7 @@ def _orchestration_mode(
     tool_call_count = _tool_activity_count(run_events)
     handoff_count = len(handoffs)
     passed = summary.status in {"completed", "dry_run"} and all(artifact_completeness.values())
+    handoff_usefulness = _handoff_usefulness(root, workspace, handoffs, summary.children)
     return BenchmarkComparisonModeResult(
         mode_id=mode_id,
         label=label,
@@ -257,7 +264,96 @@ def _orchestration_mode(
             orchestration_events=orchestration_events,
             approvals=approvals,
         ),
+        handoff_usefulness=handoff_usefulness,
     )
+
+
+def _handoff_usefulness(
+    root: Path,
+    workspace: Path,
+    handoffs: list[dict[str, Any]],
+    children: list[OrchestrationChildRun],
+) -> list[BenchmarkComparisonHandoffUsefulness]:
+    child_by_id = {child.child_id: child for child in children}
+    records: list[BenchmarkComparisonHandoffUsefulness] = []
+    for handoff in handoffs:
+        handoff_id = _string_value(handoff.get("handoff_id"))
+        from_child_id = _string_value(handoff.get("from_child_id"))
+        to_child_id = _string_value(handoff.get("to_child_id"))
+        if handoff_id is None or from_child_id is None or to_child_id is None:
+            continue
+        child = child_by_id.get(to_child_id)
+        context_path = (
+            workspace / ".agent-harness" / "runs" / child.run_id / "context_manifest.json"
+            if child is not None
+            else None
+        )
+        context_manifest = (
+            _load_object(context_path) if context_path is not None and context_path.exists() else {}
+        )
+        supporting_artifacts = (
+            [_project_relative(root, context_path)]
+            if context_path is not None and context_path.exists()
+            else []
+        )
+        classification, reason_codes = _classify_handoff_usefulness(
+            handoff_id,
+            context_manifest,
+            attached_to_child=_handoff_attached_to_child(child, handoff_id),
+        )
+        records.append(
+            BenchmarkComparisonHandoffUsefulness(
+                handoff_id=handoff_id,
+                from_child_id=from_child_id,
+                to_child_id=to_child_id,
+                classification=classification,
+                reason_codes=reason_codes,
+                supporting_metric_names=["handoff_count", "handoff_size_bytes"],
+                supporting_artifacts=supporting_artifacts,
+            )
+        )
+    return records
+
+
+def _classify_handoff_usefulness(
+    handoff_id: str,
+    context_manifest: dict[str, Any],
+    *,
+    attached_to_child: bool,
+) -> tuple[BenchmarkComparisonHandoffClassification, list[str]]:
+    included = _handoff_manifest_items(context_manifest, "items", handoff_id)
+    if included:
+        return "used_by_downstream", ["present_in_downstream_context_manifest"]
+    rejected = _handoff_manifest_items(context_manifest, "rejected_items", handoff_id)
+    if rejected:
+        if any(item.get("policy_allowed") is False for item in rejected):
+            return "policy_denied", ["downstream_policy_denied_handoff_context"]
+        return "budget_excluded", ["downstream_context_budget_excluded_handoff"]
+    if attached_to_child:
+        return "included_but_unused", ["attached_to_child_without_context_item"]
+    return "included", ["handoff_recorded_without_downstream_context"]
+
+
+def _handoff_manifest_items(
+    context_manifest: dict[str, Any],
+    section: str,
+    handoff_id: str,
+) -> list[dict[str, Any]]:
+    return [
+        item
+        for item in _object_list(context_manifest.get(section, []))
+        if item.get("handoff_id") == handoff_id
+    ]
+
+
+def _handoff_attached_to_child(child: OrchestrationChildRun | None, handoff_id: str) -> bool:
+    if child is None:
+        return False
+    return any(handoff.get("handoff_id") == handoff_id for handoff in child.handoffs)
+
+
+def _string_value(value: Any) -> str | None:
+    return value if isinstance(value, str) else None
 
 
 def _mode_spec(

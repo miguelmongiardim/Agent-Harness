@@ -334,16 +334,33 @@ to audit why a role was retained or flagged.
 
 ### Acceptance criteria
 
-- [ ] Handoff usefulness appears in comparison artifacts.
-- [ ] Role recommendations include reason codes and supporting metric names.
-- [ ] No recommendation mutates policy defaults or orchestration role lists.
-- [ ] Recommendation rules are deterministic and covered by behavior tests.
+- [x] Handoff usefulness appears in comparison artifacts.
+- [x] Role recommendations include reason codes and supporting metric names.
+- [x] No recommendation mutates policy defaults or orchestration role lists.
+- [x] Recommendation rules are deterministic and covered by behavior tests.
 
 ### Out of scope
 
 - Automatic role removal.
 - Automatic default-role promotion.
 - Machine-learned scoring or provider-generated recommendations.
+
+### Implementation notes
+
+- Added `benchmark_comparison_handoff_usefulness.v1` records to generated
+  orchestration modes. Classifications are derived from downstream
+  `context_manifest.v2` evidence and distinguish used, policy-denied,
+  budget-excluded, attached-but-unused, and recorded-only handoffs.
+- Added `benchmark_comparison_role_recommendation.v1` records to comparison
+  results. Recommendation rules compare eligible sequential modes, use reason
+  codes plus supporting metric names, retain roles only for measurable quality
+  or control gains, and flag policy regressions or overhead without gain as
+  `remove_candidate`.
+- Planner and implementer are neutral when only the combined planner ->
+  implementer mode is available because the benchmark cannot isolate either
+  role's individual contribution from that single mode.
+- Recommendations are evidence records only; they do not mutate policy
+  defaults, generated orchestration specs, or role lists.
 
 ---
 

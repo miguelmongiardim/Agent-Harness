@@ -309,8 +309,10 @@ test-enabled bundled cases. Comparison artifacts use
 `.agent-harness/benchmarks/comparisons/` and include evidence-derived metrics
 for task success, test evidence, policy violations, approval state, child/tool
 and handoff counts, handoff size, coordination overhead, artifact completeness,
-failure attribution, and explicit unavailable token/runtime/cost values.
-Pack-level comparison, handoff usefulness scoring, role recommendations, and
+failure attribution, handoff usefulness, conservative role recommendations,
+and explicit unavailable token/runtime/cost values. Role recommendations include
+reason codes and supporting metric names, and they do not alter policy defaults
+or generated orchestration role lists. Pack-level comparison and automatic
 default-role promotion remain future scope.
 Role-count expansion requires comparative outcome evidence before
 recommendation or promotion.

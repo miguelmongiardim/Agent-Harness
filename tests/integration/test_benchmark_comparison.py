@@ -300,3 +300,61 @@ def test_benchmark_compare_approval_metric_records_approved_baseline_actions(
     assert metrics["approval_correctness"]["details"]["pending"] == 0
     assert metrics["approval_correctness"]["details"]["denied"] == 0
     assert metrics["approval_correctness"]["details"]["binding_drift"] == 0
+
+
+def test_benchmark_compare_interprets_handoffs_and_role_recommendations(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-30T17:30:00Z")
+    seed_project(tmp_path)
+
+    assert main(["benchmark", "compare", "local-samples", "terminal-readonly-inspect"]) == 0
+    result = json.loads(capsys.readouterr().out)
+
+    planner_implementer = next(
+        mode for mode in result["modes"] if mode["mode_id"] == "planner_implementer"
+    )
+    handoff_usefulness = planner_implementer["handoff_usefulness"]
+    assert len(handoff_usefulness) == 1
+    assert handoff_usefulness[0]["schema_version"] == (
+        "benchmark_comparison_handoff_usefulness.v1"
+    )
+    assert handoff_usefulness[0]["handoff_id"] == (
+        "cmp-local-samples-terminal-readonly-inspect-planner-implementer"
+        "-planner-to-implementer"
+    )
+    assert handoff_usefulness[0]["from_child_id"] == "planner"
+    assert handoff_usefulness[0]["to_child_id"] == "implementer"
+    assert handoff_usefulness[0]["classification"] == "used_by_downstream"
+    assert handoff_usefulness[0]["reason_codes"] == [
+        "present_in_downstream_context_manifest"
+    ]
+    assert handoff_usefulness[0]["supporting_metric_names"] == [
+        "handoff_count",
+        "handoff_size_bytes",
+    ]
+    assert len(handoff_usefulness[0]["supporting_artifacts"]) == 1
+    context_manifest = handoff_usefulness[0]["supporting_artifacts"][0]
+    assert context_manifest.endswith("/context_manifest.json")
+    assert (tmp_path / context_manifest).exists()
+
+    recommendations = {item["role"]: item for item in result["role_recommendations"]}
+    assert list(recommendations) == ["planner", "implementer", "reviewer", "tester"]
+    assert recommendations["planner"]["recommendation"] == "neutral"
+    assert recommendations["implementer"]["recommendation"] == "neutral"
+    assert recommendations["reviewer"]["recommendation"] == "remove_candidate"
+    assert "policy_violations_worsened" in recommendations["reviewer"]["reason_codes"]
+    assert "policy_violations" in recommendations["reviewer"]["supporting_metric_names"]
+    assert recommendations["tester"]["recommendation"] == "neutral"
+    assert recommendations["tester"]["reason_codes"] == ["mode_not_eligible"]
+    assert {
+        item["default_recommendation"] for item in result["role_recommendations"]
+    } == {"not_recommended"}
+
+    artifact_path = tmp_path / result["result_artifact"]
+    assert json.loads(artifact_path.read_text(encoding="utf-8"))["role_recommendations"] == (
+        result["role_recommendations"]
+    )

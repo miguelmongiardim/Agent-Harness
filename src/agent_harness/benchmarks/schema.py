@@ -23,6 +23,16 @@ BenchmarkComparisonModeId = Literal[
 ]
 BenchmarkComparisonModeStatus = Literal["completed", "paused", "failed", "dry_run", "skipped"]
 BenchmarkComparisonMetricStatus = Literal["available", "unavailable", "not_applicable"]
+BenchmarkComparisonRole = Literal["planner", "implementer", "reviewer", "tester"]
+BenchmarkComparisonRoleRecommendationAction = Literal["retain", "neutral", "remove_candidate"]
+BenchmarkComparisonDefaultRecommendation = Literal["not_recommended", "candidate"]
+BenchmarkComparisonHandoffClassification = Literal[
+    "included",
+    "policy_denied",
+    "budget_excluded",
+    "included_but_unused",
+    "used_by_downstream",
+]
 
 
 class BenchmarkCaseRecord(StrictModel):
@@ -120,6 +130,33 @@ class BenchmarkComparisonMetric(StrictModel):
     details: dict[str, Any] = Field(default_factory=dict)
 
 
+class BenchmarkComparisonRoleRecommendation(StrictModel):
+    schema_version: Literal["benchmark_comparison_role_recommendation.v1"] = (
+        "benchmark_comparison_role_recommendation.v1"
+    )
+    role: BenchmarkComparisonRole
+    recommendation: BenchmarkComparisonRoleRecommendationAction
+    default_recommendation: BenchmarkComparisonDefaultRecommendation = "not_recommended"
+    reason_codes: list[str] = Field(default_factory=list)
+    supporting_metric_names: list[str] = Field(default_factory=list)
+    compared_mode_id: BenchmarkComparisonModeId | None = None
+    baseline_mode_id: BenchmarkComparisonModeId | None = None
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+class BenchmarkComparisonHandoffUsefulness(StrictModel):
+    schema_version: Literal["benchmark_comparison_handoff_usefulness.v1"] = (
+        "benchmark_comparison_handoff_usefulness.v1"
+    )
+    handoff_id: str
+    from_child_id: str
+    to_child_id: str
+    classification: BenchmarkComparisonHandoffClassification
+    reason_codes: list[str] = Field(default_factory=list)
+    supporting_metric_names: list[str] = Field(default_factory=list)
+    supporting_artifacts: list[str] = Field(default_factory=list)
+
+
 class BenchmarkComparisonModeResult(StrictModel):
     schema_version: Literal["benchmark_comparison_mode_result.v1"] = (
         "benchmark_comparison_mode_result.v1"
@@ -143,6 +180,9 @@ class BenchmarkComparisonModeResult(StrictModel):
     handoff_count: int = 0
     artifact_completeness: dict[str, bool] = Field(default_factory=dict)
     metrics: list[BenchmarkComparisonMetric] = Field(default_factory=list)
+    handoff_usefulness: list[BenchmarkComparisonHandoffUsefulness] = Field(
+        default_factory=list
+    )
 
 
 class BenchmarkComparisonResult(StrictModel):
@@ -154,4 +194,7 @@ class BenchmarkComparisonResult(StrictModel):
     baseline_mode_id: Literal["single_agent_baseline"] = "single_agent_baseline"
     result_artifact: str
     modes: list[BenchmarkComparisonModeResult]
+    role_recommendations: list[BenchmarkComparisonRoleRecommendation] = Field(
+        default_factory=list
+    )
     created_at: datetime = Field(default_factory=now_utc)

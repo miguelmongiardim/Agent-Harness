@@ -101,7 +101,11 @@ orchestration modes through `agent_harness.orchestration`, records tester-mode
 eligibility from executable `test_commands`, and stores project-relative links
 instead of copying raw child evidence. Metric derivation stays in the benchmark
 boundary and reads linked exports, event logs, handoff records, approvals, and
-artifact indexes rather than private runtime objects.
+artifact indexes rather than private runtime objects. Comparison interpretation
+also stays in the benchmark boundary: generated handoffs are classified from
+downstream context-manifest evidence, and role recommendations are deterministic
+records with reason codes and supporting metric names rather than policy or
+role-list mutations.
 
 Provider transports live under `agent_harness.model.adapters` behind
 `ProviderGateway`; they call the deterministic model contract or recorded
