@@ -460,9 +460,96 @@ def test_docs_check_rejects_benchmark_comparison_claims_outside_roadmap(
     assert label in comparison_claims[0]["text"]
 
 
+@pytest.mark.parametrize(
+    ("claim", "label"),
+    [
+        ("Agent Harness provides hosted governance.", "hosted governance"),
+        (
+            "Agent Harness offers enterprise governance control planes.",
+            "enterprise governance control planes",
+        ),
+        ("Agent Harness supports multi-tenant admin.", "multi-tenant admin"),
+        ("Agent Harness provides compliance readiness.", "compliance readiness"),
+        ("Agent Harness includes SOC2 readiness.", "SOC2 readiness"),
+        ("Agent Harness offers ISO readiness.", "ISO readiness"),
+        ("Agent Harness provides cloud deployment for governance.", "cloud deployment"),
+        (
+            "Agent Harness includes formal compliance certification.",
+            "formal compliance certification",
+        ),
+    ],
+)
+def test_docs_check_rejects_v12_governance_compliance_claims_outside_roadmap(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+    claim: str,
+    label: str,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    docs = tmp_path / "docs"
+    docs.mkdir(exist_ok=True)
+    (docs / "governance.md").write_text(
+        "\n".join(
+            [
+                "# Governance",
+                "",
+                "## Current Capabilities",
+                "",
+                claim,
+                "",
+                "## Roadmap / Not implemented yet",
+                "",
+                f"{label} remains future-only.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["docs", "check"]) == 1
+    report = json.loads(capsys.readouterr().out)
+    governance_claims = [
+        finding
+        for finding in report["findings"]
+        if finding["rule_id"] == "unsupported_governance_scope_claim"
+    ]
+
+    assert governance_claims
+    assert governance_claims[0]["path"] == "docs/governance.md"
+    assert governance_claims[0]["line"] == 5
+    assert label in governance_claims[0]["text"]
+
+
 def test_ci_runs_docs_check() -> None:
     workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
     assert "python -m agent_harness docs check" in workflow
+
+
+def test_v12_governance_scope_is_planned_in_public_docs() -> None:
+    readme = Path("README.md").read_text(encoding="utf-8")
+    roadmap = Path("docs/roadmap.md").read_text(encoding="utf-8")
+    prd_link = "docs/prd-agent-harness-v12-local-governance-console.md"
+    plan_link = "plans/agent-harness-v12-local-governance-console.md"
+
+    assert prd_link in readme
+    assert plan_link in readme
+    assert "V12 planned local governance evidence surface" in readme
+    assert (
+        "No governance CLI, API, UI, release-readiness, or export behavior is implemented yet."
+        in readme
+    )
+    assert "Compliance readiness and formal certification remain future-only." in readme
+
+    assert "prd-agent-harness-v12-local-governance-console.md" in roadmap
+    assert "agent-harness-v12-local-governance-console.md" in roadmap
+    assert "v1.8.0 Planned Scope" in roadmap
+    assert "V12 is planned, not implemented." in roadmap
+    assert (
+        "compliance readiness, SOC2 readiness, ISO readiness, and formal certification"
+        in roadmap
+    )
 
 
 def test_docs_check_rejects_stale_v3_scope_for_agent_harness_repo(

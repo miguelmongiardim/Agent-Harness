@@ -320,6 +320,15 @@ allowlists and automatic default-role promotion remain future scope.
 Role-count expansion requires comparative outcome evidence before
 recommendation or promotion.
 
+V12 planned local governance evidence surface:
+[docs/prd-agent-harness-v12-local-governance-console.md](docs/prd-agent-harness-v12-local-governance-console.md)
+and
+[plans/agent-harness-v12-local-governance-console.md](plans/agent-harness-v12-local-governance-console.md).
+V12 is planned as a local, read-only governance summary/report/check/export
+surface over existing Agent Harness artifacts.
+No governance CLI, API, UI, release-readiness, or export behavior is implemented yet.
+Compliance readiness and formal certification remain future-only.
+
 ## Documentation
 
 - [Architecture](docs/architecture.md)
@@ -344,6 +353,7 @@ recommendation or promotion.
 - [V9 MCP Boundary PRD](docs/prd-agent-harness-v9.md)
 - [V11 Policy-Mediated Multi-Agent Orchestration PRD](docs/prd-agent-harness-v11.md)
 - [V11 Multi-Agent Complexity Benchmark PRD](docs/prd-agent-harness-v11-multi-agent-complexity-benchmark.md)
+- [V12 Local Governance Console PRD](docs/prd-agent-harness-v12-local-governance-console.md)
 - [V5 implementation plan](plans/agent-harness-v5.md)
 - [V6 implementation plan](plans/agent-harness-v6.md)
 - [V7 implementation plan](plans/agent-harness-v7.md)
@@ -351,6 +361,7 @@ recommendation or promotion.
 - [V9 implementation plan](plans/agent-harness-v9.md)
 - [V11 implementation plan](plans/agent-harness-v11.md)
 - [V11 multi-agent complexity benchmark plan](plans/agent-harness-v11-multi-agent-complexity-benchmark.md)
+- [V12 local governance console plan](plans/agent-harness-v12-local-governance-console.md)
 - [Roadmap](docs/roadmap.md)
 
 ## License

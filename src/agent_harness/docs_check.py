@@ -26,6 +26,9 @@ MCP_DOC_SUBJECT_PATTERN = (
 ORCHESTRATION_DOC_SUBJECT_PATTERN = (
     r"(?:Agent Harness|This repo|The current implementation|V11|The V11 implementation)"
 )
+GOVERNANCE_DOC_SUBJECT_PATTERN = (
+    r"(?:Agent Harness|This repo|The current implementation|V12|The V12 implementation)"
+)
 
 
 def _unsupported_doc_pattern(claim: str, *, uses_is: bool = False) -> re.Pattern[str]:
@@ -404,6 +407,39 @@ UNSUPPORTED_BENCHMARK_COMPARISON_CLAIMS = [
         ),
     ),
 ]
+
+
+def _governance_scope_pattern(claim_pattern: str) -> re.Pattern[str]:
+    return re.compile(
+        rf"\b{GOVERNANCE_DOC_SUBJECT_PATTERN}\s+"
+        rf"(?:{DOC_CAPABILITY_VERB_PATTERN}\b|is\b)[^\n]*"
+        rf"\b(?:{claim_pattern})\b",
+        re.IGNORECASE,
+    )
+
+
+UNSUPPORTED_GOVERNANCE_SCOPE_CLAIMS = [
+    ("hosted governance", _governance_scope_pattern(r"hosted governance")),
+    (
+        "enterprise governance control planes",
+        _governance_scope_pattern(r"enterprise(?:\s+governance)?\s+control planes?"),
+    ),
+    (
+        "multi-tenant admin",
+        _governance_scope_pattern(r"multi-tenant admin(?:istration)?"),
+    ),
+    (
+        "compliance readiness",
+        _governance_scope_pattern(r"compliance readiness|compliance-ready"),
+    ),
+    ("SOC2 readiness", _governance_scope_pattern(r"SOC\s*2 readiness")),
+    ("ISO readiness", _governance_scope_pattern(r"ISO(?:\s+\d+)? readiness")),
+    ("cloud deployment", _governance_scope_pattern(r"cloud deployment")),
+    (
+        "formal compliance certification",
+        _governance_scope_pattern(r"(?:formal\s+)?compliance certification"),
+    ),
+]
 RETRIEVAL_ROADMAP_HEADINGS = (
     "roadmap",
     "out of scope",
@@ -418,6 +454,7 @@ SKILL_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 MCP_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 ORCHESTRATION_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 BENCHMARK_COMPARISON_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
+GOVERNANCE_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 
 IMPLEMENTED_SECTION_MARKERS = (
     "## What This Repo Proves",
@@ -478,6 +515,7 @@ def run_docs_check(project_root: Path) -> dict[str, Any]:
         findings.extend(_unsupported_mcp_scope_findings(relative, lines))
         findings.extend(_unsupported_orchestration_scope_findings(relative, lines))
         findings.extend(_unsupported_benchmark_comparison_findings(relative, lines))
+        findings.extend(_unsupported_governance_scope_findings(relative, lines))
         findings.extend(_required_section_findings(relative, text))
         findings.extend(_internal_link_findings(project_root, path, relative, lines))
         findings.extend(_citation_placeholder_findings(relative, lines))
@@ -860,6 +898,47 @@ def _denies_unsupported_benchmark_comparison_claim(line: str) -> bool:
             r"|\b(?:do|does)\s+not\s+claim\b"
             r"|\bnot\s+(?:assumed|necessarily)\s+beneficial\b"
             r"|\bwithout\s+claiming\b",
+            line,
+            re.IGNORECASE,
+        )
+    )
+
+
+def _unsupported_governance_scope_findings(
+    relative: str, lines: list[str]
+) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    in_roadmap_scope = False
+    for line_number, line in enumerate(lines, start=1):
+        heading = re.match(r"^#{1,6}\s+(.+?)\s*$", line)
+        if heading is not None:
+            heading_text = heading.group(1).lower()
+            in_roadmap_scope = any(marker in heading_text for marker in GOVERNANCE_ROADMAP_HEADINGS)
+        if in_roadmap_scope:
+            continue
+        for label, pattern in UNSUPPORTED_GOVERNANCE_SCOPE_CLAIMS:
+            if pattern.search(line) and not _denies_unsupported_governance_scope(line, label):
+                findings.append(
+                    _finding(
+                        "unsupported_governance_scope_claim",
+                        relative,
+                        line_number,
+                        "Docs claim unsupported V12 governance or compliance "
+                        f"behavior as available: {label}",
+                        line,
+                    )
+                )
+    return findings
+
+
+def _denies_unsupported_governance_scope(line: str, label: str) -> bool:
+    phrase = re.escape(label).replace(r"\ ", r"\s+")
+    return bool(
+        re.search(
+            rf"\b(?:without|no|not)\s+{phrase}\b"
+            rf"|\bdoes\s+not\s+(?:use|support|provide|include|ship|offer|claim)\s+{phrase}\b"
+            rf"|\b{phrase}\s+remain(?:s)?\s+(?:future-only|roadmap-only)\b"
+            rf"|\bwithout\s+claiming\b[^\n]*\b{phrase}\b",
             line,
             re.IGNORECASE,
         )
