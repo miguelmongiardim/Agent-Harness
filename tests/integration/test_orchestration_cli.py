@@ -9,6 +9,131 @@ from agent_harness.defaults import DEFAULT_POLICY
 from tests.conftest import seed_project
 
 
+def _write_orchestration_policy(root: Path, *, classify_sample: bool = False) -> None:
+    (root / "policies").mkdir()
+    policy = copy.deepcopy(DEFAULT_POLICY)
+    policy["orchestration"] = {
+        "enabled": True,
+        "execution": "sequential",
+        "allowed_roles": ["planner", "implementer", "reviewer", "tester"],
+        "allow_nested": False,
+    }
+    if classify_sample:
+        policy["sensitivity_rules"] = [
+            *policy["sensitivity_rules"],
+            {"pattern": "sample.py", "classification": "public"},
+        ]
+    (root / "policies" / "default.json").write_text(json.dumps(policy, indent=2), encoding="utf-8")
+
+
+def _write_provider_config(
+    root: Path,
+    provider_profiles: list[dict[str, object]],
+    *,
+    default_provider_profile: str | None = None,
+) -> None:
+    config: dict[str, object] = {
+        "schema_version": "config.v2",
+        "project_name": "test-project",
+        "artifact_root": ".agent-harness",
+        "default_policy": "default",
+        "retrieval_backend": "lexical",
+        "template_catalog": "bundled",
+        "provider_profiles": provider_profiles,
+    }
+    if default_provider_profile is not None:
+        config["default_provider_profile"] = default_provider_profile
+    (root / "agent-harness.yaml").write_text(json.dumps(config, indent=2), encoding="utf-8")
+
+
+def _mock_provider_profile() -> dict[str, object]:
+    return {
+        "provider_profile_id": "mock-default",
+        "transport": "mock",
+        "trust_zone": "mock",
+        "model": "mock-model",
+        "endpoint_env": "AGENT_HARNESS_MOCK_ENDPOINT",
+        "network": False,
+        "requires_approval": False,
+    }
+
+
+def _local_endpoint_provider_profile() -> dict[str, object]:
+    return {
+        "provider_profile_id": "local-endpoint",
+        "transport": "openai_compatible",
+        "trust_zone": "local_endpoint",
+        "model": "gpt-test",
+        "endpoint_env": "AGENT_HARNESS_LOCAL_ENDPOINT",
+        "network": True,
+        "requires_approval": False,
+        "api_key_env": "AGENT_HARNESS_API_KEY",
+    }
+
+
+def _write_sample_py(root: Path) -> None:
+    (root / "sample.py").write_text("def identity(value):\n    return value\n", encoding="utf-8")
+
+
+def _write_provider_dependency_spec(
+    root: Path,
+    *,
+    orchestration_id: str,
+    filename: str,
+    title: str,
+    reviewer_intent: str,
+) -> Path:
+    spec_path = root / filename
+    spec_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "orchestration.v1",
+                "orchestration_id": orchestration_id,
+                "title": title,
+                "children": [
+                    {
+                        "child_id": "provider",
+                        "role": "planner",
+                        "title": "Provider-backed planner",
+                        "intent": "Inspect the target with explicit provider use.",
+                        "target_paths": ["sample.py"],
+                        "allowed_tools": ["read_file"],
+                        "provider_profile": "local-endpoint",
+                    },
+                    {
+                        "child_id": "reviewer",
+                        "role": "reviewer",
+                        "title": "Review provider output",
+                        "intent": reviewer_intent,
+                        "target_paths": ["sample.py"],
+                        "allowed_tools": ["read_file"],
+                        "depends_on": ["provider"],
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    return spec_path
+
+
+def _approve_orchestration_plan(capsys, orchestration_id: str, action_id: str) -> None:  # type: ignore[no-untyped-def]
+    assert (
+        main(
+            [
+                "orchestration",
+                "approve",
+                orchestration_id,
+                action_id,
+                "--decision",
+                "approve",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+
 def test_orchestration_run_help_is_discoverable(capsys) -> None:  # type: ignore[no-untyped-def]
     try:
         main(["orchestration", "run", "--help"])
@@ -551,3 +676,224 @@ def test_orchestration_resume_rejects_tampered_plan_binding(
     captured = capsys.readouterr()
     assert "binding drift" in captured.err
     assert not (tmp_path / ".agent-harness" / "runs").exists()
+
+
+def test_orchestration_child_without_provider_profile_does_not_inherit_project_default(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-v11-phase5-no-provider")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-30T11:00:00Z")
+    _write_provider_config(
+        tmp_path,
+        [_mock_provider_profile()],
+        default_provider_profile="mock-default",
+    )
+    _write_orchestration_policy(tmp_path)
+    _write_sample_py(tmp_path)
+    spec_path = tmp_path / "default-provider-not-inherited.json"
+    spec_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "orchestration.v1",
+                "orchestration_id": "default-provider-not-inherited",
+                "title": "Default provider is not inherited",
+                "children": [
+                    {
+                        "child_id": "planner",
+                        "role": "planner",
+                        "title": "Inspect target",
+                        "intent": "Inspect the target without provider use.",
+                        "target_paths": ["sample.py"],
+                        "allowed_tools": ["read_file"],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["orchestration", "run", str(spec_path), "--dry-run"]) == 0
+    summary = json.loads(capsys.readouterr().out)
+
+    child = summary["children"][0]
+    assert child["status"] == "dry_run"
+    child_run_dir = tmp_path / ".agent-harness" / "runs" / child["run_id"]
+    assert not (child_run_dir / "provider.json").exists()
+    assert not (child_run_dir / "provider_input.json").exists()
+    assert not (child_run_dir / "provider_calls.json").exists()
+    materialized_task = json.loads(
+        (
+            tmp_path
+            / ".agent-harness"
+            / "orchestrations"
+            / "default-provider-not-inherited"
+            / "children"
+            / "planner.task.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert materialized_task["provider_profile"] is None
+
+
+def test_orchestration_provider_child_pause_stops_downstream_children(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-30T11:30:00Z")
+    monkeypatch.setenv("AGENT_HARNESS_LOCAL_ENDPOINT", "recorded://openai_compatible/read_only")
+    monkeypatch.setenv("AGENT_HARNESS_API_KEY", "phase5-provider-secret")
+    _write_provider_config(tmp_path, [_local_endpoint_provider_profile()])
+    _write_orchestration_policy(tmp_path, classify_sample=True)
+    _write_sample_py(tmp_path)
+    spec_path = _write_provider_dependency_spec(
+        tmp_path,
+        orchestration_id="provider-pause",
+        filename="provider-pause.json",
+        title="Provider pause",
+        reviewer_intent="Review only after provider approval.",
+    )
+
+    assert main(["orchestration", "run", str(spec_path), "--dry-run"]) == 0
+    paused_for_plan = json.loads(capsys.readouterr().out)
+    assert paused_for_plan["status"] == "paused"
+    assert paused_for_plan["children"] == []
+    action_id = paused_for_plan["approvals"][0]
+    _approve_orchestration_plan(capsys, "provider-pause", action_id)
+
+    assert main(["orchestration", "resume", "provider-pause"]) == 0
+    paused_for_child = json.loads(capsys.readouterr().out)
+
+    assert paused_for_child["status"] == "paused"
+    assert paused_for_child["blocked_child_id"] == "provider"
+    assert [child["child_id"] for child in paused_for_child["children"]] == ["provider"]
+    provider_child = paused_for_child["children"][0]
+    assert provider_child["status"] == "paused"
+    assert provider_child["approvals"]
+    assert not (
+        tmp_path
+        / ".agent-harness"
+        / "orchestrations"
+        / "provider-pause"
+        / "children"
+        / "reviewer.task.json"
+    ).exists()
+    provider_run_dir = tmp_path / ".agent-harness" / "runs" / provider_child["run_id"]
+    assert (provider_run_dir / "provider.json").exists()
+    assert (provider_run_dir / "provider_input.json").exists()
+    assert (provider_run_dir / "provider_calls.json").exists()
+
+    assert main(["orchestration", "inspect", "provider-pause"]) == 0
+    inspected = json.loads(capsys.readouterr().out)
+    assert inspected["summary"]["blocked_child_id"] == "provider"
+    assert inspected["events"][-1]["payload"]["status"] == "paused"
+    assert "phase5-provider-secret" not in json.dumps(inspected)
+
+
+def test_orchestration_resume_after_child_approval_skips_completed_children(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-30T12:00:00Z")
+    monkeypatch.setenv("AGENT_HARNESS_LOCAL_ENDPOINT", "recorded://openai_compatible/read_only")
+    monkeypatch.setenv("AGENT_HARNESS_API_KEY", "phase5-resume-secret")
+    _write_provider_config(tmp_path, [_local_endpoint_provider_profile()])
+    _write_orchestration_policy(tmp_path, classify_sample=True)
+    _write_sample_py(tmp_path)
+    spec_path = _write_provider_dependency_spec(
+        tmp_path,
+        orchestration_id="provider-resume",
+        filename="provider-resume.json",
+        title="Provider resume",
+        reviewer_intent="Review only after provider approval.",
+    )
+
+    assert main(["orchestration", "run", str(spec_path), "--dry-run"]) == 0
+    paused_for_plan = json.loads(capsys.readouterr().out)
+    _approve_orchestration_plan(capsys, "provider-resume", paused_for_plan["approvals"][0])
+    assert main(["orchestration", "resume", "provider-resume"]) == 0
+    paused_for_child = json.loads(capsys.readouterr().out)
+    provider_child = paused_for_child["children"][0]
+    provider_run_id = provider_child["run_id"]
+    child_approval = provider_child["approvals"][0]
+
+    assert main(["approve", provider_run_id, child_approval, "--decision", "approve"]) == 0
+    capsys.readouterr()
+
+    assert main(["orchestration", "resume", "provider-resume"]) == 0
+    resumed = json.loads(capsys.readouterr().out)
+
+    assert resumed["status"] == "dry_run"
+    assert resumed["blocked_child_id"] is None
+    assert [child["child_id"] for child in resumed["children"]] == ["provider", "reviewer"]
+    assert resumed["children"][0]["run_id"] == provider_run_id
+    assert resumed["children"][0]["status"] == "dry_run"
+    assert resumed["children"][1]["status"] == "dry_run"
+    assert main(["orchestration", "inspect", "provider-resume"]) == 0
+    inspected = json.loads(capsys.readouterr().out)
+    provider_starts = [
+        event
+        for event in inspected["events"]
+        if event["type"] == "child_started" and event["payload"]["child_id"] == "provider"
+    ]
+    assert len(provider_starts) == 1
+    assert "phase5-resume-secret" not in json.dumps(inspected)
+
+
+def test_orchestration_child_failure_stops_downstream_children(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,  # type: ignore[no-untyped-def]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-30T12:30:00Z")
+    monkeypatch.setenv("AGENT_HARNESS_LOCAL_ENDPOINT", "recorded://openai_compatible/read_only")
+    monkeypatch.delenv("AGENT_HARNESS_API_KEY", raising=False)
+    _write_provider_config(tmp_path, [_local_endpoint_provider_profile()])
+    _write_orchestration_policy(tmp_path, classify_sample=True)
+    _write_sample_py(tmp_path)
+    spec_path = _write_provider_dependency_spec(
+        tmp_path,
+        orchestration_id="provider-failure",
+        filename="provider-failure.json",
+        title="Provider failure",
+        reviewer_intent="Review only after provider succeeds.",
+    )
+
+    assert main(["orchestration", "run", str(spec_path), "--dry-run"]) == 0
+    paused_for_plan = json.loads(capsys.readouterr().out)
+    _approve_orchestration_plan(capsys, "provider-failure", paused_for_plan["approvals"][0])
+
+    assert main(["orchestration", "resume", "provider-failure"]) == 0
+    failed = json.loads(capsys.readouterr().out)
+
+    assert failed["status"] == "failed"
+    assert failed["blocked_child_id"] == "provider"
+    assert [child["child_id"] for child in failed["children"]] == ["provider"]
+    assert failed["children"][0]["status"] == "failed"
+    assert not (
+        tmp_path
+        / ".agent-harness"
+        / "orchestrations"
+        / "provider-failure"
+        / "children"
+        / "reviewer.task.json"
+    ).exists()
+    assert main(["orchestration", "inspect", "provider-failure"]) == 0
+    inspected = json.loads(capsys.readouterr().out)
+    event_types = [event["type"] for event in inspected["events"]]
+    child_events = [
+        json.loads(line)
+        for line in (
+            tmp_path / ".agent-harness" / "runs" / failed["children"][0]["run_id"] / "events.jsonl"
+        )
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ]
+    assert "provider_profile_invalid" in [event["type"] for event in child_events]
+    assert "orchestration_failed" in event_types

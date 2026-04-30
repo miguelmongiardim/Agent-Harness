@@ -25,6 +25,7 @@ from agent_harness.orchestration.schema import (
 from agent_harness.orchestration.specs import load_orchestration_spec
 from agent_harness.orchestration.store import OrchestrationStore
 from agent_harness.policy import PolicyEngine, load_policy
+from agent_harness.storage import RunStore
 from agent_harness.storage.schema import RunSummary
 from agent_harness.tasks.schema import TaskSpec
 from agent_harness.tools.schema import ToolName
@@ -168,13 +169,14 @@ def resume_orchestration(project_root: Path, orchestration_id: str) -> Orchestra
     if previous.status != "paused":
         raise ValueError("orchestration resume requires a paused orchestration")
     plan = store.read_plan()
-    if not previous.approvals:
+    if plan.risk_summary.requires_approval and not previous.approvals:
         raise ValueError("paused orchestration has no approval to resume")
-    approval = store.read_approval(previous.approvals[-1])
-    if approval.status != "approved":
-        raise PermissionError("orchestration_plan approval is not approved")
-    if approval.binding_hash != plan.binding_hash():
-        raise PermissionError("orchestration plan binding drift detected")
+    approval = store.read_approval(previous.approvals[-1]) if previous.approvals else None
+    if approval is not None:
+        if approval.status != "approved":
+            raise PermissionError("orchestration_plan approval is not approved")
+        if approval.binding_hash != plan.binding_hash():
+            raise PermissionError("orchestration plan binding drift detected")
     spec_path = root / plan.source_spec
     spec = load_orchestration_spec(spec_path)
     ordered_children = _dependency_order(spec)
@@ -189,11 +191,27 @@ def resume_orchestration(project_root: Path, orchestration_id: str) -> Orchestra
         policy_profile=plan.policy_profile,
         dry_run=plan.dry_run,
     )
-    if current_plan.binding_hash() != approval.binding_hash:
+    if approval is not None and current_plan.binding_hash() != approval.binding_hash:
         raise PermissionError("orchestration plan binding drift detected")
+    existing_children = [_refresh_child_record(store, child) for child in previous.children]
+    if previous.blocked_child_id is not None:
+        blocked = next(
+            (child for child in existing_children if child.child_id == previous.blocked_child_id),
+            None,
+        )
+        if blocked is None:
+            raise ValueError("blocked orchestration child is missing from summary")
+        if blocked.status == "paused":
+            raise PermissionError("blocked child still has pending approvals")
+        if blocked.status == "failed":
+            raise PermissionError("blocked child failed and cannot be retried by orchestration")
     store.append_event(
         "orchestration_resumed",
-        {"approval": approval.action_id, "policy_profile": plan.policy_profile},
+        {
+            "approval": approval.action_id if approval is not None else None,
+            "policy_profile": plan.policy_profile,
+            "blocked_child_id": previous.blocked_child_id,
+        },
     )
     return _execute_children(
         root,
@@ -206,6 +224,10 @@ def resume_orchestration(project_root: Path, orchestration_id: str) -> Orchestra
         previous.started_at,
         approvals=list(previous.approvals),
         extra_artifacts=dict(previous.artifacts),
+        existing_children=existing_children,
+        existing_handoffs=[
+            OrchestrationHandoff.model_validate(record) for record in store.read_handoffs()
+        ],
     )
 
 
@@ -257,16 +279,35 @@ def _execute_children(
     *,
     approvals: list[str],
     extra_artifacts: dict[str, str],
+    existing_children: list[OrchestrationChildRun] | None = None,
+    existing_handoffs: list[OrchestrationHandoff] | None = None,
 ) -> OrchestrationSummary:
     authority_by_child = {authority.child_id: authority for authority in plan.children}
 
+    existing_by_child = {child.child_id: child for child in existing_children or []}
     child_records: dict[str, OrchestrationChildRun] = {}
     child_order: list[OrchestrationChildRun] = []
-    handoff_records: list[OrchestrationHandoff] = []
+    handoff_records: list[OrchestrationHandoff] = list(existing_handoffs or [])
     handoff_artifacts: dict[str, str] = {}
     status: OrchestrationStatus = "dry_run"
 
     for child in ordered_children:
+        if child.child_id in existing_by_child:
+            child_record = existing_by_child[child.child_id]
+            child_records[child.child_id] = child_record
+            child_order.append(child_record)
+            status = _aggregate_status(status, child_record.status)
+            if status in {"failed", "paused"}:
+                store.append_event(
+                    "orchestration_paused" if status == "paused" else "orchestration_failed",
+                    {
+                        "status": status,
+                        "blocked_child_id": child.child_id,
+                        "run_id": child_record.run_id,
+                    },
+                )
+                break
+            continue
         handoff_contexts = [
             _write_handoff(
                 store,
@@ -319,7 +360,9 @@ def _execute_children(
             task_path,
             profile_name=selected_profile,
             provider_name=child.provider_profile,
+            inherit_default_provider=False,
             dry_run=plan.dry_run,
+            pause_on_pending_provider_approval=True,
             generated_handoffs=[context for _, context in handoff_contexts],
         )
         child_record = _child_record(child, child_summary, materialized_task_path, handoff_records)
@@ -336,6 +379,14 @@ def _execute_children(
         )
         status = _aggregate_status(status, child_summary.status)
         if status in {"failed", "paused"}:
+            store.append_event(
+                "orchestration_paused" if status == "paused" else "orchestration_failed",
+                {
+                    "status": status,
+                    "blocked_child_id": child.child_id,
+                    "run_id": child_summary.run_id,
+                },
+            )
             break
 
     return _finalize_orchestration(
@@ -348,6 +399,7 @@ def _execute_children(
         started_at=started_at,
         approvals=approvals,
         extra_artifacts={**extra_artifacts, **handoff_artifacts},
+        blocked_child_id=child_order[-1].child_id if status in {"failed", "paused"} else None,
     )
 
 
@@ -362,6 +414,7 @@ def _finalize_orchestration(
     started_at: Any,
     approvals: list[str],
     extra_artifacts: dict[str, str],
+    blocked_child_id: str | None = None,
 ) -> OrchestrationSummary:
     manifest = OrchestrationManifest(
         orchestration_id=spec.orchestration_id,
@@ -417,6 +470,7 @@ def _finalize_orchestration(
         status=status,
         children=child_order,
         authority=plan.children,
+        blocked_child_id=blocked_child_id,
         events_count=store.event_count(),
         approvals=approvals,
         artifacts=artifacts,
@@ -624,6 +678,7 @@ def _child_record(
         materialized_task_path=materialized_task_path,
         run_summary_artifact=child_summary.artifacts["summary"],
         depends_on=list(child.depends_on),
+        approvals=list(child_summary.approvals),
         handoffs=[
             {
                 "handoff_id": handoff.handoff_id,
@@ -634,6 +689,23 @@ def _child_record(
             for handoff in handoffs
             if handoff.to_child_id == child.child_id
         ],
+    )
+
+
+def _refresh_child_record(
+    store: OrchestrationStore,
+    child: OrchestrationChildRun,
+) -> OrchestrationChildRun:
+    run_store = RunStore.open_existing(store.artifact_root, child.run_id)
+    summary = RunSummary.model_validate_json(
+        (run_store.run_dir / "summary.json").read_text(encoding="utf-8")
+    )
+    return child.model_copy(
+        update={
+            "status": summary.status,
+            "approvals": list(summary.approvals),
+            "run_summary_artifact": summary.artifacts["summary"],
+        }
     )
 
 

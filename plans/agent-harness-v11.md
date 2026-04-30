@@ -400,12 +400,32 @@ orchestration summary, and support resume after child-run approvals complete.
 
 ### Acceptance criteria
 
-- [ ] Provider default inheritance attempts are denied or ignored safely.
-- [ ] Explicit provider child runs use existing provider gates and artifacts.
-- [ ] Child pause stops the supervisor and marks the blocked child.
-- [ ] Child failure stops downstream scheduling.
-- [ ] Resume does not rerun completed children.
-- [ ] Handoffs and aggregate exports never include raw provider payloads.
+- [x] Provider default inheritance attempts are denied or ignored safely.
+- [x] Explicit provider child runs use existing provider gates and artifacts.
+- [x] Child pause stops the supervisor and marks the blocked child.
+- [x] Child failure stops downstream scheduling.
+- [x] Resume does not rerun completed children.
+- [x] Handoffs and aggregate evidence never include raw provider payloads;
+      orchestration export remains Phase 6 scope.
+
+### Phase 5 implementation notes
+
+- Orchestration child runs now opt out of project default provider inheritance;
+  a provider is used only when the child declaration names `provider_profile`.
+- Explicit provider children still use normal provider profile validation,
+  provider-use approval, provider-input evidence, redacted provider-call
+  artifacts, and child-run approval records.
+- Pending provider approvals pause the orchestration summary with
+  `blocked_child_id` and child approval ids; downstream children are not
+  materialized while a child is paused.
+- Failed child runs stop downstream scheduling, mark the blocked child, and
+  preserve the child run's normal failure evidence.
+- `agent-harness orchestration resume <id>` refreshes existing child run
+  summaries, refuses to continue while the blocked child is still paused or
+  failed, and skips already-started children after their approvals complete.
+- Generated handoffs remain deterministic safe metadata; raw provider payloads
+  stay in child run provider artifacts and are not copied into aggregate
+  handoffs.
 
 ### Out of scope
 

@@ -147,10 +147,16 @@ normal `task.v2` files before delegating to `HarnessRuntime`, and inject direct
 dependency handoffs as generated, policy-mediated context. Risky plans that
 include write-capable children pause for an orchestration-plan approval before
 child launch; resume validates the approved binding before delegating to the
-native runtime, and child patch approvals remain normal child-run approvals.
-Later V11 phases should keep provider-child controls, child pause/failure
-resume, MCP resources, and release gates inside `agent_harness.orchestration`
-while preserving native runtime delegation for child execution.
+native runtime, and child patch approvals remain normal child-run approvals. A
+child can use a provider only through an explicit child `provider_profile`;
+orchestration children do not inherit the project default provider profile.
+Provider-backed children use normal provider gates and child-run artifacts, and
+the supervisor stops on child pause or failure with a blocked child recorded in
+the aggregate summary. Resume refreshes existing child run summaries and skips
+already-started children after child approvals complete. Later V11 phases should
+keep orchestration export, MCP resources, and release gates inside
+`agent_harness.orchestration` while preserving native runtime delegation for
+child execution.
 
 ## Compatibility And Roadmap Boundaries
 

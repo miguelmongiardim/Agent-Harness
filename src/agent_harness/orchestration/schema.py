@@ -146,6 +146,7 @@ class OrchestrationChildRun(StrictModel):
     materialized_task_path: str
     run_summary_artifact: str
     depends_on: list[str] = Field(default_factory=list)
+    approvals: list[str] = Field(default_factory=list)
     handoffs: list[dict[str, str]] = Field(default_factory=list)
 
 
@@ -173,6 +174,7 @@ class OrchestrationSummary(StrictModel):
     status: OrchestrationStatus
     children: list[OrchestrationChildRun] = Field(default_factory=list)
     authority: list[OrchestrationAuthority] = Field(default_factory=list)
+    blocked_child_id: str | None = None
     events_count: int
     approvals: list[str] = Field(default_factory=list)
     artifacts: dict[str, str] = Field(default_factory=dict)

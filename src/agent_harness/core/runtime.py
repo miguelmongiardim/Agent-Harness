@@ -108,9 +108,11 @@ class HarnessRuntime:
         task_path: Path,
         profile_name: str | None = None,
         provider_name: str | None = None,
+        inherit_default_provider: bool = True,
         deny_provider_input: list[str] | None = None,
         auto_approve: bool = False,
         dry_run: bool = False,
+        pause_on_pending_provider_approval: bool = False,
         runtime_adapter: str | None = None,
         generated_handoffs: list[GeneratedHandoffContext] | None = None,
     ) -> RunSummary:
@@ -337,7 +339,11 @@ class HarnessRuntime:
             )
         )
 
-        provider = self._resolve_provider(task, provider_name)
+        provider = self._resolve_provider(
+            task,
+            provider_name,
+            inherit_default_provider=inherit_default_provider,
+        )
         provider_path = None
         provider_input_path = None
         provider_calls_path = None
@@ -474,6 +480,7 @@ class HarnessRuntime:
                         "policy_profile": policy.profile.name,
                         "provider_input_hash": provider_input_hash,
                         "policy_decision_id": provider_decision.decision_id,
+                        "dry_run": dry_run,
                     },
                 )
                 store.write_approval(approval)
@@ -489,7 +496,13 @@ class HarnessRuntime:
                     )
                 )
                 if approval.status != "approved":
-                    status = "dry_run" if dry_run else "paused"
+                    status = (
+                        "paused"
+                        if pause_on_pending_provider_approval
+                        else "dry_run"
+                        if dry_run
+                        else "paused"
+                    )
                     should_execute_model = False
                 else:
                     provider_call_approval_ids.append(approval.action_id)
@@ -516,6 +529,7 @@ class HarnessRuntime:
                         "record_ids": pending_provider_input,
                         "checkpoint_hash": checkpoint_hash,
                         "policy_profile": policy.profile.name,
+                        "dry_run": dry_run,
                     },
                 )
                 provider_input_manifest = _bind_provider_input_approval(
@@ -536,7 +550,13 @@ class HarnessRuntime:
                     )
                 )
                 if approval.status != "approved":
-                    status = "dry_run" if dry_run else "paused"
+                    status = (
+                        "paused"
+                        if pause_on_pending_provider_approval
+                        else "dry_run"
+                        if dry_run
+                        else "paused"
+                    )
                     should_execute_model = False
                 else:
                     provider_call_approval_ids.append(approval.action_id)
@@ -975,11 +995,15 @@ class HarnessRuntime:
         return summary
 
     def _resolve_provider(
-        self, task: TaskSpec, provider_name: str | None = None
+        self,
+        task: TaskSpec,
+        provider_name: str | None = None,
+        *,
+        inherit_default_provider: bool = True,
     ) -> RunProviderRecord | None:
-        provider_profile_id = (
-            provider_name or task.provider_profile or self.config.default_provider_profile
-        )
+        provider_profile_id = provider_name or task.provider_profile
+        if provider_profile_id is None and inherit_default_provider:
+            provider_profile_id = self.config.default_provider_profile
         if provider_profile_id is None:
             return None
         configured = self._configured_provider(provider_profile_id)
@@ -1121,7 +1145,7 @@ def approve_action(
                 store.run_dir / "provider_input.json", ProviderInputManifest
             ),
             auto_approve=False,
-            dry_run=False,
+            dry_run=bool(action_record.get("dry_run", False)),
         )
         store.append_event(make_event(run_id, "run_finished", {"status": status}))
         _update_resumed_summary(store, status, new_approvals)
@@ -1162,7 +1186,7 @@ def approve_action(
                 store.run_dir / "provider_input.json", ProviderInputManifest
             ),
             auto_approve=False,
-            dry_run=False,
+            dry_run=bool(action_record.get("dry_run", False)),
         )
         store.append_event(make_event(run_id, "run_finished", {"status": status}))
         _update_resumed_summary(store, status, new_approvals)
