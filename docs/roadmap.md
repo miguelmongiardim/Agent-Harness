@@ -137,9 +137,9 @@ provider execution, Streamable HTTP MCP, hosted MCP service, remote MCP
 gateways, enterprise MCP registries, and multi-agent orchestration remain
 future-only.
 
-## v1.7.0 Planning
+## v1.7.x V11 Planning And Evidence
 
-v1.7.0 planning is captured in
+V11 planning is captured in
 [docs/prd-agent-harness-v11.md](prd-agent-harness-v11.md) and
 [plans/agent-harness-v11.md](../plans/agent-harness-v11.md). It describes
 local, sequential, policy-mediated orchestration over normal child task runs.
@@ -184,6 +184,11 @@ comparison evidence that fails when compared cases lack inspectable baselines.
 Broader-pack allowlists and role-default promotion remain future scope.
 Role-count expansion requires comparative outcome evidence before
 recommendation or promotion.
+
+v1.7.1 finalizes the local multi-agent complexity benchmark comparison track
+as release evidence only. It does not add hosted benchmark execution, external
+datasets, configurable broader-pack allowlists, or automatic role-default
+promotion.
 
 ## Release Maintenance Priorities
 

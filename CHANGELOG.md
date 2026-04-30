@@ -6,6 +6,23 @@ All notable changes to this project will be documented in this file.
 
 - No changes yet.
 
+## [1.7.1] - 2026-04-30
+
+V11 Multi-Agent Complexity Benchmark maintenance release.
+
+- Added baseline-first benchmark comparison for bundled local samples with
+  `benchmark_comparison_result.v1` per-case artifacts and
+  `benchmark_comparison_suite.v1` pack-level artifacts.
+- Added deterministic sequential planner, implementer, reviewer, and
+  tester-eligible comparison modes while preserving normal orchestration policy,
+  approval, handoff, and child-run evidence boundaries.
+- Added evidence-derived comparison metrics, handoff-usefulness classification,
+  conservative role recommendations, and explicit unavailable token, runtime,
+  and cost values.
+- Added `agent-harness eval` coverage that verifies every compared case has an
+  inspectable single-agent baseline before orchestration comparison evidence is
+  accepted.
+
 ## [1.7.0] - 2026-04-30
 
 V11 Policy-Mediated Multi-Agent Orchestration release.

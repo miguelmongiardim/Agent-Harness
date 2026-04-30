@@ -13,7 +13,7 @@ uv run agent-harness orchestration export workflow-demo
 uv run agent-harness mcp resources list --json
 uv run agent-harness mcp resources read agent-harness://orchestrations/workflow-demo/summary --json
 uv run agent-harness mcp resources read agent-harness://orchestrations/workflow-demo/handoffs --json
-uv run agent-harness release readiness --version 1.7.0
+uv run agent-harness release readiness --version 1.7.1
 ```
 
 The workflow records normal child `task.v2` run artifacts, aggregate
