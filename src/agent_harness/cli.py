@@ -29,10 +29,10 @@ from agent_harness.docs_check import write_docs_check_report
 from agent_harness.doctor import doctor
 from agent_harness.evals import run_builtin_evals, write_eval_report
 from agent_harness.evidence import (
-    EvidenceCheckResult,
-    EvidenceDiagnostic,
     build_evidence_pack,
+    build_evidence_state,
     run_evidence_check,
+    run_evidence_prerequisite_check,
 )
 from agent_harness.exporters import export_json, export_markdown, export_sarif
 from agent_harness.governance import (
@@ -321,6 +321,7 @@ def build_parser() -> argparse.ArgumentParser:
     evidence_pack.add_argument("--output", default=".agent-harness/evidence")
     evidence_pack.add_argument("--profile", default="default")
     evidence_pack.add_argument("--format", choices=["bundle", "json", "markdown"], default="bundle")
+    evidence_pack.add_argument("--archive", action="store_true")
     evidence_pack.set_defaults(func=cmd_evidence_pack)
     evidence_check = evidence_sub.add_parser("check")
     evidence_check.set_defaults(func=cmd_evidence_check)
@@ -842,7 +843,7 @@ def cmd_governance_export(args: argparse.Namespace) -> int:
 
 
 def cmd_evidence_pack(args: argparse.Namespace) -> int:
-    result = run_evidence_check(Path.cwd())
+    result = run_evidence_prerequisite_check(Path.cwd())
     if result.exit_code != 0:
         print(result.model_dump_json(indent=2))
         return result.exit_code
@@ -851,6 +852,7 @@ def cmd_evidence_pack(args: argparse.Namespace) -> int:
         output=Path(args.output),
         profile=args.profile,
         format=args.format,
+        archive=args.archive,
     )
     print(export_result.model_dump_json(indent=2))
     return export_result.exit_code
@@ -865,30 +867,13 @@ def cmd_evidence_check(args: argparse.Namespace) -> int:
 
 def cmd_evidence_index(args: argparse.Namespace) -> int:
     del args
-    result = run_evidence_check(Path.cwd())
+    result = run_evidence_prerequisite_check(Path.cwd())
     if result.exit_code != 0:
         print(result.model_dump_json(indent=2))
         return result.exit_code
-    result = _evidence_unavailable_result(
-        "evidence index output is not implemented yet; "
-        "Phase 1 only validates V12 governance export prerequisites"
-    )
-    print(result.model_dump_json(indent=2))
-    return result.exit_code
-
-
-def _evidence_unavailable_result(message: str) -> EvidenceCheckResult:
-    return EvidenceCheckResult(
-        status="invalid",
-        exit_code=2,
-        diagnostics=[
-            EvidenceDiagnostic(
-                severity="error",
-                domain="evidence",
-                message=message,
-            )
-        ],
-    )
+    state = build_evidence_state(Path.cwd(), profile="default")
+    print(state.index.model_dump_json(indent=2))
+    return 0
 
 
 def cmd_mcp_resources_list(args: argparse.Namespace) -> int:

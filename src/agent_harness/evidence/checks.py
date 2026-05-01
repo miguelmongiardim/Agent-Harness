@@ -5,7 +5,12 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from agent_harness.config import load_config
-from agent_harness.evidence.schema import EvidenceCheckResult, EvidenceDiagnostic
+from agent_harness.evidence.schema import (
+    EvidenceCheckResult,
+    EvidenceDiagnostic,
+    EvidenceFinding,
+    EvidenceFindingsExport,
+)
 from agent_harness.utils import load_json, normalize_relative_path
 
 REQUIRED_GOVERNANCE_EXPORTS: tuple[tuple[str, str], ...] = (
@@ -19,6 +24,41 @@ GOVERNANCE_EXPORT_HINT = "agent-harness governance export --output .agent-harnes
 
 
 def run_evidence_check(project_root: Path) -> EvidenceCheckResult:
+    prerequisite_result = run_evidence_prerequisite_check(project_root)
+    if prerequisite_result.exit_code != 0:
+        return prerequisite_result
+
+    root = project_root.resolve()
+    try:
+        from agent_harness.evidence.pack import build_evidence_state
+
+        state = build_evidence_state(root, profile="default")
+    except Exception:
+        return EvidenceCheckResult(
+            status="internal_error",
+            exit_code=3,
+            diagnostics=[
+                EvidenceDiagnostic(
+                    severity="error",
+                    domain="evidence",
+                    message="evidence check failed with an internal error",
+                )
+            ],
+        )
+    blocking_diagnostics = _blocking_finding_diagnostics(state.findings_export.findings)
+    if blocking_diagnostics:
+        return EvidenceCheckResult(
+            status="failed",
+            exit_code=1,
+            diagnostics=blocking_diagnostics,
+        )
+    existing_pack_result = _existing_pack_findings_result(root)
+    if existing_pack_result is not None:
+        return existing_pack_result
+    return EvidenceCheckResult(status="passed", exit_code=0)
+
+
+def run_evidence_prerequisite_check(project_root: Path) -> EvidenceCheckResult:
     root = project_root.resolve()
     try:
         config = load_config(root)
@@ -44,7 +84,66 @@ def run_evidence_check(project_root: Path) -> EvidenceCheckResult:
 
 
 def build_missing_prerequisite_result(project_root: Path) -> EvidenceCheckResult:
-    return run_evidence_check(project_root)
+    return run_evidence_prerequisite_check(project_root)
+
+
+def _existing_pack_findings_result(root: Path) -> EvidenceCheckResult | None:
+    try:
+        config = load_config(root)
+        artifact_root = normalize_relative_path(config.artifact_root)
+    except (OSError, ValueError, ValidationError):
+        return EvidenceCheckResult(
+            status="invalid",
+            exit_code=2,
+            diagnostics=[
+                EvidenceDiagnostic(
+                    severity="error",
+                    domain="evidence",
+                    message="evidence input, config, or artifact root is invalid",
+                )
+            ],
+        )
+    findings_path = root / artifact_root / "evidence" / "evidence_findings.v1.json"
+    if not findings_path.exists():
+        return None
+    try:
+        findings_export = EvidenceFindingsExport.model_validate_json(
+            findings_path.read_text(encoding="utf-8")
+        )
+    except (OSError, ValueError, ValidationError):
+        return EvidenceCheckResult(
+            status="invalid",
+            exit_code=2,
+            diagnostics=[
+                EvidenceDiagnostic(
+                    severity="error",
+                    domain="evidence",
+                    message="existing evidence findings artifact is malformed",
+                    artifact_reference=_project_relative(root, findings_path),
+                )
+            ],
+        )
+    blocking_diagnostics = _blocking_finding_diagnostics(findings_export.findings)
+    if blocking_diagnostics:
+        return EvidenceCheckResult(
+            status="failed",
+            exit_code=1,
+            diagnostics=blocking_diagnostics,
+        )
+    return None
+
+
+def _blocking_finding_diagnostics(findings: list[EvidenceFinding]) -> list[EvidenceDiagnostic]:
+    return [
+        EvidenceDiagnostic(
+            severity="error",
+            domain=finding.domain,
+            message=f"blocking evidence finding: {finding.source}",
+            artifact_reference=finding.artifact_reference,
+        )
+        for finding in findings
+        if finding.blocks_evidence_pack
+    ]
 
 
 def _governance_export_diagnostics(root: Path, governance_dir: Path) -> list[EvidenceDiagnostic]:

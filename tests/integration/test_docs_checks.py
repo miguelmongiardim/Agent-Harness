@@ -638,11 +638,13 @@ def test_v19_evidence_pack_scope_is_documented_without_implemented_claims() -> N
     assert "prd-agent-harness-v1.9-compliance-evidence-pack.md" in roadmap
     assert "agent-harness-v1.9-compliance-evidence-pack.md" in roadmap
     assert "depends on completed V12 governance exports" in roadmap
-    assert "Phase 4 adds evidence command discovery" in roadmap
+    assert "Phase 5 adds evidence command discovery" in roadmap
     assert "`evidence pack --format json` generation" in roadmap
     assert "redaction-safe artifact indexing" in roadmap
     assert "V12 governance indexes" in roadmap
-    assert "review-only control mapping Markdown" in roadmap
+    assert "review-only Markdown output" in roadmap
+    assert "opt-in archive creation" in roadmap
+    assert "`evidence index` JSON output" in roadmap
     assert "does not certify compliance" in roadmap
 
     assert "governance_summary.v1" in evidence_docs
@@ -660,8 +662,10 @@ def test_v19_evidence_pack_scope_is_documented_without_implemented_claims() -> N
     assert "Optional absent evidence domains are" in evidence_docs
     assert "recorded as `not_present`" in evidence_docs
     assert "`control_mapping.v1.json`" in evidence_docs
-    assert "review-only mapping" in evidence_docs
-    assert "Full Markdown pack presentation, archive" in evidence_docs
+    assert "`evidence_pack.v1.md`" in evidence_docs
+    assert "opt-in with `--archive`" in evidence_docs
+    assert "`agent-harness evidence check` validates" in evidence_docs
+    assert "`agent-harness evidence index` command prints" in evidence_docs
 
     assert "Release readiness does not generate" in release_readiness
     assert "evidence packs. It may only validate an" in release_readiness

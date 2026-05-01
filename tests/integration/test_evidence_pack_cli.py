@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -665,6 +666,269 @@ def test_evidence_pack_bundle_writes_review_only_control_mapping(
     ]
     assert "control_mapping.v1.json" in checksum_paths
     assert "control_mapping.v1.md" in checksum_paths
+
+
+def test_evidence_pack_formats_write_documented_file_sets(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-01-01T00:00:00Z")
+    seed_project(tmp_path)
+    _write_governance_exports(tmp_path, missing_filename="")
+
+    expected_json = {
+        "evidence_pack.v1.json",
+        "evidence_manifest.v1.json",
+        "evidence_index.v1.json",
+        "evidence_findings.v1.json",
+        "control_mapping.v1.json",
+        "checksums.sha256",
+    }
+    expected_markdown = expected_json | {"evidence_pack.v1.md", "control_mapping.v1.md"}
+
+    for pack_format, expected_names in (
+        ("json", expected_json),
+        ("bundle", expected_markdown),
+        ("markdown", expected_markdown),
+    ):
+        output = f".agent-harness/evidence-{pack_format}"
+        assert (
+            main(["evidence", "pack", "--output", output, "--format", pack_format]) == 0
+        )
+        result = json.loads(capsys.readouterr().out)
+        evidence_root = tmp_path / output
+
+        assert {Path(path).name for path in result["files"]} == expected_names
+        assert {
+            path.name for path in evidence_root.iterdir() if path.is_file()
+        } == expected_names
+        assert not (evidence_root / "archive").exists()
+        assert "evidence_pack.v1.md" in expected_names or not (
+            evidence_root / "evidence_pack.v1.md"
+        ).exists()
+
+        checksum_paths = {
+            line.split("  ", 1)[1]
+            for line in (evidence_root / "checksums.sha256").read_text(
+                encoding="utf-8"
+            ).splitlines()
+        }
+        assert checksum_paths == expected_names - {"checksums.sha256"}
+
+        manifest = json.loads(
+            (evidence_root / "evidence_manifest.v1.json").read_text(encoding="utf-8")
+        )
+        assert {entry["path"] for entry in manifest["files"]} == expected_names - {
+            "checksums.sha256"
+        }
+        if "evidence_pack.v1.md" in expected_names:
+            markdown = (evidence_root / "evidence_pack.v1.md").read_text(
+                encoding="utf-8"
+            )
+            assert "# Evidence Pack" in markdown
+            assert "This evidence pack supports review and audit preparation." in markdown
+
+
+def test_evidence_pack_archive_is_created_only_when_requested(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-01-01T00:00:00Z")
+    seed_project(tmp_path)
+    _write_governance_exports(tmp_path, missing_filename="")
+
+    assert main(["evidence", "pack", "--output", ".agent-harness/evidence"]) == 0
+    capsys.readouterr()
+    evidence_root = tmp_path / ".agent-harness" / "evidence"
+    assert not (evidence_root / "archive").exists()
+
+    assert (
+        main(
+            [
+                "evidence",
+                "pack",
+                "--output",
+                ".agent-harness/evidence-archive",
+                "--archive",
+            ]
+        )
+        == 0
+    )
+    result = json.loads(capsys.readouterr().out)
+    archive_root = tmp_path / ".agent-harness" / "evidence-archive" / "archive"
+    archive_path = archive_root / "agent-harness-evidence-pack-20260101T000000Z.zip"
+    archive_ref = (
+        ".agent-harness/evidence-archive/archive/"
+        "agent-harness-evidence-pack-20260101T000000Z.zip"
+    )
+
+    assert archive_path.exists()
+    assert archive_ref in result["files"]
+    with zipfile.ZipFile(archive_path) as archive:
+        assert set(archive.namelist()) == {
+            "evidence_pack.v1.json",
+            "evidence_manifest.v1.json",
+            "evidence_index.v1.json",
+            "evidence_findings.v1.json",
+            "control_mapping.v1.json",
+            "evidence_pack.v1.md",
+            "control_mapping.v1.md",
+            "checksums.sha256",
+        }
+
+
+def test_evidence_check_passes_clean_state_and_fails_on_blocking_findings(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-01-01T00:00:00Z")
+    seed_project(tmp_path)
+    _write_governance_exports(tmp_path, missing_filename="")
+
+    assert main(["evidence", "check"]) == 0
+    passed = json.loads(capsys.readouterr().out)
+    assert passed["schema_version"] == "evidence_check.v1"
+    assert passed["status"] == "passed"
+    assert passed["exit_code"] == 0
+    assert passed["diagnostics"] == []
+    assert not (tmp_path / ".agent-harness" / "evidence").exists()
+
+    _write_governance_index(
+        tmp_path,
+        [
+            {
+                "artifact_type": "raw_provider_payload",
+                "path": ".agent-harness/runs/run-sensitive/raw_provider_payload.json",
+                "content_hash": "raw-payload-hash",
+                "schema_version": None,
+                "redaction_status": "excluded_raw",
+                "inclusion_status": "excluded",
+            }
+        ],
+    )
+
+    assert main(["evidence", "check"]) == 1
+    failed = json.loads(capsys.readouterr().out)
+    assert failed["schema_version"] == "evidence_check.v1"
+    assert failed["status"] == "failed"
+    assert failed["exit_code"] == 1
+    assert failed["diagnostics"] == [
+        {
+            "severity": "error",
+            "domain": "evidence",
+            "message": "blocking evidence finding: raw_provider_payload",
+            "artifact_reference": ".agent-harness/runs/run-sensitive/raw_provider_payload.json",
+        }
+    ]
+    assert not (tmp_path / ".agent-harness" / "evidence").exists()
+
+
+def test_evidence_check_validates_existing_pack_findings(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-01-01T00:00:00Z")
+    seed_project(tmp_path)
+    _write_governance_exports(tmp_path, missing_filename="")
+    _write_governance_index(
+        tmp_path,
+        [
+            {
+                "artifact_type": "raw_provider_payload",
+                "path": ".agent-harness/runs/run-existing/raw_provider_payload.json",
+                "content_hash": "raw-payload-hash",
+                "schema_version": None,
+                "redaction_status": "excluded_raw",
+                "inclusion_status": "excluded",
+            }
+        ],
+    )
+
+    assert main(["evidence", "pack", "--output", ".agent-harness/evidence"]) == 0
+    capsys.readouterr()
+    _write_governance_index(tmp_path, [])
+
+    assert main(["evidence", "check"]) == 1
+    failed = json.loads(capsys.readouterr().out)
+
+    assert failed["status"] == "failed"
+    assert failed["exit_code"] == 1
+    assert failed["diagnostics"] == [
+        {
+            "severity": "error",
+            "domain": "evidence",
+            "message": "blocking evidence finding: raw_provider_payload",
+            "artifact_reference": ".agent-harness/runs/run-existing/raw_provider_payload.json",
+        }
+    ]
+
+
+def test_evidence_index_prints_current_evidence_index_json(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-01-01T00:00:00Z")
+    seed_project(tmp_path)
+    _write_governance_exports(tmp_path, missing_filename="")
+
+    run_dir = tmp_path / ".agent-harness" / "runs" / "run-index-output"
+    run_dir.mkdir(parents=True)
+    safe_summary_ref = ".agent-harness/runs/run-index-output/summary.json"
+    (run_dir / "summary.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "summary.v1",
+                "run_id": "run-index-output",
+                "task_id": "index-output",
+                "status": "completed",
+                "events_count": 1,
+                "approvals": [],
+                "artifacts": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    _write_governance_index(
+        tmp_path,
+        [
+            {
+                "artifact_type": "run_summary",
+                "path": safe_summary_ref,
+                "content_hash": "stale-hash",
+                "schema_version": "summary.v1",
+                "redaction_status": "safe",
+                "inclusion_status": "included",
+            }
+        ],
+    )
+
+    assert (
+        main(["evidence", "pack", "--output", ".agent-harness/evidence", "--format", "json"])
+        == 0
+    )
+    capsys.readouterr()
+    generated_index = json.loads(
+        (tmp_path / ".agent-harness" / "evidence" / "evidence_index.v1.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert main(["evidence", "index"]) == 0
+    printed_index = json.loads(capsys.readouterr().out)
+
+    assert printed_index == generated_index
+    EvidenceIndex.model_validate_json(json.dumps(printed_index))
+    assert any(entry["path"] == safe_summary_ref for entry in printed_index["entries"])
 
 
 def _write_governance_exports(root: Path, *, missing_filename: str) -> None:

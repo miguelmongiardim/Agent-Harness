@@ -4,8 +4,9 @@ from agent_harness.evidence.checks import (
     REQUIRED_GOVERNANCE_EXPORTS,
     build_missing_prerequisite_result,
     run_evidence_check,
+    run_evidence_prerequisite_check,
 )
-from agent_harness.evidence.pack import build_evidence_pack
+from agent_harness.evidence.pack import build_evidence_pack, build_evidence_state
 from agent_harness.evidence.schema import (
     ControlMapping,
     ControlMappingEntry,
@@ -30,6 +31,8 @@ __all__ = [
     "EvidenceManifest",
     "EvidencePack",
     "build_evidence_pack",
+    "build_evidence_state",
     "build_missing_prerequisite_result",
     "run_evidence_check",
+    "run_evidence_prerequisite_check",
 ]

@@ -7,10 +7,10 @@ The V1.9 Compliance Evidence Pack is in progress. The durable PRD lives in
 and the implementation plan lives in
 [plans/agent-harness-v1.9-compliance-evidence-pack.md](../plans/agent-harness-v1.9-compliance-evidence-pack.md).
 
-Through Phase 4, the `agent-harness evidence` CLI surface exposes `pack`,
-`check`, and `index` commands. `pack` and `check` validate the required V12
-governance export prerequisites and fail with exit code `2` when they are
-missing, without generating governance exports.
+Through Phase 5, the `agent-harness evidence` CLI surface exposes `pack`,
+`check`, and `index` commands. `pack`, `check`, and `index` validate the
+required V12 governance export prerequisites and fail with exit code `2` when
+they are missing, without generating governance exports.
 
 When the V12 exports are present, `agent-harness evidence pack --format json`
 writes canonical JSON evidence artifacts under the selected evidence output
@@ -23,6 +23,12 @@ directory:
 - `control_mapping.v1.json`
 - `checksums.sha256`
 
+`agent-harness evidence pack --format bundle` and `--format markdown` also
+write Markdown presentation files:
+
+- `evidence_pack.v1.md`
+- `control_mapping.v1.md`
+
 Phase 3 redaction-filters artifact references from `governance_index.v1`.
 Included artifacts must be normalized project-relative references and are
 hash-indexed from the local file. Absolute paths, path traversal references,
@@ -31,12 +37,17 @@ and raw vector database internals are omitted with evidence findings instead
 of being copied into pack contents. Optional absent evidence domains are
 recorded as `not_present`.
 
-The default bundle format also writes `control_mapping.v1.md` as a Markdown
-presentation of the same review-only mapping. The mapping uses internal review
-themes, safe evidence refs, limited coverage statuses, limitations, and the
-non-certification disclaimer. Full Markdown pack presentation, archive
-creation, operator routes, UI views, and release-readiness gates remain
-later-phase work.
+The mapping uses internal review themes, safe evidence refs, limited coverage
+statuses, limitations, and the non-certification disclaimer. Archive creation
+is opt-in with `--archive`, which writes a zip under the evidence output
+directory's `archive/` folder. `agent-harness evidence check` validates the
+current in-memory pack state and existing pack findings: exit code `0` means
+valid, `1` means blocking evidence findings exist, `2` means invalid input or
+missing prerequisites, and `3` means an internal check error. The
+`agent-harness evidence index` command prints the current `evidence_index.v1`
+JSON.
+
+Operator routes, UI views, and release-readiness gates remain later-phase work.
 
 ## Planned Boundary
 
@@ -53,7 +64,7 @@ Required V12 prerequisite artifacts are:
 - `governance_index.v1`
 - `governance_findings.v1`
 
-If those exports are missing, current Phase 4 evidence commands fail clearly
+If those exports are missing, current Phase 5 evidence commands fail clearly
 and tell the user to generate V12 governance exports first.
 
 ## Claim Boundary

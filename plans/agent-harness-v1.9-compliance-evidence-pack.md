@@ -428,14 +428,36 @@ existing-pack validation, check exit code mapping, and index printing.
 
 ### Acceptance criteria
 
-- [ ] `--format bundle` writes JSON, Markdown, and checksums.
-- [ ] `--format json` writes JSON and checksums, and omits Markdown.
-- [ ] `--format markdown` writes Markdown plus canonical JSON and checksums.
-- [ ] `--archive` creates the documented zip path.
-- [ ] No archive is created without `--archive`.
-- [ ] `evidence check` returns exit codes `0`, `1`, `2`, and `3` for the
+- [x] `--format bundle` writes JSON, Markdown, and checksums.
+- [x] `--format json` writes JSON and checksums, and omits Markdown.
+- [x] `--format markdown` writes Markdown plus canonical JSON and checksums.
+- [x] `--archive` creates the documented zip path.
+- [x] No archive is created without `--archive`.
+- [x] `evidence check` returns exit codes `0`, `1`, `2`, and `3` for the
       documented conditions.
-- [ ] `evidence index` prints valid `evidence_index.v1` JSON.
+- [x] `evidence index` prints valid `evidence_index.v1` JSON.
+
+### Phase 5 implementation notes
+
+- Added `evidence_pack.v1.md` presentation for Markdown-including formats
+  while keeping JSON artifacts canonical.
+- `--format json` writes canonical JSON plus checksums only; `--format
+  bundle` and `--format markdown` write canonical JSON, Markdown presentation,
+  and checksums.
+- Added `agent-harness evidence pack --archive`, which creates an opt-in zip
+  under the selected evidence output directory's `archive/` folder and leaves
+  archives out of `checksums.sha256`.
+- Split prerequisite validation from full evidence checks so `pack` and
+  `index` can still package safe metadata and findings, while `check` returns
+  `0` for valid state, `1` for blocking evidence findings, `2` for invalid
+  input or missing prerequisites, and `3` for internal check errors.
+- `evidence check` validates both current in-memory pack state and existing
+  `evidence_findings.v1.json` pack findings when present.
+- `agent-harness evidence index` now prints valid current `evidence_index.v1`
+  JSON through the same in-memory evidence state used by pack and check.
+- Scope stayed Phase 5-only: no operator API/UI route, release-readiness gate,
+  mandatory scanner execution, governance aggregation rebuild, provider call,
+  workflow run, or arbitrary workspace scan was added.
 
 ### Out of scope
 

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import re
+import zipfile
+from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path, PureWindowsPath
 from typing import Literal
 
@@ -36,6 +39,17 @@ from agent_harness.utils import (
 )
 
 EvidencePackFormat = Literal["bundle", "json", "markdown"]
+
+
+@dataclass(frozen=True)
+class EvidencePackState:
+    generated_at: datetime
+    pack: EvidencePack
+    index: EvidenceIndex
+    findings_export: EvidenceFindingsExport
+    control_mapping: ControlMapping
+
+
 CONTROL_MAPPING_LIMITATIONS = [
     "This mapping is review only and is generated from packaged evidence references.",
     "Coverage statuses describe available evidence, not control effectiveness or audit results.",
@@ -90,14 +104,101 @@ def build_evidence_pack(
     output: Path,
     profile: str,
     format: EvidencePackFormat,
+    archive: bool = False,
 ) -> EvidenceExportResult:
+    root = project_root.resolve()
+    output_dir = output if output.is_absolute() else root / output
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    state = build_evidence_state(root, profile=profile)
+    generated_at = state.generated_at
+    pack = state.pack
+    index = state.index
+    findings_export = state.findings_export
+    control_mapping = state.control_mapping
+    include_markdown = format in {"bundle", "markdown"}
+    manifest = EvidenceManifest(
+        pack_id=pack.pack_id,
+        generated_at=generated_at,
+        files=[
+            EvidenceManifestFile(path="evidence_pack.v1.json", schema_version=pack.schema_version),
+            EvidenceManifestFile(
+                path="evidence_manifest.v1.json",
+                schema_version="evidence_manifest.v1",
+            ),
+            EvidenceManifestFile(
+                path="evidence_index.v1.json",
+                schema_version=index.schema_version,
+            ),
+            EvidenceManifestFile(
+                path="evidence_findings.v1.json",
+                schema_version=findings_export.schema_version,
+            ),
+            EvidenceManifestFile(
+                path="control_mapping.v1.json",
+                schema_version=control_mapping.schema_version,
+            ),
+        ],
+    )
+    if include_markdown:
+        manifest.files.append(
+            EvidenceManifestFile(path="evidence_pack.v1.md", schema_version=pack.schema_version)
+        )
+        manifest.files.append(
+            EvidenceManifestFile(
+                path="control_mapping.v1.md",
+                schema_version=control_mapping.schema_version,
+            )
+        )
+
+    exported: dict[str, object] = {
+        "evidence_pack.v1.json": pack.model_dump(mode="json"),
+        "evidence_manifest.v1.json": manifest.model_dump(mode="json"),
+        "evidence_index.v1.json": index.model_dump(mode="json"),
+        "evidence_findings.v1.json": findings_export.model_dump(mode="json"),
+        "control_mapping.v1.json": control_mapping.model_dump(mode="json"),
+    }
+    export_order = [
+        "evidence_pack.v1.json",
+        "evidence_manifest.v1.json",
+        "evidence_index.v1.json",
+        "evidence_findings.v1.json",
+        "control_mapping.v1.json",
+    ]
+    if include_markdown:
+        exported["evidence_pack.v1.md"] = _render_evidence_pack_markdown(
+            pack,
+            findings_export,
+        )
+        exported["control_mapping.v1.md"] = _render_control_mapping_markdown(control_mapping)
+        export_order.append("evidence_pack.v1.md")
+        export_order.append("control_mapping.v1.md")
+    for filename, payload in exported.items():
+        if filename.endswith(".json"):
+            write_json(output_dir / filename, payload)
+        else:
+            (output_dir / filename).write_text(str(payload), encoding="utf-8")
+    _write_checksums(output_dir, sorted(export_order))
+
+    files = [_display_path(root, output_dir / filename) for filename in export_order]
+    files.append(_display_path(root, output_dir / "checksums.sha256"))
+    if archive:
+        archive_path = _write_archive(output_dir, generated_at, sorted(export_order))
+        files.append(_display_path(root, archive_path))
+    return EvidenceExportResult(
+        generated_at=generated_at,
+        status="passed",
+        exit_code=0,
+        output_path=_display_path(root, output_dir),
+        files=files,
+    )
+
+
+def build_evidence_state(project_root: Path, *, profile: str) -> EvidencePackState:
     root = project_root.resolve()
     config = load_config(root)
     artifact_root = normalize_relative_path(config.artifact_root)
     governance_dir = root / artifact_root / "governance"
-    output_dir = output if output.is_absolute() else root / output
-    output_dir.mkdir(parents=True, exist_ok=True)
-
     generated_at = now_utc()
     governance_files = _governance_files(root, governance_dir)
     governance_hashes = {reference: hash_file(path) for reference, path, _ in governance_files}
@@ -117,7 +218,6 @@ def build_evidence_pack(
         governance_index,
         _display_path(root, governance_dir / "governance_index.v1.json"),
     )
-
     pack = EvidencePack(
         pack_id=pack_id,
         generated_at=generated_at,
@@ -150,72 +250,25 @@ def build_evidence_pack(
         counts=_finding_counts(evidence_findings),
         findings=evidence_findings,
     )
-    control_mapping = _control_mapping(pack, index)
-    include_markdown = format in {"bundle", "markdown"}
-    manifest = EvidenceManifest(
-        pack_id=pack_id,
+    return EvidencePackState(
         generated_at=generated_at,
-        files=[
-            EvidenceManifestFile(path="evidence_pack.v1.json", schema_version=pack.schema_version),
-            EvidenceManifestFile(
-                path="evidence_manifest.v1.json",
-                schema_version="evidence_manifest.v1",
-            ),
-            EvidenceManifestFile(
-                path="evidence_index.v1.json",
-                schema_version=index.schema_version,
-            ),
-            EvidenceManifestFile(
-                path="evidence_findings.v1.json",
-                schema_version=findings_export.schema_version,
-            ),
-            EvidenceManifestFile(
-                path="control_mapping.v1.json",
-                schema_version=control_mapping.schema_version,
-            ),
-        ],
+        pack=pack,
+        index=index,
+        findings_export=findings_export,
+        control_mapping=_control_mapping(pack, index),
     )
-    if include_markdown:
-        manifest.files.append(
-            EvidenceManifestFile(
-                path="control_mapping.v1.md",
-                schema_version=control_mapping.schema_version,
-            )
-        )
 
-    exported: dict[str, object] = {
-        "evidence_pack.v1.json": pack.model_dump(mode="json"),
-        "evidence_manifest.v1.json": manifest.model_dump(mode="json"),
-        "evidence_index.v1.json": index.model_dump(mode="json"),
-        "evidence_findings.v1.json": findings_export.model_dump(mode="json"),
-        "control_mapping.v1.json": control_mapping.model_dump(mode="json"),
-    }
-    export_order = [
-        "evidence_pack.v1.json",
-        "evidence_manifest.v1.json",
-        "evidence_index.v1.json",
-        "evidence_findings.v1.json",
-        "control_mapping.v1.json",
-    ]
-    if include_markdown:
-        exported["control_mapping.v1.md"] = _render_control_mapping_markdown(control_mapping)
-        export_order.append("control_mapping.v1.md")
-    for filename, payload in exported.items():
-        if filename.endswith(".json"):
-            write_json(output_dir / filename, payload)
-        else:
-            (output_dir / filename).write_text(str(payload), encoding="utf-8")
-    _write_checksums(output_dir, sorted(export_order))
 
-    files = [_display_path(root, output_dir / filename) for filename in export_order]
-    files.append(_display_path(root, output_dir / "checksums.sha256"))
-    return EvidenceExportResult(
-        generated_at=generated_at,
-        status="passed",
-        exit_code=0,
-        output_path=_display_path(root, output_dir),
-        files=files,
-    )
+def _write_archive(output_dir: Path, generated_at: datetime, filenames: list[str]) -> Path:
+    archive_dir = output_dir / "archive"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = generated_at.strftime("%Y%m%dT%H%M%SZ")
+    archive_path = archive_dir / f"agent-harness-evidence-pack-{timestamp}.zip"
+    archive_names = sorted(filenames + ["checksums.sha256"])
+    with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for filename in archive_names:
+            archive.write(output_dir / filename, arcname=filename)
+    return archive_path
 
 
 def _control_mapping(pack: EvidencePack, index: EvidenceIndex) -> ControlMapping:
@@ -319,6 +372,67 @@ def _render_control_mapping_markdown(mapping: ControlMapping) -> str:
         lines.append("- Limitations:")
         lines.extend(f"  - {limitation}" for limitation in entry.limitations)
         lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _render_evidence_pack_markdown(
+    pack: EvidencePack,
+    findings_export: EvidenceFindingsExport,
+) -> str:
+    lines = [
+        "# Evidence Pack",
+        "",
+        pack.disclaimer,
+        "",
+        "## Summary",
+        "",
+        f"- Pack id: `{pack.pack_id}`",
+        f"- Generated at: `{pack.generated_at.isoformat()}`",
+        f"- Profile: `{pack.profile}`",
+        f"- Agent Harness version: `{pack.agent_harness_version}`",
+        f"- Claim status: `{pack.claim_status}`",
+        f"- Redaction status: `{pack.redaction_status}`",
+        "",
+        "## Workspace",
+        "",
+        f"- Project name: `{pack.workspace.project_name}`",
+        f"- Artifact root: `{pack.workspace.artifact_root}`",
+        f"- Config path: `{pack.workspace.config_path}`",
+        f"- Default policy: `{pack.workspace.default_policy}`",
+        f"- Policy path: `{pack.workspace.policy_path}`",
+        "",
+        "## Governance References",
+        "",
+    ]
+    lines.extend(f"- `{reference}`" for reference in pack.governance_references)
+    lines.extend(["", "## Domains", ""])
+    for domain, summary in sorted(pack.domains.items()):
+        lines.extend(
+            [
+                f"### {domain}",
+                "",
+                f"- Status: `{summary.status}`",
+                f"- Message: {summary.message or 'No message'}",
+                "- Evidence refs:",
+            ]
+        )
+        if summary.evidence_refs:
+            lines.extend(f"  - `{ref}`" for ref in summary.evidence_refs)
+        else:
+            lines.append("  - None")
+        lines.append("")
+    lines.extend(
+        [
+            "## Findings",
+            "",
+            f"- Total findings: `{findings_export.counts.total}`",
+        ]
+    )
+    if findings_export.counts.by_severity:
+        for severity, count in sorted(findings_export.counts.by_severity.items()):
+            lines.append(f"- {severity}: `{count}`")
+    else:
+        lines.append("- Blocking findings: `0`")
     return "\n".join(lines).rstrip() + "\n"
 
 
