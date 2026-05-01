@@ -6,6 +6,23 @@ All notable changes to this project will be documented in this file.
 
 - No changes yet.
 
+## [1.9.0] - 2026-05-01
+
+V1.9 Compliance Evidence Pack release.
+
+- Added the V12 local governance console surface for summary, check, report,
+  and export evidence that feeds review-ready governance artifacts.
+- Added `agent-harness evidence pack`, `check`, and `index` with canonical
+  evidence-pack JSON artifacts, review Markdown, optional archives, checksums,
+  redaction-safe artifact indexing, domain summaries, and malformed-domain
+  findings.
+- Added token-protected read-only operator API routes and packaged operator UI
+  views for evidence overview, exported packs, control mapping, artifact index,
+  findings, and release evidence state.
+- Added a non-mutating release-readiness evidence-pack gate that validates
+  existing pack files, schemas, checksums, blocking findings, advisory
+  visibility, and safe project-relative artifact links.
+
 ## [1.7.1] - 2026-04-30
 
 V11 Multi-Agent Complexity Benchmark maintenance release.

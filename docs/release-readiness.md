@@ -9,7 +9,7 @@ The command defaults to `[project].version` from `pyproject.toml`. Release
 managers can still bind the report to an explicit version and CI run:
 
 ```powershell
-agent-harness release readiness --version 1.7.1 --ci-run-id <run-id>
+agent-harness release readiness --version 1.9.0 --ci-run-id <run-id>
 ```
 
 When GitHub CLI is authenticated, the command attempts to discover the latest
@@ -207,10 +207,10 @@ orchestration, nested orchestration, or MCP execution for multi-agent
 orchestration. Operator UI support and enterprise governance remain
 future-only.
 
-## Future Evidence Pack Gate
+## Evidence Pack Gate
 
-The V1.9 Compliance Evidence Pack is planned as a later release-readiness input.
-Phase 8 evidence commands validate missing V12 governance export prerequisites,
+The V1.9 Compliance Evidence Pack is a non-mutating release-readiness input.
+Evidence commands validate missing V12 governance export prerequisites,
 generate canonical JSON packs with `agent-harness evidence pack --format json`,
 omit unsafe governance-index artifact references with evidence findings, and
 write review-only Markdown for bundle/markdown formats. Evidence archives are
@@ -221,11 +221,16 @@ operator API can inspect existing evidence pack overview, pack detail, control
 mapping, artifact index, and findings through token-protected read-only routes.
 The packaged local operator UI can inspect the same existing evidence pack
 state without generating packs or mutating evidence.
-Release readiness does not generate evidence packs. It may only validate an
-existing pack once the release-readiness evidence gate is implemented.
 
-Until that phase exists, release readiness must not claim evidence-pack gates,
-certification, auditor approval, or formal framework readiness.
+Release readiness does not generate evidence packs. It validates an existing
+pack under `.agent-harness/evidence/`, requires the canonical JSON artifacts
+and `checksums.sha256`, validates schemas and checksums, reports a missing
+pack as a prerequisite diagnostic, blocks readiness on critical or
+release-blocking evidence findings, and keeps advisory findings visible through
+safe counts and summaries. Readiness output links only fixed project-relative
+evidence artifacts and must not expose raw provider payloads, secrets,
+absolute paths, certification claims, auditor approval, or formal framework
+readiness.
 
 ## Release Checklist
 
@@ -252,7 +257,7 @@ Before tagging the current release:
 17. Run the orchestration workflow golden path in
     `examples/orchestration_workflow/`.
 18. Run `agent-harness eval`.
-19. Run `agent-harness release readiness --version 1.7.1`.
+19. Run `agent-harness release readiness --version 1.9.0`.
 20. Confirm CI passes for the release commit.
 
 ## Tag Process
@@ -261,9 +266,9 @@ Create the release tag only after the release commit is pushed and required CI
 has passed for that exact commit:
 
 ```powershell
-git tag -a v1.7.1 -m "v1.7.1"
-git push origin v1.7.1
-agent-harness release readiness --version 1.7.1 --ci-run-id <run-id>
+git tag -a v1.9.0 -m "v1.9.0"
+git push origin v1.9.0
+agent-harness release readiness --version 1.9.0 --ci-run-id <run-id>
 ```
 
 The readiness report binds the tag target commit to the recorded GitHub Actions
@@ -276,12 +281,12 @@ different commit.
 hashes in `.agent-harness/release/package-check.json` and supporting evidence
 files under `.agent-harness/release/evidence/`. Reviewers should verify that:
 
-- `dist/agent_harness-1.7.1-*.whl` exists.
-- `dist/agent_harness-1.7.1.tar.gz` exists.
+- `dist/agent_harness-1.9.0-*.whl` exists.
+- `dist/agent_harness-1.9.0.tar.gz` exists.
 - package-check evidence reports `status: passed`.
 - clean-install evidence reports `status: passed`.
 - console-script evidence reports `status: passed`.
-- the final readiness report is generated for `version: 1.7.1`.
+- the final readiness report is generated for `version: 1.9.0`.
 
 ## Roadmap
 

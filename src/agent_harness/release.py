@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -13,9 +14,19 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-from agent_harness.config import load_mapping
+from pydantic import BaseModel, ValidationError
+
+from agent_harness.config import load_config, load_mapping
 from agent_harness.defaults import DEFAULT_POLICY
 from agent_harness.docs_check import run_docs_check
+from agent_harness.evidence.schema import (
+    ControlMapping,
+    EvidenceFinding,
+    EvidenceFindingsExport,
+    EvidenceIndex,
+    EvidenceManifest,
+    EvidencePack,
+)
 from agent_harness.utils import hash_file, now_utc, write_json
 
 LOCAL_RELEASE_CHECKS = {
@@ -65,6 +76,25 @@ ORCHESTRATION_WORKFLOW_REQUIRED_FILES = (
     "orchestration.json",
     "src/calculator.py",
 )
+EVIDENCE_PACK_REQUIRED_FILES = {
+    "evidence_pack": "evidence_pack.v1.json",
+    "manifest": "evidence_manifest.v1.json",
+    "artifact_index": "evidence_index.v1.json",
+    "findings": "evidence_findings.v1.json",
+    "control_mapping": "control_mapping.v1.json",
+    "checksums": "checksums.sha256",
+}
+EVIDENCE_PACK_OPTIONAL_CHECKSUM_FILES = {
+    "evidence_pack.v1.md",
+    "control_mapping.v1.md",
+}
+EVIDENCE_PACK_MODELS: dict[str, type[BaseModel]] = {
+    "evidence_pack.v1.json": EvidencePack,
+    "evidence_manifest.v1.json": EvidenceManifest,
+    "evidence_index.v1.json": EvidenceIndex,
+    "evidence_findings.v1.json": EvidenceFindingsExport,
+    "control_mapping.v1.json": ControlMapping,
+}
 
 
 def build_release_readiness_report(
@@ -93,6 +123,7 @@ def build_release_readiness_report(
     skills = _skills_evidence(project_root, docs_report)
     mcp = _mcp_evidence(project_root)
     orchestration = _orchestration_evidence(project_root)
+    evidence_pack = _evidence_pack_evidence(project_root)
     release_artifacts = _release_artifact_evidence(project_root, normalized_version)
     diagnostics = _diagnostics(
         package=package,
@@ -104,6 +135,7 @@ def build_release_readiness_report(
         skills=skills,
         mcp=mcp,
         orchestration=orchestration,
+        evidence_pack=evidence_pack,
         release_artifacts=release_artifacts,
         changelog_present=changelog_present,
         tag_exists=tag_exists,
@@ -151,6 +183,7 @@ def build_release_readiness_report(
         "skills": skills,
         "mcp": mcp,
         "orchestration": orchestration,
+        "evidence_pack": evidence_pack,
         "release_artifacts": release_artifacts,
         "local_checks": {
             name: {
@@ -863,6 +896,298 @@ def _operator_evidence(project_root: Path) -> dict[str, Any]:
         "approval_binding": _operator_approval_binding_evidence(),
         "static_ui": _operator_static_ui_evidence(project_root),
     }
+
+
+def _evidence_pack_evidence(project_root: Path) -> dict[str, Any]:
+    command = "agent-harness evidence pack"
+    try:
+        evidence_root = _evidence_root(project_root)
+    except Exception as exc:
+        return {
+            "command": command,
+            "status": "failed",
+            "action": "Fix project config before validating evidence pack release evidence.",
+            "error": _safe_error(exc),
+        }
+    pack_dir = _current_evidence_pack_dir(evidence_root)
+    if pack_dir is None:
+        return {
+            "command": command,
+            "status": "missing_evidence",
+            "evidence_root": _project_relative(project_root, evidence_root),
+            "action": (
+                "Generate governance exports and run `agent-harness evidence pack` before "
+                "release readiness."
+            ),
+        }
+    return _validate_evidence_pack_release_gate(project_root, evidence_root, pack_dir, command)
+
+
+def _validate_evidence_pack_release_gate(
+    project_root: Path,
+    evidence_root: Path,
+    pack_dir: Path,
+    command: str,
+) -> dict[str, Any]:
+    artifacts = {
+        key: _project_relative(project_root, pack_dir / filename)
+        for key, filename in EVIDENCE_PACK_REQUIRED_FILES.items()
+    }
+    missing_files = [
+        filename
+        for filename in EVIDENCE_PACK_REQUIRED_FILES.values()
+        if not (pack_dir / filename).exists()
+    ]
+    if missing_files:
+        return {
+            "command": command,
+            "status": "failed",
+            "evidence_root": _project_relative(project_root, evidence_root),
+            "artifacts": artifacts,
+            "validation": {
+                "required_files": "failed",
+                "missing_files": missing_files,
+                "schemas": "not_checked",
+                "checksums": "not_checked",
+            },
+            "action": "Regenerate the evidence pack before release readiness.",
+        }
+
+    loaded: dict[str, Any] = {}
+    malformed_files: list[str] = []
+    for filename, model in EVIDENCE_PACK_MODELS.items():
+        try:
+            loaded[filename] = model.model_validate_json(
+                (pack_dir / filename).read_text(encoding="utf-8")
+            )
+        except (OSError, ValidationError, ValueError):
+            malformed_files.append(filename)
+    checksum_result = _evidence_pack_checksum_result(pack_dir)
+    if malformed_files:
+        return {
+            "command": command,
+            "status": "failed",
+            "evidence_root": _project_relative(project_root, evidence_root),
+            "artifacts": artifacts,
+            "validation": {
+                "required_files": "passed",
+                "schemas": "failed",
+                "malformed_files": malformed_files,
+                "checksums": checksum_result["status"],
+                "checksum_findings": checksum_result["findings"],
+            },
+            "action": "Regenerate malformed evidence pack artifacts before release readiness.",
+        }
+
+    pack = loaded["evidence_pack.v1.json"]
+    findings_export = loaded["evidence_findings.v1.json"]
+    if not isinstance(pack, EvidencePack) or not isinstance(
+        findings_export,
+        EvidenceFindingsExport,
+    ):
+        return {
+            "command": command,
+            "status": "failed",
+            "evidence_root": _project_relative(project_root, evidence_root),
+            "artifacts": artifacts,
+            "validation": {
+                "required_files": "passed",
+                "schemas": "failed",
+                "checksums": checksum_result["status"],
+                "checksum_findings": checksum_result["findings"],
+            },
+            "action": "Regenerate malformed evidence pack artifacts before release readiness.",
+        }
+
+    findings_summary = _evidence_pack_findings_summary(findings_export.findings)
+    status = (
+        "failed"
+        if checksum_result["status"] != "passed" or findings_summary["blocking"] > 0
+        else "passed"
+    )
+    return {
+        "command": command,
+        "status": status,
+        "evidence_root": _project_relative(project_root, evidence_root),
+        "current_pack": {
+            "pack_id": pack.pack_id,
+            "path": artifacts["evidence_pack"],
+            "generated_at": pack.generated_at.isoformat(),
+            "profile": pack.profile,
+            "claim_status": pack.claim_status,
+            "redaction_status": pack.redaction_status,
+        },
+        "artifacts": artifacts,
+        "validation": {
+            "required_files": "passed",
+            "schemas": "passed",
+            "checksums": checksum_result["status"],
+            "checksum_findings": checksum_result["findings"],
+        },
+        "findings": findings_summary,
+        "action": (
+            "Resolve blocking evidence findings before release."
+            if status != "passed"
+            else "Keep the evidence pack artifacts with the release evidence."
+        ),
+    }
+
+
+def _evidence_pack_findings_summary(findings: list[EvidenceFinding]) -> dict[str, Any]:
+    blocking = [
+        finding
+        for finding in findings
+        if finding.severity == "critical" or finding.blocks_release or finding.blocks_evidence_pack
+    ]
+    advisory = [finding for finding in findings if finding not in blocking]
+    by_severity: dict[str, int] = {}
+    for finding in findings:
+        by_severity[finding.severity] = by_severity.get(finding.severity, 0) + 1
+    return {
+        "total": len(findings),
+        "by_severity": by_severity,
+        "critical": by_severity.get("critical", 0),
+        "blocking": len(blocking),
+        "advisory": len(advisory),
+        "blocking_findings": [_safe_evidence_finding_summary(finding) for finding in blocking],
+        "advisory_findings": [_safe_evidence_finding_summary(finding) for finding in advisory],
+    }
+
+
+def _safe_evidence_finding_summary(finding: EvidenceFinding) -> dict[str, Any]:
+    return {
+        "finding_id": _safe_release_string(finding.finding_id),
+        "severity": finding.severity,
+        "domain": _safe_release_string(finding.domain),
+        "source": _safe_release_string(finding.source),
+        "omission_reason": (
+            _safe_release_string(finding.omission_reason)
+            if finding.omission_reason is not None
+            else None
+        ),
+        "blocks_release": finding.blocks_release,
+        "blocks_evidence_pack": finding.blocks_evidence_pack,
+        "evidence_refs": [
+            reference
+            for reference in finding.evidence_refs
+            if _is_safe_release_reference(reference)
+        ],
+    }
+
+
+def _safe_release_string(value: str | None) -> str | None:
+    if value is None:
+        return None
+    return "[redacted]" if _unsafe_release_string(value) else value
+
+
+def _unsafe_release_string(value: str) -> bool:
+    lowered = value.lower()
+    return (
+        "sk-" in lowered
+        or "api_key" in lowered
+        or "token" in lowered
+        or "secret" in lowered
+        or "password" in lowered
+        or "raw provider prompt" in lowered
+        or _is_absolute_release_reference(value)
+    )
+
+
+def _is_safe_release_reference(value: str) -> bool:
+    if _is_absolute_release_reference(value):
+        return False
+    normalized = Path(value.replace("\\", "/"))
+    return ".." not in normalized.parts and bool(value.strip())
+
+
+def _is_absolute_release_reference(value: str) -> bool:
+    return (
+        Path(value).is_absolute()
+        or value.startswith("/")
+        or bool(re.match(r"^[A-Za-z]:[\\/]", value))
+    )
+
+
+def _evidence_pack_checksum_result(pack_dir: Path) -> dict[str, Any]:
+    checksums = pack_dir / "checksums.sha256"
+    if not checksums.exists():
+        return {"status": "failed", "findings": ["missing checksums.sha256"]}
+    required_files = {
+        filename
+        for filename in EVIDENCE_PACK_REQUIRED_FILES.values()
+        if filename != "checksums.sha256"
+    }
+    allowed_files = required_files | EVIDENCE_PACK_OPTIONAL_CHECKSUM_FILES
+    parsed: dict[str, str] = {}
+    findings: list[str] = []
+    for line in checksums.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            digest, filename = line.split(None, 1)
+        except ValueError:
+            findings.append("malformed checksum line")
+            continue
+        filename = filename.strip()
+        if not _is_safe_release_reference(filename):
+            findings.append("unsafe checksum entry")
+            continue
+        if filename not in allowed_files:
+            findings.append(f"unexpected checksum entry: {_safe_release_string(filename)}")
+            continue
+        if not (pack_dir / filename).is_file():
+            findings.append(f"missing checksum artifact: {filename}")
+            continue
+        parsed[filename] = digest
+    for filename in sorted(required_files):
+        if filename not in parsed:
+            findings.append(f"missing checksum entry: {filename}")
+            continue
+    for filename in sorted(parsed):
+        actual = hash_file(pack_dir / filename)
+        if parsed[filename] != actual:
+            findings.append(f"checksum mismatch: {filename}")
+    return {"status": "passed" if not findings else "failed", "findings": findings}
+
+
+def _evidence_root(project_root: Path) -> Path:
+    config = load_config(project_root)
+    return project_root / config.artifact_root / "evidence"
+
+
+def _current_evidence_pack_dir(evidence_root: Path) -> Path | None:
+    if not evidence_root.exists() or not evidence_root.is_dir():
+        return None
+    candidates: list[tuple[str, str, Path]] = []
+    for pack_dir in _evidence_pack_directories(evidence_root):
+        try:
+            pack = EvidencePack.model_validate_json(
+                (pack_dir / "evidence_pack.v1.json").read_text(encoding="utf-8")
+            )
+        except (OSError, ValidationError, ValueError):
+            return pack_dir
+        candidates.append((pack.generated_at.isoformat(), pack.pack_id, pack_dir))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda item: (item[0], item[1]))
+    return candidates[-1][2]
+
+
+def _evidence_pack_directories(evidence_root: Path) -> list[Path]:
+    directories: list[Path] = []
+    if (evidence_root / "evidence_pack.v1.json").exists():
+        directories.append(evidence_root)
+    for child in sorted(evidence_root.iterdir()):
+        if child.name == "archive" or child.is_symlink() or not child.is_dir():
+            continue
+        try:
+            child.resolve().relative_to(evidence_root.resolve())
+        except ValueError:
+            continue
+        if (child / "evidence_pack.v1.json").exists():
+            directories.append(child)
+    return directories
 
 
 def _skills_evidence(project_root: Path, docs_report: dict[str, Any]) -> dict[str, Any]:
@@ -2875,6 +3200,7 @@ def _diagnostics(
     skills: dict[str, Any],
     mcp: dict[str, Any],
     orchestration: dict[str, Any],
+    evidence_pack: dict[str, Any],
     release_artifacts: dict[str, Any],
     changelog_present: bool,
     tag_exists: bool,
@@ -2891,6 +3217,7 @@ def _diagnostics(
     _collect_status_diagnostics(diagnostics, "skills", skills)
     _collect_status_diagnostics(diagnostics, "mcp", mcp)
     _collect_status_diagnostics(diagnostics, "orchestration", orchestration)
+    _collect_evidence_pack_diagnostics(diagnostics, evidence_pack)
     _collect_status_diagnostics(diagnostics, "release_artifacts", release_artifacts)
     if not changelog_present:
         diagnostics.append(
@@ -2925,6 +3252,31 @@ def _diagnostics(
             }
         )
     return diagnostics
+
+
+def _collect_evidence_pack_diagnostics(
+    diagnostics: list[dict[str, str]],
+    evidence_pack: dict[str, Any],
+) -> None:
+    status = evidence_pack.get("status")
+    if status in {None, "passed"}:
+        return
+    findings = evidence_pack.get("findings")
+    gate = (
+        "evidence_pack.findings"
+        if isinstance(findings, dict) and int(findings.get("blocking", 0)) > 0
+        else "evidence_pack"
+    )
+    diagnostics.append(
+        {
+            "gate": gate,
+            "status": str(status),
+            "action": str(
+                evidence_pack.get("action")
+                or "Generate and validate an evidence pack before release readiness."
+            ),
+        }
+    )
 
 
 def _collect_status_diagnostics(

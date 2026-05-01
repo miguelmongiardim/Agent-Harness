@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import shutil
 import tomllib
@@ -355,6 +356,128 @@ def test_release_readiness_verifies_v11_orchestration_gates(
     assert orchestration["mcp_access_log"]["status"] == "passed"
 
 
+def test_release_readiness_requires_existing_evidence_pack_without_generating_one(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    _write_release_ready_project(tmp_path, "9.9.9", include_evidence_pack=False)
+    monkeypatch.setattr(release, "_tag_exists", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_pushed", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_target_commit", lambda project_root, tag_name: "abc123")
+    monkeypatch.setattr(release, "_remote_ci_evidence", _passing_remote_ci)
+
+    evidence_root = tmp_path / ".agent-harness" / "evidence"
+    assert not evidence_root.exists()
+
+    assert main(["release", "readiness"]) == 0
+    report = json.loads(capsys.readouterr().out)
+
+    assert report["status"] == "pending"
+    assert report["evidence_pack"]["status"] == "missing_evidence"
+    assert report["evidence_pack"]["command"] == "agent-harness evidence pack"
+    assert "evidence_pack" in {entry["gate"] for entry in report["diagnostics"]}
+    assert not (evidence_root / "evidence_pack.v1.json").exists()
+
+
+def test_release_readiness_validates_pack_links_and_blocks_critical_findings(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    _write_release_ready_project(
+        tmp_path,
+        "9.9.9",
+        evidence_findings=[
+            {
+                "schema_version": "evidence_finding.v1",
+                "finding_id": "critical-unsafe-release-finding",
+                "severity": "critical",
+                "domain": "evidence",
+                "source": "raw_provider_payload",
+                "message": "raw provider prompt with sk-release-secret must not appear",
+                "artifact_reference": "C:/Users/example/raw-provider-payload.json",
+                "evidence_refs": ["C:/Users/example/raw-provider-payload.json"],
+                "omission_reason": "raw_provider_payload",
+                "recommendation": "Keep only redacted provider evidence.",
+                "blocks_release": True,
+                "blocks_evidence_pack": True,
+            },
+            {
+                "schema_version": "evidence_finding.v1",
+                "finding_id": "advisory-release-finding",
+                "severity": "low",
+                "domain": "docs_claim",
+                "source": "docs_claim_review",
+                "message": "advisory finding remains visible",
+                "artifact_reference": ".agent-harness/evidence/evidence_pack.v1.json",
+                "evidence_refs": [".agent-harness/evidence/evidence_pack.v1.json"],
+                "omission_reason": None,
+                "recommendation": "Review before release.",
+                "blocks_release": False,
+                "blocks_evidence_pack": False,
+            },
+        ],
+    )
+    monkeypatch.setattr(release, "_tag_exists", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_pushed", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_target_commit", lambda project_root, tag_name: "abc123")
+    monkeypatch.setattr(release, "_remote_ci_evidence", _passing_remote_ci)
+
+    assert main(["release", "readiness"]) == 0
+    report = json.loads(capsys.readouterr().out)
+
+    assert report["status"] == "pending"
+    evidence_pack = report["evidence_pack"]
+    assert evidence_pack["status"] == "failed"
+    assert evidence_pack["current_pack"]["pack_id"] == "release-ready-evidence-pack"
+    assert evidence_pack["artifacts"] == {
+        "evidence_pack": ".agent-harness/evidence/evidence_pack.v1.json",
+        "manifest": ".agent-harness/evidence/evidence_manifest.v1.json",
+        "artifact_index": ".agent-harness/evidence/evidence_index.v1.json",
+        "findings": ".agent-harness/evidence/evidence_findings.v1.json",
+        "control_mapping": ".agent-harness/evidence/control_mapping.v1.json",
+        "checksums": ".agent-harness/evidence/checksums.sha256",
+    }
+    assert evidence_pack["validation"]["checksums"] == "passed"
+    assert evidence_pack["findings"]["critical"] == 1
+    assert evidence_pack["findings"]["advisory"] == 1
+    assert evidence_pack["findings"]["blocking"] == 1
+    assert evidence_pack["findings"]["blocking_findings"] == [
+        {
+            "finding_id": "critical-unsafe-release-finding",
+            "severity": "critical",
+            "domain": "evidence",
+            "source": "raw_provider_payload",
+            "omission_reason": "raw_provider_payload",
+            "blocks_release": True,
+            "blocks_evidence_pack": True,
+            "evidence_refs": [],
+        }
+    ]
+    assert evidence_pack["findings"]["advisory_findings"] == [
+        {
+            "finding_id": "advisory-release-finding",
+            "severity": "low",
+            "domain": "docs_claim",
+            "source": "docs_claim_review",
+            "omission_reason": None,
+            "blocks_release": False,
+            "blocks_evidence_pack": False,
+            "evidence_refs": [".agent-harness/evidence/evidence_pack.v1.json"],
+        }
+    ]
+    assert "evidence_pack.findings" in {entry["gate"] for entry in report["diagnostics"]}
+    serialized = json.dumps(report)
+    assert "sk-release-secret" not in serialized
+    assert "raw provider prompt" not in serialized
+    assert "C:/Users/example" not in serialized
+
+
 def test_release_readiness_verifies_v9_mcp_gates(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -638,7 +761,7 @@ def test_v11_orchestration_workflow_golden_path_example_and_cli_sequence(
             "uv run agent-harness mcp resources read "
             "agent-harness://orchestrations/workflow-demo/handoffs --json"
         ),
-        "uv run agent-harness release readiness --version 1.7.1",
+        "uv run agent-harness release readiness --version 1.9.0",
     ):
         assert command in text
 
@@ -800,10 +923,11 @@ def test_release_readiness_requires_v1_release_closure_docs(
 
 def test_current_release_metadata_and_v1_closure_docs_are_complete() -> None:
     pyproject = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
-    assert pyproject["project"]["version"] == "1.7.1"
-    assert __version__ == "1.7.1"
+    assert pyproject["project"]["version"] == "1.9.0"
+    assert __version__ == "1.9.0"
 
     changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+    assert "## [1.9.0]" in changelog
     assert "## [1.7.1]" in changelog
     assert "## [1.7.0]" in changelog
     assert "## [1.6.1]" in changelog
@@ -835,6 +959,10 @@ def test_ci_installs_operator_extra_and_runs_operator_release_gates() -> None:
     assert "tests/integration/test_mcp_protocol.py" in workflow
     assert "tests/integration/test_orchestration_cli.py" in workflow
     assert "tests/integration/test_release_evidence.py" in workflow
+    assert (
+        "python -m agent_harness governance export --output .agent-harness/governance" in workflow
+    )
+    assert "python -m agent_harness evidence pack --output .agent-harness/evidence" in workflow
 
 
 def test_operator_release_docs_cover_v6_golden_path_and_evidence() -> None:
@@ -1004,6 +1132,8 @@ def _write_release_ready_project(
     include_skills: bool = True,
     include_mcp: bool = True,
     include_orchestration: bool = True,
+    include_evidence_pack: bool = True,
+    evidence_findings: list[dict[str, Any]] | None = None,
 ) -> None:
     if not (root / "agent-harness.yaml").exists():
         (root / "agent-harness.yaml").write_text(
@@ -1197,6 +1327,143 @@ def _write_release_ready_project(
         _write_mcp_ci_workflow(root)
     if include_orchestration:
         _write_orchestration_workflow_demo(root)
+    if include_evidence_pack:
+        _write_release_ready_evidence_pack(root, findings=evidence_findings or [])
+
+
+def _write_release_ready_evidence_pack(root: Path, *, findings: list[dict[str, Any]]) -> None:
+    evidence_root = root / ".agent-harness" / "evidence"
+    evidence_root.mkdir(parents=True, exist_ok=True)
+    generated_at = "2026-05-01T00:00:00Z"
+    pack_id = "release-ready-evidence-pack"
+    pack = {
+        "schema_version": "evidence_pack.v1",
+        "pack_id": pack_id,
+        "generated_at": generated_at,
+        "profile": "default",
+        "agent_harness_version": __version__,
+        "workspace": {
+            "project_name": "release-ready",
+            "artifact_root": ".agent-harness",
+            "config_path": "agent-harness.yaml",
+            "default_policy": "default",
+            "policy_path": "policies/default.json",
+        },
+        "domains": {
+            "governance": {
+                "status": "present",
+                "message": "governance evidence packaged",
+                "evidence_refs": [".agent-harness/evidence/evidence_manifest.v1.json"],
+                "summary": {"checks": "passed"},
+            },
+            "release_readiness": {
+                "status": "present",
+                "message": "release evidence packaged",
+                "evidence_refs": [".agent-harness/release/evidence/package-build.json"],
+                "summary": {"status": "represented"},
+            },
+        },
+        "governance_references": [".agent-harness/governance/governance_summary.v1.json"],
+        "governance_hashes": {
+            ".agent-harness/governance/governance_summary.v1.json": "hash-placeholder",
+        },
+        "release_readiness_reference": ".agent-harness/release/v9.9.9-readiness.json",
+        "redaction_status": "metadata_only",
+        "claim_status": "non_certifying",
+        "disclaimer": (
+            "This evidence pack supports review and audit preparation. It does not certify "
+            "compliance with any legal, regulatory, security, or organizational framework."
+        ),
+    }
+    manifest = {
+        "schema_version": "evidence_manifest.v1",
+        "pack_id": pack_id,
+        "generated_at": generated_at,
+        "files": [
+            {"path": "evidence_pack.v1.json", "schema_version": "evidence_pack.v1"},
+            {"path": "evidence_manifest.v1.json", "schema_version": "evidence_manifest.v1"},
+            {"path": "evidence_index.v1.json", "schema_version": "evidence_index.v1"},
+            {"path": "evidence_findings.v1.json", "schema_version": "evidence_findings.v1"},
+            {"path": "control_mapping.v1.json", "schema_version": "control_mapping.v1"},
+            {"path": "evidence_pack.v1.md", "schema_version": None},
+            {"path": "control_mapping.v1.md", "schema_version": None},
+        ],
+    }
+    index = {
+        "schema_version": "evidence_index.v1",
+        "pack_id": pack_id,
+        "generated_at": generated_at,
+        "entries": [
+            {
+                "artifact_type": "evidence_pack",
+                "path": ".agent-harness/evidence/evidence_pack.v1.json",
+                "content_hash": None,
+                "schema_version": "evidence_pack.v1",
+                "redaction_status": "metadata_only",
+                "inclusion_status": "included",
+            }
+        ],
+    }
+    findings_export = {
+        "schema_version": "evidence_findings.v1",
+        "pack_id": pack_id,
+        "generated_at": generated_at,
+        "counts": {
+            "total": len(findings),
+            "by_severity": _finding_counts_by_severity(findings),
+        },
+        "findings": findings,
+    }
+    control_mapping = {
+        "schema_version": "control_mapping.v1",
+        "pack_id": pack_id,
+        "generated_at": generated_at,
+        "disclaimer": pack["disclaimer"],
+        "limitations": ["Review-only release fixture."],
+        "mappings": [
+            {
+                "theme_id": "release_readiness",
+                "title": "Release Readiness",
+                "coverage_status": "covered",
+                "source_domains": ["release_readiness"],
+                "evidence_refs": [".agent-harness/release/evidence/package-build.json"],
+                "summary": "Release evidence is represented for review.",
+                "limitations": ["No certification claim is made."],
+            }
+        ],
+    }
+    files = {
+        "evidence_pack.v1.json": pack,
+        "evidence_manifest.v1.json": manifest,
+        "evidence_index.v1.json": index,
+        "evidence_findings.v1.json": findings_export,
+        "control_mapping.v1.json": control_mapping,
+    }
+    for filename, payload in files.items():
+        (evidence_root / filename).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    markdown_files = {
+        "evidence_pack.v1.md": "# Evidence Pack\n",
+        "control_mapping.v1.md": "# Control Mapping\n",
+    }
+    for filename, content in markdown_files.items():
+        (evidence_root / filename).write_text(content, encoding="utf-8")
+    _write_evidence_pack_checksums(evidence_root, sorted([*files, *markdown_files]))
+
+
+def _finding_counts_by_severity(findings: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for finding in findings:
+        severity = str(finding.get("severity", "info"))
+        counts[severity] = counts.get(severity, 0) + 1
+    return counts
+
+
+def _write_evidence_pack_checksums(evidence_root: Path, filenames: list[str]) -> None:
+    lines = []
+    for filename in filenames:
+        digest = hashlib.sha256((evidence_root / filename).read_bytes()).hexdigest()
+        lines.append(f"{digest}  {filename}")
+    (evidence_root / "checksums.sha256").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def _passing_remote_ci(

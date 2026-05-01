@@ -605,7 +605,7 @@ def test_v12_governance_report_and_export_scope_is_current_in_public_docs() -> N
 
     assert "prd-agent-harness-v12-local-governance-console.md" in roadmap
     assert "agent-harness-v12-local-governance-console.md" in roadmap
-    assert "v1.8.0 In Progress" in roadmap
+    assert "v1.8.0 Implemented" in roadmap
     assert (
         "Phase 3 implements `agent-harness governance summary`, `check`, `report`, and" in roadmap
     )
@@ -616,7 +616,7 @@ def test_v12_governance_report_and_export_scope_is_current_in_public_docs() -> N
     assert "formal certification remain future-only." in roadmap
 
 
-def test_v19_evidence_pack_scope_is_documented_without_implemented_claims() -> None:
+def test_v19_evidence_pack_release_gate_scope_is_documented() -> None:
     readme = Path("README.md").read_text(encoding="utf-8")
     roadmap = Path("docs/roadmap.md").read_text(encoding="utf-8")
     evidence_docs = Path("docs/compliance-evidence-pack.md").read_text(encoding="utf-8")
@@ -634,11 +634,11 @@ def test_v19_evidence_pack_scope_is_documented_without_implemented_claims() -> N
     assert "planned" in readme
     assert "does not certify compliance" in readme
 
-    assert "v1.9.0 In Progress" in roadmap
+    assert "v1.9.0 Release" in roadmap
     assert "prd-agent-harness-v1.9-compliance-evidence-pack.md" in roadmap
     assert "agent-harness-v1.9-compliance-evidence-pack.md" in roadmap
     assert "depends on completed V12 governance exports" in roadmap
-    assert "Through Phase 8 the evidence-pack track adds evidence command discovery" in roadmap
+    assert "Through Phase 9 the evidence-pack track adds evidence command discovery" in roadmap
     assert "`evidence pack --format json` generation" in roadmap
     assert "redaction-safe artifact indexing" in roadmap
     assert "V12 governance indexes" in roadmap
@@ -650,7 +650,8 @@ def test_v19_evidence_pack_scope_is_documented_without_implemented_claims() -> N
     assert "findings" in roadmap
     assert "token-protected read-only evidence" in roadmap
     assert "packaged local operator UI now includes read-only Evidence Pack" in roadmap
-    assert "Release-readiness gates remain unimplemented" in roadmap
+    assert "Release readiness now validates existing evidence" in roadmap
+    assert "blocks on critical or release-blocking" in roadmap
     assert "does not certify compliance" in roadmap
 
     assert "governance_summary.v1" in evidence_docs
@@ -680,12 +681,15 @@ def test_v19_evidence_pack_scope_is_documented_without_implemented_claims() -> N
     assert "read-only Evidence Pack section" in evidence_docs
     assert "evidence generation" in evidence_docs
     assert "mutation controls" in evidence_docs
+    assert "non-mutating evidence-pack" in evidence_docs
+    assert "blocks readiness on critical or release-blocking" in evidence_docs
+    assert "release-readiness output links only fixed project-relative" in evidence_docs
 
     assert "Release readiness does not generate" in release_readiness
-    assert "evidence packs. It may only validate an" in release_readiness
-    assert (
-        "existing pack once the release-readiness evidence gate is implemented" in release_readiness
-    )
+    assert "validates an existing" in release_readiness
+    assert "pack under `.agent-harness/evidence/`" in release_readiness
+    assert "blocks readiness on critical or" in release_readiness
+    assert "links only fixed project-relative" in release_readiness
     assert "Implemented V1.9 Evidence API Extension" in operator_docs
     assert "Implemented V1.9 Evidence UI Extension" in operator_docs
     assert "GET /api/v1/evidence/artifact-index" in operator_docs
@@ -695,7 +699,9 @@ def test_v19_evidence_pack_scope_is_documented_without_implemented_claims() -> N
     )
     assert "token-protected read-only evidence routes" in architecture
     assert "read-only Evidence Pack views" in architecture
+    assert "Release readiness validates existing pack files" in architecture
     assert "portable evidence-pack boundary must not include raw provider" in security_model
+    assert "Release-readiness coverage stays inside that redaction-safe" in security_model
 
 
 def test_docs_check_rejects_stale_v3_scope_for_agent_harness_repo(

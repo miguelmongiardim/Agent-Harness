@@ -351,8 +351,8 @@ V1.9 Compliance Evidence Pack planning is captured in
 and
 [plans/agent-harness-v1.9-compliance-evidence-pack.md](plans/agent-harness-v1.9-compliance-evidence-pack.md).
 The pack depends on completed V12 governance exports and packages existing
-evidence for review. Through Phase 8 it provides `agent-harness evidence pack`, `check`,
-and `index` command discovery, prerequisite validation for missing V12
+evidence for review. Through Phase 9 it provides `agent-harness evidence pack`,
+`check`, and `index` command discovery, prerequisite validation for missing V12
 governance exports, `evidence pack --format json` generation of canonical
 `evidence_pack.v1`, `evidence_manifest.v1`, `evidence_index.v1`,
 `evidence_findings.v1`, `control_mapping.v1`, and checksum files, plus
@@ -372,11 +372,12 @@ routes for overview, exported packs, pack detail, control mapping, artifact
 index, and findings, backed by existing pack files under `.agent-harness`.
 The packaged local operator UI now includes a read-only Evidence Pack section
 for overview, control mapping, artifact index, findings, exported packs, and
-release evidence state. It uses only local evidence API routes and does not add
-evidence mutation controls, remote assets, analytics, or browser persistence.
-Release-readiness gates remain later-phase work. The
-evidence pack does not certify compliance with any
-legal, regulatory, security, or organizational framework.
+release evidence state. Release readiness validates an existing evidence pack
+without generating one, reports missing pack prerequisites, validates required
+files, schemas, and checksums, blocks on critical or release-blocking evidence
+findings, and reports advisory counts plus safe project-relative artifact links.
+The evidence pack does not certify compliance with any legal, regulatory,
+security, or organizational framework.
 
 ## Documentation
 

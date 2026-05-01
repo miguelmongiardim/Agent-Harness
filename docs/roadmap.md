@@ -190,7 +190,7 @@ as release evidence only. It does not add hosted benchmark execution, external
 datasets, configurable broader-pack allowlists, or automatic role-default
 promotion.
 
-## v1.8.0 In Progress
+## v1.8.0 Implemented
 
 V12 implementation has started with a local governance summary, blocking
 governance check, report generation, and explicit export writing.
@@ -215,7 +215,7 @@ Hosted governance, enterprise governance control planes, multi-tenant admin,
 cloud deployment, compliance readiness, SOC2 readiness, ISO readiness, and
 formal certification remain future-only.
 
-## v1.9.0 In Progress
+## v1.9.0 Release
 
 V1.9 Compliance Evidence Pack planning lives in
 [docs/compliance-evidence-pack.md](compliance-evidence-pack.md),
@@ -223,9 +223,9 @@ V1.9 Compliance Evidence Pack planning lives in
 and
 [plans/agent-harness-v1.9-compliance-evidence-pack.md](../plans/agent-harness-v1.9-compliance-evidence-pack.md).
 
-The planned pack depends on completed V12 governance exports:
+The pack depends on completed V12 governance exports:
 `governance_summary.v1`, `governance_report.v1`, `governance_index.v1`, and
-`governance_findings.v1`. Through Phase 8 the evidence-pack track adds evidence command discovery,
+`governance_findings.v1`. Through Phase 9 the evidence-pack track adds evidence command discovery,
 prerequisite validation for missing V12 governance exports,
 `evidence pack --format json` generation of canonical evidence pack, manifest,
 index, findings, control mapping, and checksum files, redaction-safe artifact
@@ -237,8 +237,11 @@ findings. The local operator API now exposes token-protected read-only evidence
 routes for overview, packs, pack detail, control mapping, artifact index, and
 findings. The packaged local operator UI now includes read-only Evidence Pack
 views for overview, control mapping, artifact index, findings, exported packs,
-and release evidence state. Release-readiness gates remain unimplemented until
-the next phase adds tested behavior.
+and release evidence state. Release readiness now validates existing evidence
+packs without generating them, reports missing pack prerequisites, validates
+required files, schemas, and checksums, blocks on critical or release-blocking
+findings, keeps advisory findings visible, and links only safe project-relative
+evidence artifacts.
 The implementation includes redaction-safe artifact indexing for portable
 review bundles.
 

@@ -86,6 +86,10 @@ jobs:
         run: python -m agent_harness template validate --all
       - name: Eval scorecard
         run: python -m agent_harness eval
+      - name: Governance export evidence
+        run: python -m agent_harness governance export --output .agent-harness/governance
+      - name: Evidence pack export
+        run: python -m agent_harness evidence pack --output .agent-harness/evidence --format bundle
       - name: Operator, MCP, and orchestration release gates
         run: python -m pytest tests/integration/test_operator_cli.py tests/integration/test_operator_api.py tests/integration/test_operator_ui.py tests/integration/test_mcp_protocol.py tests/integration/test_orchestration_cli.py -q
       - name: Slow release evidence tests
@@ -98,6 +102,7 @@ jobs:
           name: release-evidence
           path: |
             .agent-harness/release
+            .agent-harness/evidence
             .agent-harness/evals
             dist/
 

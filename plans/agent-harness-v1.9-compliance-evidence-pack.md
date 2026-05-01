@@ -697,14 +697,30 @@ release readiness.
 
 ### Acceptance criteria
 
-- [ ] Release readiness includes an `evidence_pack` gate.
-- [ ] Release readiness does not generate evidence packs.
-- [ ] Missing pack reports a prerequisite error.
-- [ ] Existing pack files are validated.
-- [ ] Critical evidence findings block readiness.
-- [ ] Advisory evidence findings remain visible.
-- [ ] Safe evidence pack artifacts are linked.
-- [ ] Unsafe evidence contents are never exposed in readiness output.
+- [x] Release readiness includes an `evidence_pack` gate.
+- [x] Release readiness does not generate evidence packs.
+- [x] Missing pack reports a prerequisite error.
+- [x] Existing pack files are validated.
+- [x] Critical evidence findings block readiness.
+- [x] Advisory evidence findings remain visible.
+- [x] Safe evidence pack artifacts are linked.
+- [x] Unsafe evidence contents are never exposed in readiness output.
+
+### Phase 9 implementation notes
+
+- `agent-harness release readiness` now includes a non-mutating
+  `evidence_pack` gate.
+- Missing packs under the configured evidence root report
+  `missing_evidence` with an evidence-pack diagnostic and no generated files.
+- Existing packs are validated through fixed canonical artifact names, Pydantic
+  schemas, and `checksums.sha256`.
+- Critical findings and findings marked as release or pack blockers fail the
+  gate; advisory findings remain visible in counts and redaction-safe summaries.
+- Readiness output links only fixed project-relative evidence artifacts and
+  does not expose raw finding messages, unsafe refs, absolute paths, or secret
+  content.
+- Scope stayed release-readiness-only: no release automation, pack generation
+  from readiness, compliance attestation, or external auditor workflow.
 
 ### Out of scope
 

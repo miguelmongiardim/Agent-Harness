@@ -2,12 +2,13 @@
 
 ## Status
 
-The V1.9 Compliance Evidence Pack is in progress. The durable PRD lives in
+The V1.9 Compliance Evidence Pack is implemented through release-readiness
+validation. The durable PRD lives in
 [docs/prd-agent-harness-v1.9-compliance-evidence-pack.md](prd-agent-harness-v1.9-compliance-evidence-pack.md)
 and the implementation plan lives in
 [plans/agent-harness-v1.9-compliance-evidence-pack.md](../plans/agent-harness-v1.9-compliance-evidence-pack.md).
 
-Through Phase 8, the `agent-harness evidence` CLI surface exposes `pack`,
+Through Phase 9, the `agent-harness evidence` CLI surface exposes `pack`,
 `check`, and `index` commands. `pack`, `check`, and `index` validate the
 required V12 governance export prerequisites and fail with exit code `2` when
 they are missing, without generating governance exports.
@@ -76,12 +77,19 @@ loads only local `/api/v1/evidence/*` routes and renders overview, control
 mapping, artifact index, findings, exported packs, and release evidence state.
 The UI handles missing pack and blocking finding states, and it does not
 include evidence generation, mutation controls, remote assets, analytics, or
-browser persistence for evidence state. Release-readiness gates remain
-later-phase work.
+browser persistence for evidence state.
 
-## Planned Boundary
+`agent-harness release readiness` now includes a non-mutating evidence-pack
+gate. The gate validates an existing pack under the configured evidence root,
+requires the canonical JSON artifacts and checksum file, validates schemas and
+checksums, reports missing pack prerequisites without generating evidence, and
+blocks readiness on critical or release-blocking evidence findings. Advisory
+findings remain visible through counts and redaction-safe summaries, and
+release-readiness output links only fixed project-relative evidence artifacts.
 
-The planned evidence-pack boundary packages existing governance evidence into
+## Boundary
+
+The evidence-pack boundary packages existing governance evidence into
 portable review artifacts. It consumes completed V12 governance exports instead
 of rebuilding governance aggregation, running tasks, calling providers, running
 retrieval, executing scanners, applying templates, serving MCP, launching
@@ -94,7 +102,7 @@ Required V12 prerequisite artifacts are:
 - `governance_index.v1`
 - `governance_findings.v1`
 
-If those exports are missing, current Phase 8 evidence commands fail clearly
+If those exports are missing, evidence commands fail clearly
 and tell the user to generate V12 governance exports first.
 
 ## Claim Boundary

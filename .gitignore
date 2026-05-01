@@ -21,6 +21,8 @@ build/
 .agent-harness/artifacts/
 .agent-harness/evals/
 .agent-harness/exports/
+.agent-harness/governance/
+.agent-harness/evidence/
 .agent-harness/benchmarks/
 .agent-harness/eval-work/
 .agent-harness/retrieval-scorecards/
@@ -29,6 +31,9 @@ build/
 .agent-harness/docs/
 .agent-harness/migrations/
 .agent-harness/release/
+.agent-harness/mcp/
+.agent-harness/advisories/
+.agent-harness/workspace.json
 examples/**/.agent-harness/
 
 # Local planning artifacts
