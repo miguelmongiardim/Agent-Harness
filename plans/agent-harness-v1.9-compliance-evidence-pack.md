@@ -502,22 +502,22 @@ only when they are known, allowlisted, and needed to package safe metadata.
 
 ### Acceptance criteria
 
-- [ ] Governance evidence refs point to V12 governance outputs.
-- [ ] Policy evidence answers what controls execution, what can widen
+- [x] Governance evidence refs point to V12 governance outputs.
+- [x] Policy evidence answers what controls execution, what can widen
       permissions, and what is denied by default.
-- [ ] Approval evidence answers whether risky actions were reviewed and bound
+- [x] Approval evidence answers whether risky actions were reviewed and bound
       to proposed effects.
-- [ ] Provider evidence includes safe profile, trust-zone, approval-linkage,
+- [x] Provider evidence includes safe profile, trust-zone, approval-linkage,
       redaction, sensitivity, and metadata summaries.
-- [ ] Retrieval evidence includes safe provenance, backend, local-first, and
+- [x] Retrieval evidence includes safe provenance, backend, local-first, and
       rejection summaries.
-- [ ] Template and skill evidence includes validation, inventory, and local
+- [x] Template and skill evidence includes validation, inventory, and local
       guidance summaries.
-- [ ] MCP and multi-agent domains report present safe summaries or
+- [x] MCP and multi-agent domains report present safe summaries or
       `not_present`.
-- [ ] Supply-chain evidence references optional SBOM/scanner/license artifacts
+- [x] Supply-chain evidence references optional SBOM/scanner/license artifacts
       when present and reports `not_present` when absent.
-- [ ] Docs claim evidence records unsupported-claim scanner results.
+- [x] Docs claim evidence records unsupported-claim scanner results.
 
 ### Out of scope
 
@@ -525,6 +525,18 @@ only when they are known, allowlisted, and needed to package safe metadata.
 - Running scanners or SBOM generation as part of pack generation.
 - Creating new provider, retrieval, template, skill, MCP, or orchestration
   evidence.
+
+### Phase 6 implementation notes
+
+- Added safe `summary` payloads to `evidence_pack.v1` domain summaries, sourced
+  from `governance_summary.v1` rather than recomputed by evidence packaging.
+- Packaged safe summaries and refs for governance, policy, approvals, provider,
+  retrieval, templates, skills, MCP, multi-agent, supply-chain, security, docs
+  claim, and release-readiness domains when V12 reports them.
+- Kept absent optional domains as `not_present` with empty summaries.
+- Malformed domain summary payloads now become `malformed_domain_summary`
+  evidence findings and set the affected domain to `malformed_evidence`
+  without crashing pack generation.
 
 ---
 

@@ -30,6 +30,7 @@ from agent_harness.evidence.schema import (
     EvidenceWorkspaceIdentity,
 )
 from agent_harness.utils import (
+    canonical_json,
     hash_file,
     load_json,
     normalize_relative_path,
@@ -218,13 +219,19 @@ def build_evidence_state(project_root: Path, *, profile: str) -> EvidencePackSta
         governance_index,
         _display_path(root, governance_dir / "governance_index.v1.json"),
     )
+    domain_summaries, domain_findings = _domain_summaries(
+        root,
+        summary,
+        _display_path(root, governance_dir / "governance_summary.v1.json"),
+    )
+    evidence_findings.extend(domain_findings)
     pack = EvidencePack(
         pack_id=pack_id,
         generated_at=generated_at,
         profile=profile,
         agent_harness_version=__version__,
         workspace=workspace,
-        domains=_domain_summaries(root, summary),
+        domains=domain_summaries,
         governance_references=list(governance_hashes),
         governance_hashes=governance_hashes,
     )
@@ -418,6 +425,14 @@ def _render_evidence_pack_markdown(
         )
         if summary.evidence_refs:
             lines.extend(f"  - `{ref}`" for ref in summary.evidence_refs)
+        else:
+            lines.append("  - None")
+        lines.append("- Summary:")
+        if summary.summary:
+            lines.extend(
+                f"  - `{key}`: `{canonical_json(value)}`"
+                for key, value in sorted(summary.summary.items())
+            )
         else:
             lines.append("  - None")
         lines.append("")
@@ -697,10 +712,15 @@ def _workspace_identity(summary: object, artifact_root: str) -> EvidenceWorkspac
     )
 
 
-def _domain_summaries(root: Path, summary: object) -> dict[str, EvidenceDomainSummary]:
+def _domain_summaries(
+    root: Path,
+    summary: object,
+    governance_summary_reference: str,
+) -> tuple[dict[str, EvidenceDomainSummary], list[EvidenceFinding]]:
     raw_domains = summary.get("domains", {}) if isinstance(summary, dict) else {}
     domains = raw_domains if isinstance(raw_domains, dict) else {}
     result: dict[str, EvidenceDomainSummary] = {}
+    findings: list[EvidenceFinding] = []
     for domain in EVIDENCE_DOMAINS:
         raw_domain = domains.get(domain)
         if not isinstance(raw_domain, dict):
@@ -710,12 +730,72 @@ def _domain_summaries(root: Path, summary: object) -> dict[str, EvidenceDomainSu
             )
             continue
         status = _domain_status(raw_domain.get("status"))
+        domain_summary, summary_finding = _safe_domain_summary(
+            raw_domain.get("summary"),
+            domain=domain,
+            governance_summary_reference=governance_summary_reference,
+        )
+        if summary_finding is not None:
+            findings.append(summary_finding)
+            status = "malformed_evidence"
         result[domain] = EvidenceDomainSummary(
             status=status,
             message=_safe_string(raw_domain.get("message"), ""),
             evidence_refs=_safe_evidence_refs(root, raw_domain.get("evidence_refs")),
+            summary=domain_summary,
         )
-    return result
+    return result, findings
+
+
+def _safe_domain_summary(
+    value: object,
+    *,
+    domain: str,
+    governance_summary_reference: str,
+) -> tuple[dict[str, object], EvidenceFinding | None]:
+    if value is None:
+        return {}, None
+    if not isinstance(value, dict):
+        return {}, _finding(
+            source="malformed_domain_summary",
+            message="Governance domain summary is malformed and was omitted.",
+            artifact_reference=governance_summary_reference,
+            omission_reason="malformed_domain_summary",
+            recommendation="Regenerate V12 governance summary domain metadata.",
+            severity="high",
+            domain=domain,
+        )
+    return _safe_domain_summary_mapping(value), None
+
+
+def _safe_domain_summary_mapping(value: dict[object, object]) -> dict[str, object]:
+    return {
+        key: _safe_domain_summary_value(raw_value)
+        for key, raw_value in sorted(value.items(), key=lambda item: str(item[0]))
+        if isinstance(key, str) and key
+    }
+
+
+def _safe_domain_summary_value(value: object) -> object:
+    if isinstance(value, str):
+        return "[redacted]" if _is_unsafe_summary_string(value) else value
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    if isinstance(value, list):
+        return [_safe_domain_summary_value(item) for item in value]
+    if isinstance(value, dict):
+        return _safe_domain_summary_mapping(value)
+    return str(value)
+
+
+def _is_unsafe_summary_string(value: str) -> bool:
+    if _is_private_upload_reference(value):
+        return True
+    if _CREDENTIAL_LIKE_REFERENCE.search(value):
+        return True
+    if _RAW_VECTOR_DB_REFERENCE.search(value):
+        return True
+    return _is_absolute_reference(value)
 
 
 def _domain_status(value: object) -> EvidenceDomainStatus:

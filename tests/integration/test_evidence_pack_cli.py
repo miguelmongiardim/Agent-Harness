@@ -532,7 +532,272 @@ def test_evidence_pack_reports_absent_optional_domains_as_not_present(
             "status": "not_present",
             "message": f"{domain} evidence not present in V12 governance exports",
             "evidence_refs": [],
+            "summary": {},
         }
+
+
+def test_evidence_pack_packages_governance_domain_summaries_and_malformed_findings(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-01-01T00:00:00Z")
+    seed_project(tmp_path)
+    _write_governance_exports(tmp_path, missing_filename="")
+
+    run_dir = tmp_path / ".agent-harness" / "runs" / "run-domain-packaging"
+    run_dir.mkdir(parents=True)
+    run_summary_ref = ".agent-harness/runs/run-domain-packaging/summary.json"
+    (run_dir / "summary.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "summary.v1",
+                "run_id": "run-domain-packaging",
+                "task_id": "domain-packaging",
+                "status": "completed",
+                "events_count": 3,
+                "approvals": [],
+                "artifacts": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    supply_chain_ref = ".agent-harness/advisories/sbom.json"
+    supply_chain_path = tmp_path / supply_chain_ref
+    supply_chain_path.parent.mkdir(parents=True)
+    supply_chain_path.write_text(
+        json.dumps({"schema_version": "sbom_summary.v1", "packages": 2}),
+        encoding="utf-8",
+    )
+    governance_refs = [
+        ".agent-harness/governance/governance_summary.v1.json",
+        ".agent-harness/governance/governance_report.v1.json",
+        ".agent-harness/governance/governance_index.v1.json",
+        ".agent-harness/governance/governance_findings.v1.json",
+    ]
+    _write_governance_summary_domains(
+        tmp_path,
+        {
+            "governance": {
+                "status": "present",
+                "message": "V12 governance outputs are available for review",
+                "evidence_refs": governance_refs,
+                "summary": {"source": "v12_governance_exports"},
+            },
+            "policy": {
+                "status": "present",
+                "message": "policy evidence is available for review",
+                "evidence_refs": [".agent-harness/governance/governance_report.v1.json"],
+                "summary": {
+                    "controls_execution": "policy profile ceilings",
+                    "can_widen_permissions": "explicit approvals within policy ceilings",
+                    "denied_by_default": ["network", "filesystem_write"],
+                },
+            },
+            "approvals": {
+                "status": "present",
+                "message": "approval evidence is available for review",
+                "evidence_refs": [run_summary_ref],
+                "summary": {
+                    "risky_actions_reviewed": True,
+                    "bound_to_proposed_effects": True,
+                },
+            },
+            "provider": {
+                "status": "present",
+                "message": "provider evidence is available for review",
+                "evidence_refs": [run_summary_ref],
+                "summary": {
+                    "profiles": ["default"],
+                    "trust_zones": ["local"],
+                    "approval_linkage": "provider use approval binding",
+                    "redaction": "metadata_only",
+                    "sensitivity": "safe metadata",
+                },
+            },
+            "retrieval": {
+                "status": "present",
+                "message": "retrieval evidence is available for review",
+                "evidence_refs": [run_summary_ref],
+                "summary": {
+                    "provenance": "context_manifest.v2",
+                    "backend": "lexical",
+                    "local_first": True,
+                    "rejections": 1,
+                },
+            },
+            "templates": {
+                "status": "present",
+                "message": "template evidence is available for review",
+                "evidence_refs": [run_summary_ref],
+                "summary": {
+                    "validation": "passed",
+                    "inventory": ["python-library"],
+                    "local_guidance": True,
+                },
+            },
+            "skills": {
+                "status": "present",
+                "message": "skill evidence is available for review",
+                "evidence_refs": [run_summary_ref],
+                "summary": {
+                    "validation": "passed",
+                    "inventory": ["tdd"],
+                    "local_guidance": True,
+                },
+            },
+            "mcp": {
+                "status": "present",
+                "message": "MCP evidence is available for review",
+                "evidence_refs": [run_summary_ref],
+                "summary": {"resources": "metadata_only", "prompts": "metadata_only"},
+            },
+            "supply_chain": {
+                "status": "present",
+                "message": "supply-chain evidence is available for review",
+                "evidence_refs": [supply_chain_ref],
+                "summary": {
+                    "sbom": "present",
+                    "scanner": "not_present",
+                    "licenses": "not_present",
+                },
+            },
+            "docs_claim": {
+                "status": "present",
+                "message": "documentation claim evidence is available for review",
+                "evidence_refs": [".agent-harness/governance/governance_report.v1.json"],
+                "summary": {"unsupported_claim_findings": 0},
+            },
+            "release_readiness": {
+                "status": "present",
+                "message": "release readiness evidence is available for review",
+                "evidence_refs": [run_summary_ref],
+                "summary": {"status": "pending_remote_ci", "safe_artifacts": [run_summary_ref]},
+            },
+            "security": {
+                "status": "present",
+                "message": "security evidence is malformed in this fixture",
+                "evidence_refs": [run_summary_ref],
+                "summary": "not-a-summary-object",
+            },
+        },
+    )
+    _write_governance_index(
+        tmp_path,
+        [
+            {
+                "artifact_type": "run_summary",
+                "path": run_summary_ref,
+                "content_hash": "stale-run-hash",
+                "schema_version": "summary.v1",
+                "redaction_status": "safe",
+                "inclusion_status": "included",
+            },
+            {
+                "artifact_type": "sbom_summary",
+                "path": supply_chain_ref,
+                "content_hash": "stale-sbom-hash",
+                "schema_version": "sbom_summary.v1",
+                "redaction_status": "safe",
+                "inclusion_status": "included",
+            },
+        ],
+    )
+
+    assert (
+        main(["evidence", "pack", "--output", ".agent-harness/evidence", "--format", "json"])
+        == 0
+    )
+    capsys.readouterr()
+
+    evidence_root = tmp_path / ".agent-harness" / "evidence"
+    pack = json.loads((evidence_root / "evidence_pack.v1.json").read_text(encoding="utf-8"))
+    index = json.loads((evidence_root / "evidence_index.v1.json").read_text(encoding="utf-8"))
+    findings = json.loads((evidence_root / "evidence_findings.v1.json").read_text(encoding="utf-8"))
+
+    assert set(pack["domains"]["governance"]["evidence_refs"]) == set(governance_refs)
+    assert pack["domains"]["policy"]["summary"] == {
+        "can_widen_permissions": "explicit approvals within policy ceilings",
+        "controls_execution": "policy profile ceilings",
+        "denied_by_default": ["network", "filesystem_write"],
+    }
+    assert pack["domains"]["approvals"]["summary"] == {
+        "bound_to_proposed_effects": True,
+        "risky_actions_reviewed": True,
+    }
+    assert pack["domains"]["provider"]["summary"] == {
+        "approval_linkage": "provider use approval binding",
+        "profiles": ["default"],
+        "redaction": "metadata_only",
+        "sensitivity": "safe metadata",
+        "trust_zones": ["local"],
+    }
+    assert pack["domains"]["retrieval"]["summary"] == {
+        "backend": "lexical",
+        "local_first": True,
+        "provenance": "context_manifest.v2",
+        "rejections": 1,
+    }
+    assert pack["domains"]["templates"]["summary"] == {
+        "inventory": ["python-library"],
+        "local_guidance": True,
+        "validation": "passed",
+    }
+    assert pack["domains"]["skills"]["summary"] == {
+        "inventory": ["tdd"],
+        "local_guidance": True,
+        "validation": "passed",
+    }
+    assert pack["domains"]["mcp"]["summary"] == {
+        "prompts": "metadata_only",
+        "resources": "metadata_only",
+    }
+    assert pack["domains"]["multi_agent"] == {
+        "status": "not_present",
+        "message": "multi_agent evidence not present in V12 governance exports",
+        "evidence_refs": [],
+        "summary": {},
+    }
+    assert pack["domains"]["supply_chain"]["summary"] == {
+        "licenses": "not_present",
+        "sbom": "present",
+        "scanner": "not_present",
+    }
+    assert pack["domains"]["docs_claim"]["summary"] == {"unsupported_claim_findings": 0}
+    assert pack["domains"]["release_readiness"]["summary"] == {
+        "safe_artifacts": [run_summary_ref],
+        "status": "pending_remote_ci",
+    }
+    assert pack["domains"]["security"]["status"] == "malformed_evidence"
+    assert pack["domains"]["security"]["summary"] == {}
+
+    assert {entry["path"] for entry in index["entries"]} >= {
+        run_summary_ref,
+        supply_chain_ref,
+        *governance_refs,
+    }
+    malformed_findings = [
+        finding
+        for finding in findings["findings"]
+        if finding["source"] == "malformed_domain_summary"
+    ]
+    assert malformed_findings == [
+        {
+            "schema_version": "evidence_finding.v1",
+            "finding_id": malformed_findings[0]["finding_id"],
+            "severity": "high",
+            "domain": "security",
+            "source": "malformed_domain_summary",
+            "message": "Governance domain summary is malformed and was omitted.",
+            "artifact_reference": ".agent-harness/governance/governance_summary.v1.json",
+            "evidence_refs": [".agent-harness/governance/governance_summary.v1.json"],
+            "omission_reason": "malformed_domain_summary",
+            "recommendation": "Regenerate V12 governance summary domain metadata.",
+            "blocks_release": True,
+            "blocks_evidence_pack": True,
+        }
+    ]
 
 
 def test_evidence_pack_bundle_writes_review_only_control_mapping(

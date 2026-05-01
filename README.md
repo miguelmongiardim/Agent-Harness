@@ -351,7 +351,7 @@ V1.9 Compliance Evidence Pack planning is captured in
 and
 [plans/agent-harness-v1.9-compliance-evidence-pack.md](plans/agent-harness-v1.9-compliance-evidence-pack.md).
 The pack depends on completed V12 governance exports and packages existing
-evidence for review. Phase 5 provides `agent-harness evidence pack`, `check`,
+evidence for review. Phase 6 provides `agent-harness evidence pack`, `check`,
 and `index` command discovery, prerequisite validation for missing V12
 governance exports, `evidence pack --format json` generation of canonical
 `evidence_pack.v1`, `evidence_manifest.v1`, `evidence_index.v1`,
@@ -362,9 +362,14 @@ creation, `evidence check` pass/fail/invalid/internal-error exit semantics,
 and `evidence index` JSON output. Absolute paths, traversal references, raw
 provider payloads, private uploads, credential-like references, and raw vector
 database internals are omitted with evidence findings, and absent optional
-domains are recorded as `not_present`. Operator routes, UI views, and
-release-readiness gates remain later-phase work. The evidence pack does not certify compliance
-with any legal, regulatory, security, or organizational framework.
+domains are recorded as `not_present`. Pack domains now include safe
+V12-provided summary metadata for governance, policy, approvals, provider,
+retrieval, templates, skills, MCP, multi-agent, supply-chain, security, docs
+claim, and release-readiness domains when V12 reports those summaries;
+malformed domain summaries produce evidence findings without crashing pack
+generation. Operator routes, UI views, and release-readiness gates remain
+later-phase work. The evidence pack does not certify compliance with any
+legal, regulatory, security, or organizational framework.
 
 ## Documentation
 

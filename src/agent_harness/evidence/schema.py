@@ -64,6 +64,7 @@ class EvidenceDomainSummary(StrictModel):
     status: EvidenceDomainStatus
     message: str = ""
     evidence_refs: list[str] = Field(default_factory=list)
+    summary: dict[str, object] = Field(default_factory=dict)
 
 
 class EvidencePack(StrictModel):

@@ -7,7 +7,7 @@ The V1.9 Compliance Evidence Pack is in progress. The durable PRD lives in
 and the implementation plan lives in
 [plans/agent-harness-v1.9-compliance-evidence-pack.md](../plans/agent-harness-v1.9-compliance-evidence-pack.md).
 
-Through Phase 5, the `agent-harness evidence` CLI surface exposes `pack`,
+Through Phase 6, the `agent-harness evidence` CLI surface exposes `pack`,
 `check`, and `index` commands. `pack`, `check`, and `index` validate the
 required V12 governance export prerequisites and fail with exit code `2` when
 they are missing, without generating governance exports.
@@ -37,6 +37,15 @@ and raw vector database internals are omitted with evidence findings instead
 of being copied into pack contents. Optional absent evidence domains are
 recorded as `not_present`.
 
+Phase 6 packages safe domain summaries from `governance_summary.v1` into
+`evidence_pack.v1`. Present domains can include safe summary metadata and
+evidence refs for governance, policy, approvals, provider, retrieval,
+templates, skills, MCP, multi-agent, supply-chain, security, docs claim, and
+release-readiness evidence. Optional domains that V12 does not report remain
+`not_present`. Malformed domain summary payloads are omitted, the domain is
+marked `malformed_evidence`, and `evidence_findings.v1` records a
+`malformed_domain_summary` finding instead of crashing pack generation.
+
 The mapping uses internal review themes, safe evidence refs, limited coverage
 statuses, limitations, and the non-certification disclaimer. Archive creation
 is opt-in with `--archive`, which writes a zip under the evidence output
@@ -64,7 +73,7 @@ Required V12 prerequisite artifacts are:
 - `governance_index.v1`
 - `governance_findings.v1`
 
-If those exports are missing, current Phase 5 evidence commands fail clearly
+If those exports are missing, current Phase 6 evidence commands fail clearly
 and tell the user to generate V12 governance exports first.
 
 ## Claim Boundary
