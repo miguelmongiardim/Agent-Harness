@@ -638,7 +638,7 @@ def test_v19_evidence_pack_scope_is_documented_without_implemented_claims() -> N
     assert "prd-agent-harness-v1.9-compliance-evidence-pack.md" in roadmap
     assert "agent-harness-v1.9-compliance-evidence-pack.md" in roadmap
     assert "depends on completed V12 governance exports" in roadmap
-    assert "Phase 7 adds evidence command discovery" in roadmap
+    assert "Through Phase 8 the evidence-pack track adds evidence command discovery" in roadmap
     assert "`evidence pack --format json` generation" in roadmap
     assert "redaction-safe artifact indexing" in roadmap
     assert "V12 governance indexes" in roadmap
@@ -649,6 +649,8 @@ def test_v19_evidence_pack_scope_is_documented_without_implemented_claims() -> N
     assert "malformed-domain evidence" in roadmap
     assert "findings" in roadmap
     assert "token-protected read-only evidence" in roadmap
+    assert "packaged local operator UI now includes read-only Evidence Pack" in roadmap
+    assert "Release-readiness gates remain unimplemented" in roadmap
     assert "does not certify compliance" in roadmap
 
     assert "governance_summary.v1" in evidence_docs
@@ -675,6 +677,9 @@ def test_v19_evidence_pack_scope_is_documented_without_implemented_claims() -> N
     assert "`GET /api/v1/evidence/overview`" in evidence_docs
     assert "`GET /api/v1/evidence/packs/{pack_id}`" in evidence_docs
     assert "reject mutation methods" in evidence_docs
+    assert "read-only Evidence Pack section" in evidence_docs
+    assert "evidence generation" in evidence_docs
+    assert "mutation controls" in evidence_docs
 
     assert "Release readiness does not generate" in release_readiness
     assert "evidence packs. It may only validate an" in release_readiness
@@ -682,11 +687,14 @@ def test_v19_evidence_pack_scope_is_documented_without_implemented_claims() -> N
         "existing pack once the release-readiness evidence gate is implemented" in release_readiness
     )
     assert "Implemented V1.9 Evidence API Extension" in operator_docs
+    assert "Implemented V1.9 Evidence UI Extension" in operator_docs
     assert "GET /api/v1/evidence/artifact-index" in operator_docs
+    assert "Release Evidence" in operator_docs
     assert (
         "`agent_harness.evidence` owns the V1.9 Compliance Evidence Pack boundary" in architecture
     )
     assert "token-protected read-only evidence routes" in architecture
+    assert "read-only Evidence Pack views" in architecture
     assert "portable evidence-pack boundary must not include raw provider" in security_model
 
 

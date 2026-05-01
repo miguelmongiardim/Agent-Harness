@@ -633,15 +633,29 @@ operator surface.
 
 ### Acceptance criteria
 
-- [ ] Evidence Pack section is visible in the local UI.
-- [ ] UI fetches only local evidence API routes.
-- [ ] UI renders overview, mapping, index, findings, packs, and release
+- [x] Evidence Pack section is visible in the local UI.
+- [x] UI fetches only local evidence API routes.
+- [x] UI renders overview, mapping, index, findings, packs, and release
       evidence states.
-- [ ] UI handles missing pack and blocking finding states.
-- [ ] UI contains no external assets, CDN references, analytics, or browser
+- [x] UI handles missing pack and blocking finding states.
+- [x] UI contains no external assets, CDN references, analytics, or browser
       persistence for evidence state.
-- [ ] UI contains no evidence mutation controls.
-- [ ] UI wording does not imply certification or formal compliance.
+- [x] UI contains no evidence mutation controls.
+- [x] UI wording does not imply certification or formal compliance.
+
+### Phase 8 implementation notes
+
+- Added a packaged local Evidence Pack UI section next to the run inspector.
+- The section uses the existing in-memory operator token and reads only local
+  `/api/v1/evidence/*` routes for overview, exported packs, pack detail,
+  control mapping, artifact index, and findings.
+- The UI renders overview, control mapping, artifact index, findings, exported
+  packs, and release evidence state from existing pack artifacts.
+- Missing pack state and blocking finding counts are shown from the API
+  responses without generating packs or mutating evidence.
+- Scope stayed Phase 8-only: no release-readiness gate, pack generation from
+  the UI, evidence mutation controls, remote assets, analytics, browser
+  persistence, hosted UI behavior, or certification claim was added.
 
 ### Out of scope
 

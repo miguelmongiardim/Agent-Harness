@@ -19,14 +19,32 @@
       </form>
     </header>
     <main class="layout">
-      <section class="pane run-list-pane" aria-labelledby="run-list-heading">
-        <div class="pane-heading">
-          <h2 id="run-list-heading">Runs</h2>
-          <button id="refresh-runs" type="button">Refresh</button>
-        </div>
-        <div id="run-list-status" class="status">Enter the generated token.</div>
-        <ul id="run-list" class="run-list"></ul>
-      </section>
+      <div class="sidebar">
+        <section class="pane run-list-pane" aria-labelledby="run-list-heading">
+          <div class="pane-heading">
+            <h2 id="run-list-heading">Runs</h2>
+            <button id="refresh-runs" type="button">Refresh</button>
+          </div>
+          <div id="run-list-status" class="status">Enter the generated token.</div>
+          <ul id="run-list" class="run-list"></ul>
+        </section>
+        <section class="pane evidence-pane" aria-labelledby="evidence-heading">
+          <div class="pane-heading">
+            <h2 id="evidence-heading">Evidence Pack</h2>
+            <button id="refresh-evidence" type="button">Refresh</button>
+          </div>
+          <nav class="tabs evidence-tabs" aria-label="Evidence Pack views">
+            <button class="evidence-tab active" type="button" data-evidence-tab="overview">Overview</button>
+            <button class="evidence-tab" type="button" data-evidence-tab="control-map">Control Mapping</button>
+            <button class="evidence-tab" type="button" data-evidence-tab="artifact-index">Artifact Index</button>
+            <button class="evidence-tab" type="button" data-evidence-tab="findings">Findings</button>
+            <button class="evidence-tab" type="button" data-evidence-tab="packs">Exported Packs</button>
+            <button class="evidence-tab" type="button" data-evidence-tab="evidence-release">Release Evidence</button>
+          </nav>
+          <div id="evidence-status" class="status">Enter the generated token.</div>
+          <div id="evidence-output" class="evidence-output"><pre>{}</pre></div>
+        </section>
+      </div>
       <section class="pane detail-pane" aria-labelledby="run-detail-heading">
         <div class="pane-heading">
           <h2 id="run-detail-heading">Run Detail</h2>

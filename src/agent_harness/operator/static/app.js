@@ -9,17 +9,30 @@
   let context = null;
   let approvals = null;
   let policy = null;
+  let evidence = {
+    overview: null,
+    packs: null,
+    detail: null,
+    controlMap: null,
+    artifactIndex: null,
+    findings: null,
+  };
+  let selectedEvidenceTab = "overview";
 
   const elements = {
     tokenForm: document.querySelector("#token-form"),
     tokenInput: document.querySelector("#operator-token"),
     refreshRuns: document.querySelector("#refresh-runs"),
+    refreshEvidence: document.querySelector("#refresh-evidence"),
     runList: document.querySelector("#run-list"),
     runListStatus: document.querySelector("#run-list-status"),
     selectedRun: document.querySelector("#selected-run"),
     detailStatus: document.querySelector("#detail-status"),
     detailOutput: document.querySelector("#detail-output"),
     tabs: Array.from(document.querySelectorAll(".tab")),
+    evidenceStatus: document.querySelector("#evidence-status"),
+    evidenceOutput: document.querySelector("#evidence-output"),
+    evidenceTabs: Array.from(document.querySelectorAll(".evidence-tab")),
   };
   const policyProfile = document.body.dataset.policyProfile || "default";
 
@@ -27,13 +40,22 @@
     event.preventDefault();
     operatorToken = elements.tokenInput.value.trim();
     loadRuns();
+    loadEvidence();
   });
   elements.refreshRuns.addEventListener("click", () => loadRuns());
+  elements.refreshEvidence.addEventListener("click", () => loadEvidence());
   elements.tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
       selectedTab = tab.dataset.tab;
       renderTabs();
       renderDetail();
+    });
+  });
+  elements.evidenceTabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      selectedEvidenceTab = tab.dataset.evidenceTab;
+      renderEvidenceTabs();
+      renderEvidenceView();
     });
   });
 
@@ -74,6 +96,42 @@
       setStatus(elements.runListStatus, `${runs.length} run(s) available.`, false);
     } catch (error) {
       setStatus(elements.runListStatus, error.message, true);
+    }
+  }
+
+  async function loadEvidence() {
+    if (!operatorToken) {
+      setStatus(elements.evidenceStatus, "Enter the generated token.", true);
+      return;
+    }
+    evidence = {
+      overview: null,
+      packs: null,
+      detail: null,
+      controlMap: null,
+      artifactIndex: null,
+      findings: null,
+    };
+    setStatus(elements.evidenceStatus, "Loading evidence pack views.", false);
+    try {
+      evidence.overview = await api("/api/v1/evidence/overview");
+      evidence.packs = await api("/api/v1/evidence/packs");
+      const packId = evidence.overview.current_pack && evidence.overview.current_pack.pack_id;
+      if (packId) {
+        evidence.detail = await api(`/api/v1/evidence/packs/${encodeURIComponent(packId)}`);
+        evidence.controlMap = await api("/api/v1/evidence/control-map");
+        evidence.artifactIndex = await api("/api/v1/evidence/artifact-index");
+        evidence.findings = await api("/api/v1/evidence/findings");
+        const blocking = evidence.overview.current_pack.blocking_findings || 0;
+        const suffix = blocking > 0 ? ` ${blocking} blocking finding(s).` : "";
+        setStatus(elements.evidenceStatus, `Evidence pack loaded.${suffix}`, blocking > 0);
+      } else {
+        setStatus(elements.evidenceStatus, "No exported evidence pack found.", true);
+      }
+      renderEvidenceView();
+    } catch (error) {
+      setStatus(elements.evidenceStatus, error.message, true);
+      renderEvidenceJson({error: error.message});
     }
   }
 
@@ -127,6 +185,12 @@
     });
   }
 
+  function renderEvidenceTabs() {
+    elements.evidenceTabs.forEach((tab) => {
+      tab.classList.toggle("active", tab.dataset.evidenceTab === selectedEvidenceTab);
+    });
+  }
+
   function renderDetail() {
     if (!detail) {
       renderJson({});
@@ -159,6 +223,48 @@
       return;
     }
     renderJson(views[selectedTab] || {});
+  }
+
+  function renderEvidenceView() {
+    const views = {
+      overview: evidenceOverviewView(),
+      "control-map": evidence.controlMap || {},
+      "artifact-index": evidence.artifactIndex || {},
+      findings: evidence.findings || {},
+      packs: evidence.packs || {},
+      "evidence-release": renderEvidenceReleaseView(),
+    };
+    renderEvidenceJson(views[selectedEvidenceTab] || {});
+  }
+
+  function evidenceOverviewView() {
+    const currentPack = evidence.overview && evidence.overview.current_pack;
+    return {
+      overview: evidence.overview || {},
+      current_pack_status: currentPack
+        ? {
+            pack_id: currentPack.pack_id,
+            redaction_status: currentPack.redaction_status,
+            claim_status: currentPack.claim_status,
+            findings_count: currentPack.findings_count,
+            blocking_findings: currentPack.blocking_findings,
+          }
+        : {status: "missing"},
+    };
+  }
+
+  function renderEvidenceReleaseView() {
+    const pack = (evidence.detail && evidence.detail.evidence_pack) || {};
+    const domains = pack.domains || {};
+    return {
+      pack_id: evidence.detail ? evidence.detail.pack_id : null,
+      release_readiness_reference: pack.release_readiness_reference || null,
+      release_readiness_domain: domains.release_readiness || {status: "not_present"},
+      blocking_findings:
+        evidence.overview && evidence.overview.current_pack
+          ? evidence.overview.current_pack.blocking_findings
+          : 0,
+    };
   }
 
   function renderApprovals() {
@@ -334,8 +440,19 @@
     elements.detailOutput.append(pre);
   }
 
+  function renderEvidenceJson(value) {
+    clearEvidenceOutput();
+    const pre = document.createElement("pre");
+    pre.textContent = JSON.stringify(value, null, 2);
+    elements.evidenceOutput.append(pre);
+  }
+
   function clearOutput() {
     elements.detailOutput.replaceChildren();
+  }
+
+  function clearEvidenceOutput() {
+    elements.evidenceOutput.replaceChildren();
   }
 
   function setStatus(element, message, isError) {

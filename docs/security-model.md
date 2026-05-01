@@ -70,14 +70,15 @@ future roadmap work.
 The V1.9 portable evidence-pack boundary must not include raw provider
 payloads, credentials, API keys, environment values, raw headers, private
 uploads, PII, customer data, secret values, absolute machine-local paths, raw
-vector database internals, or arbitrary workspace files. Phase 7 validates
+vector database internals, or arbitrary workspace files. Phase 8 validates
 missing V12 governance export prerequisites, generates canonical JSON evidence
 packs from existing V12 governance exports for review, omits unsafe
 governance-index artifact references with evidence findings, packages safe V12
 domain summaries, and exposes existing pack state through token-protected
-read-only local operator API routes. Later phases must keep UI and
-release-readiness coverage inside that redaction-safe boundary and must not
-present evidence packaging as certification or formal framework readiness.
+read-only local operator API routes and packaged read-only operator UI views.
+Later phases must keep release-readiness coverage inside that redaction-safe
+boundary and must not present evidence packaging as certification or formal
+framework readiness.
 
 The V9 MCP plan narrows future MCP scope to local stdio, read-only resources,
 review prompts, policy-filtered evidence, and append-only MCP access evidence.

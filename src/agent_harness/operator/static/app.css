@@ -96,7 +96,8 @@ h2 {
 
 .token-form button,
 .run-list button.active,
-.tab.active {
+.tab.active,
+.evidence-tab.active {
   border-color: var(--accent);
   background: var(--accent);
   color: var(--accent-ink);
@@ -107,6 +108,13 @@ h2 {
   grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr);
   gap: 1rem;
   padding: 1rem;
+}
+
+.sidebar {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  min-width: 0;
 }
 
 .pane {
@@ -185,7 +193,19 @@ h2 {
   font-size: 0.84rem;
 }
 
-.detail-output pre {
+.evidence-output {
+  max-height: 24rem;
+  overflow: auto;
+  border-top: 1px solid var(--line);
+  background: #101820;
+  color: #f8fafc;
+  padding: 0.75rem;
+  font-family: "Cascadia Mono", "Segoe UI Mono", monospace;
+  font-size: 0.78rem;
+}
+
+.detail-output pre,
+.evidence-output pre {
   margin: 0;
   white-space: pre-wrap;
 }

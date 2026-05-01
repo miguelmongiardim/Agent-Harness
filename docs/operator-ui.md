@@ -89,6 +89,24 @@ These routes read existing evidence pack artifacts under the configured
 serve arbitrary files, or expose raw provider payloads, secrets, or absolute
 paths.
 
+## Implemented V1.9 Evidence UI Extension
+
+The packaged local operator UI includes a read-only Evidence Pack section. It
+uses the existing in-memory operator token, calls only local
+`/api/v1/evidence/*` routes, and renders:
+
+- Overview
+- Control Mapping
+- Artifact Index
+- Findings
+- Exported Packs
+- Release Evidence
+
+The Evidence Pack section shows missing pack and blocking finding states from
+the API. It does not generate packs, mutate evidence, use external assets,
+call remote services, add analytics, or persist evidence state in browser
+storage.
+
 The operator surface is not a new runtime. The CLI and existing runtime remain
 responsible for task execution, provider setup, template application, patch
 planning, and git commit planning.

@@ -225,7 +225,7 @@ and
 
 The planned pack depends on completed V12 governance exports:
 `governance_summary.v1`, `governance_report.v1`, `governance_index.v1`, and
-`governance_findings.v1`. Phase 7 adds evidence command discovery,
+`governance_findings.v1`. Through Phase 8 the evidence-pack track adds evidence command discovery,
 prerequisite validation for missing V12 governance exports,
 `evidence pack --format json` generation of canonical evidence pack, manifest,
 index, findings, control mapping, and checksum files, redaction-safe artifact
@@ -235,8 +235,10 @@ semantics, `evidence index` JSON output, safe V12 domain summary packaging,
 optional-domain `not_present` reporting, and malformed-domain evidence
 findings. The local operator API now exposes token-protected read-only evidence
 routes for overview, packs, pack detail, control mapping, artifact index, and
-findings. Operator UI routes and release-readiness gates remain unimplemented
-until later phases add tested behavior.
+findings. The packaged local operator UI now includes read-only Evidence Pack
+views for overview, control mapping, artifact index, findings, exported packs,
+and release evidence state. Release-readiness gates remain unimplemented until
+the next phase adds tested behavior.
 The implementation includes redaction-safe artifact indexing for portable
 review bundles.
 

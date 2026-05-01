@@ -69,6 +69,46 @@ def test_operator_ui_script_uses_only_local_api_routes(tmp_path: Path) -> None:
     assert _remote_markers(script) == []
 
 
+def test_operator_ui_exposes_read_only_evidence_pack_views(tmp_path: Path) -> None:
+    seed_project(tmp_path)
+    app = create_operator_app(
+        project_root=tmp_path,
+        token="operator-secret",
+        profile="default",
+    )
+    client = TestClient(app)
+
+    html = client.get("/").text
+    css = client.get("/operator/static/app.css").text
+    script = client.get("/operator/static/app.js").text
+    combined = "\n".join([html, css, script])
+
+    assert "Evidence Pack" in html
+    for label in [
+        "Overview",
+        "Control Mapping",
+        "Artifact Index",
+        "Findings",
+        "Exported Packs",
+        "Release Evidence",
+    ]:
+        assert label in combined
+    for route in [
+        "/api/v1/evidence/overview",
+        "/api/v1/evidence/packs",
+        "/api/v1/evidence/control-map",
+        "/api/v1/evidence/artifact-index",
+        "/api/v1/evidence/findings",
+    ]:
+        assert route in script
+    assert "/api/v1/evidence/packs/${encodeURIComponent(packId)}" in script
+    assert "renderEvidenceView" in script
+    assert "evidence-release" in script
+    assert _remote_markers(combined) == []
+    assert _evidence_mutation_markers(script) == []
+    assert _forbidden_evidence_ui_claims(combined) == []
+
+
 def test_operator_ui_approval_panel_posts_decisions_to_existing_local_api(
     tmp_path: Path,
 ) -> None:
@@ -112,3 +152,26 @@ def test_operator_static_ui_files_are_packaged() -> None:
 def _remote_markers(text: str) -> list[str]:
     lowered = text.lower()
     return [marker for marker in FORBIDDEN_REMOTE_MARKERS if marker.lower() in lowered]
+
+
+def _evidence_mutation_markers(script: str) -> list[str]:
+    markers: list[str] = []
+    for method in ["POST", "PUT", "PATCH", "DELETE"]:
+        for line in script.splitlines():
+            if "/api/v1/evidence" in line and f'method: "{method}"' in line:
+                markers.append(line.strip())
+    return markers
+
+
+def _forbidden_evidence_ui_claims(text: str) -> list[str]:
+    lowered = text.lower()
+    forbidden = [
+        "certified",
+        "certification",
+        "compliance-ready",
+        "compliant",
+        "auditor-approved",
+        "framework-ready",
+        "formal compliance",
+    ]
+    return [claim for claim in forbidden if claim in lowered]

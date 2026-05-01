@@ -7,7 +7,7 @@ The V1.9 Compliance Evidence Pack is in progress. The durable PRD lives in
 and the implementation plan lives in
 [plans/agent-harness-v1.9-compliance-evidence-pack.md](../plans/agent-harness-v1.9-compliance-evidence-pack.md).
 
-Through Phase 7, the `agent-harness evidence` CLI surface exposes `pack`,
+Through Phase 8, the `agent-harness evidence` CLI surface exposes `pack`,
 `check`, and `index` commands. `pack`, `check`, and `index` validate the
 required V12 governance export prerequisites and fail with exit code `2` when
 they are missing, without generating governance exports.
@@ -69,8 +69,15 @@ by existing evidence pack files:
 The routes require `X-Agent-Harness-Operator-Token`, read fixed evidence
 artifact filenames under the configured evidence root, reject mutation methods,
 and do not generate packs or expose raw provider payloads, secrets, absolute
-paths, or arbitrary workspace files. Operator UI views and release-readiness
-gates remain later-phase work.
+paths, or arbitrary workspace files.
+
+The packaged local operator UI includes a read-only Evidence Pack section. It
+loads only local `/api/v1/evidence/*` routes and renders overview, control
+mapping, artifact index, findings, exported packs, and release evidence state.
+The UI handles missing pack and blocking finding states, and it does not
+include evidence generation, mutation controls, remote assets, analytics, or
+browser persistence for evidence state. Release-readiness gates remain
+later-phase work.
 
 ## Planned Boundary
 
@@ -87,7 +94,7 @@ Required V12 prerequisite artifacts are:
 - `governance_index.v1`
 - `governance_findings.v1`
 
-If those exports are missing, current Phase 7 evidence commands fail clearly
+If those exports are missing, current Phase 8 evidence commands fail clearly
 and tell the user to generate V12 governance exports first.
 
 ## Claim Boundary
