@@ -28,6 +28,7 @@ from agent_harness.demos import (
 from agent_harness.docs_check import write_docs_check_report
 from agent_harness.doctor import doctor
 from agent_harness.evals import run_builtin_evals, write_eval_report
+from agent_harness.evidence import EvidenceCheckResult, EvidenceDiagnostic, run_evidence_check
 from agent_harness.exporters import export_json, export_markdown, export_sarif
 from agent_harness.governance import (
     build_governance_report,
@@ -308,6 +309,18 @@ def build_parser() -> argparse.ArgumentParser:
     governance_export = governance_sub.add_parser("export")
     governance_export.add_argument("--output", required=True)
     governance_export.set_defaults(func=cmd_governance_export)
+
+    evidence = sub.add_parser("evidence")
+    evidence_sub = evidence.add_subparsers(required=True)
+    evidence_pack = evidence_sub.add_parser("pack")
+    evidence_pack.add_argument("--output", default=".agent-harness/evidence")
+    evidence_pack.add_argument("--profile", default="default")
+    evidence_pack.add_argument("--format", choices=["bundle", "json", "markdown"], default="bundle")
+    evidence_pack.set_defaults(func=cmd_evidence_pack)
+    evidence_check = evidence_sub.add_parser("check")
+    evidence_check.set_defaults(func=cmd_evidence_check)
+    evidence_index = evidence_sub.add_parser("index")
+    evidence_index.set_defaults(func=cmd_evidence_index)
 
     mcp = sub.add_parser(
         "mcp",
@@ -821,6 +834,55 @@ def cmd_governance_export(args: argparse.Namespace) -> int:
     result = export_governance(Path.cwd(), Path(args.output))
     print(result.model_dump_json(indent=2))
     return 0
+
+
+def cmd_evidence_pack(args: argparse.Namespace) -> int:
+    del args
+    result = run_evidence_check(Path.cwd())
+    if result.exit_code != 0:
+        print(result.model_dump_json(indent=2))
+        return result.exit_code
+    result = _evidence_unavailable_result(
+        "evidence pack generation is not implemented yet; "
+        "Phase 1 only validates V12 governance export prerequisites"
+    )
+    print(result.model_dump_json(indent=2))
+    return result.exit_code
+
+
+def cmd_evidence_check(args: argparse.Namespace) -> int:
+    del args
+    result = run_evidence_check(Path.cwd())
+    print(result.model_dump_json(indent=2))
+    return result.exit_code
+
+
+def cmd_evidence_index(args: argparse.Namespace) -> int:
+    del args
+    result = run_evidence_check(Path.cwd())
+    if result.exit_code != 0:
+        print(result.model_dump_json(indent=2))
+        return result.exit_code
+    result = _evidence_unavailable_result(
+        "evidence index output is not implemented yet; "
+        "Phase 1 only validates V12 governance export prerequisites"
+    )
+    print(result.model_dump_json(indent=2))
+    return result.exit_code
+
+
+def _evidence_unavailable_result(message: str) -> EvidenceCheckResult:
+    return EvidenceCheckResult(
+        status="invalid",
+        exit_code=2,
+        diagnostics=[
+            EvidenceDiagnostic(
+                severity="error",
+                domain="evidence",
+                message=message,
+            )
+        ],
+    )
 
 
 def cmd_mcp_resources_list(args: argparse.Namespace) -> int:

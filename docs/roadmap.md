@@ -215,6 +215,26 @@ Hosted governance, enterprise governance control planes, multi-tenant admin,
 cloud deployment, compliance readiness, SOC2 readiness, ISO readiness, and
 formal certification remain future-only.
 
+## v1.9.0 In Progress
+
+V1.9 Compliance Evidence Pack planning lives in
+[docs/compliance-evidence-pack.md](compliance-evidence-pack.md),
+[docs/prd-agent-harness-v1.9-compliance-evidence-pack.md](prd-agent-harness-v1.9-compliance-evidence-pack.md),
+and
+[plans/agent-harness-v1.9-compliance-evidence-pack.md](../plans/agent-harness-v1.9-compliance-evidence-pack.md).
+
+The planned pack depends on completed V12 governance exports:
+`governance_summary.v1`, `governance_report.v1`, `governance_index.v1`, and
+`governance_findings.v1`. Phase 1 adds evidence command discovery and
+prerequisite validation for missing V12 governance exports. Pack files,
+operator API/UI routes, and release-readiness gates remain unimplemented until
+later phases add tested behavior.
+
+The planned pack packages existing governance evidence for review and audit
+preparation. It does not rebuild governance aggregation, run workflows, call
+providers, execute scanners, or create release evidence. It does not certify compliance.
+The pack is not legal, regulatory, security, or organizational certification.
+
 ## Release Maintenance Priorities
 
 - Preserve the v1.0.0 compatibility and deprecation contract.

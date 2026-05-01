@@ -342,6 +342,18 @@ only when explicitly requested. Operator API/UI and release-readiness gates
 remain future-only.
 Compliance readiness and formal certification remain future-only.
 
+V1.9 Compliance Evidence Pack planning is captured in
+[docs/compliance-evidence-pack.md](docs/compliance-evidence-pack.md),
+[docs/prd-agent-harness-v1.9-compliance-evidence-pack.md](docs/prd-agent-harness-v1.9-compliance-evidence-pack.md),
+and
+[plans/agent-harness-v1.9-compliance-evidence-pack.md](plans/agent-harness-v1.9-compliance-evidence-pack.md).
+The pack depends on completed V12 governance exports and packages existing
+evidence for review. Phase 1 adds `agent-harness evidence pack`, `check`, and
+`index` command discovery plus prerequisite validation for missing V12
+governance exports. It does not yet generate evidence-pack files, operator
+routes, UI views, or release-readiness gates, and it does not certify compliance
+with any legal, regulatory, security, or organizational framework.
+
 ## Documentation
 
 - [Architecture](docs/architecture.md)
@@ -351,6 +363,7 @@ Compliance readiness and formal certification remain future-only.
 - [Context packs and retrieval](docs/context-packs.md)
 - [Evaluation strategy](docs/evaluations.md)
 - [Provider Core](docs/provider-core.md)
+- [Compliance evidence pack](docs/compliance-evidence-pack.md)
 - [Template catalog](docs/templates.md)
 - [Template pack system](docs/template-pack-system.md)
 - [Skills system](docs/skills-system.md)
@@ -367,6 +380,7 @@ Compliance readiness and formal certification remain future-only.
 - [V11 Policy-Mediated Multi-Agent Orchestration PRD](docs/prd-agent-harness-v11.md)
 - [V11 Multi-Agent Complexity Benchmark PRD](docs/prd-agent-harness-v11-multi-agent-complexity-benchmark.md)
 - [V12 Local Governance Console PRD](docs/prd-agent-harness-v12-local-governance-console.md)
+- [V1.9 Compliance Evidence Pack PRD](docs/prd-agent-harness-v1.9-compliance-evidence-pack.md)
 - [V5 implementation plan](plans/agent-harness-v5.md)
 - [V6 implementation plan](plans/agent-harness-v6.md)
 - [V7 implementation plan](plans/agent-harness-v7.md)
@@ -375,6 +389,7 @@ Compliance readiness and formal certification remain future-only.
 - [V11 implementation plan](plans/agent-harness-v11.md)
 - [V11 multi-agent complexity benchmark plan](plans/agent-harness-v11-multi-agent-complexity-benchmark.md)
 - [V12 local governance console plan](plans/agent-harness-v12-local-governance-console.md)
+- [V1.9 compliance evidence pack plan](plans/agent-harness-v1.9-compliance-evidence-pack.md)
 - [Roadmap](docs/roadmap.md)
 
 ## License

@@ -67,6 +67,14 @@ retention profiles, retrieval redesign, Anthropic live support, compliance
 readiness, enterprise claims, and multi-tenant guarantees. Those belong in
 future roadmap work.
 
+The V1.9 portable evidence-pack boundary must not include raw provider
+payloads, credentials, API keys, environment values, raw headers, private
+uploads, PII, customer data, secret values, absolute machine-local paths, raw
+vector database internals, or arbitrary workspace files. Phase 1 only validates
+missing V12 governance export prerequisites. Later pack generation must package
+existing V12 governance exports for review and must not present that packaging
+as certification or formal framework readiness.
+
 The V9 MCP plan narrows future MCP scope to local stdio, read-only resources,
 review prompts, policy-filtered evidence, and append-only MCP access evidence.
 V11 adds read-only orchestration evidence resources for aggregate summaries,

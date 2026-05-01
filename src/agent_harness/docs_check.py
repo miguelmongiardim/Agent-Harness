@@ -29,6 +29,10 @@ ORCHESTRATION_DOC_SUBJECT_PATTERN = (
 GOVERNANCE_DOC_SUBJECT_PATTERN = (
     r"(?:Agent Harness|This repo|The current implementation|V12|The V12 implementation)"
 )
+EVIDENCE_PACK_DOC_SUBJECT_PATTERN = (
+    r"(?:Agent Harness|This repo|The current implementation|V1\.9|The V1\.9 implementation|"
+    r"The evidence pack|This evidence pack|The Compliance Evidence Pack)"
+)
 
 
 def _unsupported_doc_pattern(claim: str, *, uses_is: bool = False) -> re.Pattern[str]:
@@ -440,6 +444,55 @@ UNSUPPORTED_GOVERNANCE_SCOPE_CLAIMS = [
         _governance_scope_pattern(r"(?:formal\s+)?compliance certification"),
     ),
 ]
+
+
+def _evidence_pack_scope_pattern(claim_pattern: str) -> re.Pattern[str]:
+    return re.compile(
+        rf"\b{EVIDENCE_PACK_DOC_SUBJECT_PATTERN}\s+"
+        rf"(?:{DOC_CAPABILITY_VERB_PATTERN}\b|is\b)[^\n]*"
+        rf"\b(?:{claim_pattern})\b",
+        re.IGNORECASE,
+    )
+
+
+UNSUPPORTED_EVIDENCE_PACK_CLAIMS = [
+    (
+        "compliance-ready",
+        _evidence_pack_scope_pattern(r"compliance[-\s]ready(?:\s+evidence packs?)?"),
+    ),
+    (
+        "SOC2-ready",
+        _evidence_pack_scope_pattern(r"SOC\s*2[-\s]ready(?:\s+evidence packs?)?"),
+    ),
+    (
+        "ISO-ready",
+        _evidence_pack_scope_pattern(r"ISO(?:\s+\d+)?[-\s]ready(?:\s+evidence packs?)?"),
+    ),
+    (
+        "GDPR-compliant",
+        _evidence_pack_scope_pattern(r"GDPR[-\s]compliant(?:\s+evidence packs?)?"),
+    ),
+    (
+        "enterprise-certified",
+        _evidence_pack_scope_pattern(r"enterprise[-\s]certified(?:\s+evidence packs?)?"),
+    ),
+    (
+        "regulatory compliant",
+        _evidence_pack_scope_pattern(r"regulatory\s+compliant(?:\s+evidence packs?)?"),
+    ),
+    (
+        "auditor-approved",
+        _evidence_pack_scope_pattern(r"auditor[-\s]approved(?:\s+evidence packs?)?"),
+    ),
+    (
+        "NIST compliant",
+        _evidence_pack_scope_pattern(r"NIST\s+compliant(?:\s+evidence packs?)?"),
+    ),
+    (
+        "OWASP compliant",
+        _evidence_pack_scope_pattern(r"OWASP\s+compliant(?:\s+evidence packs?)?"),
+    ),
+]
 RETRIEVAL_ROADMAP_HEADINGS = (
     "roadmap",
     "out of scope",
@@ -455,6 +508,7 @@ MCP_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 ORCHESTRATION_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 BENCHMARK_COMPARISON_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 GOVERNANCE_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
+EVIDENCE_PACK_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 
 IMPLEMENTED_SECTION_MARKERS = (
     "## What This Repo Proves",
@@ -516,6 +570,7 @@ def run_docs_check(project_root: Path) -> dict[str, Any]:
         findings.extend(_unsupported_orchestration_scope_findings(relative, lines))
         findings.extend(_unsupported_benchmark_comparison_findings(relative, lines))
         findings.extend(_unsupported_governance_scope_findings(relative, lines))
+        findings.extend(_unsupported_evidence_pack_findings(relative, lines))
         findings.extend(_required_section_findings(relative, text))
         findings.extend(_internal_link_findings(project_root, path, relative, lines))
         findings.extend(_citation_placeholder_findings(relative, lines))
@@ -939,6 +994,51 @@ def _denies_unsupported_governance_scope(line: str, label: str) -> bool:
             rf"|\bdoes\s+not\s+(?:use|support|provide|include|ship|offer|claim)\s+{phrase}\b"
             rf"|\b{phrase}\s+remain(?:s)?\s+(?:future-only|roadmap-only)\b"
             rf"|\bwithout\s+claiming\b[^\n]*\b{phrase}\b",
+            line,
+            re.IGNORECASE,
+        )
+    )
+
+
+def _unsupported_evidence_pack_findings(
+    relative: str, lines: list[str]
+) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    in_roadmap_scope = False
+    for line_number, line in enumerate(lines, start=1):
+        heading = re.match(r"^#{1,6}\s+(.+?)\s*$", line)
+        if heading is not None:
+            heading_text = heading.group(1).lower()
+            in_roadmap_scope = any(
+                marker in heading_text for marker in EVIDENCE_PACK_ROADMAP_HEADINGS
+            )
+        if in_roadmap_scope:
+            continue
+        for label, pattern in UNSUPPORTED_EVIDENCE_PACK_CLAIMS:
+            if pattern.search(line) and not _denies_unsupported_evidence_pack_claim(line, label):
+                findings.append(
+                    _finding(
+                        "unsupported_evidence_pack_claim",
+                        relative,
+                        line_number,
+                        "Docs claim unsupported v1.9 evidence-pack compliance "
+                        f"behavior as available: {label}",
+                        line,
+                    )
+                )
+    return findings
+
+
+def _denies_unsupported_evidence_pack_claim(line: str, label: str) -> bool:
+    phrase = re.escape(label).replace(r"\ ", r"\s+")
+    return bool(
+        re.search(
+            rf"\b(?:without|no|not)\s+{phrase}\b"
+            rf"|\bdoes\s+not\s+(?:use|support|provide|include|ship|offer|claim|certify|assert)"
+            rf"\s+{phrase}\b"
+            rf"|\b{phrase}\s+remain(?:s)?\s+(?:future-only|roadmap-only)\b"
+            rf"|\bwithout\s+claiming\b[^\n]*\b{phrase}\b"
+            rf"|\b(?:reject|rejects|avoid|avoids)\b[^\n]*\b{phrase}\b",
             line,
             re.IGNORECASE,
         )

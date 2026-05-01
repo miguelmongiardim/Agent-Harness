@@ -522,6 +522,63 @@ def test_docs_check_rejects_v12_governance_compliance_claims_outside_roadmap(
     assert label in governance_claims[0]["text"]
 
 
+@pytest.mark.parametrize(
+    ("claim", "label"),
+    [
+        ("Agent Harness provides compliance-ready evidence packs.", "compliance-ready"),
+        ("Agent Harness includes SOC2-ready evidence packs.", "SOC2-ready"),
+        ("Agent Harness offers ISO-ready evidence packs.", "ISO-ready"),
+        ("Agent Harness provides GDPR-compliant evidence packs.", "GDPR-compliant"),
+        ("Agent Harness includes enterprise-certified evidence packs.", "enterprise-certified"),
+        ("Agent Harness offers regulatory compliant evidence packs.", "regulatory compliant"),
+        ("Agent Harness provides auditor-approved evidence packs.", "auditor-approved"),
+        ("Agent Harness includes NIST compliant evidence packs.", "NIST compliant"),
+        ("Agent Harness offers OWASP compliant evidence packs.", "OWASP compliant"),
+    ],
+)
+def test_docs_check_rejects_v19_evidence_pack_compliance_claims_outside_roadmap(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+    claim: str,
+    label: str,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    docs = tmp_path / "docs"
+    docs.mkdir(exist_ok=True)
+    (docs / "evidence-pack.md").write_text(
+        "\n".join(
+            [
+                "# Evidence Pack",
+                "",
+                "## Current Capabilities",
+                "",
+                claim,
+                "",
+                "## Roadmap / Not implemented yet",
+                "",
+                f"{label} evidence packs remain future-only.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["docs", "check"]) == 1
+    report = json.loads(capsys.readouterr().out)
+    evidence_claims = [
+        finding
+        for finding in report["findings"]
+        if finding["rule_id"] == "unsupported_evidence_pack_claim"
+    ]
+
+    assert evidence_claims
+    assert evidence_claims[0]["path"] == "docs/evidence-pack.md"
+    assert evidence_claims[0]["line"] == 5
+    assert label in evidence_claims[0]["text"]
+
+
 def test_ci_runs_docs_check() -> None:
     workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
     assert "python -m agent_harness docs check" in workflow
@@ -557,6 +614,50 @@ def test_v12_governance_report_and_export_scope_is_current_in_public_docs() -> N
     assert "`governance_index.v1`" in roadmap
     assert "compliance readiness, SOC2 readiness, ISO readiness" in roadmap
     assert "formal certification remain future-only." in roadmap
+
+
+def test_v19_evidence_pack_scope_is_documented_without_implemented_claims() -> None:
+    readme = Path("README.md").read_text(encoding="utf-8")
+    roadmap = Path("docs/roadmap.md").read_text(encoding="utf-8")
+    evidence_docs = Path("docs/compliance-evidence-pack.md").read_text(encoding="utf-8")
+    release_readiness = Path("docs/release-readiness.md").read_text(encoding="utf-8")
+    operator_docs = Path("docs/operator-ui.md").read_text(encoding="utf-8")
+    architecture = Path("docs/architecture.md").read_text(encoding="utf-8")
+    security_model = Path("docs/security-model.md").read_text(encoding="utf-8")
+
+    prd_link = "docs/prd-agent-harness-v1.9-compliance-evidence-pack.md"
+    plan_link = "plans/agent-harness-v1.9-compliance-evidence-pack.md"
+
+    assert prd_link in readme
+    assert plan_link in readme
+    assert "V1.9 Compliance Evidence Pack" in readme
+    assert "planned" in readme
+    assert "does not certify compliance" in readme
+
+    assert "v1.9.0 In Progress" in roadmap
+    assert "prd-agent-harness-v1.9-compliance-evidence-pack.md" in roadmap
+    assert "agent-harness-v1.9-compliance-evidence-pack.md" in roadmap
+    assert "depends on completed V12 governance exports" in roadmap
+    assert "Phase 1 adds evidence command discovery" in roadmap
+    assert "does not certify compliance" in roadmap
+
+    assert "governance_summary.v1" in evidence_docs
+    assert "governance_report.v1" in evidence_docs
+    assert "governance_index.v1" in evidence_docs
+    assert "governance_findings.v1" in evidence_docs
+    assert "This evidence pack supports review and audit preparation." in evidence_docs
+    assert "does not certify compliance" in evidence_docs
+    assert "`agent-harness evidence` CLI surface" in evidence_docs
+    assert "fail with exit code `2`" in evidence_docs
+    assert "without generating evidence-pack files or governance exports" in evidence_docs
+
+    assert "Release readiness does not generate evidence packs" in release_readiness
+    assert "operator evidence routes remain future-only" in operator_docs
+    assert (
+        "`agent_harness.evidence` owns the V1.9 Compliance Evidence Pack boundary"
+        in architecture
+    )
+    assert "portable evidence-pack boundary must not include raw provider" in security_model
 
 
 def test_docs_check_rejects_stale_v3_scope_for_agent_harness_repo(

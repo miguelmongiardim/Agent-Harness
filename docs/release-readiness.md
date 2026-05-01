@@ -207,6 +207,17 @@ orchestration, nested orchestration, or MCP execution for multi-agent
 orchestration. Operator UI support and enterprise governance remain
 future-only.
 
+## Future Evidence Pack Gate
+
+The V1.9 Compliance Evidence Pack is planned as a later release-readiness input.
+Phase 1 evidence commands only validate missing V12 governance export
+prerequisites. Release readiness does not generate evidence packs, and it may
+only validate an existing pack once pack generation is implemented.
+
+Until that phase exists, release readiness must not claim evidence-pack gates,
+control mapping, certification, auditor approval, or formal framework
+readiness.
+
 ## Release Checklist
 
 Before tagging the current release:

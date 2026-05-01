@@ -97,6 +97,8 @@ These remain outside the V6 local operator scope:
 - config, task, policy, provider, or template editing from the API or UI
 - direct patch, commit, or provider execution from the API or UI
 - arbitrary filesystem browsing
+- operator evidence routes remain future-only until later V1.9 evidence-pack
+  API phases are implemented and tested
 
 ## Safety Boundaries
 
