@@ -360,15 +360,32 @@ assertions of compliance.
 
 ### Acceptance criteria
 
-- [ ] `control_mapping.v1.json` is generated.
-- [ ] `control_mapping.v1.md` is generated for Markdown-including formats.
-- [ ] Coverage statuses are limited to `covered`, `partially_covered`,
+- [x] `control_mapping.v1.json` is generated.
+- [x] `control_mapping.v1.md` is generated for Markdown-including formats.
+- [x] Coverage statuses are limited to `covered`, `partially_covered`,
       `not_covered`, `not_applicable`, and `roadmap_only`.
-- [ ] Control mappings reference safe evidence refs only.
-- [ ] Mapping output includes limitations.
-- [ ] Mapping output includes the non-certification disclaimer.
-- [ ] Docs check covers forbidden implemented wording for compliance and
+- [x] Control mappings reference safe evidence refs only.
+- [x] Mapping output includes limitations.
+- [x] Mapping output includes the non-certification disclaimer.
+- [x] Docs check covers forbidden implemented wording for compliance and
       framework claims.
+
+### Phase 4 implementation notes
+
+- Added `control_mapping.v1` contracts with deterministic review-theme entries,
+  limited coverage statuses, source domains, safe evidence refs, limitations,
+  and the non-certification disclaimer.
+- `agent-harness evidence pack` now writes `control_mapping.v1.json` as part
+  of the canonical JSON artifact set.
+- Bundle output also writes `control_mapping.v1.md` as review-only Markdown
+  presentation generated from the canonical mapping.
+- Mappings are derived from packaged domain summaries and included safe
+  evidence refs; unsafe governance-index refs remain omitted through Phase 3
+  findings instead of appearing in mapping output.
+- Scope stayed Phase 4-only: no full Markdown pack presentation, archive
+  creation, operator routes, UI views, release-readiness gate, framework
+  certification, auditor workflow, signed attestation, or policy change was
+  added.
 
 ### Out of scope
 

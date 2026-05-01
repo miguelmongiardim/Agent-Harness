@@ -14,6 +14,13 @@ EvidenceExportStatus = Literal["passed", "failed", "invalid", "internal_error"]
 EvidenceRedactionStatus = Literal["safe", "redacted", "metadata_only", "excluded_raw", "unknown"]
 EvidenceInclusionStatus = Literal["included", "excluded", "missing", "malformed"]
 EvidenceClaimStatus = Literal["non_certifying"]
+EvidenceControlCoverageStatus = Literal[
+    "covered",
+    "partially_covered",
+    "not_covered",
+    "not_applicable",
+    "roadmap_only",
+]
 EvidenceFindingSeverity = Literal["critical", "high", "medium", "low", "info"]
 EvidenceDomainStatus = Literal[
     "present",
@@ -130,6 +137,25 @@ class EvidenceFindingsExport(StrictModel):
     generated_at: datetime = Field(default_factory=now_utc)
     counts: EvidenceFindingCounts = Field(default_factory=EvidenceFindingCounts)
     findings: list[EvidenceFinding] = Field(default_factory=list)
+
+
+class ControlMappingEntry(StrictModel):
+    theme_id: str
+    title: str
+    coverage_status: EvidenceControlCoverageStatus
+    source_domains: list[str] = Field(default_factory=list)
+    evidence_refs: list[str] = Field(default_factory=list)
+    summary: str = ""
+    limitations: list[str] = Field(default_factory=list)
+
+
+class ControlMapping(StrictModel):
+    schema_version: Literal["control_mapping.v1"] = "control_mapping.v1"
+    pack_id: str
+    generated_at: datetime = Field(default_factory=now_utc)
+    disclaimer: str = NON_CERTIFICATION_DISCLAIMER
+    limitations: list[str] = Field(default_factory=list)
+    mappings: list[ControlMappingEntry] = Field(default_factory=list)
 
 
 class EvidenceExportResult(StrictModel):

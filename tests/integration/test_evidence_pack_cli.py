@@ -7,6 +7,7 @@ import pytest
 
 from agent_harness.cli import main
 from agent_harness.evidence.schema import (
+    ControlMapping,
     EvidenceFindingsExport,
     EvidenceIndex,
     EvidenceManifest,
@@ -197,6 +198,7 @@ def test_evidence_pack_writes_minimal_canonical_json_from_v12_governance_exports
         ".agent-harness/evidence/evidence_manifest.v1.json",
         ".agent-harness/evidence/evidence_index.v1.json",
         ".agent-harness/evidence/evidence_findings.v1.json",
+        ".agent-harness/evidence/control_mapping.v1.json",
         ".agent-harness/evidence/checksums.sha256",
     ]
 
@@ -229,6 +231,7 @@ def test_evidence_pack_writes_minimal_canonical_json_from_v12_governance_exports
     assert manifest.pack_id == pack.pack_id
     assert index.pack_id == pack.pack_id
     assert findings.pack_id == pack.pack_id
+    assert (evidence_root / "control_mapping.v1.json").exists()
     assert not (evidence_root / "evidence_pack.v1.md").exists()
     assert not (evidence_root / "control_mapping.v1.md").exists()
 
@@ -237,6 +240,7 @@ def test_evidence_pack_writes_minimal_canonical_json_from_v12_governance_exports
     assert all(len(line.split("  ", 1)[0]) == 64 for line in checksum_lines)
     assert checksum_paths == sorted(checksum_paths)
     assert checksum_paths == [
+        "control_mapping.v1.json",
         "evidence_findings.v1.json",
         "evidence_index.v1.json",
         "evidence_manifest.v1.json",
@@ -530,6 +534,139 @@ def test_evidence_pack_reports_absent_optional_domains_as_not_present(
         }
 
 
+def test_evidence_pack_bundle_writes_review_only_control_mapping(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-01-01T00:00:00Z")
+    seed_project(tmp_path)
+    _write_governance_exports(tmp_path, missing_filename="")
+
+    run_dir = tmp_path / ".agent-harness" / "runs" / "run-control-map"
+    run_dir.mkdir(parents=True)
+    safe_summary = run_dir / "summary.json"
+    safe_summary_ref = ".agent-harness/runs/run-control-map/summary.json"
+    safe_summary.write_text(
+        json.dumps(
+            {
+                "schema_version": "summary.v1",
+                "run_id": "run-control-map",
+                "task_id": "control-map",
+                "status": "completed",
+                "events_count": 1,
+                "approvals": [],
+                "artifacts": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    _write_governance_summary_domains(
+        tmp_path,
+        {
+            "approvals": {
+                "status": "present",
+                "message": "approval evidence is available for review",
+                "evidence_refs": [safe_summary_ref],
+            },
+            "provider": {
+                "status": "not_present",
+                "message": "provider evidence was not generated for this fixture",
+                "evidence_refs": [],
+            },
+            "docs_claim": {
+                "status": "present",
+                "message": "documentation claim checks are available for review",
+                "evidence_refs": [".agent-harness/governance/governance_report.v1.json"],
+            },
+        },
+    )
+    _write_governance_index(
+        tmp_path,
+        [
+            {
+                "artifact_type": "run_summary",
+                "path": safe_summary_ref,
+                "content_hash": "stale-hash",
+                "source_run_id": "run-control-map",
+                "schema_version": "summary.v1",
+                "redaction_status": "safe",
+                "inclusion_status": "included",
+            },
+            {
+                "artifact_type": "provider_calls",
+                "path": str(tmp_path / "absolute-provider.json"),
+                "content_hash": "unsafe-absolute-hash",
+                "schema_version": "provider_calls.v1",
+                "redaction_status": "metadata_only",
+                "inclusion_status": "included",
+            },
+        ],
+    )
+
+    assert main(["evidence", "pack", "--output", ".agent-harness/evidence"]) == 0
+    result = json.loads(capsys.readouterr().out)
+    evidence_root = tmp_path / ".agent-harness" / "evidence"
+
+    assert ".agent-harness/evidence/control_mapping.v1.json" in result["files"]
+    assert ".agent-harness/evidence/control_mapping.v1.md" in result["files"]
+
+    control_mapping = ControlMapping.model_validate_json(
+        (evidence_root / "control_mapping.v1.json").read_text(encoding="utf-8")
+    )
+    markdown = (evidence_root / "control_mapping.v1.md").read_text(encoding="utf-8")
+    serialized_outputs = "\n".join(
+        path.read_text(encoding="utf-8") for path in sorted(evidence_root.glob("*"))
+    )
+
+    control_mapping_payload = control_mapping.model_dump(mode="json")
+    assert control_mapping.schema_version == "control_mapping.v1"
+    assert control_mapping.disclaimer.startswith(
+        "This evidence pack supports review and audit preparation."
+    )
+    assert "This evidence pack supports review and audit preparation." in markdown
+    assert control_mapping.limitations
+    assert "review only" in " ".join(control_mapping.limitations).lower()
+
+    mappings = {entry["theme_id"]: entry for entry in control_mapping_payload["mappings"]}
+    assert mappings["approval_governance"]["coverage_status"] == "covered"
+    assert mappings["provider_governance"]["coverage_status"] == "not_covered"
+    assert mappings["documentation_claim_control"]["coverage_status"] == "covered"
+    assert mappings["approval_governance"]["evidence_refs"] == [safe_summary_ref]
+    assert set(mappings) >= {
+        "ai_risk_governance",
+        "secure_software_development",
+        "data_classification",
+        "provider_governance",
+        "approval_governance",
+        "retrieval_provenance",
+        "supply_chain_evidence",
+        "documentation_claim_control",
+        "release_readiness",
+    }
+    assert {
+        entry["coverage_status"] for entry in control_mapping_payload["mappings"]
+        } <= {"covered", "partially_covered", "not_covered", "not_applicable", "roadmap_only"}
+    assert all(
+        not Path(ref).is_absolute() and ".." not in Path(ref).parts
+        for entry in control_mapping_payload["mappings"]
+        for ref in entry["evidence_refs"]
+    )
+    assert str(tmp_path) not in serialized_outputs
+    assert str(tmp_path / "absolute-provider.json") not in serialized_outputs
+    assert "framework-compliant" not in serialized_outputs.lower()
+    assert "auditor-approved" not in serialized_outputs.lower()
+    assert "certified evidence" not in serialized_outputs.lower()
+
+    checksum_paths = [
+        line.split("  ", 1)[1]
+        for line in (evidence_root / "checksums.sha256").read_text(encoding="utf-8").splitlines()
+    ]
+    assert "control_mapping.v1.json" in checksum_paths
+    assert "control_mapping.v1.md" in checksum_paths
+
+
 def _write_governance_exports(root: Path, *, missing_filename: str) -> None:
     governance_dir = root / ".agent-harness" / "governance"
     governance_dir.mkdir(parents=True)
@@ -544,6 +681,13 @@ def _write_governance_index(root: Path, entries: list[dict[str, object]]) -> Non
         json.dumps({"schema_version": "governance_index.v1", "entries": entries}),
         encoding="utf-8",
     )
+
+
+def _write_governance_summary_domains(root: Path, domains: dict[str, object]) -> None:
+    summary_path = root / ".agent-harness" / "governance" / "governance_summary.v1.json"
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    summary["domains"] = domains
+    summary_path.write_text(json.dumps(summary), encoding="utf-8")
 
 
 def _sha256_file(path: Path) -> str:

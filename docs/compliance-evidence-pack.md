@@ -7,7 +7,7 @@ The V1.9 Compliance Evidence Pack is in progress. The durable PRD lives in
 and the implementation plan lives in
 [plans/agent-harness-v1.9-compliance-evidence-pack.md](../plans/agent-harness-v1.9-compliance-evidence-pack.md).
 
-Through Phase 3, the `agent-harness evidence` CLI surface exposes `pack`,
+Through Phase 4, the `agent-harness evidence` CLI surface exposes `pack`,
 `check`, and `index` commands. `pack` and `check` validate the required V12
 governance export prerequisites and fail with exit code `2` when they are
 missing, without generating governance exports.
@@ -20,6 +20,7 @@ directory:
 - `evidence_manifest.v1.json`
 - `evidence_index.v1.json`
 - `evidence_findings.v1.json`
+- `control_mapping.v1.json`
 - `checksums.sha256`
 
 Phase 3 redaction-filters artifact references from `governance_index.v1`.
@@ -30,8 +31,12 @@ and raw vector database internals are omitted with evidence findings instead
 of being copied into pack contents. Optional absent evidence domains are
 recorded as `not_present`.
 
-Markdown presentation, archive creation, full control mapping, operator routes,
-UI views, and release-readiness gates remain later-phase work.
+The default bundle format also writes `control_mapping.v1.md` as a Markdown
+presentation of the same review-only mapping. The mapping uses internal review
+themes, safe evidence refs, limited coverage statuses, limitations, and the
+non-certification disclaimer. Full Markdown pack presentation, archive
+creation, operator routes, UI views, and release-readiness gates remain
+later-phase work.
 
 ## Planned Boundary
 
@@ -48,7 +53,7 @@ Required V12 prerequisite artifacts are:
 - `governance_index.v1`
 - `governance_findings.v1`
 
-If those exports are missing, current Phase 3 evidence commands fail clearly
+If those exports are missing, current Phase 4 evidence commands fail clearly
 and tell the user to generate V12 governance exports first.
 
 ## Claim Boundary

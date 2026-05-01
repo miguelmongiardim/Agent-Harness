@@ -8,6 +8,9 @@ from agent_harness import __version__
 from agent_harness.config import load_config
 from agent_harness.evidence.checks import REQUIRED_GOVERNANCE_EXPORTS
 from agent_harness.evidence.schema import (
+    ControlMapping,
+    ControlMappingEntry,
+    EvidenceControlCoverageStatus,
     EvidenceDomainStatus,
     EvidenceDomainSummary,
     EvidenceExportResult,
@@ -33,6 +36,26 @@ from agent_harness.utils import (
 )
 
 EvidencePackFormat = Literal["bundle", "json", "markdown"]
+CONTROL_MAPPING_LIMITATIONS = [
+    "This mapping is review only and is generated from packaged evidence references.",
+    "Coverage statuses describe available evidence, not control effectiveness or audit results.",
+    "Formal certification, legal determinations, and framework conformance remain out of scope.",
+]
+CONTROL_THEME_DEFINITIONS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
+    ("ai_risk_governance", "AI Risk Governance", ("governance", "multi_agent")),
+    (
+        "secure_software_development",
+        "Secure Software Development",
+        ("security", "policy", "supply_chain"),
+    ),
+    ("data_classification", "Data Classification", ("policy", "provider", "retrieval")),
+    ("provider_governance", "Provider Governance", ("provider",)),
+    ("approval_governance", "Approval Governance", ("approvals",)),
+    ("retrieval_provenance", "Retrieval Provenance", ("retrieval",)),
+    ("supply_chain_evidence", "Supply Chain Evidence", ("supply_chain",)),
+    ("documentation_claim_control", "Documentation Claim Control", ("docs_claim",)),
+    ("release_readiness", "Release Readiness", ("release_readiness",)),
+)
 EVIDENCE_DOMAINS = (
     "governance",
     "policy",
@@ -68,7 +91,6 @@ def build_evidence_pack(
     profile: str,
     format: EvidencePackFormat,
 ) -> EvidenceExportResult:
-    del format
     root = project_root.resolve()
     config = load_config(root)
     artifact_root = normalize_relative_path(config.artifact_root)
@@ -128,6 +150,8 @@ def build_evidence_pack(
         counts=_finding_counts(evidence_findings),
         findings=evidence_findings,
     )
+    control_mapping = _control_mapping(pack, index)
+    include_markdown = format in {"bundle", "markdown"}
     manifest = EvidenceManifest(
         pack_id=pack_id,
         generated_at=generated_at,
@@ -145,23 +169,42 @@ def build_evidence_pack(
                 path="evidence_findings.v1.json",
                 schema_version=findings_export.schema_version,
             ),
+            EvidenceManifestFile(
+                path="control_mapping.v1.json",
+                schema_version=control_mapping.schema_version,
+            ),
         ],
     )
+    if include_markdown:
+        manifest.files.append(
+            EvidenceManifestFile(
+                path="control_mapping.v1.md",
+                schema_version=control_mapping.schema_version,
+            )
+        )
 
-    exported = {
+    exported: dict[str, object] = {
         "evidence_pack.v1.json": pack.model_dump(mode="json"),
         "evidence_manifest.v1.json": manifest.model_dump(mode="json"),
         "evidence_index.v1.json": index.model_dump(mode="json"),
         "evidence_findings.v1.json": findings_export.model_dump(mode="json"),
+        "control_mapping.v1.json": control_mapping.model_dump(mode="json"),
     }
     export_order = [
         "evidence_pack.v1.json",
         "evidence_manifest.v1.json",
         "evidence_index.v1.json",
         "evidence_findings.v1.json",
+        "control_mapping.v1.json",
     ]
+    if include_markdown:
+        exported["control_mapping.v1.md"] = _render_control_mapping_markdown(control_mapping)
+        export_order.append("control_mapping.v1.md")
     for filename, payload in exported.items():
-        write_json(output_dir / filename, payload)
+        if filename.endswith(".json"):
+            write_json(output_dir / filename, payload)
+        else:
+            (output_dir / filename).write_text(str(payload), encoding="utf-8")
     _write_checksums(output_dir, sorted(export_order))
 
     files = [_display_path(root, output_dir / filename) for filename in export_order]
@@ -173,6 +216,110 @@ def build_evidence_pack(
         output_path=_display_path(root, output_dir),
         files=files,
     )
+
+
+def _control_mapping(pack: EvidencePack, index: EvidenceIndex) -> ControlMapping:
+    included_refs = {
+        entry.path for entry in index.entries if entry.inclusion_status == "included"
+    } | set(pack.governance_references)
+    mappings: list[ControlMappingEntry] = []
+    for theme_id, title, source_domains in CONTROL_THEME_DEFINITIONS:
+        domain_summaries = [pack.domains[domain] for domain in source_domains]
+        evidence_refs = sorted(
+            {
+                ref
+                for summary in domain_summaries
+                for ref in summary.evidence_refs
+                if ref in included_refs
+            }
+        )
+        coverage_status = _control_mapping_coverage(domain_summaries, evidence_refs)
+        mappings.append(
+            ControlMappingEntry(
+                theme_id=theme_id,
+                title=title,
+                coverage_status=coverage_status,
+                source_domains=list(source_domains),
+                evidence_refs=evidence_refs,
+                summary=_control_mapping_summary(title, coverage_status, source_domains),
+                limitations=[
+                    "Mapped evidence is suitable for review framing only.",
+                    (
+                        "The mapping does not assert control effectiveness, "
+                        "audit pass/fail status, or certification."
+                    ),
+                ],
+            )
+        )
+    return ControlMapping(
+        pack_id=pack.pack_id,
+        generated_at=pack.generated_at,
+        limitations=CONTROL_MAPPING_LIMITATIONS,
+        mappings=mappings,
+    )
+
+
+def _control_mapping_coverage(
+    domain_summaries: list[EvidenceDomainSummary],
+    evidence_refs: list[str],
+) -> EvidenceControlCoverageStatus:
+    statuses = [summary.status for summary in domain_summaries]
+    if statuses and all(status == "roadmap_only" for status in statuses):
+        return "roadmap_only"
+    if not statuses or all(status == "not_present" for status in statuses):
+        return "not_covered"
+    if not evidence_refs:
+        return "partially_covered"
+    if all(status == "present" for status in statuses):
+        return "covered"
+    return "partially_covered"
+
+
+def _control_mapping_summary(
+    title: str,
+    coverage_status: EvidenceControlCoverageStatus,
+    source_domains: tuple[str, ...],
+) -> str:
+    domains = ", ".join(source_domains)
+    return (
+        f"{title} is {coverage_status.replace('_', ' ')} for review based on "
+        f"the packaged {domains} evidence domains."
+    )
+
+
+def _render_control_mapping_markdown(mapping: ControlMapping) -> str:
+    lines = [
+        "# Control Mapping",
+        "",
+        mapping.disclaimer,
+        "",
+        "## Limitations",
+        "",
+    ]
+    for limitation in mapping.limitations:
+        lines.append(f"- {limitation}")
+    lines.extend(["", "## Review Themes", ""])
+    for entry in mapping.mappings:
+        lines.extend(
+            [
+                f"### {entry.title}",
+                "",
+                f"- Theme id: `{entry.theme_id}`",
+                f"- Coverage status: `{entry.coverage_status}`",
+                "- Source domains: "
+                + ", ".join(f"`{domain}`" for domain in entry.source_domains),
+                f"- Summary: {entry.summary}",
+                "- Evidence refs:",
+            ]
+        )
+        if entry.evidence_refs:
+            lines.extend(f"  - `{ref}`" for ref in entry.evidence_refs)
+        else:
+            lines.append("  - None")
+        lines.append("- Limitations:")
+        lines.extend(f"  - {limitation}" for limitation in entry.limitations)
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
 
 
 def _governance_files(root: Path, governance_dir: Path) -> list[tuple[str, Path, str]]:

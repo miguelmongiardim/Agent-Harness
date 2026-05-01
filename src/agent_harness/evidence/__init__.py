@@ -7,6 +7,8 @@ from agent_harness.evidence.checks import (
 )
 from agent_harness.evidence.pack import build_evidence_pack
 from agent_harness.evidence.schema import (
+    ControlMapping,
+    ControlMappingEntry,
     EvidenceCheckResult,
     EvidenceDiagnostic,
     EvidenceExportResult,
@@ -18,6 +20,8 @@ from agent_harness.evidence.schema import (
 
 __all__ = [
     "REQUIRED_GOVERNANCE_EXPORTS",
+    "ControlMapping",
+    "ControlMappingEntry",
     "EvidenceCheckResult",
     "EvidenceDiagnostic",
     "EvidenceExportResult",
