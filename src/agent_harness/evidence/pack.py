@@ -1,20 +1,26 @@
 from __future__ import annotations
 
-from pathlib import Path
+import re
+from pathlib import Path, PureWindowsPath
 from typing import Literal
 
 from agent_harness import __version__
 from agent_harness.config import load_config
 from agent_harness.evidence.checks import REQUIRED_GOVERNANCE_EXPORTS
 from agent_harness.evidence.schema import (
+    EvidenceDomainStatus,
+    EvidenceDomainSummary,
     EvidenceExportResult,
+    EvidenceFinding,
     EvidenceFindingCounts,
+    EvidenceFindingSeverity,
     EvidenceFindingsExport,
     EvidenceIndex,
     EvidenceIndexEntry,
     EvidenceManifest,
     EvidenceManifestFile,
     EvidencePack,
+    EvidenceRedactionStatus,
     EvidenceWorkspaceIdentity,
 )
 from agent_harness.utils import (
@@ -27,6 +33,32 @@ from agent_harness.utils import (
 )
 
 EvidencePackFormat = Literal["bundle", "json", "markdown"]
+EVIDENCE_DOMAINS = (
+    "governance",
+    "policy",
+    "approvals",
+    "provider",
+    "retrieval",
+    "templates",
+    "skills",
+    "mcp",
+    "multi_agent",
+    "supply_chain",
+    "security",
+    "docs_claim",
+    "release_readiness",
+)
+_PRIVATE_UPLOAD_REFERENCE = re.compile(
+    r"(?i)(?:/mnt/data/|sandbox:/mnt/data|uploaded file|file-[A-Za-z0-9]{8,})"
+)
+_CREDENTIAL_LIKE_REFERENCE = re.compile(
+    r"(?i)(?:[A-Z0-9_]*(?:API[_-]?KEY|TOKEN|SECRET|PASSWORD)[A-Z0-9_]*\s*[:=]|"
+    r"sk-(?:live|test)-|OPENAI_API_KEY|ANTHROPIC_API_KEY)"
+)
+_RAW_VECTOR_DB_REFERENCE = re.compile(
+    r"(?i)(?:qdrant.*(?:raw|collection|point|snapshot|storage)|"
+    r"(?:raw|vector)[-_]?(?:vector|embedding|db|database|collection|point))"
+)
 
 
 def build_evidence_pack(
@@ -48,7 +80,7 @@ def build_evidence_pack(
     governance_files = _governance_files(root, governance_dir)
     governance_hashes = {reference: hash_file(path) for reference, path, _ in governance_files}
     summary = load_json(governance_dir / "governance_summary.v1.json")
-    findings = load_json(governance_dir / "governance_findings.v1.json")
+    governance_index = load_json(governance_dir / "governance_index.v1.json")
     workspace = _workspace_identity(summary, artifact_root)
     pack_id = stable_id(
         "evidence-pack",
@@ -58,6 +90,11 @@ def build_evidence_pack(
         governance_hashes,
         generated_at.isoformat(),
     )
+    source_index_entries, evidence_findings = _source_index_entries(
+        root,
+        governance_index,
+        _display_path(root, governance_dir / "governance_index.v1.json"),
+    )
 
     pack = EvidencePack(
         pack_id=pack_id,
@@ -65,6 +102,7 @@ def build_evidence_pack(
         profile=profile,
         agent_harness_version=__version__,
         workspace=workspace,
+        domains=_domain_summaries(root, summary),
         governance_references=list(governance_hashes),
         governance_hashes=governance_hashes,
     )
@@ -81,15 +119,14 @@ def build_evidence_pack(
                 inclusion_status="included",
             )
             for reference, _, schema_version in governance_files
-        ],
+        ]
+        + source_index_entries,
     )
     findings_export = EvidenceFindingsExport(
         pack_id=pack_id,
         generated_at=generated_at,
-        counts=EvidenceFindingCounts.model_validate(
-            findings.get("counts", {"total": 0, "by_severity": {}})
-        ),
-        findings=[],
+        counts=_finding_counts(evidence_findings),
+        findings=evidence_findings,
     )
     manifest = EvidenceManifest(
         pack_id=pack_id,
@@ -145,6 +182,249 @@ def _governance_files(root: Path, governance_dir: Path) -> list[tuple[str, Path,
     ]
 
 
+def _source_index_entries(
+    root: Path,
+    governance_index: object,
+    governance_index_reference: str,
+) -> tuple[list[EvidenceIndexEntry], list[EvidenceFinding]]:
+    if not isinstance(governance_index, dict):
+        return (
+            [],
+            [
+                _finding(
+                    source="malformed_governance_index",
+                    message="Governance index is malformed and cannot be packaged safely.",
+                    artifact_reference=governance_index_reference,
+                    omission_reason="malformed_governance_index",
+                    recommendation="Regenerate V12 governance exports before packaging evidence.",
+                )
+            ],
+        )
+    raw_entries = governance_index.get("entries", [])
+    if not isinstance(raw_entries, list):
+        return (
+            [],
+            [
+                _finding(
+                    source="malformed_governance_index",
+                    message="Governance index entries are malformed and cannot be packaged safely.",
+                    artifact_reference=governance_index_reference,
+                    omission_reason="malformed_governance_index",
+                    recommendation="Regenerate V12 governance exports before packaging evidence.",
+                )
+            ],
+        )
+
+    entries: list[EvidenceIndexEntry] = []
+    findings: list[EvidenceFinding] = []
+    seen_paths: set[str] = set()
+    for raw_entry in raw_entries:
+        if not isinstance(raw_entry, dict):
+            findings.append(
+                _finding(
+                    source="malformed_governance_index_entry",
+                    message="Governance index entry is malformed and was omitted.",
+                    artifact_reference=governance_index_reference,
+                    omission_reason="malformed_governance_index_entry",
+                    recommendation="Regenerate V12 governance exports before packaging evidence.",
+                )
+            )
+            continue
+        entry, finding = _source_index_entry(root, raw_entry, governance_index_reference)
+        if finding is not None:
+            findings.append(finding)
+            continue
+        if entry is None or entry.path in seen_paths:
+            continue
+        seen_paths.add(entry.path)
+        entries.append(entry)
+    return sorted(entries, key=lambda entry: (entry.path, entry.artifact_type)), findings
+
+
+def _source_index_entry(
+    root: Path,
+    raw_entry: dict[object, object],
+    governance_index_reference: str,
+) -> tuple[EvidenceIndexEntry | None, EvidenceFinding | None]:
+    artifact_type = _safe_string(raw_entry.get("artifact_type"), "unknown")
+    reference = raw_entry.get("path")
+    if not isinstance(reference, str) or not reference.strip():
+        return None, _finding(
+            source="malformed_artifact_reference",
+            message="Governance index entry does not contain a usable artifact reference.",
+            artifact_reference=governance_index_reference,
+            omission_reason="malformed_artifact_reference",
+            recommendation="Regenerate V12 governance exports with normalized artifact references.",
+        )
+    if _is_private_upload_reference(reference):
+        return None, _finding(
+            source="private_upload_reference",
+            message="Private uploaded-file artifact reference was omitted from the evidence pack.",
+            artifact_reference=governance_index_reference,
+            omission_reason="private_upload_reference",
+            recommendation="Replace private upload references with safe project-relative evidence.",
+        )
+    if _is_credential_like_reference(raw_entry, reference):
+        return None, _finding(
+            source="credential_like_artifact_reference",
+            message="Credential-like artifact reference was omitted from the evidence pack.",
+            artifact_reference=governance_index_reference,
+            omission_reason="credential_like_artifact_reference",
+            recommendation="Replace credential-like references with metadata-only evidence.",
+        )
+    if _is_raw_vector_db_reference(raw_entry, reference):
+        return None, _finding(
+            source="raw_vector_db_internal",
+            message="Raw vector database internal artifact was omitted from the evidence pack.",
+            artifact_reference=governance_index_reference,
+            omission_reason="raw_vector_db_internal",
+            recommendation="Retain retrieval provenance summaries instead of raw vector internals.",
+        )
+    if _is_raw_provider_payload(raw_entry):
+        return None, _finding(
+            source="raw_provider_payload",
+            message="Raw provider payload artifact was omitted from the evidence pack.",
+            artifact_reference=_safe_artifact_reference(root, reference)
+            or governance_index_reference,
+            omission_reason="raw_provider_payload",
+            recommendation="Retain redacted provider evidence instead of raw provider payloads.",
+        )
+
+    normalized = _safe_artifact_reference(root, reference)
+    if normalized is None:
+        source = (
+            "absolute_artifact_reference"
+            if _is_absolute_reference(reference)
+            else "path_traversal_artifact_reference"
+        )
+        reason = "absolute_path" if source == "absolute_artifact_reference" else "path_traversal"
+        return None, _finding(
+            source=source,
+            message="Unsafe artifact reference was omitted from the evidence pack.",
+            artifact_reference=governance_index_reference,
+            omission_reason=reason,
+            recommendation="Regenerate governance exports with normalized project-relative paths.",
+        )
+
+    path = root / normalized
+    if not path.exists() or not path.is_file():
+        return None, _finding(
+            source="missing_artifact_reference",
+            message="Referenced artifact was absent and was omitted from the evidence pack.",
+            artifact_reference=normalized,
+            omission_reason="missing_artifact",
+            recommendation="Regenerate governance exports after producing the referenced artifact.",
+        )
+
+    return (
+        EvidenceIndexEntry(
+            artifact_type=artifact_type,
+            path=normalized,
+            content_hash=hash_file(path),
+            schema_version=_optional_string(raw_entry.get("schema_version")),
+            redaction_status=_redaction_status(raw_entry.get("redaction_status")),
+            inclusion_status="included",
+        ),
+        None,
+    )
+
+
+def _is_raw_provider_payload(raw_entry: dict[object, object]) -> bool:
+    return (
+        raw_entry.get("artifact_type") == "raw_provider_payload"
+        or raw_entry.get("redaction_status") == "excluded_raw"
+        or raw_entry.get("inclusion_status") == "excluded"
+        and "provider" in _safe_string(raw_entry.get("artifact_type"), "")
+    )
+
+
+def _is_private_upload_reference(reference: str) -> bool:
+    return bool(_PRIVATE_UPLOAD_REFERENCE.search(reference))
+
+
+def _is_credential_like_reference(raw_entry: dict[object, object], reference: str) -> bool:
+    artifact_type = _safe_string(raw_entry.get("artifact_type"), "")
+    return bool(_CREDENTIAL_LIKE_REFERENCE.search(reference)) or "credential" in artifact_type
+
+
+def _is_raw_vector_db_reference(raw_entry: dict[object, object], reference: str) -> bool:
+    artifact_type = _safe_string(raw_entry.get("artifact_type"), "")
+    return bool(_RAW_VECTOR_DB_REFERENCE.search(artifact_type)) or bool(
+        _RAW_VECTOR_DB_REFERENCE.search(reference)
+    )
+
+
+def _safe_artifact_reference(root: Path, reference: str) -> str | None:
+    try:
+        if _is_absolute_reference(reference):
+            return None
+        normalized = normalize_relative_path(reference)
+        (root / normalized).resolve().relative_to(root)
+    except ValueError:
+        return None
+    return normalized
+
+
+def _is_absolute_reference(reference: str) -> bool:
+    return PureWindowsPath(reference).is_absolute() or reference.startswith("/")
+
+
+def _safe_string(value: object, fallback: str) -> str:
+    return value if isinstance(value, str) and value else fallback
+
+
+def _optional_string(value: object) -> str | None:
+    return value if isinstance(value, str) and value else None
+
+
+def _redaction_status(value: object) -> EvidenceRedactionStatus:
+    if value in {"safe", "redacted", "metadata_only", "excluded_raw", "unknown"}:
+        return value  # type: ignore[return-value]
+    return "unknown"
+
+
+def _finding(
+    *,
+    source: str,
+    message: str,
+    artifact_reference: str | None,
+    omission_reason: str,
+    recommendation: str,
+    severity: EvidenceFindingSeverity = "critical",
+    domain: str = "evidence",
+    blocks_release: bool = True,
+    blocks_evidence_pack: bool = True,
+) -> EvidenceFinding:
+    evidence_refs = [artifact_reference] if artifact_reference else []
+    return EvidenceFinding(
+        finding_id=stable_id(
+            "evidence",
+            domain,
+            source,
+            severity,
+            artifact_reference or "",
+            omission_reason,
+        ),
+        severity=severity,
+        domain=domain,
+        source=source,
+        message=message,
+        artifact_reference=artifact_reference,
+        evidence_refs=evidence_refs,
+        omission_reason=omission_reason,
+        recommendation=recommendation,
+        blocks_release=blocks_release,
+        blocks_evidence_pack=blocks_evidence_pack,
+    )
+
+
+def _finding_counts(findings: list[EvidenceFinding]) -> EvidenceFindingCounts:
+    counts: dict[EvidenceFindingSeverity, int] = {}
+    for finding in findings:
+        counts[finding.severity] = counts.get(finding.severity, 0) + 1
+    return EvidenceFindingCounts(total=len(findings), by_severity=counts)
+
+
 def _workspace_identity(summary: object, artifact_root: str) -> EvidenceWorkspaceIdentity:
     workspace = summary.get("workspace", {}) if isinstance(summary, dict) else {}
     return EvidenceWorkspaceIdentity(
@@ -154,6 +434,53 @@ def _workspace_identity(summary: object, artifact_root: str) -> EvidenceWorkspac
         default_policy=str(workspace.get("default_policy", "default")),
         policy_path=str(workspace.get("policy_path", "policies/default.json")),
     )
+
+
+def _domain_summaries(root: Path, summary: object) -> dict[str, EvidenceDomainSummary]:
+    raw_domains = summary.get("domains", {}) if isinstance(summary, dict) else {}
+    domains = raw_domains if isinstance(raw_domains, dict) else {}
+    result: dict[str, EvidenceDomainSummary] = {}
+    for domain in EVIDENCE_DOMAINS:
+        raw_domain = domains.get(domain)
+        if not isinstance(raw_domain, dict):
+            result[domain] = EvidenceDomainSummary(
+                status="not_present",
+                message=f"{domain} evidence not present in V12 governance exports",
+            )
+            continue
+        status = _domain_status(raw_domain.get("status"))
+        result[domain] = EvidenceDomainSummary(
+            status=status,
+            message=_safe_string(raw_domain.get("message"), ""),
+            evidence_refs=_safe_evidence_refs(root, raw_domain.get("evidence_refs")),
+        )
+    return result
+
+
+def _domain_status(value: object) -> EvidenceDomainStatus:
+    if value in {
+        "present",
+        "not_present",
+        "missing_evidence",
+        "malformed_evidence",
+        "blocked_by_policy",
+        "roadmap_only",
+    }:
+        return value  # type: ignore[return-value]
+    return "malformed_evidence"
+
+
+def _safe_evidence_refs(root: Path, value: object) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    refs: list[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            continue
+        normalized = _safe_artifact_reference(root, item)
+        if normalized is not None:
+            refs.append(normalized)
+    return sorted(set(refs))
 
 
 def _write_checksums(output_dir: Path, filenames: list[str]) -> None:

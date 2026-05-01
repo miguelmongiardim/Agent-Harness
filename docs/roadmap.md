@@ -225,11 +225,12 @@ and
 
 The planned pack depends on completed V12 governance exports:
 `governance_summary.v1`, `governance_report.v1`, `governance_index.v1`, and
-`governance_findings.v1`. Phase 2 adds evidence command discovery,
-prerequisite validation for missing V12 governance exports, and
+`governance_findings.v1`. Phase 3 adds evidence command discovery,
+prerequisite validation for missing V12 governance exports,
 `evidence pack --format json` generation of canonical evidence pack, manifest,
-index, findings, and checksum files. Markdown output, archive creation, full
-control mapping, operator API/UI routes, and release-readiness gates remain
+index, findings, and checksum files, and redaction-safe artifact indexing from
+V12 governance indexes. Markdown output, archive creation, full control
+mapping, operator API/UI routes, and release-readiness gates remain
 unimplemented until later phases add tested behavior.
 
 The planned pack packages existing governance evidence for review and audit

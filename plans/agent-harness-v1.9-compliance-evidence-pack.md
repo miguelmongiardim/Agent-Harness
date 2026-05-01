@@ -291,16 +291,31 @@ copy source artifacts into the pack.
 
 ### Acceptance criteria
 
-- [ ] Included artifact refs are project-relative and normalized.
-- [ ] Path traversal refs are rejected.
-- [ ] Absolute local paths are rejected.
-- [ ] Raw provider payload refs are excluded with findings.
-- [ ] Private upload refs are excluded with findings.
-- [ ] Credential/env-var-like values never appear in pack files.
-- [ ] Unsafe raw vector DB internals are excluded.
-- [ ] Optional absent domains are represented as `not_present`.
-- [ ] Findings include severity, domain, recommendation,
+- [x] Included artifact refs are project-relative and normalized.
+- [x] Path traversal refs are rejected.
+- [x] Absolute local paths are rejected.
+- [x] Raw provider payload refs are excluded with findings.
+- [x] Private upload refs are excluded with findings.
+- [x] Credential/env-var-like values never appear in pack files.
+- [x] Unsafe raw vector DB internals are excluded.
+- [x] Optional absent domains are represented as `not_present`.
+- [x] Findings include severity, domain, recommendation,
       `blocks_release`, and `blocks_evidence_pack`.
+
+### Phase 3 implementation notes
+
+- Extended `evidence pack --format json` to consume `governance_index.v1`
+  entries as metadata-only source references.
+- Included safe artifact refs are normalized project-relative paths with
+  content hashes recomputed from local files, not trusted from governance input.
+- Absolute paths, traversal refs, raw provider payloads, private upload refs,
+  credential-like refs, and raw vector database internals are omitted and
+  represented as `evidence_finding.v1` records with omission reasons.
+- `evidence_pack.v1` now records known evidence domains and reports absent
+  optional domains as `not_present`.
+- Scope stayed Phase 3-only: no Markdown presentation, archive creation,
+  control mapping, operator routes, UI, release-readiness gate, governance
+  aggregation, scanner execution, or copied raw artifacts were added.
 
 ### Out of scope
 

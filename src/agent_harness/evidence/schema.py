@@ -15,6 +15,14 @@ EvidenceRedactionStatus = Literal["safe", "redacted", "metadata_only", "excluded
 EvidenceInclusionStatus = Literal["included", "excluded", "missing", "malformed"]
 EvidenceClaimStatus = Literal["non_certifying"]
 EvidenceFindingSeverity = Literal["critical", "high", "medium", "low", "info"]
+EvidenceDomainStatus = Literal[
+    "present",
+    "not_present",
+    "missing_evidence",
+    "malformed_evidence",
+    "blocked_by_policy",
+    "roadmap_only",
+]
 
 NON_CERTIFICATION_DISCLAIMER = (
     "This evidence pack supports review and audit preparation. It does not certify "
@@ -45,6 +53,12 @@ class EvidenceWorkspaceIdentity(StrictModel):
     policy_path: str
 
 
+class EvidenceDomainSummary(StrictModel):
+    status: EvidenceDomainStatus
+    message: str = ""
+    evidence_refs: list[str] = Field(default_factory=list)
+
+
 class EvidencePack(StrictModel):
     schema_version: Literal["evidence_pack.v1"] = "evidence_pack.v1"
     pack_id: str
@@ -52,6 +66,7 @@ class EvidencePack(StrictModel):
     profile: str
     agent_harness_version: str
     workspace: EvidenceWorkspaceIdentity
+    domains: dict[str, EvidenceDomainSummary] = Field(default_factory=dict)
     governance_references: list[str]
     governance_hashes: dict[str, str]
     release_readiness_reference: str | None = None
@@ -98,6 +113,7 @@ class EvidenceFinding(StrictModel):
     message: str
     artifact_reference: str | None = None
     evidence_refs: list[str] = Field(default_factory=list)
+    omission_reason: str | None = None
     recommendation: str = ""
     blocks_release: bool = False
     blocks_evidence_pack: bool = False
