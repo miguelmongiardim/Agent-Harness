@@ -28,7 +28,12 @@ from agent_harness.demos import (
 from agent_harness.docs_check import write_docs_check_report
 from agent_harness.doctor import doctor
 from agent_harness.evals import run_builtin_evals, write_eval_report
-from agent_harness.evidence import EvidenceCheckResult, EvidenceDiagnostic, run_evidence_check
+from agent_harness.evidence import (
+    EvidenceCheckResult,
+    EvidenceDiagnostic,
+    build_evidence_pack,
+    run_evidence_check,
+)
 from agent_harness.exporters import export_json, export_markdown, export_sarif
 from agent_harness.governance import (
     build_governance_report,
@@ -837,17 +842,18 @@ def cmd_governance_export(args: argparse.Namespace) -> int:
 
 
 def cmd_evidence_pack(args: argparse.Namespace) -> int:
-    del args
     result = run_evidence_check(Path.cwd())
     if result.exit_code != 0:
         print(result.model_dump_json(indent=2))
         return result.exit_code
-    result = _evidence_unavailable_result(
-        "evidence pack generation is not implemented yet; "
-        "Phase 1 only validates V12 governance export prerequisites"
+    export_result = build_evidence_pack(
+        Path.cwd(),
+        output=Path(args.output),
+        profile=args.profile,
+        format=args.format,
     )
-    print(result.model_dump_json(indent=2))
-    return result.exit_code
+    print(export_result.model_dump_json(indent=2))
+    return export_result.exit_code
 
 
 def cmd_evidence_check(args: argparse.Namespace) -> int:

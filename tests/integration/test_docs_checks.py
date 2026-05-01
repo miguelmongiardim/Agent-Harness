@@ -638,7 +638,8 @@ def test_v19_evidence_pack_scope_is_documented_without_implemented_claims() -> N
     assert "prd-agent-harness-v1.9-compliance-evidence-pack.md" in roadmap
     assert "agent-harness-v1.9-compliance-evidence-pack.md" in roadmap
     assert "depends on completed V12 governance exports" in roadmap
-    assert "Phase 1 adds evidence command discovery" in roadmap
+    assert "Phase 2 adds evidence command discovery" in roadmap
+    assert "`evidence pack --format json` generation" in roadmap
     assert "does not certify compliance" in roadmap
 
     assert "governance_summary.v1" in evidence_docs
@@ -649,9 +650,13 @@ def test_v19_evidence_pack_scope_is_documented_without_implemented_claims() -> N
     assert "does not certify compliance" in evidence_docs
     assert "`agent-harness evidence` CLI surface" in evidence_docs
     assert "fail with exit code `2`" in evidence_docs
-    assert "without generating evidence-pack files or governance exports" in evidence_docs
+    assert "without generating governance exports" in evidence_docs
+    assert "`evidence_pack.v1.json`" in evidence_docs
+    assert "`checksums.sha256`" in evidence_docs
+    assert "Markdown presentation, archive creation, full control mapping" in evidence_docs
 
-    assert "Release readiness does not generate evidence packs" in release_readiness
+    assert "Release readiness does not generate" in release_readiness
+    assert "evidence packs. It may only validate an existing pack" in release_readiness
     assert "operator evidence routes remain future-only" in operator_docs
     assert (
         "`agent_harness.evidence` owns the V1.9 Compliance Evidence Pack boundary"

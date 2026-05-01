@@ -7,13 +7,23 @@ The V1.9 Compliance Evidence Pack is in progress. The durable PRD lives in
 and the implementation plan lives in
 [plans/agent-harness-v1.9-compliance-evidence-pack.md](../plans/agent-harness-v1.9-compliance-evidence-pack.md).
 
-Phase 1 implements the `agent-harness evidence` CLI surface with `pack`,
-`check`, and `index` commands. `pack` and `check` currently validate the
-required V12 governance export prerequisites and fail with exit code `2` when
-they are missing, without generating evidence-pack files or governance exports.
+Phase 2 implements the `agent-harness evidence` CLI surface with `pack`,
+`check`, and `index` commands. `pack` and `check` validate the required V12
+governance export prerequisites and fail with exit code `2` when they are
+missing, without generating governance exports.
 
-Successful pack generation, canonical evidence artifacts, control mapping,
-operator routes, UI views, and release-readiness gates remain later-phase work.
+When the V12 exports are present, `agent-harness evidence pack --format json`
+writes the first canonical JSON evidence artifacts under the selected evidence
+output directory:
+
+- `evidence_pack.v1.json`
+- `evidence_manifest.v1.json`
+- `evidence_index.v1.json`
+- `evidence_findings.v1.json`
+- `checksums.sha256`
+
+Markdown presentation, archive creation, full control mapping, operator routes,
+UI views, and release-readiness gates remain later-phase work.
 
 ## Planned Boundary
 
@@ -30,7 +40,7 @@ Required V12 prerequisite artifacts are:
 - `governance_index.v1`
 - `governance_findings.v1`
 
-If those exports are missing, current Phase 1 evidence commands fail clearly
+If those exports are missing, current Phase 2 evidence commands fail clearly
 and tell the user to generate V12 governance exports first.
 
 ## Claim Boundary

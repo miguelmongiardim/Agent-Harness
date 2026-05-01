@@ -6,6 +6,12 @@ from pathlib import Path
 import pytest
 
 from agent_harness.cli import main
+from agent_harness.evidence.schema import (
+    EvidenceFindingsExport,
+    EvidenceIndex,
+    EvidenceManifest,
+    EvidencePack,
+)
 from tests.conftest import seed_project
 
 GOVERNANCE_EXPORT_FIXTURES = {
@@ -167,6 +173,91 @@ def test_evidence_pack_names_each_missing_v12_governance_export(
         }
     ]
     assert str(tmp_path) not in output
+
+
+def test_evidence_pack_writes_minimal_canonical_json_from_v12_governance_exports(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-01-01T00:00:00Z")
+    seed_project(tmp_path)
+    _write_governance_exports(tmp_path, missing_filename="")
+
+    assert (
+        main(["evidence", "pack", "--output", ".agent-harness/evidence", "--format", "json"])
+        == 0
+    )
+    output = capsys.readouterr().out
+    result = json.loads(output)
+    evidence_root = tmp_path / ".agent-harness" / "evidence"
+
+    assert result["schema_version"] == "evidence_export_result.v1"
+    assert result["status"] == "passed"
+    assert result["output_path"] == ".agent-harness/evidence"
+    assert result["files"] == [
+        ".agent-harness/evidence/evidence_pack.v1.json",
+        ".agent-harness/evidence/evidence_manifest.v1.json",
+        ".agent-harness/evidence/evidence_index.v1.json",
+        ".agent-harness/evidence/evidence_findings.v1.json",
+        ".agent-harness/evidence/checksums.sha256",
+    ]
+
+    pack = EvidencePack.model_validate_json(
+        (evidence_root / "evidence_pack.v1.json").read_text(encoding="utf-8")
+    )
+    manifest = EvidenceManifest.model_validate_json(
+        (evidence_root / "evidence_manifest.v1.json").read_text(encoding="utf-8")
+    )
+    index = EvidenceIndex.model_validate_json(
+        (evidence_root / "evidence_index.v1.json").read_text(encoding="utf-8")
+    )
+    findings = EvidenceFindingsExport.model_validate_json(
+        (evidence_root / "evidence_findings.v1.json").read_text(encoding="utf-8")
+    )
+
+    assert pack.pack_id
+    assert pack.generated_at.isoformat() == "2026-01-01T00:00:00+00:00"
+    assert pack.profile == "default"
+    assert pack.workspace.project_name == "test-project"
+    assert pack.governance_references == [
+        ".agent-harness/governance/governance_summary.v1.json",
+        ".agent-harness/governance/governance_report.v1.json",
+        ".agent-harness/governance/governance_index.v1.json",
+        ".agent-harness/governance/governance_findings.v1.json",
+    ]
+    assert "does not certify compliance" in pack.disclaimer
+    assert pack.claim_status == "non_certifying"
+    assert pack.redaction_status == "metadata_only"
+    assert manifest.pack_id == pack.pack_id
+    assert index.pack_id == pack.pack_id
+    assert findings.pack_id == pack.pack_id
+    assert not (evidence_root / "evidence_pack.v1.md").exists()
+    assert not (evidence_root / "control_mapping.v1.md").exists()
+
+    checksum_lines = (evidence_root / "checksums.sha256").read_text(
+        encoding="utf-8"
+    ).splitlines()
+    checksum_paths = [line.split("  ", 1)[1] for line in checksum_lines]
+    assert all(len(line.split("  ", 1)[0]) == 64 for line in checksum_lines)
+    assert checksum_paths == sorted(checksum_paths)
+    assert checksum_paths == [
+        "evidence_findings.v1.json",
+        "evidence_index.v1.json",
+        "evidence_manifest.v1.json",
+        "evidence_pack.v1.json",
+    ]
+
+    repeated_root = tmp_path / ".agent-harness" / "evidence-repeat"
+    assert main(["evidence", "pack", "--output", str(repeated_root), "--format", "json"]) == 0
+    capsys.readouterr()
+    repeated_pack = json.loads(
+        (repeated_root / "evidence_pack.v1.json").read_text(encoding="utf-8")
+    )
+    repeated_checksums = (repeated_root / "checksums.sha256").read_text(encoding="utf-8")
+    assert repeated_pack["pack_id"] == pack.pack_id
+    assert repeated_checksums == (evidence_root / "checksums.sha256").read_text(encoding="utf-8")
 
 
 def _write_governance_exports(root: Path, *, missing_filename: str) -> None:

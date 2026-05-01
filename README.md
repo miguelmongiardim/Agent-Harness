@@ -156,6 +156,9 @@ agent-harness governance check
 agent-harness governance report --format markdown
 agent-harness governance report --format json
 agent-harness governance export --output .agent-harness/governance/
+agent-harness evidence pack --format json
+agent-harness evidence check
+agent-harness evidence index
 agent-harness eval
 agent-harness release package-check
 agent-harness release readiness
@@ -348,10 +351,13 @@ V1.9 Compliance Evidence Pack planning is captured in
 and
 [plans/agent-harness-v1.9-compliance-evidence-pack.md](plans/agent-harness-v1.9-compliance-evidence-pack.md).
 The pack depends on completed V12 governance exports and packages existing
-evidence for review. Phase 1 adds `agent-harness evidence pack`, `check`, and
-`index` command discovery plus prerequisite validation for missing V12
-governance exports. It does not yet generate evidence-pack files, operator
-routes, UI views, or release-readiness gates, and it does not certify compliance
+evidence for review. Phase 2 adds `agent-harness evidence pack`, `check`, and
+`index` command discovery, prerequisite validation for missing V12 governance
+exports, and `evidence pack --format json` generation of canonical
+`evidence_pack.v1`, `evidence_manifest.v1`, `evidence_index.v1`,
+`evidence_findings.v1`, and checksum files. Markdown presentation, archive
+creation, control mapping, operator routes, UI views, and release-readiness
+gates remain later-phase work. The evidence pack does not certify compliance
 with any legal, regulatory, security, or organizational framework.
 
 ## Documentation

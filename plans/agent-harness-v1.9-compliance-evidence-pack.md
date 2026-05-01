@@ -219,15 +219,31 @@ export result.
 
 ### Acceptance criteria
 
-- [ ] `evidence_pack.v1.json` is generated.
-- [ ] `evidence_manifest.v1.json` is generated.
-- [ ] `evidence_index.v1.json` is generated.
-- [ ] `evidence_findings.v1.json` is generated.
-- [ ] `checksums.sha256` is generated.
-- [ ] JSON artifacts validate with `StrictModel`.
-- [ ] Pack id is deterministic under fixed generation time.
-- [ ] Checksum lines are deterministic and exclude `checksums.sha256`.
-- [ ] The non-certification disclaimer appears in `evidence_pack.v1.json`.
+- [x] `evidence_pack.v1.json` is generated.
+- [x] `evidence_manifest.v1.json` is generated.
+- [x] `evidence_index.v1.json` is generated.
+- [x] `evidence_findings.v1.json` is generated.
+- [x] `checksums.sha256` is generated.
+- [x] JSON artifacts validate with `StrictModel`.
+- [x] Pack id is deterministic under fixed generation time.
+- [x] Checksum lines are deterministic and exclude `checksums.sha256`.
+- [x] The non-certification disclaimer appears in `evidence_pack.v1.json`.
+
+### Phase 2 implementation notes
+
+- Added `evidence_pack.v1`, `evidence_manifest.v1`, `evidence_index.v1`,
+  `evidence_findings.v1`, and `evidence_export_result.v1` contracts under the
+  evidence boundary.
+- Added `agent-harness evidence pack --format json` generation from existing
+  V12 governance exports into canonical JSON files and deterministic
+  `checksums.sha256`.
+- Pack ids use the fixed generation time hook in tests and the selected
+  profile, Agent Harness version, workspace identity, governance references,
+  and governance input hashes.
+- Scope stayed Phase 2-only: no Markdown presentation, archive creation, full
+  control mapping, operator routes, UI, release-readiness gate, governance
+  aggregation, workflow execution, provider calls, scanners, or arbitrary
+  workspace scanning were added.
 
 ### Out of scope
 
