@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import Field
@@ -81,3 +82,65 @@ class OperatorApprovalDecisionResponse(StrictModel):
     schema_version: Literal["operator_approval_decision.v1"] = "operator_approval_decision.v1"
     run_id: str
     approval: dict[str, Any]
+
+
+class OperatorEvidencePackSummary(StrictModel):
+    pack_id: str
+    path: str
+    generated_at: datetime
+    profile: str
+    claim_status: str
+    redaction_status: str
+    findings_count: int = Field(ge=0)
+    blocking_findings: int = Field(ge=0)
+
+
+class OperatorEvidenceOverviewResponse(StrictModel):
+    schema_version: Literal["operator_evidence_overview.v1"] = "operator_evidence_overview.v1"
+    status: Literal["available", "missing"]
+    evidence_root: str
+    pack_count: int = Field(ge=0)
+    current_pack: OperatorEvidencePackSummary | None = None
+
+
+class OperatorEvidencePackListResponse(StrictModel):
+    schema_version: Literal["operator_evidence_pack_list.v1"] = "operator_evidence_pack_list.v1"
+    evidence_root: str
+    packs: list[OperatorEvidencePackSummary] = Field(default_factory=list)
+    count: int = Field(ge=0)
+
+
+class OperatorEvidencePackDetailResponse(StrictModel):
+    schema_version: Literal["operator_evidence_pack_detail.v1"] = "operator_evidence_pack_detail.v1"
+    pack_id: str
+    path: str
+    evidence_pack: dict[str, Any]
+    manifest: dict[str, Any]
+    artifact_index: dict[str, Any]
+    findings: dict[str, Any]
+    control_mapping: dict[str, Any]
+
+
+class OperatorEvidenceControlMappingResponse(StrictModel):
+    schema_version: Literal["operator_evidence_control_mapping.v1"] = (
+        "operator_evidence_control_mapping.v1"
+    )
+    pack_id: str
+    path: str
+    control_mapping: dict[str, Any]
+
+
+class OperatorEvidenceArtifactIndexResponse(StrictModel):
+    schema_version: Literal["operator_evidence_artifact_index.v1"] = (
+        "operator_evidence_artifact_index.v1"
+    )
+    pack_id: str
+    path: str
+    artifact_index: dict[str, Any]
+
+
+class OperatorEvidenceFindingsResponse(StrictModel):
+    schema_version: Literal["operator_evidence_findings.v1"] = "operator_evidence_findings.v1"
+    pack_id: str
+    path: str
+    findings: dict[str, Any]

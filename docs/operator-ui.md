@@ -72,6 +72,23 @@ first local operator run-inspection APIs:
 - CI installs the operator extra for Python checks and runs focused operator
   release gates before the release-readiness report
 
+## Implemented V1.9 Evidence API Extension
+
+The local operator API also exposes token-protected read-only evidence pack
+inspection routes:
+
+- `GET /api/v1/evidence/overview`
+- `GET /api/v1/evidence/packs`
+- `GET /api/v1/evidence/packs/{pack_id}`
+- `GET /api/v1/evidence/control-map`
+- `GET /api/v1/evidence/artifact-index`
+- `GET /api/v1/evidence/findings`
+
+These routes read existing evidence pack artifacts under the configured
+`.agent-harness` evidence root. They do not generate packs, mutate evidence,
+serve arbitrary files, or expose raw provider payloads, secrets, or absolute
+paths.
+
 The operator surface is not a new runtime. The CLI and existing runtime remain
 responsible for task execution, provider setup, template application, patch
 planning, and git commit planning.
@@ -97,8 +114,7 @@ These remain outside the V6 local operator scope:
 - config, task, policy, provider, or template editing from the API or UI
 - direct patch, commit, or provider execution from the API or UI
 - arbitrary filesystem browsing
-- operator evidence routes remain future-only until later V1.9 evidence-pack
-  API phases are implemented and tested
+- evidence pack generation from the API or UI
 
 ## Safety Boundaries
 

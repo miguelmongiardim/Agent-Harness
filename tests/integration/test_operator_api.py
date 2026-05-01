@@ -892,3 +892,245 @@ def test_operator_approval_decision_reports_boundary_errors_safely(
     for response in (invalid_decision, missing_action, missing_run, conflict):
         assert "operator-secret" not in response.text
         assert str(tmp_path) not in response.text
+
+
+def test_operator_evidence_routes_are_token_gated_read_only_and_artifact_backed(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-01-01T00:00:00Z")
+    seed_project(tmp_path)
+    _write_operator_evidence_governance_exports(tmp_path)
+    safe_summary_ref = ".agent-harness/runs/run-evidence-api/summary.json"
+    safe_summary_path = tmp_path / safe_summary_ref
+    safe_summary_path.parent.mkdir(parents=True)
+    safe_summary_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "summary.v1",
+                "run_id": "run-evidence-api",
+                "task_id": "operator-evidence-api",
+                "status": "completed",
+                "events_count": 1,
+                "approvals": [],
+                "artifacts": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    absolute_raw_payload = tmp_path / "raw-provider-payload.json"
+    absolute_raw_payload.write_text(
+        json.dumps(
+            {
+                "api_key": "sk-operator-evidence-secret",
+                "prompt": "raw provider prompt must not appear",
+            }
+        ),
+        encoding="utf-8",
+    )
+    _write_operator_evidence_governance_domains(
+        tmp_path,
+        {
+            "governance": {
+                "status": "present",
+                "message": "governance evidence is available",
+                "evidence_refs": [".agent-harness/governance/governance_report.v1.json"],
+                "summary": {"checks": "passed"},
+            },
+            "provider": {
+                "status": "present",
+                "message": "provider metadata is available",
+                "evidence_refs": [safe_summary_ref],
+                "summary": {"redaction": "metadata_only"},
+            },
+            "docs_claim": {
+                "status": "present",
+                "message": "docs claim checks are available",
+                "evidence_refs": [".agent-harness/governance/governance_findings.v1.json"],
+                "summary": {"unsupported_claim_findings": 0},
+            },
+        },
+    )
+    _write_operator_evidence_governance_index(
+        tmp_path,
+        [
+            {
+                "artifact_type": "run_summary",
+                "path": safe_summary_ref,
+                "content_hash": "stale-hash",
+                "schema_version": "summary.v1",
+                "redaction_status": "safe",
+                "inclusion_status": "included",
+            },
+            {
+                "artifact_type": "raw_provider_payload",
+                "path": str(absolute_raw_payload),
+                "content_hash": "raw-provider-hash",
+                "schema_version": None,
+                "redaction_status": "excluded_raw",
+                "inclusion_status": "excluded",
+            },
+        ],
+    )
+
+    assert (
+        main(["evidence", "pack", "--output", ".agent-harness/evidence", "--format", "json"]) == 0
+    )
+    capsys.readouterr()
+    pack = json.loads(
+        (tmp_path / ".agent-harness" / "evidence" / "evidence_pack.v1.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    pack_id = pack["pack_id"]
+    app = create_operator_app(
+        project_root=tmp_path,
+        token="operator-secret",
+        profile="default",
+    )
+    client = TestClient(app)
+    routes = [
+        "/api/v1/evidence/overview",
+        "/api/v1/evidence/packs",
+        f"/api/v1/evidence/packs/{pack_id}",
+        "/api/v1/evidence/control-map",
+        "/api/v1/evidence/artifact-index",
+        "/api/v1/evidence/findings",
+    ]
+
+    for route in routes:
+        missing = client.get(route)
+        invalid = client.get(route, headers=_operator_headers("wrong-secret"))
+        assert missing.status_code == 401
+        assert invalid.status_code == 401
+        assert "operator-secret" not in missing.text
+        assert "operator-secret" not in invalid.text
+
+    overview = client.get("/api/v1/evidence/overview", headers=_operator_headers())
+    packs = client.get("/api/v1/evidence/packs", headers=_operator_headers())
+    detail = client.get(f"/api/v1/evidence/packs/{pack_id}", headers=_operator_headers())
+    control_map = client.get("/api/v1/evidence/control-map", headers=_operator_headers())
+    artifact_index = client.get("/api/v1/evidence/artifact-index", headers=_operator_headers())
+    findings = client.get("/api/v1/evidence/findings", headers=_operator_headers())
+    mutation = client.post("/api/v1/evidence/overview", headers=_operator_headers())
+
+    assert overview.status_code == 200
+    assert overview.json()["schema_version"] == "operator_evidence_overview.v1"
+    assert overview.json()["status"] == "available"
+    assert overview.json()["current_pack"]["pack_id"] == pack_id
+    assert overview.json()["pack_count"] == 1
+
+    assert packs.status_code == 200
+    assert packs.json()["schema_version"] == "operator_evidence_pack_list.v1"
+    assert packs.json()["packs"] == [overview.json()["current_pack"]]
+
+    assert detail.status_code == 200
+    assert detail.json()["schema_version"] == "operator_evidence_pack_detail.v1"
+    assert detail.json()["pack_id"] == pack_id
+    assert detail.json()["evidence_pack"]["pack_id"] == pack_id
+    assert detail.json()["manifest"]["schema_version"] == "evidence_manifest.v1"
+    assert detail.json()["artifact_index"]["schema_version"] == "evidence_index.v1"
+    assert detail.json()["findings"]["schema_version"] == "evidence_findings.v1"
+    assert detail.json()["control_mapping"]["schema_version"] == "control_mapping.v1"
+
+    assert control_map.status_code == 200
+    assert control_map.json()["schema_version"] == "operator_evidence_control_mapping.v1"
+    assert control_map.json()["pack_id"] == pack_id
+    assert control_map.json()["control_mapping"]["schema_version"] == "control_mapping.v1"
+
+    assert artifact_index.status_code == 200
+    assert artifact_index.json()["schema_version"] == "operator_evidence_artifact_index.v1"
+    assert artifact_index.json()["pack_id"] == pack_id
+    assert any(
+        entry["path"] == safe_summary_ref
+        for entry in artifact_index.json()["artifact_index"]["entries"]
+    )
+
+    assert findings.status_code == 200
+    assert findings.json()["schema_version"] == "operator_evidence_findings.v1"
+    assert findings.json()["pack_id"] == pack_id
+    assert {finding["source"] for finding in findings.json()["findings"]["findings"]} >= {
+        "raw_provider_payload"
+    }
+
+    assert mutation.status_code == 405
+    assert "read-only" in mutation.json()["detail"]
+
+    serialized_responses = "\n".join(
+        response.text
+        for response in (overview, packs, detail, control_map, artifact_index, findings, mutation)
+    )
+    for leaked in (
+        str(tmp_path),
+        str(absolute_raw_payload),
+        "sk-operator-evidence-secret",
+        "raw provider prompt must not appear",
+        "api_key",
+    ):
+        assert leaked not in serialized_responses
+
+
+def _write_operator_evidence_governance_exports(root: Path) -> None:
+    governance_dir = root / ".agent-harness" / "governance"
+    governance_dir.mkdir(parents=True)
+    summary = {
+        "schema_version": "governance_summary.v1",
+        "workspace": {
+            "project_name": "test-project",
+            "artifact_root": ".agent-harness",
+            "config_path": "agent-harness.yaml",
+            "default_policy": "default",
+            "policy_path": "policies/default.json",
+        },
+        "domains": {},
+        "policy": {"default_profile": "default", "profiles": []},
+        "runs": {},
+    }
+    exports = {
+        "governance_summary.v1.json": summary,
+        "governance_report.v1.json": {
+            "schema_version": "governance_report.v1",
+            "summary": summary,
+            "check": {
+                "schema_version": "governance_check.v1",
+                "status": "passed",
+                "exit_code": 0,
+            },
+            "sections": [],
+            "findings": [],
+            "diagnostics": [],
+        },
+        "governance_index.v1.json": {
+            "schema_version": "governance_index.v1",
+            "entries": [],
+        },
+        "governance_findings.v1.json": {
+            "schema_version": "governance_findings.v1",
+            "counts": {"total": 0, "by_severity": {}},
+            "findings": [],
+        },
+    }
+    for filename, payload in exports.items():
+        (governance_dir / filename).write_text(json.dumps(payload), encoding="utf-8")
+
+
+def _write_operator_evidence_governance_domains(
+    root: Path,
+    domains: dict[str, object],
+) -> None:
+    summary_path = root / ".agent-harness" / "governance" / "governance_summary.v1.json"
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    summary["domains"] = domains
+    summary_path.write_text(json.dumps(summary), encoding="utf-8")
+
+
+def _write_operator_evidence_governance_index(
+    root: Path,
+    entries: list[dict[str, object]],
+) -> None:
+    (root / ".agent-harness" / "governance" / "governance_index.v1.json").write_text(
+        json.dumps({"schema_version": "governance_index.v1", "entries": entries}),
+        encoding="utf-8",
+    )

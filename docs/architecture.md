@@ -44,17 +44,19 @@ runtime around explicit ownership boundaries.
   including V11 orchestration demo, policy, artifact, inspect/export, MCP
   resource-read, and access-log gates.
 - `agent_harness.evidence` owns the V1.9 Compliance Evidence Pack boundary.
-  Phase 6 validates completed V12 governance export prerequisites, writes
+  Phase 7 validates completed V12 governance export prerequisites, writes
   canonical JSON evidence pack, manifest, index, findings, control mapping,
   and checksum files, filters V12 governance-index artifact references so
   unsafe refs become evidence findings instead of pack content, renders
   review-only Markdown for bundle/markdown formats, creates opt-in archives,
   validates check exit states, prints `evidence_index.v1` JSON, packages safe
   V12 domain summaries into `evidence_pack.v1`, and turns malformed domain
-  summary payloads into evidence findings. Later phases will add operator
-  views and release-readiness validation without rebuilding governance
-  aggregation or becoming a release, operator, policy, provider, retrieval, or
-  orchestration boundary.
+  summary payloads into evidence findings. The local operator app exposes
+  token-protected read-only evidence routes that read existing pack artifacts
+  without generating packs or browsing arbitrary files. Later phases will add
+  operator UI views and release-readiness validation without rebuilding
+  governance aggregation or becoming a release, policy, provider, retrieval,
+  or orchestration boundary.
 - `agent_harness.model`, `agent_harness.runtimes`, `agent_harness.storage`,
   `agent_harness.telemetry`, `agent_harness.evals`, and
   `agent_harness.exporters` provide the report's package-level structural

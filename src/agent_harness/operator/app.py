@@ -6,21 +6,35 @@ import secrets
 from html import escape
 from importlib import resources
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import HTMLResponse, Response
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from agent_harness import __version__
 from agent_harness.config import load_config
 from agent_harness.core.runtime import approve_action
+from agent_harness.evidence.schema import (
+    ControlMapping,
+    EvidenceFindingsExport,
+    EvidenceIndex,
+    EvidenceManifest,
+    EvidencePack,
+)
 from agent_harness.operator.schema import (
     OperatorApprovalDecisionRequest,
     OperatorApprovalDecisionResponse,
     OperatorApprovalListResponse,
     OperatorArtifactStatus,
     OperatorContextResponse,
+    OperatorEvidenceArtifactIndexResponse,
+    OperatorEvidenceControlMappingResponse,
+    OperatorEvidenceFindingsResponse,
+    OperatorEvidenceOverviewResponse,
+    OperatorEvidencePackDetailResponse,
+    OperatorEvidencePackListResponse,
+    OperatorEvidencePackSummary,
     OperatorHealthResponse,
     OperatorPolicyResponse,
     OperatorRunDetailResponse,
@@ -37,6 +51,7 @@ STATIC_ASSET_TYPES = {
     "app.css": "text/css; charset=utf-8",
     "app.js": "text/javascript; charset=utf-8",
 }
+TModel = TypeVar("TModel", bound=BaseModel)
 
 
 def create_operator_app(project_root: Path, token: str, profile: str = "default") -> FastAPI:
@@ -134,6 +149,79 @@ def create_operator_app(project_root: Path, token: str, profile: str = "default"
     ) -> dict[str, object]:
         del _authorized
         return _load_policy_summary(app.state.project_root, profile).model_dump(mode="json")
+
+    @app.get("/api/v1/evidence/overview")
+    def evidence_overview(
+        _authorized: None = Depends(require_operator_token),
+    ) -> dict[str, object]:
+        del _authorized
+        return _load_evidence_overview(app.state.project_root).model_dump(
+            mode="json",
+            exclude_none=True,
+        )
+
+    @app.get("/api/v1/evidence/packs")
+    def evidence_packs(
+        _authorized: None = Depends(require_operator_token),
+    ) -> dict[str, object]:
+        del _authorized
+        return _load_evidence_pack_list(app.state.project_root).model_dump(mode="json")
+
+    @app.get("/api/v1/evidence/packs/{pack_id}")
+    def evidence_pack_detail(
+        pack_id: str,
+        _authorized: None = Depends(require_operator_token),
+    ) -> dict[str, object]:
+        del _authorized
+        pack_dir = _find_evidence_pack_dir(app.state.project_root, pack_id)
+        return _load_evidence_pack_detail(app.state.project_root, pack_dir).model_dump(mode="json")
+
+    @app.get("/api/v1/evidence/control-map")
+    def evidence_control_map(
+        _authorized: None = Depends(require_operator_token),
+    ) -> dict[str, object]:
+        del _authorized
+        detail = _load_current_evidence_pack_detail(app.state.project_root)
+        return OperatorEvidenceControlMappingResponse(
+            pack_id=detail.pack_id,
+            path=detail.path,
+            control_mapping=detail.control_mapping,
+        ).model_dump(mode="json")
+
+    @app.get("/api/v1/evidence/artifact-index")
+    def evidence_artifact_index(
+        _authorized: None = Depends(require_operator_token),
+    ) -> dict[str, object]:
+        del _authorized
+        detail = _load_current_evidence_pack_detail(app.state.project_root)
+        return OperatorEvidenceArtifactIndexResponse(
+            pack_id=detail.pack_id,
+            path=detail.path,
+            artifact_index=detail.artifact_index,
+        ).model_dump(mode="json")
+
+    @app.get("/api/v1/evidence/findings")
+    def evidence_findings(
+        _authorized: None = Depends(require_operator_token),
+    ) -> dict[str, object]:
+        del _authorized
+        detail = _load_current_evidence_pack_detail(app.state.project_root)
+        return OperatorEvidenceFindingsResponse(
+            pack_id=detail.pack_id,
+            path=detail.path,
+            findings=detail.findings,
+        ).model_dump(mode="json")
+
+    @app.api_route(
+        "/api/v1/evidence/{path:path}",
+        methods=["DELETE", "PATCH", "POST", "PUT"],
+    )
+    def evidence_read_only(
+        path: str,
+        _authorized: None = Depends(require_operator_token),
+    ) -> None:
+        del path, _authorized
+        raise HTTPException(status_code=405, detail="evidence API is read-only")
 
     @app.api_route(
         "/api/v1/{path:path}",
@@ -311,6 +399,198 @@ def _decide_approval(
         run_id=run_id,
         approval=approval.model_dump(mode="json"),
     )
+
+
+def _load_evidence_overview(project_root: Path) -> OperatorEvidenceOverviewResponse:
+    pack_list = _load_evidence_pack_list(project_root)
+    current_pack = pack_list.packs[-1] if pack_list.packs else None
+    return OperatorEvidenceOverviewResponse(
+        status="available" if current_pack is not None else "missing",
+        evidence_root=pack_list.evidence_root,
+        pack_count=pack_list.count,
+        current_pack=current_pack,
+    )
+
+
+def _load_evidence_pack_list(project_root: Path) -> OperatorEvidencePackListResponse:
+    evidence_root = _evidence_root(project_root)
+    summaries = [
+        _evidence_pack_summary(project_root, pack_dir)
+        for pack_dir in _evidence_pack_directories(project_root)
+    ]
+    summaries.sort(key=lambda summary: (summary.generated_at, summary.pack_id))
+    return OperatorEvidencePackListResponse(
+        evidence_root=_safe_project_relative(project_root, evidence_root),
+        packs=summaries,
+        count=len(summaries),
+    )
+
+
+def _load_current_evidence_pack_detail(project_root: Path) -> OperatorEvidencePackDetailResponse:
+    pack_dir = _current_evidence_pack_dir(project_root)
+    if pack_dir is None:
+        raise HTTPException(status_code=404, detail="evidence pack not found")
+    return _load_evidence_pack_detail(project_root, pack_dir)
+
+
+def _load_evidence_pack_detail(
+    project_root: Path,
+    pack_dir: Path,
+) -> OperatorEvidencePackDetailResponse:
+    pack = _read_evidence_model(project_root, pack_dir, "evidence_pack.v1.json", EvidencePack)
+    manifest = _read_evidence_model(
+        project_root,
+        pack_dir,
+        "evidence_manifest.v1.json",
+        EvidenceManifest,
+    )
+    index = _read_evidence_model(
+        project_root,
+        pack_dir,
+        "evidence_index.v1.json",
+        EvidenceIndex,
+    )
+    findings = _read_evidence_model(
+        project_root,
+        pack_dir,
+        "evidence_findings.v1.json",
+        EvidenceFindingsExport,
+    )
+    control_mapping = _read_evidence_model(
+        project_root,
+        pack_dir,
+        "control_mapping.v1.json",
+        ControlMapping,
+    )
+    return OperatorEvidencePackDetailResponse(
+        pack_id=pack.pack_id,
+        path=_safe_project_relative(project_root, pack_dir / "evidence_pack.v1.json"),
+        evidence_pack=pack.model_dump(mode="json"),
+        manifest=manifest.model_dump(mode="json"),
+        artifact_index=index.model_dump(mode="json"),
+        findings=findings.model_dump(mode="json"),
+        control_mapping=control_mapping.model_dump(mode="json"),
+    )
+
+
+def _evidence_pack_summary(project_root: Path, pack_dir: Path) -> OperatorEvidencePackSummary:
+    pack = _read_evidence_model(project_root, pack_dir, "evidence_pack.v1.json", EvidencePack)
+    findings = _read_optional_evidence_model(
+        project_root,
+        pack_dir,
+        "evidence_findings.v1.json",
+        EvidenceFindingsExport,
+    )
+    finding_count = findings.counts.total if findings is not None else 0
+    blocking_findings = (
+        sum(
+            1
+            for finding in findings.findings
+            if finding.blocks_evidence_pack or finding.blocks_release
+        )
+        if findings is not None
+        else 0
+    )
+    return OperatorEvidencePackSummary(
+        pack_id=pack.pack_id,
+        path=_safe_project_relative(project_root, pack_dir / "evidence_pack.v1.json"),
+        generated_at=pack.generated_at,
+        profile=pack.profile,
+        claim_status=pack.claim_status,
+        redaction_status=pack.redaction_status,
+        findings_count=finding_count,
+        blocking_findings=blocking_findings,
+    )
+
+
+def _find_evidence_pack_dir(project_root: Path, pack_id: str) -> Path:
+    if RUN_ID_PATTERN.fullmatch(pack_id) is None:
+        raise HTTPException(status_code=404, detail="evidence pack not found")
+    for pack_dir in _evidence_pack_directories(project_root):
+        pack = _read_evidence_model(project_root, pack_dir, "evidence_pack.v1.json", EvidencePack)
+        if pack.pack_id == pack_id:
+            return pack_dir
+    raise HTTPException(status_code=404, detail="evidence pack not found")
+
+
+def _current_evidence_pack_dir(project_root: Path) -> Path | None:
+    records: list[tuple[EvidencePack, Path]] = []
+    for pack_dir in _evidence_pack_directories(project_root):
+        pack = _read_evidence_model(project_root, pack_dir, "evidence_pack.v1.json", EvidencePack)
+        records.append((pack, pack_dir))
+    if not records:
+        return None
+    records.sort(key=lambda record: (record[0].generated_at, record[0].pack_id))
+    return records[-1][1]
+
+
+def _evidence_pack_directories(project_root: Path) -> list[Path]:
+    evidence_root = _evidence_root(project_root)
+    if not evidence_root.exists() or not evidence_root.is_dir():
+        return []
+    directories: list[Path] = []
+    if (evidence_root / "evidence_pack.v1.json").exists():
+        directories.append(evidence_root)
+    for child in sorted(evidence_root.iterdir()):
+        if child.name == "archive" or child.is_symlink() or not child.is_dir():
+            continue
+        try:
+            child.resolve().relative_to(evidence_root.resolve())
+        except ValueError:
+            continue
+        if (child / "evidence_pack.v1.json").exists():
+            directories.append(child)
+    return directories
+
+
+def _read_evidence_model(
+    project_root: Path,
+    pack_dir: Path,
+    filename: str,
+    model: type[TModel],
+) -> TModel:
+    path = _safe_evidence_artifact_path(project_root, pack_dir, filename)
+    if not path.exists():
+        raise HTTPException(
+            status_code=422,
+            detail=f"missing required evidence artifact: {filename}",
+        )
+    try:
+        return model.model_validate_json(path.read_text(encoding="utf-8"))
+    except (OSError, ValidationError, ValueError) as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=f"malformed evidence artifact: {filename}",
+        ) from exc
+
+
+def _read_optional_evidence_model(
+    project_root: Path,
+    pack_dir: Path,
+    filename: str,
+    model: type[TModel],
+) -> TModel | None:
+    path = _safe_evidence_artifact_path(project_root, pack_dir, filename)
+    if not path.exists():
+        return None
+    return _read_evidence_model(project_root, pack_dir, filename, model)
+
+
+def _safe_evidence_artifact_path(project_root: Path, pack_dir: Path, filename: str) -> Path:
+    evidence_root = _evidence_root(project_root).resolve()
+    path = pack_dir / filename
+    try:
+        path.resolve().relative_to(evidence_root)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail="denied evidence artifact reference",
+        ) from exc
+    return path
+
+
+def _evidence_root(project_root: Path) -> Path:
+    return _artifact_root(project_root) / "evidence"
 
 
 def _open_run_store(project_root: Path, run_id: str) -> RunStore:

@@ -570,15 +570,15 @@ serving arbitrary files.
 
 ### Acceptance criteria
 
-- [ ] `/api/v1/evidence/overview` returns safe overview data.
-- [ ] `/api/v1/evidence/packs` lists exported packs from the evidence root.
-- [ ] `/api/v1/evidence/packs/{pack_id}` returns safe pack detail.
-- [ ] `/api/v1/evidence/control-map` returns control mapping.
-- [ ] `/api/v1/evidence/artifact-index` returns the evidence index.
-- [ ] `/api/v1/evidence/findings` returns evidence findings.
-- [ ] All routes require the operator token.
-- [ ] Routes are read-only and artifact-backed.
-- [ ] Routes do not expose raw provider payloads, secrets, or absolute paths.
+- [x] `/api/v1/evidence/overview` returns safe overview data.
+- [x] `/api/v1/evidence/packs` lists exported packs from the evidence root.
+- [x] `/api/v1/evidence/packs/{pack_id}` returns safe pack detail.
+- [x] `/api/v1/evidence/control-map` returns control mapping.
+- [x] `/api/v1/evidence/artifact-index` returns the evidence index.
+- [x] `/api/v1/evidence/findings` returns evidence findings.
+- [x] All routes require the operator token.
+- [x] Routes are read-only and artifact-backed.
+- [x] Routes do not expose raw provider payloads, secrets, or absolute paths.
 
 ### Out of scope
 
@@ -586,6 +586,19 @@ serving arbitrary files.
 - Pack generation through the API.
 - Hosted API behavior.
 - Evidence mutation routes.
+
+### Phase 7 implementation notes
+
+- Added token-protected read-only operator evidence routes for overview, pack
+  listing, pack detail, control mapping, artifact index, and findings.
+- Routes read only fixed evidence artifact filenames under the configured
+  `.agent-harness/evidence` root and do not build packs, run governance,
+  mutate evidence, or browse arbitrary workspace paths.
+- Unsupported mutation methods under `/api/v1/evidence/*` return a read-only
+  API error.
+- API tests generate a real CLI evidence pack first, then verify token
+  enforcement, schema versions, artifact-backed payloads, and redaction safety
+  for raw provider payload contents, secrets, and absolute paths.
 
 ---
 

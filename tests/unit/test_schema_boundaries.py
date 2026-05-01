@@ -189,9 +189,7 @@ def test_skills_schema_module_owns_skill_contracts() -> None:
         SkillSpec,
         SkillValidationReport,
     ]
-    assert {contract.__module__ for contract in skill_contracts} == {
-        "agent_harness.skills.schema"
-    }
+    assert {contract.__module__ for contract in skill_contracts} == {"agent_harness.skills.schema"}
 
 
 def test_operator_schema_module_owns_operator_contracts() -> None:
@@ -201,6 +199,13 @@ def test_operator_schema_module_owns_operator_contracts() -> None:
         OperatorApprovalListResponse,
         OperatorArtifactStatus,
         OperatorContextResponse,
+        OperatorEvidenceArtifactIndexResponse,
+        OperatorEvidenceControlMappingResponse,
+        OperatorEvidenceFindingsResponse,
+        OperatorEvidenceOverviewResponse,
+        OperatorEvidencePackDetailResponse,
+        OperatorEvidencePackListResponse,
+        OperatorEvidencePackSummary,
         OperatorHealthResponse,
         OperatorPolicyResponse,
         OperatorRunDetailResponse,
@@ -213,6 +218,13 @@ def test_operator_schema_module_owns_operator_contracts() -> None:
         OperatorApprovalListResponse,
         OperatorArtifactStatus,
         OperatorContextResponse,
+        OperatorEvidenceArtifactIndexResponse,
+        OperatorEvidenceControlMappingResponse,
+        OperatorEvidenceFindingsResponse,
+        OperatorEvidenceOverviewResponse,
+        OperatorEvidencePackDetailResponse,
+        OperatorEvidencePackListResponse,
+        OperatorEvidencePackSummary,
         OperatorHealthResponse,
         OperatorPolicyResponse,
         OperatorRunDetailResponse,
@@ -250,9 +262,7 @@ def test_evals_schema_module_owns_eval_contracts() -> None:
     from agent_harness.evals.schema import EvalInvariant, EvalResult, EvalSpec
 
     eval_contracts = [EvalInvariant, EvalResult, EvalSpec]
-    assert {contract.__module__ for contract in eval_contracts} == {
-        "agent_harness.evals.schema"
-    }
+    assert {contract.__module__ for contract in eval_contracts} == {"agent_harness.evals.schema"}
 
 
 def test_benchmarks_schema_module_owns_benchmark_contracts() -> None:
@@ -290,9 +300,7 @@ def test_mcp_schema_module_owns_mcp_contracts() -> None:
         McpResourceEnvelope,
         McpResourceList,
     ]
-    assert {contract.__module__ for contract in mcp_contracts} == {
-        "agent_harness.mcp.schema"
-    }
+    assert {contract.__module__ for contract in mcp_contracts} == {"agent_harness.mcp.schema"}
 
 
 def test_config_package_preserves_loader_exports_and_owns_config_contracts() -> None:
@@ -325,9 +333,7 @@ def test_model_schema_module_owns_provider_contracts() -> None:
         ProviderUseApprovalBinding,
         RunProviderRecord,
     ]
-    assert {contract.__module__ for contract in model_contracts} == {
-        "agent_harness.model.schema"
-    }
+    assert {contract.__module__ for contract in model_contracts} == {"agent_harness.model.schema"}
 
 
 def test_policy_schema_module_owns_policy_contracts() -> None:
@@ -354,18 +360,14 @@ def test_policy_schema_module_owns_policy_contracts() -> None:
         SensitivityRule,
         TemplateCapabilityPolicyContract,
     ]
-    assert {contract.__module__ for contract in policy_contracts} == {
-        "agent_harness.policy.schema"
-    }
+    assert {contract.__module__ for contract in policy_contracts} == {"agent_harness.policy.schema"}
 
 
 def test_tools_schema_module_owns_tool_contracts() -> None:
     from agent_harness.tools.schema import GitCommitPlan, ToolCall, ToolObservation, ToolSpec
 
     tool_contracts = [GitCommitPlan, ToolCall, ToolObservation, ToolSpec]
-    assert {contract.__module__ for contract in tool_contracts} == {
-        "agent_harness.tools.schema"
-    }
+    assert {contract.__module__ for contract in tool_contracts} == {"agent_harness.tools.schema"}
 
 
 def test_storage_schema_module_owns_storage_contracts() -> None:

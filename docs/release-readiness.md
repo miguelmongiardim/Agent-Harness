@@ -210,13 +210,15 @@ future-only.
 ## Future Evidence Pack Gate
 
 The V1.9 Compliance Evidence Pack is planned as a later release-readiness input.
-Phase 6 evidence commands validate missing V12 governance export prerequisites,
+Phase 7 evidence commands validate missing V12 governance export prerequisites,
 generate canonical JSON packs with `agent-harness evidence pack --format json`,
 omit unsafe governance-index artifact references with evidence findings, and
 write review-only Markdown for bundle/markdown formats. Evidence archives are
 opt-in, `evidence check` reports pass/fail/prerequisite/internal-error states,
 `evidence index` prints the current artifact index, and `evidence_pack.v1`
-records safe V12 domain summaries plus malformed-domain findings.
+records safe V12 domain summaries plus malformed-domain findings. The local
+operator API can inspect existing evidence pack overview, pack detail, control
+mapping, artifact index, and findings through token-protected read-only routes.
 Release readiness does not generate evidence packs. It may only validate an
 existing pack once the release-readiness evidence gate is implemented.
 
