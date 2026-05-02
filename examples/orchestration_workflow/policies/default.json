@@ -1,7 +1,7 @@
 {
   "schema_version": "policy.v2",
   "name": "default",
-  "description": "Default local policy ceiling for the V11 orchestration workflow demo.",
+  "description": "Default local policy ceiling for the v1.7.0 orchestration workflow demo.",
   "profile_kind": "default",
   "documented": true,
   "deliberate_selection_required": true,

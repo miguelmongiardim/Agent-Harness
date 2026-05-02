@@ -2,15 +2,15 @@
 
 ## Status
 
-V7 is the active `v1.4.0` template-pack track. The durable source documents are
-the [V7 PRD](prd-agent-harness-v7.md) and
-[V7 implementation plan](../plans/agent-harness-v7.md).
+v1.4.0 is the active `v1.4.0` template-pack track. The durable source documents are
+the [v1.4.0 PRD](prd-agent-harness-v1.4.0-template-pack-system.md) and
+[v1.4.0 implementation plan](../plans/agent-harness-v1.4.0-template-pack-system.md).
 
 ## Current Capabilities
 
 The current implementation provides a bundled local template-pack catalog. It
 can list, show, validate, dry-run, preview, and apply packaged templates through
-the existing `agent-harness template` commands. The bundled V7 pack IDs are
+the existing `agent-harness template` commands. The bundled v1.4.0 pack IDs are
 `python-lib`, `cli-tool`, `fastapi-service`, `provider-audit`, and
 `retrieval-quality`. Legacy bundled JSON inputs remain readable through the
 compatibility model path, while the public bundled catalog now serves these IDs
@@ -21,18 +21,18 @@ Clean empty-destination scaffolding is local and records
 overwrites, unsupported template capabilities, invalid packs, target escapes,
 and undeclared parameters remain guarded before writing.
 
-Every bundled V7 pack includes `template.v2.toml`, README content, demo
+Every bundled v1.4.0 pack includes `template.v2.toml`, README content, demo
 metadata, generated config/policy/task/eval examples, and at least one local
 validation or demo command where practical.
 
-The V8 skills track extends `template.v2` with optional `recommended_skills`.
+The v1.5.0 skills track extends `template.v2` with optional `recommended_skills`.
 Those recommendations are recorded in template application evidence and
 workspace metadata, but they remain recommendations only; they do not force
 runtime skill usage by default.
 
-## V7 Local Pack Boundary
+## v1.4.0 Local Pack Boundary
 
-V7 keeps template ownership in `agent_harness.templates` and deepens that
+v1.4.0 keeps template ownership in `agent_harness.templates` and deepens that
 boundary around local template packs. The target behavior is:
 
 - `template.v2.toml` pack manifests loaded with `tomllib`
@@ -51,7 +51,7 @@ compatibility alias.
 
 ## Golden Path
 
-The executable V7 walkthrough lives in
+The executable v1.4.0 walkthrough lives in
 `examples/template_pack_system/README.md`. It covers:
 
 - `agent-harness template list`
@@ -63,15 +63,15 @@ The executable V7 walkthrough lives in
 - `agent-harness release readiness`
 
 Release readiness now runs the bundled-pack acceptance loop directly. It
-refreshes `template validate --all` evidence, dry-runs every bundled V7 pack,
-clean-applies every bundled V7 pack to temporary release workspaces, validates
+refreshes `template validate --all` evidence, dry-runs every bundled v1.4.0 pack,
+clean-applies every bundled v1.4.0 pack to temporary release workspaces, validates
 generated `config.v2`, `policy.v2`, `task.v2`, and `eval.v1` examples, confirms
 template docs exist, confirms completed `template_application.v1` evidence, and
 keeps remote catalog defaults out of executable config.
 
 ## Guarded Scope
 
-The V7 docs-check guard rejects implemented-scope claims that template packs
+The v1.4.0 docs-check guard rejects implemented-scope claims that template packs
 already provide remote catalogs, marketplace behavior, signing, organization
 catalogs, cloud registries, hook execution, script execution, enterprise
 governance, or conditional file inclusion.
@@ -85,4 +85,4 @@ Remote template catalogs, template marketplace behavior, template signing,
 organization template catalogs, cloud template registries, enterprise template
 governance, hook execution, script execution, arbitrary lifecycle hooks,
 conditional file inclusion, full template programming, `template create`,
-`template export`, and `eval.v2` remain outside the V7 implementation target.
+`template export`, and `eval.v2` remain outside the v1.4.0 implementation target.

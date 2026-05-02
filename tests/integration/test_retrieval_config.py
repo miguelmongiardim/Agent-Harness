@@ -13,7 +13,7 @@ from agent_harness.policy.schema import PolicyProfile
 from tests.integration.test_retrieval_hardening import _hide_optional_retrieval_dependencies
 
 
-def test_valid_v5_local_first_retrieval_config_validates(
+def test_valid_v120_local_first_retrieval_config_validates(
     tmp_path: Path,
     monkeypatch,
     capsys,  # type: ignore[no-untyped-def]
@@ -45,7 +45,7 @@ def test_valid_v5_local_first_retrieval_config_validates(
     assert "OK config: agent-harness.yaml artifact_root=.agent-harness" in output
 
 
-def test_valid_v5_local_first_yaml_retrieval_config_validates(
+def test_valid_v120_local_first_yaml_retrieval_config_validates(
     tmp_path: Path,
     monkeypatch,
     capsys,  # type: ignore[no-untyped-def]
@@ -83,7 +83,7 @@ def test_valid_v5_local_first_yaml_retrieval_config_validates(
     assert "OK config: agent-harness.yaml artifact_root=.agent-harness" in output
 
 
-def test_remote_embeddings_config_fails_with_v5_validation_error(
+def test_remote_embeddings_config_fails_with_v120_validation_error(
     tmp_path: Path,
     monkeypatch,
     capsys,  # type: ignore[no-untyped-def]
@@ -105,11 +105,11 @@ def test_remote_embeddings_config_fails_with_v5_validation_error(
     assert main(["doctor"]) == 2
     captured = capsys.readouterr()
 
-    assert "V5 local-first retrieval forbids remote_embeddings: true" in captured.err
+    assert "v1.2.0 local-first retrieval forbids remote_embeddings: true" in captured.err
     assert "retrieval.dense.remote_embeddings" in captured.err
 
 
-def test_hosted_embedding_provider_config_fails_with_v5_validation_error(
+def test_hosted_embedding_provider_config_fails_with_v120_validation_error(
     tmp_path: Path,
     monkeypatch,
     capsys,  # type: ignore[no-untyped-def]
@@ -131,11 +131,11 @@ def test_hosted_embedding_provider_config_fails_with_v5_validation_error(
     assert main(["doctor"]) == 2
     captured = capsys.readouterr()
 
-    assert "V5 local-first retrieval forbids hosted embedding providers" in captured.err
+    assert "v1.2.0 local-first retrieval forbids hosted embedding providers" in captured.err
     assert "retrieval.dense.embedding_provider" in captured.err
 
 
-def test_cloud_qdrant_url_config_fails_with_v5_validation_error(
+def test_cloud_qdrant_url_config_fails_with_v120_validation_error(
     tmp_path: Path,
     monkeypatch,
     capsys,  # type: ignore[no-untyped-def]
@@ -157,11 +157,11 @@ def test_cloud_qdrant_url_config_fails_with_v5_validation_error(
     assert main(["doctor"]) == 2
     captured = capsys.readouterr()
 
-    assert "V5 local-first retrieval forbids cloud Qdrant URLs" in captured.err
+    assert "v1.2.0 local-first retrieval forbids cloud Qdrant URLs" in captured.err
     assert "retrieval.qdrant.url" in captured.err
 
 
-def test_api_key_backed_qdrant_config_fails_with_v5_validation_error(
+def test_api_key_backed_qdrant_config_fails_with_v120_validation_error(
     tmp_path: Path,
     monkeypatch,
     capsys,  # type: ignore[no-untyped-def]
@@ -184,11 +184,11 @@ def test_api_key_backed_qdrant_config_fails_with_v5_validation_error(
     assert main(["doctor"]) == 2
     captured = capsys.readouterr()
 
-    assert "V5 local-first retrieval forbids API-key-backed Qdrant endpoints" in captured.err
+    assert "v1.2.0 local-first retrieval forbids API-key-backed Qdrant endpoints" in captured.err
     assert "retrieval.qdrant.api_key_env" in captured.err
 
 
-def test_https_qdrant_url_config_fails_with_v5_validation_error(
+def test_https_qdrant_url_config_fails_with_v120_validation_error(
     tmp_path: Path,
     monkeypatch,
     capsys,  # type: ignore[no-untyped-def]
@@ -210,12 +210,12 @@ def test_https_qdrant_url_config_fails_with_v5_validation_error(
     assert main(["doctor"]) == 2
     captured = capsys.readouterr()
 
-    assert "V5 local-first retrieval forbids remote HTTPS Qdrant endpoints" in captured.err
+    assert "v1.2.0 local-first retrieval forbids remote HTTPS Qdrant endpoints" in captured.err
     assert "retrieval.qdrant.url" in captured.err
 
 
 @pytest.mark.parametrize("url", ["http://10.1.2.3:6333", "http://203.0.113.10:6333"])
-def test_non_loopback_qdrant_url_config_fails_with_v5_validation_error(
+def test_non_loopback_qdrant_url_config_fails_with_v120_validation_error(
     tmp_path: Path,
     monkeypatch,
     capsys,  # type: ignore[no-untyped-def]
@@ -238,11 +238,11 @@ def test_non_loopback_qdrant_url_config_fails_with_v5_validation_error(
     assert main(["doctor"]) == 2
     captured = capsys.readouterr()
 
-    assert "V5 local-first retrieval forbids non-loopback Qdrant endpoints" in captured.err
+    assert "v1.2.0 local-first retrieval forbids non-loopback Qdrant endpoints" in captured.err
     assert "retrieval.qdrant.url" in captured.err
 
 
-def test_v5_retrieval_config_falls_back_to_lexical_when_dense_dependencies_are_missing(
+def test_v120_retrieval_config_falls_back_to_lexical_when_dense_dependencies_are_missing(
     tmp_path: Path,
     monkeypatch,
     capsys,  # type: ignore[no-untyped-def]
@@ -278,9 +278,9 @@ def test_v5_retrieval_config_falls_back_to_lexical_when_dense_dependencies_are_m
         ["docs"],
         PolicyEngine(tmp_path, PolicyProfile.model_validate(DEFAULT_POLICY)),
     )
-    task_path = _write_task(tmp_path, "v5-missing-dense-deps")
+    task_path = _write_task(tmp_path, "v120-missing-dense-deps")
     _hide_optional_retrieval_dependencies(monkeypatch)
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-v5-missing-dense-deps")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-v120-missing-dense-deps")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-27T13:00:00Z")
 
     assert main(["run", str(task_path), "--dry-run"]) == 0
@@ -290,7 +290,7 @@ def test_v5_retrieval_config_falls_back_to_lexical_when_dense_dependencies_are_m
             tmp_path
             / ".agent-harness"
             / "runs"
-            / "run-v5-missing-dense-deps"
+            / "run-v120-missing-dense-deps"
             / "context_manifest.json"
         ).read_text(encoding="utf-8")
     )

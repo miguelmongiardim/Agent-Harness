@@ -2,15 +2,15 @@
 
 ## Status
 
-The local operator surface is the implemented V6 track for the v1.3.0 release
-target. It is described by [the V6 PRD](prd-agent-harness-v6.md) and
-[the V6 plan](../plans/agent-harness-v6.md).
+The local operator surface is the implemented v1.3.0 track for the v1.3.0 release
+target. It is described by [the v1.3.0 PRD](prd-agent-harness-v1.3.0-local-operator-surface.md) and
+[the v1.3.0 plan](../plans/agent-harness-v1.3.0-local-operator-surface.md).
 
 This page records the implemented local boundary. It must not describe later
 hosted, enterprise, MCP, or multi-agent behavior as current until tests and
 release evidence exist.
 
-## Implemented in V6
+## Implemented in v1.3.0
 
 Phases 1 through 8 have added the safe `agent-harness serve` shell and the
 first local operator run-inspection APIs:
@@ -62,7 +62,7 @@ first local operator run-inspection APIs:
   provider evidence, security/policy evidence, eval/scorecard evidence, and
   approvals
 - the UI approval panel displays pending and decided approvals, accepts optional
-  actor and reason text, and posts approve/deny decisions to the existing V6
+  actor and reason text, and posts approve/deny decisions to the existing v1.3.0
   approval decision API
 - UI approval errors are shown from the API response, including already-decided,
   binding, and drift failures, while the approval artifact remains the source of
@@ -72,7 +72,7 @@ first local operator run-inspection APIs:
 - CI installs the operator extra for Python checks and runs focused operator
   release gates before the release-readiness report
 
-## Implemented V1.9 Evidence API Extension
+## Implemented v1.9.0 Evidence API Extension
 
 The local operator API also exposes token-protected read-only evidence pack
 inspection routes:
@@ -89,7 +89,7 @@ These routes read existing evidence pack artifacts under the configured
 serve arbitrary files, or expose raw provider payloads, secrets, or absolute
 paths.
 
-## Implemented V1.9 Evidence UI Extension
+## Implemented v1.9.0 Evidence UI Extension
 
 The packaged local operator UI includes a read-only Evidence Pack section. It
 uses the existing in-memory operator token, calls only local
@@ -113,11 +113,11 @@ planning, and git commit planning.
 
 ## Roadmap / Not implemented yet
 
-These remain outside the completed V6 local operator implementation:
+These remain outside the completed v1.3.0 local operator implementation:
 
 - release tagging and package publishing for v1.3.0
 
-These remain outside the V6 local operator scope:
+These remain outside the v1.3.0 local operator scope:
 
 - hosted API
 - remote web UI
@@ -136,7 +136,7 @@ These remain outside the V6 local operator scope:
 
 ## Safety Boundaries
 
-The planned V6 security model is intentionally local and modest:
+The planned v1.3.0 security model is intentionally local and modest:
 
 - bind only to `127.0.0.1`, `localhost`, or `::1`
 - require `X-Agent-Harness-Operator-Token` for `/api/v1/*`
@@ -147,7 +147,7 @@ The planned V6 security model is intentionally local and modest:
   arbitrary workspace files, and files outside known artifact roots
 - route all approval decisions through the existing approval service
 
-V6 must not present the in-memory token as enterprise authentication or the
+v1.3.0 must not present the in-memory token as enterprise authentication or the
 local server as a hosted platform.
 
 ## Golden Path

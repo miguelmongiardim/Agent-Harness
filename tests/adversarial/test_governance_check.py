@@ -202,7 +202,7 @@ def _write_docs_check_report(root: Path) -> None:
                         "rule_id": "unsupported_governance_scope_claim",
                         "path": "docs/governance.md",
                         "line": 5,
-                        "message": "Docs claim unsupported V12 governance behavior as available",
+                        "message": "Docs claim unsupported v1.8.0 governance behavior as available",
                         "text": "Agent Harness provides hosted governance.",
                     }
                 ],

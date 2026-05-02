@@ -74,7 +74,7 @@ def test_evidence_help_exposes_pack_check_and_index_commands(capsys) -> None:  #
     assert "index" in help_text
 
 
-def test_evidence_pack_fails_when_v12_governance_exports_are_missing(
+def test_evidence_pack_fails_when_v180_governance_exports_are_missing(
     tmp_path: Path,
     monkeypatch,
     capsys,
@@ -98,7 +98,7 @@ def test_evidence_pack_fails_when_v12_governance_exports_are_missing(
     assert all(
         diagnostic["severity"] == "error"
         and diagnostic["domain"] == "evidence"
-        and "missing V12 governance export prerequisite" in diagnostic["message"]
+        and "missing v1.8.0 governance export prerequisite" in diagnostic["message"]
         and "agent-harness governance export --output .agent-harness/governance/"
         in diagnostic["message"]
         for diagnostic in result["diagnostics"]
@@ -108,7 +108,7 @@ def test_evidence_pack_fails_when_v12_governance_exports_are_missing(
     assert not (tmp_path / ".agent-harness" / "governance").exists()
 
 
-def test_evidence_check_fails_when_v12_governance_exports_are_missing(
+def test_evidence_check_fails_when_v180_governance_exports_are_missing(
     tmp_path: Path,
     monkeypatch,
     capsys,
@@ -142,7 +142,7 @@ def test_evidence_check_fails_when_v12_governance_exports_are_missing(
         ("governance_findings.v1.json", "governance_findings.v1"),
     ],
 )
-def test_evidence_pack_names_each_missing_v12_governance_export(
+def test_evidence_pack_names_each_missing_v180_governance_export(
     tmp_path: Path,
     monkeypatch,
     capsys,
@@ -164,7 +164,7 @@ def test_evidence_pack_names_each_missing_v12_governance_export(
             "severity": "error",
             "domain": "evidence",
             "message": (
-                f"missing V12 governance export prerequisite: {missing_schema}; "
+                f"missing v1.8.0 governance export prerequisite: {missing_schema}; "
                 "generate it first with `agent-harness governance export --output "
                 ".agent-harness/governance/`"
             ),
@@ -174,7 +174,7 @@ def test_evidence_pack_names_each_missing_v12_governance_export(
     assert str(tmp_path) not in output
 
 
-def test_evidence_pack_writes_minimal_canonical_json_from_v12_governance_exports(
+def test_evidence_pack_writes_minimal_canonical_json_from_v180_governance_exports(
     tmp_path: Path,
     monkeypatch,
     capsys,
@@ -530,7 +530,7 @@ def test_evidence_pack_reports_absent_optional_domains_as_not_present(
     ):
         assert pack["domains"][domain] == {
             "status": "not_present",
-            "message": f"{domain} evidence not present in V12 governance exports",
+            "message": f"{domain} evidence not present in v1.8.0 governance exports",
             "evidence_refs": [],
             "summary": {},
         }
@@ -581,9 +581,9 @@ def test_evidence_pack_packages_governance_domain_summaries_and_malformed_findin
         {
             "governance": {
                 "status": "present",
-                "message": "V12 governance outputs are available for review",
+                "message": "v1.8.0 governance outputs are available for review",
                 "evidence_refs": governance_refs,
-                "summary": {"source": "v12_governance_exports"},
+                "summary": {"source": "v180_governance_exports"},
             },
             "policy": {
                 "status": "present",
@@ -755,7 +755,7 @@ def test_evidence_pack_packages_governance_domain_summaries_and_malformed_findin
     }
     assert pack["domains"]["multi_agent"] == {
         "status": "not_present",
-        "message": "multi_agent evidence not present in V12 governance exports",
+        "message": "multi_agent evidence not present in v1.8.0 governance exports",
         "evidence_refs": [],
         "summary": {},
     }
@@ -793,7 +793,7 @@ def test_evidence_pack_packages_governance_domain_summaries_and_malformed_findin
             "artifact_reference": ".agent-harness/governance/governance_summary.v1.json",
             "evidence_refs": [".agent-harness/governance/governance_summary.v1.json"],
             "omission_reason": "malformed_domain_summary",
-            "recommendation": "Regenerate V12 governance summary domain metadata.",
+            "recommendation": "Regenerate v1.8.0 governance summary domain metadata.",
             "blocks_release": True,
             "blocks_evidence_pack": True,
         }

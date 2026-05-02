@@ -1,21 +1,21 @@
-# Agent Harness V3 / v1.0.0 Plan
+# Agent Harness v1.0.0 / v1.0.0 Plan
 
 ## Planning Decision
 
-V3 is the v1.0.0 release-maturity track. The goal is to turn the v0.3.0 V2
+v1.0.0 is the v1.0.0 Mature CLI/runtime track. The goal is to turn the v0.3.0
 architecture-completion prototype into a stable OSS CLI/runtime release with
 auditable release evidence, reproducible demos, packaging checks, Docker demo
 packaging, pre-commit discipline, accurate public docs, and a clear
 compatibility contract.
 
-V3 does not promote deferred platform scope. Enterprise readiness, compliance
+v1.0.0 does not promote deferred platform scope. Enterprise readiness, compliance
 readiness, MCP support, multi-agent support, production Qdrant server mode,
 external catalogs, web/API maturity, and deployment hardening remain out of
 scope until later plans implement and test them.
 
 ## Phase 0: v1.0.0 PRD, Compatibility Contract, And Scope Reset
 
-First RED test: docs check fails until V3 docs define v1.0.0 positioning,
+First RED test: docs check fails until v1.0.0 docs define v1.0.0 positioning,
 compatibility rules, and Implemented vs Roadmap boundaries.
 
 Acceptance criteria:

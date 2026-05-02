@@ -1,6 +1,6 @@
-# Plan: Agent Harness V6 Local Operator Surface
+# Plan: Agent Harness v1.3.0 Local Operator Surface
 
-> Source PRD: [docs/prd-agent-harness-v6.md](../docs/prd-agent-harness-v6.md)
+> Source PRD: [docs/prd-agent-harness-v1.3.0-local-operator-surface.md](../docs/prd-agent-harness-v1.3.0-local-operator-surface.md)
 
 Phases 0, 1, 2, 3, 4, 5, 6, 7, and 8 have been implemented. Release tagging and
 package publishing remain outside this implementation plan.
@@ -30,21 +30,21 @@ Durable decisions that apply across all phases:
   same-origin UI by default, no wildcard CORS, no token persistence by default.
 - **UI boundary**: package static HTML/CSS/JS with no Node build, no external
   CDN, no remote fonts, no analytics, and no external API calls.
-- **Release boundary**: V6 targets v1.3.0 and stays limited to local operator
+- **Release boundary**: v1.3.0 targets v1.3.0 and stays limited to local operator
   inspection and approval.
 
 ---
 
-## Phase 0: V6 Scope Is Documented And Guarded
+## Phase 0: v1.3.0 Scope Is Documented And Guarded
 
 **User stories covered**
 
 - Story 7: maintainer can verify local-only server scope.
-- Story 10: release reviewer can distinguish V6 behavior from roadmap claims.
+- Story 10: release reviewer can distinguish v1.3.0 behavior from roadmap claims.
 
 **Observable behaviors**
 
-- V6 PRD and plan exist.
+- v1.3.0 PRD and plan exist.
 - Operator docs describe local operator API/UI as the target scope.
 - Docs checks fail when hosted, enterprise, MCP, multi-agent, cloud, production
   web service, or compliance claims appear as implemented behavior.
@@ -52,17 +52,17 @@ Durable decisions that apply across all phases:
 **First RED test**
 
 - `agent-harness docs check` passes while a doc claims hosted operator API or
-  enterprise web UI as implemented V6 behavior.
+  enterprise web UI as implemented v1.3.0 behavior.
 
 ### What to build
 
-Add the V6 PRD, plan, operator docs, README/roadmap positioning, and docs-check
+Add the v1.3.0 PRD, plan, operator docs, README/roadmap positioning, and docs-check
 guard updates needed to separate local operator behavior from roadmap claims.
 
 ### Acceptance criteria
 
-- [x] `docs/prd-agent-harness-v6.md` exists and follows the PRD template.
-- [x] `plans/agent-harness-v6.md` is a vertical-slice implementation plan.
+- [x] `docs/prd-agent-harness-v1.3.0-local-operator-surface.md` exists and follows the PRD template.
+- [x] `plans/agent-harness-v1.3.0-local-operator-surface.md` is a vertical-slice implementation plan.
 - [x] `docs/operator-ui.md` describes local-only operator scope.
 - [x] README and roadmap distinguish local operator API/UI from hosted or
       enterprise UI.
@@ -352,7 +352,7 @@ approval service and map domain errors to clear HTTP responses.
 
 ### What to build
 
-Add packaged static HTML/CSS/JS that consumes existing V6 API routes. Keep the
+Add packaged static HTML/CSS/JS that consumes existing v1.3.0 API routes. Keep the
 UI simple, offline-capable, and operationally dense.
 
 ### Acceptance criteria
@@ -392,13 +392,13 @@ UI simple, offline-capable, and operationally dense.
 **Observable behaviors**
 
 - UI approval panel displays pending and decided approvals.
-- UI approve/deny controls call the V6 decision API.
+- UI approve/deny controls call the v1.3.0 decision API.
 - UI reflects decision results and error states.
 - CLI inspect sees the same decision state.
 
 **First RED test**
 
-- A pending approval can be decided through the UI without calling the V6
+- A pending approval can be decided through the UI without calling the v1.3.0
   approval decision route or without updating existing approval artifacts.
 
 ### What to build
@@ -435,11 +435,11 @@ state.
 
 - Story 1: reviewer can start the UI.
 - Story 4: reviewer can approve or deny through UI.
-- Story 10: release reviewer can accept V6 from clean checkout evidence.
+- Story 10: release reviewer can accept v1.3.0 from clean checkout evidence.
 
 **Observable behaviors**
 
-- The documented V6 golden path works with operator extras installed.
+- The documented v1.3.0 golden path works with operator extras installed.
 - Release readiness reports operator evidence.
 - CI validates API token requirements, host rejection, approval binding, static
   UI packaging, and docs claim boundaries.
@@ -453,11 +453,11 @@ state.
 ### What to build
 
 Add release-readiness operator evidence, CI coverage, final docs updates, and
-the golden-path documentation. Keep V6 scoped to local operator behavior.
+the golden-path documentation. Keep v1.3.0 scoped to local operator behavior.
 
 ### Acceptance criteria
 
-- [x] V6 golden path works:
+- [x] v1.3.0 golden path works:
 
       ```powershell
       uv sync --extra operator
@@ -499,7 +499,7 @@ the golden-path documentation. Keep V6 scoped to local operator behavior.
 
 ## Cross-Phase Invariants
 
-- V6 exposes the existing control plane; it does not create a parallel runtime.
+- v1.3.0 exposes the existing control plane; it does not create a parallel runtime.
 - Base install remains CLI-first.
 - Operator dependencies remain optional.
 - Server binding remains loopback-only.
@@ -535,7 +535,7 @@ the golden-path documentation. Keep V6 scoped to local operator behavior.
 
 ## Final Acceptance
 
-V6 is complete only when the following path works from a clean checkout with
+v1.3.0 is complete only when the following path works from a clean checkout with
 operator extras installed:
 
 ```powershell
@@ -546,7 +546,7 @@ uv run agent-harness demo provider-audit
 uv run agent-harness serve --host 127.0.0.1 --port 8765
 ```
 
-V6 is also complete only when a reviewer can open the local UI, inspect run
+v1.3.0 is also complete only when a reviewer can open the local UI, inspect run
 list and run details, inspect timeline/context/provider/security/policy/eval
 and retrieval scorecard evidence, review pending approvals, approve or deny
 through the UI, verify the approval decision in run artifacts, verify CLI

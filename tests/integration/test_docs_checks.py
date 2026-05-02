@@ -358,7 +358,7 @@ def test_docs_check_rejects_mcp_scope_claims_outside_roadmap(
         ),
     ],
 )
-def test_docs_check_rejects_v11_orchestration_claims_outside_roadmap(
+def test_docs_check_rejects_v170_orchestration_claims_outside_roadmap(
     tmp_path: Path,
     monkeypatch,
     capsys,
@@ -479,7 +479,7 @@ def test_docs_check_rejects_benchmark_comparison_claims_outside_roadmap(
         ),
     ],
 )
-def test_docs_check_rejects_v12_governance_compliance_claims_outside_roadmap(
+def test_docs_check_rejects_v180_governance_compliance_claims_outside_roadmap(
     tmp_path: Path,
     monkeypatch,
     capsys,
@@ -584,15 +584,15 @@ def test_ci_runs_docs_check() -> None:
     assert "python -m agent_harness docs check" in workflow
 
 
-def test_v12_governance_report_and_export_scope_is_current_in_public_docs() -> None:
+def test_v180_governance_report_and_export_scope_is_current_in_public_docs() -> None:
     readme = Path("README.md").read_text(encoding="utf-8")
     roadmap = Path("docs/roadmap.md").read_text(encoding="utf-8")
-    prd_link = "docs/prd-agent-harness-v12-local-governance-console.md"
-    plan_link = "plans/agent-harness-v12-local-governance-console.md"
+    prd_link = "docs/prd-agent-harness-v1.8.0-local-governance-console.md"
+    plan_link = "plans/agent-harness-v1.8.0-local-governance-console.md"
 
     assert prd_link in readme
     assert plan_link in readme
-    assert "V12 local governance evidence surface" in readme
+    assert "v1.8.0 local governance evidence surface" in readme
     assert "`agent-harness governance summary`" in readme
     assert "`agent-harness governance check`" in readme
     assert "agent-harness governance report --format markdown" in readme
@@ -603,8 +603,8 @@ def test_v12_governance_report_and_export_scope_is_current_in_public_docs() -> N
     assert "remain future-only" in readme
     assert "Compliance readiness and formal certification remain future-only." in readme
 
-    assert "prd-agent-harness-v12-local-governance-console.md" in roadmap
-    assert "agent-harness-v12-local-governance-console.md" in roadmap
+    assert "prd-agent-harness-v1.8.0-local-governance-console.md" in roadmap
+    assert "agent-harness-v1.8.0-local-governance-console.md" in roadmap
     assert "v1.8.0 Implemented" in roadmap
     assert (
         "Phase 3 implements `agent-harness governance summary`, `check`, `report`, and" in roadmap
@@ -625,27 +625,27 @@ def test_v19_evidence_pack_release_gate_scope_is_documented() -> None:
     architecture = Path("docs/architecture.md").read_text(encoding="utf-8")
     security_model = Path("docs/security-model.md").read_text(encoding="utf-8")
 
-    prd_link = "docs/prd-agent-harness-v1.9-compliance-evidence-pack.md"
-    plan_link = "plans/agent-harness-v1.9-compliance-evidence-pack.md"
+    prd_link = "docs/prd-agent-harness-v1.9.0-compliance-evidence-pack.md"
+    plan_link = "plans/agent-harness-v1.9.0-compliance-evidence-pack.md"
 
     assert prd_link in readme
     assert plan_link in readme
-    assert "V1.9 Compliance Evidence Pack" in readme
+    assert "v1.9.0 Compliance Evidence Pack" in readme
     assert "planned" in readme
     assert "does not certify compliance" in readme
 
     assert "v1.9.0 Release" in roadmap
-    assert "prd-agent-harness-v1.9-compliance-evidence-pack.md" in roadmap
-    assert "agent-harness-v1.9-compliance-evidence-pack.md" in roadmap
-    assert "depends on completed V12 governance exports" in roadmap
+    assert "prd-agent-harness-v1.9.0-compliance-evidence-pack.md" in roadmap
+    assert "agent-harness-v1.9.0-compliance-evidence-pack.md" in roadmap
+    assert "depends on completed v1.8.0 governance exports" in roadmap
     assert "Through Phase 9 the evidence-pack track adds evidence command discovery" in roadmap
     assert "`evidence pack --format json` generation" in roadmap
     assert "redaction-safe artifact indexing" in roadmap
-    assert "V12 governance indexes" in roadmap
+    assert "v1.8.0 governance indexes" in roadmap
     assert "review-only Markdown output" in roadmap
     assert "opt-in archive creation" in roadmap
     assert "`evidence index` JSON output" in roadmap
-    assert "safe V12 domain summary packaging" in roadmap
+    assert "safe v1.8.0 domain summary packaging" in roadmap
     assert "malformed-domain evidence" in roadmap
     assert "findings" in roadmap
     assert "token-protected read-only evidence" in roadmap
@@ -690,12 +690,12 @@ def test_v19_evidence_pack_release_gate_scope_is_documented() -> None:
     assert "pack under `.agent-harness/evidence/`" in release_readiness
     assert "blocks readiness on critical or" in release_readiness
     assert "links only fixed project-relative" in release_readiness
-    assert "Implemented V1.9 Evidence API Extension" in operator_docs
-    assert "Implemented V1.9 Evidence UI Extension" in operator_docs
+    assert "Implemented v1.9.0 Evidence API Extension" in operator_docs
+    assert "Implemented v1.9.0 Evidence UI Extension" in operator_docs
     assert "GET /api/v1/evidence/artifact-index" in operator_docs
     assert "Release Evidence" in operator_docs
     assert (
-        "`agent_harness.evidence` owns the V1.9 Compliance Evidence Pack boundary" in architecture
+        "`agent_harness.evidence` owns the v1.9.0 Compliance Evidence Pack boundary" in architecture
     )
     assert "token-protected read-only evidence routes" in architecture
     assert "read-only Evidence Pack views" in architecture
@@ -704,7 +704,7 @@ def test_v19_evidence_pack_release_gate_scope_is_documented() -> None:
     assert "Release-readiness coverage stays inside that redaction-safe" in security_model
 
 
-def test_docs_check_rejects_stale_v3_scope_for_agent_harness_repo(
+def test_docs_check_rejects_stale_v100_scope_for_agent_harness_repo(
     tmp_path: Path,
     monkeypatch,
     capsys,
@@ -724,7 +724,7 @@ def test_docs_check_rejects_stale_v3_scope_for_agent_harness_repo(
                 "",
                 "## Roadmap / Not Enabled By Init",
                 "",
-                "The V3 plan starts with operational integration hardening.",
+                "The v1.0.0 plan starts with operational integration hardening.",
                 "",
             ]
         ),
@@ -741,9 +741,9 @@ def test_docs_check_rejects_stale_v3_scope_for_agent_harness_repo(
                 "",
                 "Agent Harness provides controlled local workflows.",
                 "",
-                "## V3 Direction",
+                "## v1.0.0 Direction",
                 "",
-                "V3 is planned as operational integration hardening.",
+                "v1.0.0 is planned as operational integration hardening.",
                 "",
                 "## Later Possibilities",
                 "",
@@ -758,7 +758,7 @@ def test_docs_check_rejects_stale_v3_scope_for_agent_harness_repo(
     report = json.loads(capsys.readouterr().out)
     rule_ids = {finding["rule_id"] for finding in report["findings"]}
 
-    assert "stale_v3_scope" in rule_ids
+    assert "stale_v100_scope" in rule_ids
     assert "missing_v1_compatibility_contract" in rule_ids
 
 

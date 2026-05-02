@@ -1,4 +1,4 @@
-# PRD: Agent Harness V6 Local Operator Surface
+# PRD: Agent Harness v1.3.0 Local Operator Surface
 
 ## Problem Statement
 
@@ -9,7 +9,7 @@ readiness. The remaining operator workflow is still mostly terminal-bound.
 
 A reviewer can inspect artifacts through CLI commands, but the original product
 conception calls for a human-readable operator surface for approvals and run
-inspection. Without V6, review of a paused run requires knowing the artifact
+inspection. Without v1.3.0, review of a paused run requires knowing the artifact
 layout and CLI inspection commands. That makes approval review harder to
 demonstrate and increases the chance that reviewers treat the stored evidence as
 opaque files instead of an auditable control plane.
@@ -20,7 +20,7 @@ decisions are recorded through the same policy and audit behavior as the CLI.
 
 ## Solution
 
-V6 introduces a local-only operator surface for v1.3.0: an optional web API and
+v1.3.0 introduces a local-only operator surface for v1.3.0: an optional web API and
 packaged static UI over existing Agent Harness run artifacts and approval
 services. The server exposes the current control plane. It does not replace the
 CLI or runtime.
@@ -36,15 +36,15 @@ The primary reviewer workflow is:
 6. Approve or deny an existing pending approval through the UI.
 7. Verify that CLI inspection shows the same approval state and audit evidence.
 
-V6 deliberately avoids hosted service behavior, non-loopback binding, remote web
+v1.3.0 deliberately avoids hosted service behavior, non-loopback binding, remote web
 UI operation, multi-user authentication, run creation, config editing, template
 application, direct patch application, direct git commit creation, direct
 provider execution, MCP, multi-agent orchestration, enterprise readiness, and
 compliance readiness.
 
-## Implemented in V6
+## Implemented in v1.3.0
 
-The V6 target scope is a local operator surface:
+The v1.3.0 target scope is a local operator surface:
 
 - optional `agent-harness[operator]` dependencies for FastAPI and uvicorn
 - `agent-harness serve` with loopback-only host validation
@@ -61,7 +61,7 @@ The V6 target scope is a local operator surface:
 
 ## Roadmap / Not implemented yet
 
-The following are not part of V6:
+The following are not part of v1.3.0:
 
 - hosted API
 - remote web UI
@@ -95,7 +95,7 @@ The following are not part of V6:
    approval state, so that the operator surface does not create a parallel
    source of truth.
 7. As a security-minded maintainer, I want the operator server to bind only to
-   loopback hosts, so that V6 does not introduce network exposure by default.
+   loopback hosts, so that v1.3.0 does not introduce network exposure by default.
 8. As a security-minded maintainer, I want `/api/v1/*` routes to require an
    operator token, so that accidental local access is gated without claiming
    enterprise authentication.
@@ -103,7 +103,7 @@ The following are not part of V6:
    FastAPI and uvicorn are not required unless I opt into the operator surface.
 10. As a release reviewer, I want release readiness to verify the operator API,
     token requirement, loopback binding, static UI packaging, and claim
-    boundaries, so that V6 can be accepted from a clean checkout.
+    boundaries, so that v1.3.0 can be accepted from a clean checkout.
 
 ## Behavioral Requirements
 
@@ -167,7 +167,7 @@ The following are not part of V6:
 33. The UI lets a reviewer list runs, open a run, inspect timeline, context,
     artifacts, provider evidence, security or policy findings, eval or
     scorecard evidence, and pending approvals.
-34. The UI lets a reviewer approve or deny pending approvals through the V6 API.
+34. The UI lets a reviewer approve or deny pending approvals through the v1.3.0 API.
 35. Release readiness reports operator evidence, including API smoke, static UI
     packaging, no external UI references, loopback host rejection, token
     enforcement, approval binding enforcement, and docs claim boundaries.
@@ -179,7 +179,7 @@ The following are not part of V6:
 
 - Preserve the existing CLI and runtime as the source of run creation and
   execution behavior.
-- Add `agent-harness serve` as the only new public CLI command for V6.
+- Add `agent-harness serve` as the only new public CLI command for v1.3.0.
 - Add `agent_harness.operator` as the operator boundary. It should expose an
   app factory and reuse existing storage, policy, artifact, and approval
   services.
@@ -220,7 +220,7 @@ The following are not part of V6:
   read arbitrary files.
 - Add UI packaging tests that parse static assets and reject external CDN,
   remote font, analytics, and external API references.
-- Add docs-check coverage that allows local operator API/UI claims only in V6
+- Add docs-check coverage that allows local operator API/UI claims only in v1.3.0
   implemented sections and still blocks hosted, enterprise, MCP, multi-agent,
   cloud, production web service, and compliance claims outside roadmap sections.
 - Keep tests focused on public CLI, API, artifact, and release-readiness
@@ -250,12 +250,12 @@ The following are not part of V6:
 ## Further Notes
 
 - The security model is intentionally modest: loopback binding plus an
-  in-memory token for local operation. V6 must not describe this as enterprise
+  in-memory token for local operation. v1.3.0 must not describe this as enterprise
   authentication.
 - The highest-risk behavior is approval mutation. It must stay inside the
   existing approval service and preserve all existing approval binding and drift
   checks.
-- The second highest-risk behavior is artifact exposure. V6 should add an
+- The second highest-risk behavior is artifact exposure. v1.3.0 should add an
   explicit allowlist instead of exposing user-supplied file paths.
 - The golden path is:
 

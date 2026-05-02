@@ -55,7 +55,7 @@ proposed behavior and that task ids alone are insufficient to drive actions.
 ## Provider Core Evals
 
 The `provider-core-deterministic-boundaries` eval is the normal CI proof for
-V4 provider core. It uses mock and recorded-fixture provider paths only, so it
+v1.1.0 provider core. It uses mock and recorded-fixture provider paths only, so it
 does not require provider credentials or outbound network access.
 
 The eval writes inspectable run artifacts for provider input, provider calls,

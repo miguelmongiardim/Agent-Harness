@@ -428,16 +428,16 @@ def _write_release_metadata(root: Path) -> None:
         encoding="utf-8",
     )
     (root / "docs").mkdir(exist_ok=True)
-    (root / "docs" / "prd-agent-harness-v3.md").write_text(
+    (root / "docs" / "prd-agent-harness-v1.0.0-mature-cli-runtime.md").write_text(
         "\n".join(
             [
-                "# Agent Harness V3 / v1.0.0 PRD",
+                "# Agent Harness v1.0.0 / v1.0.0 PRD",
                 "",
-                "Agent Harness V3 is the v1.0.0 maturity release.",
+                "Agent Harness v1.0.0 is the v1.0.0 Mature CLI/runtime release.",
                 "",
                 "## Compatibility And Deprecation Policy",
                 "",
-                "V2 schemas are the v1.0.0 public baseline.",
+                "v0.3.0 schemas are the v1.0.0 public baseline.",
                 "",
                 "## Implemented vs Roadmap",
                 "",
@@ -454,7 +454,7 @@ def _write_release_metadata(root: Path) -> None:
                 "",
                 "## Migration Notes From v0.3.0 To v1.0.0",
                 "",
-                "v1.0.0 keeps the v0.3.0 V2 schemas as the public baseline.",
+                "v1.0.0 keeps the v0.3.0 schemas as the public baseline.",
                 "",
             ]
         ),

@@ -1,9 +1,9 @@
-# PRD: Agent Harness V11 Multi-Agent Complexity Benchmark
+# PRD: Agent Harness v1.7.1 Multi-Agent Complexity Benchmark
 
-This PRD amends the V11 policy-mediated orchestration track. The original
-requirement was phrased as a V10 requirement, but this repository already uses
-V10 for the schema-boundary refactor. The benchmark belongs with V11 because it
-measures whether V11 orchestration roles improve outcomes over a normal
+This PRD amends the v1.7.0 policy-mediated orchestration track. The original
+requirement was phrased as a v1.6.1 requirement, but this repository already uses
+v1.6.1 for the schema-boundary refactor. The benchmark belongs with v1.7.0 because it
+measures whether v1.7.0 orchestration roles improve outcomes over a normal
 single-agent run.
 
 ## Problem Statement
@@ -51,7 +51,7 @@ The comparison workflow evaluates these modes:
    exist for the case
 
 The benchmark starts with bundled local samples. A later version may add an
-explicit per-case allowlist for broader packs, but V11 comparison should not
+explicit per-case allowlist for broader packs, but v1.7.0 comparison should not
 run arbitrary external benchmarks by default.
 
 The benchmark records metrics for task success, tests passed, policy
@@ -182,7 +182,7 @@ changes.
   files, approvals, and artifacts cannot contaminate other modes.
 - Use existing run exports and orchestration exports as measurement inputs
   instead of reading private runtime objects.
-- Add roadmap documentation for explicit benchmark allowlists, but keep V11
+- Add roadmap documentation for explicit benchmark allowlists, but keep v1.7.0
   initial scope to bundled local samples.
 
 ## Testing Decisions
@@ -208,7 +208,7 @@ changes.
 ## Out of Scope
 
 - Implementing the benchmark in this planning branch.
-- Replacing the existing V10 schema-boundary PRD or plan.
+- Replacing the existing v1.6.1 schema-boundary PRD or plan.
 - Parallel orchestration.
 - Nested orchestration.
 - Hosted benchmark execution or remote agent workers.

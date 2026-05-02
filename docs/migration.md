@@ -20,13 +20,13 @@ than silently rewritten.
 
 ## Migration Notes From v0.3.0 To v1.0.0
 
-v1.0.0 keeps the v0.3.0 V2 schemas as the public compatibility baseline:
-`config.v2`, `task.v2`, `policy.v2`, and `template.v2`. Existing readable V1
+v1.0.0 keeps the v0.3.0 schemas as the public compatibility baseline:
+`config.v2`, `task.v2`, `policy.v2`, and `template.v2`. Existing readable v0.2.0
 inputs remain compatibility inputs through the migration workflow, but new
-projects and bundled examples continue to emit V2 schemas.
+projects and bundled examples continue to emit v0.3.0 schemas.
 
 No workspace rewrite is required for a v0.3.0 workspace that already uses the
-V2 defaults. Maintainers should run:
+v0.3.0 defaults. Maintainers should run:
 
 ```powershell
 agent-harness migrate schemas

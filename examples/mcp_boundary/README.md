@@ -1,6 +1,6 @@
 # MCP Boundary Example
 
-This example is the V9 golden path for the local read-only MCP boundary.
+This example is the v1.6.0 golden path for the local read-only MCP boundary.
 
 From a clean checkout:
 
@@ -26,4 +26,4 @@ written in the demo workspace at `.agent-harness/mcp/access-log.jsonl`.
 
 MCP tools, write actions, approval decisions, provider execution, HTTP
 transport, hosted service operation, remote gateways, and arbitrary file reads
-remain outside this V9 boundary.
+remain outside this v1.6.0 boundary.

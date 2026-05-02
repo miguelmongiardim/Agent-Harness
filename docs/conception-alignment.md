@@ -12,7 +12,7 @@ surfaces, MCP, retention, and enterprise-grade evidence remain deliberately
 deferred.
 
 The original conception should remain the north star, but future work should not
-copy its old MVP/v1/v2 labels. The real release history is now V0 through V3,
+copy its old MVP/v1/v2 labels. The real release history is now v0.1.0 through v1.0.0,
 with v1.0.0 closing the stable local CLI/runtime baseline.
 
 ## What This Repo Proves
@@ -64,7 +64,7 @@ control-plane release before it became a live applied-AI runtime.
 Important drift points:
 
 - The original report's MVP/v1/v2 milestone labels no longer map to the actual
-  release history. The project now has V0, V1, V2, and V3/v1.0.0.
+  release history. The project now has v0.1.0, v0.2.0, v0.3.0, and v1.0.0/v1.0.0.
 - Some report-shaped modules are boundary placeholders rather than implemented
   systems, especially MCP, OpenTelemetry, and production Qdrant.
 - The current provider path is auditable and well controlled, but still relies
@@ -121,12 +121,12 @@ The highest-value remaining work is ordered below. This is the path from
 
 ## Roadmap
 
-The recommended next version is V4: live provider and structured-output
+The recommended next version is v1.1.0: live provider and structured-output
 alignment. That is the most direct fix for the concept drift because the
 original project was conceived as an LLM-powered software-engineering harness,
 while the current release is primarily a deterministic, auditable control-plane
 baseline.
 
-V4 should not add web UI, MCP execution, multi-agent orchestration, or
+v1.1.0 should not add web UI, MCP execution, multi-agent orchestration, or
 enterprise/compliance claims. Those become credible only after the live provider
 path is policy-safe, inspectable, and covered by evals.

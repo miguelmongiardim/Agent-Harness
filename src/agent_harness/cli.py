@@ -330,7 +330,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     mcp = sub.add_parser(
         "mcp",
-        description="Local MCP boundary inspection. V9 exposes resources/prompts only; no tools.",
+        description="Local MCP boundary: resources/prompts only; no tools.",
     )
     mcp_sub = mcp.add_subparsers(required=True)
     mcp_serve = mcp_sub.add_parser("serve")

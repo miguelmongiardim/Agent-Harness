@@ -6,8 +6,8 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 ROOT_SCHEMA_MODULE = "agent_harness" + ".schemas"
 ROOT_SCHEMA_HISTORICAL_REFERENCES = {
-    "docs/prd-agent-harness-v10.md",
-    "plans/agent-harness-v10.md",
+    "docs/prd-agent-harness-v1.6.1-schema-internals-refactor.md",
+    "plans/agent-harness-v1.6.1-schema-internals-refactor.md",
 }
 TEXT_REFERENCE_SUFFIXES = {
     ".css",

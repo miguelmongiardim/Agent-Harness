@@ -29,7 +29,7 @@ def test_template_v1_bundle_remains_readable() -> None:
     assert spec.generated_schema_versions == {}
 
 
-def test_template_catalog_exposes_required_bundled_v7_packs(
+def test_template_catalog_exposes_required_bundled_v140_packs(
     capsys,  # type: ignore[no-untyped-def]
 ) -> None:
     assert main(["template", "list"]) == 0
@@ -184,7 +184,7 @@ def test_template_validate_all_applies_bundled_templates_cleanly_and_records_rel
     assert {entry["template_id"] for entry in evidence["templates"]} == set(results)
 
 
-def test_required_bundled_v7_packs_dry_run_without_mutation(
+def test_required_bundled_v140_packs_dry_run_without_mutation(
     tmp_path: Path,
     monkeypatch,  # type: ignore[no-untyped-def]
     capsys,  # type: ignore[no-untyped-def]
@@ -227,7 +227,7 @@ def test_required_bundled_v7_packs_dry_run_without_mutation(
     assert not (tmp_path / ".agent-harness").exists()
 
 
-def test_required_bundled_v7_packs_do_not_claim_remote_pack_features(
+def test_required_bundled_v140_packs_do_not_claim_remote_pack_features(
     capsys,  # type: ignore[no-untyped-def]
 ) -> None:
     forbidden_claims = {

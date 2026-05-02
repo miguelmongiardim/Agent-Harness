@@ -1,13 +1,13 @@
-# Plan: Agent Harness V12 Local Governance Console
+# Plan: Agent Harness v1.8.0 Local Governance Console
 
 > Source PRD:
-> [docs/prd-agent-harness-v12-local-governance-console.md](../docs/prd-agent-harness-v12-local-governance-console.md)
+> [docs/prd-agent-harness-v1.8.0-local-governance-console.md](../docs/prd-agent-harness-v1.8.0-local-governance-console.md)
 
 This plan follows the PRD -> Plan -> TDD workflow. It is intentionally limited
 to planning; do not implement these phases until a separate implementation
 request starts TDD execution.
 
-V12 targets `v1.8.0`. The feature is a local governance evidence browser and
+v1.8.0 targets `v1.8.0`. The feature is a local governance evidence browser and
 reporting surface over existing artifacts, not a hosted admin platform,
 enterprise control plane, or compliance product.
 
@@ -40,25 +40,25 @@ Durable decisions that apply across all phases:
 - **Operator boundary**: extend the existing local operator app with
   token-protected read-only governance routes and a packaged static Governance
   section.
-- **External service boundary**: V12 is local and artifact-backed. It requires
+- **External service boundary**: v1.8.0 is local and artifact-backed. It requires
   no network, hosted service, remote dashboard, multi-user identity, or
   compliance backend.
 
 ---
 
-## Phase 0: V12 Scope Is Documented And Guarded
+## Phase 0: v1.8.0 Scope Is Documented And Guarded
 
 **User stories covered**
 
 - Story 18: documentation reviewer can prevent unsupported governance and
   compliance claims.
-- Story 17: release maintainer can see how V12 leads into later compliance
+- Story 17: release maintainer can see how v1.8.0 leads into later compliance
   evidence without claiming readiness.
 
 **Observable behaviors**
 
-- V12 PRD and vertical implementation plan exist as durable planning artifacts.
-- Public docs can reference V12 as planned work without claiming it is
+- v1.8.0 PRD and vertical implementation plan exist as durable planning artifacts.
+- Public docs can reference v1.8.0 as planned work without claiming it is
   implemented before feature evidence exists.
 - Docs checks can reject unsupported implemented claims for hosted governance,
   enterprise control planes, multi-tenant admin, compliance readiness, SOC2
@@ -75,18 +75,18 @@ Durable decisions that apply across all phases:
 
 ### What to build
 
-Add the V12 PRD and plan, then extend docs-claim guard behavior only enough to
+Add the v1.8.0 PRD and plan, then extend docs-claim guard behavior only enough to
 keep public documentation honest while implementation proceeds. Do not add
 governance CLI, schemas, API routes, or UI behavior in this phase.
 
 ### Acceptance criteria
 
-- [x] `docs/prd-agent-harness-v12-local-governance-console.md` exists and
+- [x] `docs/prd-agent-harness-v1.8.0-local-governance-console.md` exists and
       follows the repo PRD template.
-- [x] `plans/agent-harness-v12-local-governance-console.md` exists and uses
+- [x] `plans/agent-harness-v1.8.0-local-governance-console.md` exists and uses
       vertical tracer-bullet phases.
 - [x] Docs checks reject unsupported governance and compliance claims.
-- [x] README and roadmap identify V12 as planned until implementation and
+- [x] README and roadmap identify v1.8.0 as planned until implementation and
       release evidence exist.
 - [x] No governance runtime, CLI, API, UI, release-readiness, or export
       behavior is added.
@@ -97,7 +97,7 @@ governance CLI, schemas, API routes, or UI behavior in this phase.
   governance, enterprise governance control planes, multi-tenant admin,
   compliance readiness, SOC2 readiness, ISO readiness, cloud deployment, and
   formal compliance certification claims outside roadmap/future language.
-- README and roadmap now link the V12 PRD/plan and describe V12 as planned,
+- README and roadmap now link the v1.8.0 PRD/plan and describe v1.8.0 as planned,
   not implemented.
 - Scope stayed documentation-only: no governance CLI, schema, API, UI,
   release-readiness, or export behavior was added.
@@ -549,12 +549,12 @@ Do not add compliance mapping or formal attestation.
 - [ ] Advisory governance findings remain visible without blocking by default.
 - [ ] Governance report/index/findings artifact references are safe and
       redaction-safe.
-- [ ] Readiness docs identify V12 outputs as inputs to future compliance
+- [ ] Readiness docs identify v1.8.0 outputs as inputs to future compliance
       evidence, not compliance readiness.
 
 ### Out of scope
 
-- V1.9 Compliance Evidence Pack.
+- v1.9.0 Compliance Evidence Pack.
 - Formal compliance framework mapping.
 - Hosted attestations.
 - New release automation.

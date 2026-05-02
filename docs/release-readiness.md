@@ -111,11 +111,11 @@ The report represents:
 - retrieval demo and local-first config evidence
 - operator app factory, API smoke, token requirement, loopback host rejection,
   approval binding, and static UI packaging evidence
-- V8 skill validation, registry command, workflow demo, manifest, inspect, and
+- v1.5.0 skill validation, registry command, workflow demo, manifest, inspect, and
   skills docs evidence
-- V9 MCP boundary demo, optional extra, CI install, CLI resource and prompt,
+- v1.6.0 MCP boundary demo, optional extra, CI install, CLI resource and prompt,
   denial, access log, and stdio resources/prompts-only evidence
-- V11 orchestration workflow demo, policy, artifact, inspect/export, read-only
+- v1.7.0 orchestration workflow demo, policy, artifact, inspect/export, read-only
   MCP resource, and metadata-only MCP access-log evidence
 - release artifact presence
 - local check commands
@@ -132,7 +132,7 @@ only when required package, install, console script, demo, docs, changelog,
 template, retrieval scorecard, retrieval demo/config, operator, skills, MCP,
 orchestration, artifact, tag, and remote CI evidence is present and passing.
 
-For V7 template packs, release readiness refreshes `template validate --all`
+For v1.4.0 template packs, release readiness refreshes `template validate --all`
 evidence, then validates every bundled pack through a temporary release
 workspace. Each bundled pack must validate, produce dry-run evidence without
 mutating the target, clean-apply to a temporary target, generate valid
@@ -142,9 +142,9 @@ report also scans executable template config defaults and stays pending when a
 remote catalog, marketplace URL, cloud registry, or registry URL is configured
 as a default.
 
-## V8 Skill Gates
+## v1.5.0 Skill Gates
 
-For V8 skills, release readiness validates all required bundled skills:
+For v1.5.0 skills, release readiness validates all required bundled skills:
 `write-a-prd`, `prd-to-plan`, `tdd`, and `prd-plan-tdd-workflow`. It verifies
 skill list/show/validate behavior, resolves
 `examples/skills_workflow/task.yaml`, runs that task as a dry run, checks
@@ -155,9 +155,9 @@ Release readiness also verifies `docs/skills-system.md` exists, docs check is
 passing, and deferred skill distribution and governance features remain outside
 implemented scope.
 
-## V9 MCP Gates
+## v1.6.0 MCP Gates
 
-For V9, release readiness verifies the local read-only MCP Boundary. The
+For v1.6.0, release readiness verifies the local read-only MCP Boundary. The
 golden-path example lives at `examples/mcp_boundary/` and documents the
 resource, prompt, denial, access-log, and stdio checks.
 
@@ -179,9 +179,9 @@ MCP tools, write-capable MCP, Streamable HTTP MCP, hosted MCP service, remote
 gateways, enterprise registries, and MCP runtime adapter behavior remain outside
 implemented scope.
 
-## V11 Orchestration Gates
+## v1.7.0 Orchestration Gates
 
-For V11, release readiness verifies the local sequential orchestration
+For v1.7.0, release readiness verifies the local sequential orchestration
 workflow. The golden-path example lives at `examples/orchestration_workflow/`
 and documents the dry-run, inspect, export, read-only MCP resource, and
 release-readiness commands.
@@ -202,21 +202,21 @@ The report records:
 - `orchestration.mcp_access_log` for metadata-only MCP access records tied to
   the orchestration id.
 
-V11 does not support hosted APIs. It does not support parallel multi-agent
+v1.7.0 does not support hosted APIs. It does not support parallel multi-agent
 orchestration, nested orchestration, or MCP execution for multi-agent
 orchestration. Operator UI support and enterprise governance remain
 future-only.
 
 ## Evidence Pack Gate
 
-The V1.9 Compliance Evidence Pack is a non-mutating release-readiness input.
-Evidence commands validate missing V12 governance export prerequisites,
+The v1.9.0 Compliance Evidence Pack is a non-mutating release-readiness input.
+Evidence commands validate missing v1.8.0 governance export prerequisites,
 generate canonical JSON packs with `agent-harness evidence pack --format json`,
 omit unsafe governance-index artifact references with evidence findings, and
 write review-only Markdown for bundle/markdown formats. Evidence archives are
 opt-in, `evidence check` reports pass/fail/prerequisite/internal-error states,
 `evidence index` prints the current artifact index, and `evidence_pack.v1`
-records safe V12 domain summaries plus malformed-domain findings. The local
+records safe v1.8.0 domain summaries plus malformed-domain findings. The local
 operator API can inspect existing evidence pack overview, pack detail, control
 mapping, artifact index, and findings through token-protected read-only routes.
 The packaged local operator UI can inspect the same existing evidence pack
@@ -293,7 +293,7 @@ files under `.agent-harness/release/evidence/`. Reviewers should verify that:
 Automated release publishing, production deployment artifacts, and compliance
 attestation are outside the current release workflow.
 
-For the V6 local operator surface, release readiness now records operator
+For the v1.3.0 local operator surface, release readiness now records operator
 evidence under `operator.app_factory`, `operator.api_smoke`,
 `operator.token_required`, `operator.host_rejection`,
 `operator.approval_binding`, and `operator.static_ui`. Those gates verify the
@@ -301,4 +301,4 @@ optional operator import path, local health route, token enforcement,
 loopback-only serve behavior, approval binding protection, packaged static UI
 metadata, and absence of external UI references. Hosted API behavior, remote web
 UI operation, enterprise control plane evidence, and compliance attestation
-remain outside the V6 release readiness target.
+remain outside the v1.3.0 release readiness target.

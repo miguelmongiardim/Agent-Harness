@@ -214,7 +214,7 @@ def test_orchestration_run_and_inspect_one_readonly_planner_child(
     capsys,  # type: ignore[no-untyped-def]
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-v11-phase2-planner")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-v170-phase2-planner")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-30T08:00:00Z")
     seed_project(tmp_path)
     (tmp_path / "sample.py").write_text(
@@ -265,15 +265,15 @@ def test_orchestration_run_and_inspect_one_readonly_planner_child(
     assert child["child_id"] == "planner"
     assert child["role"] == "planner"
     assert child["status"] == "dry_run"
-    assert child["run_id"] == "run-v11-phase2-planner"
+    assert child["run_id"] == "run-v170-phase2-planner"
     assert child["task_id"] == "minimal-readonly-planner"
     assert child["materialized_task_path"].endswith("children/planner.task.json")
     assert child["run_summary_artifact"].endswith(
-        ".agent-harness/runs/run-v11-phase2-planner/summary.json"
+        ".agent-harness/runs/run-v170-phase2-planner/summary.json"
     )
 
     orchestration_dir = tmp_path / ".agent-harness" / "orchestrations" / "minimal-readonly"
-    run_dir = tmp_path / ".agent-harness" / "runs" / "run-v11-phase2-planner"
+    run_dir = tmp_path / ".agent-harness" / "runs" / "run-v170-phase2-planner"
     assert orchestration_dir.is_dir()
     assert run_dir.is_dir()
     materialized_task = json.loads(
@@ -302,7 +302,7 @@ def test_orchestration_export_references_child_artifacts_without_raw_provider_pa
     capsys,  # type: ignore[no-untyped-def]
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-v11-phase6-export")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-v170-phase6-export")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-30T13:00:00Z")
     seed_project(tmp_path)
     _write_orchestration_policy(tmp_path)
@@ -383,7 +383,7 @@ def test_orchestration_mcp_resources_list_and_read_safe_summary(
     capsys,  # type: ignore[no-untyped-def]
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-v11-phase6-mcp-summary")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-v170-phase6-mcp-summary")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-30T13:30:00Z")
     seed_project(tmp_path)
     _write_orchestration_policy(tmp_path)
@@ -735,7 +735,7 @@ def test_orchestration_risky_implementer_plan_pauses_before_child_and_resumes(
     capsys,  # type: ignore[no-untyped-def]
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-v11-phase4-implementer")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-v170-phase4-implementer")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-30T10:00:00Z")
     seed_project(tmp_path)
     original = "def add_numbers(a, b):\n    return a + b\n"
@@ -810,10 +810,10 @@ def test_orchestration_risky_implementer_plan_pauses_before_child_and_resumes(
     assert resumed["status"] == "dry_run"
     assert resumed["children"][0]["child_id"] == "implementer"
     assert resumed["children"][0]["status"] == "dry_run"
-    assert resumed["children"][0]["run_id"] == "run-v11-phase4-implementer"
+    assert resumed["children"][0]["run_id"] == "run-v170-phase4-implementer"
     child_summary = json.loads(
         (
-            tmp_path / ".agent-harness" / "runs" / "run-v11-phase4-implementer" / "summary.json"
+            tmp_path / ".agent-harness" / "runs" / "run-v170-phase4-implementer" / "summary.json"
         ).read_text(encoding="utf-8")
     )
     assert child_summary["status"] == "dry_run"
@@ -823,7 +823,7 @@ def test_orchestration_risky_implementer_plan_pauses_before_child_and_resumes(
             tmp_path
             / ".agent-harness"
             / "runs"
-            / "run-v11-phase4-implementer"
+            / "run-v170-phase4-implementer"
             / "approvals"
             / f"{child_summary['approvals'][0]}.json"
         ).read_text(encoding="utf-8")
@@ -958,7 +958,7 @@ def test_orchestration_child_without_provider_profile_does_not_inherit_project_d
     capsys,  # type: ignore[no-untyped-def]
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-v11-phase5-no-provider")
+    monkeypatch.setenv("AGENT_HARNESS_FIXED_RUN_ID", "run-v170-phase5-no-provider")
     monkeypatch.setenv("AGENT_HARNESS_FIXED_TIME", "2026-04-30T11:00:00Z")
     _write_provider_config(
         tmp_path,

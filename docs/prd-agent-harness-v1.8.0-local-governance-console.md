@@ -1,6 +1,6 @@
-# PRD: Agent Harness V12 Local Governance Console
+# PRD: Agent Harness v1.8.0 Local Governance Console
 
-V12 targets `v1.8.0` after the V11 orchestration and benchmark evidence
+v1.8.0 targets `v1.8.0` after the v1.7.0 orchestration and benchmark evidence
 tracks. It introduces a local governance evidence surface that aggregates
 existing Agent Harness artifacts without turning the project into a hosted
 admin platform, enterprise control plane, or compliance product.
@@ -35,7 +35,7 @@ references, path traversal attempts, hard-denied provider-input classes, and
 unsupported documentation claims should be surfaced consistently.
 
 Fourth, the future compliance evidence pack needs a stable local evidence
-foundation, but V12 must not claim compliance readiness before formal mappings,
+foundation, but v1.8.0 must not claim compliance readiness before formal mappings,
 controls, and review procedures exist.
 
 The affected actors are:
@@ -51,7 +51,7 @@ The affected actors are:
 
 ## Solution
 
-V12 adds an `agent_harness.governance` boundary that summarizes, indexes,
+v1.8.0 adds an `agent_harness.governance` boundary that summarizes, indexes,
 checks, reports, and exports existing local evidence. The boundary is
 read-only by default. It reads known artifact classes, classifies domain
 status, normalizes governance findings, and writes governance exports only when
@@ -79,7 +79,7 @@ start providers, mutate source artifacts, or create a separate server stack.
 The operator Governance section is a read-only evidence browser. Approval
 mutation remains in the existing approval panel.
 
-V12 deliberately avoids hosted governance, multi-user authentication,
+v1.8.0 deliberately avoids hosted governance, multi-user authentication,
 multi-tenant admin, enterprise control planes, cloud deployment, SOC2 or ISO
 readiness claims, formal compliance mapping, remote dashboards, and arbitrary
 workspace browsing.
@@ -135,7 +135,7 @@ workspace browsing.
     evidence and fail on critical governance findings, so that release
     decisions include the aggregate governance state.
 18. As a documentation reviewer, I want docs checks to reject unsupported
-    governance, enterprise, and compliance claims, so that V12 is not
+    governance, enterprise, and compliance claims, so that v1.8.0 is not
     overstated.
 
 ## Behavioral Requirements
@@ -245,12 +245,12 @@ workspace browsing.
     governance, enterprise control planes, multi-tenant admin, compliance
     readiness, SOC2 readiness, ISO readiness, cloud deployment, and formal
     compliance certification.
-46. V12 documentation describes governance outputs as future inputs to the
+46. v1.8.0 documentation describes governance outputs as future inputs to the
     `v1.9.0` Compliance Evidence Pack without claiming compliance readiness.
 
 ## Implementation Decisions
 
-- Add `agent_harness.governance` as the V12 boundary. It owns aggregation,
+- Add `agent_harness.governance` as the v1.8.0 boundary. It owns aggregation,
   domain status classification, finding normalization, report generation,
   checks, export writing, and operator governance payload construction.
 - Keep governance out of `agent_harness.core.runtime`. Governance observes
@@ -313,7 +313,7 @@ workspace browsing.
 
 ## Out of Scope
 
-- Implementing V12 governance in this planning task.
+- Implementing v1.8.0 governance in this planning task.
 - `agent-harness governance serve`.
 - Hosted governance APIs or dashboards.
 - Remote web UI operation.
@@ -338,7 +338,7 @@ workspace browsing.
 
 ## Further Notes
 
-V12 is intentionally an evidence foundation. It should make local governance
+v1.8.0 is intentionally an evidence foundation. It should make local governance
 review easier and safer without expanding Agent Harness into organization-wide
 governance or compliance tooling. The main implementation risk is scope
 creep: governance touches many domains, so each slice should prove one

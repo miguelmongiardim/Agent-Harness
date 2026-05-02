@@ -1,6 +1,6 @@
-# PRD: Agent Harness V11 Policy-Mediated Multi-Agent Orchestration
+# PRD: Agent Harness v1.7.0 Policy-Mediated Multi-Agent Orchestration
 
-V11 targets `v1.7.0` after the V10 schema-boundary refactor. It introduces a
+v1.7.0 targets `v1.7.0` after the v1.6.1 schema-boundary refactor. It introduces a
 local, policy-mediated supervisor for coordinating multiple child task runs
 without turning Agent Harness into a hosted platform, an MCP execution surface,
 or an in-process multi-agent graph runtime.
@@ -45,7 +45,7 @@ The affected actors are:
 
 ## Solution
 
-V11 adds a local `agent_harness.orchestration` boundary that supervises child
+v1.7.0 adds a local `agent_harness.orchestration` boundary that supervises child
 runs through the existing native runtime. An orchestration is defined by an
 `orchestration.v1` input file with inline child declarations. The supervisor
 validates the spec, applies a single selected policy profile, materializes each
@@ -66,7 +66,7 @@ The user-facing workflow is:
    approved through the existing child-run approval command.
 6. Inspect the aggregate orchestration, child run links, generated handoffs, and
    policy decisions through CLI or read-only MCP resources.
-7. Verify the V11 golden path through release-readiness evidence.
+7. Verify the v1.7.0 golden path through release-readiness evidence.
 
 The supervisor is not a new agent runtime. It delegates child task execution to
 `HarnessRuntime`, preserving existing context assembly, tool mediation,
@@ -75,7 +75,7 @@ approval, checkpoints, redaction, and run storage behavior. The supervisor owns
 only orchestration-level validation, scheduling, authority narrowing, aggregate
 evidence, generated handoff construction, and orchestration-plan approvals.
 
-V11 deliberately avoids parallel execution, nested orchestration, MCP tools,
+v1.7.0 deliberately avoids parallel execution, nested orchestration, MCP tools,
 MCP run execution, operator UI changes, hosted APIs, remote agents, provider-
 generated handoffs, cross-profile child policies, and organization-wide agent
 governance.
@@ -124,12 +124,12 @@ governance.
     evidence, so that standard review clients can inspect aggregate results
     without getting execution tools.
 15. As a release maintainer, I want a deterministic local golden-path demo and
-    release-readiness gates, so that V11 can be accepted from a clean checkout.
-16. As a documentation reviewer, I want public docs to clearly separate V11
+    release-readiness gates, so that v1.7.0 can be accepted from a clean checkout.
+16. As a documentation reviewer, I want public docs to clearly separate v1.7.0
     local orchestration from future parallel, hosted, MCP-execution, nested, and
     enterprise multi-agent behavior.
 17. As a maintainer, I want orchestration contracts to live in the
-    boundary-owned schema layout established by V10, so that new public models
+    boundary-owned schema layout established by v1.6.1, so that new public models
     do not recreate a root schema dumping ground.
 
 ## Behavioral Requirements
@@ -155,7 +155,7 @@ governance.
    approval requests, child start/finish, handoff creation, pause, resume,
    failure, and completion events.
 8. Supported child roles are exactly `planner`, `implementer`, `reviewer`, and
-   `tester` in V11.
+   `tester` in v1.7.0.
 9. Default role ceilings are narrow: planner may read and search; implementer
    may read, search, and patch; reviewer may read, search, and inspect git
    status; tester may read, search, and run allowed tests.
@@ -163,7 +163,7 @@ governance.
     ceilings, child-declared tools, and task constraints.
 11. A child cannot write outside policy write roots, cannot read denied paths,
     and cannot use tools excluded by either policy or role ceiling.
-12. V11 scheduling is deterministic and sequential. Independent children may
+12. v1.7.0 scheduling is deterministic and sequential. Independent children may
     be ordered deterministically, but no OS-level parallel child execution is
     part of this release.
 13. Multiple write-capable children may exist in a single orchestration only
@@ -208,19 +208,19 @@ governance.
     events, children, and handoffs through safe envelopes and append metadata-
     only MCP access logs.
 29. MCP does not expose orchestration tools, approval mutation, run execution,
-    provider execution, patch application, or resume operations in V11.
-30. Release readiness reports V11 orchestration demo, policy, artifact,
+    provider execution, patch application, or resume operations in v1.7.0.
+30. Release readiness reports v1.7.0 orchestration demo, policy, artifact,
     inspection, MCP resource, access-log, and documentation-gate evidence.
 
 ## Implementation Decisions
 
-- Add `agent_harness.orchestration` as the core V11 boundary. It owns
+- Add `agent_harness.orchestration` as the core v1.7.0 boundary. It owns
   orchestration spec loading, DAG validation, role authority narrowing,
   scheduling, orchestration-plan approvals, aggregate storage, handoff
   construction, and inspection/export helpers.
-- Implement V11 as a supervisor over `HarnessRuntime`, not as a replacement
+- Implement v1.7.0 as a supervisor over `HarnessRuntime`, not as a replacement
   runtime and not as an in-process graph executor.
-- Assume the V10 schema-boundary refactor has landed before V11 implementation.
+- Assume the v1.6.1 schema-boundary refactor has landed before v1.7.0 implementation.
   New models should live in boundary-owned modules such as
   `agent_harness.orchestration.schema` and should not reintroduce a root schema
   module.
@@ -228,11 +228,11 @@ governance.
   declarations and materializes generated `task.v2` files into orchestration
   artifacts.
 - Keep `task.v2` focused on one child task. Do not introduce a new task schema
-  version for V11.
+  version for v1.7.0.
 - Extend `policy.v2` with an explicit `orchestration` contract. Missing
   orchestration policy denies orchestration while preserving existing single-
   agent run compatibility.
-- The default v1.7 policy emitted by `agent-harness init` should include a safe
+- The default v1.7.0 policy emitted by `agent-harness init` should include a safe
   orchestration section with local sequential orchestration enabled, narrow role
   ceilings, no nested orchestration, deterministic handoffs, and risky-plan
   approval enabled.
@@ -254,11 +254,11 @@ governance.
   for current run artifacts.
 - Extend MCP resource registries for read-only orchestration evidence. Keep MCP
   tools, write-capable MCP, approval mutation, provider execution, and run
-  creation outside V11.
+  creation outside v1.7.0.
 - Extend release readiness with required orchestration gates and a deterministic
   `examples/orchestration_workflow/` golden path.
 - Documentation must update roadmap and capability boundaries only when the
-  implementation is complete. Planning docs may describe intended V11 behavior
+  implementation is complete. Planning docs may describe intended v1.7.0 behavior
   as future work.
 
 ## Testing Decisions
@@ -314,12 +314,12 @@ architecture already proven by earlier releases.
 
 The largest risks are accidental authority widening, treating generated
 handoffs as trusted raw evidence, leaking provider payloads through aggregate
-artifacts, and creating a second mutation path outside child-run approvals. V11
+artifacts, and creating a second mutation path outside child-run approvals. v1.7.0
 should keep those risks visible through policy-denial defaults, exact approval
 bindings, role ceilings, redacted generated context, read-only MCP resources,
 and required release gates.
 
-V11 planning assumes V10 schema ownership lands first. If V11 is implemented
-before V10 is complete, the first implementation slice should either rebase onto
-V10 or keep orchestration models isolated enough that they can be moved cleanly
-into boundary-owned schema modules after the V10 refactor.
+v1.7.0 planning assumes v1.6.1 schema ownership lands first. If v1.7.0 is implemented
+before v1.6.1 is complete, the first implementation slice should either rebase onto
+v1.6.1 or keep orchestration models isolated enough that they can be moved cleanly
+into boundary-owned schema modules after the v1.6.1 refactor.

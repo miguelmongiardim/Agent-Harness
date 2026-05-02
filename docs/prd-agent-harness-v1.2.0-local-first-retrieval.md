@@ -1,8 +1,8 @@
-# PRD: Agent Harness V5 Local-First Retrieval Hardening
+# PRD: Agent Harness v1.2.0 Local-First Retrieval
 
 ## Problem Statement
 
-Agent Harness v1.1.0 closes the V4 Provider Core track by validating provider
+Agent Harness v1.1.0 closes the v1.1.0 Provider Core track by validating provider
 output, provider profiles, provider-input evidence, provider-call artifacts, and
 deterministic provider-core evals. Retrieval remains the largest remaining drift
 from the original controlled-agent conception.
@@ -14,7 +14,7 @@ index metadata, compare lexical, dense, and hybrid quality, or run a retrieval
 scorecard that proves policy-filtered context assembly from a real local-first
 retrieval subsystem.
 
-Without V5, retrieval evidence remains hard to measure. The harness can show
+Without v1.2.0, retrieval evidence remains hard to measure. The harness can show
 that retrieved content is policy mediated, but it cannot yet prove that local
 retrieval indexes are reproducible, inspectable, scored, and safe to use in
 controlled agent workflows without sending document text to remote embedding
@@ -22,7 +22,7 @@ providers.
 
 ## Solution
 
-V5 introduces a focused local-first retrieval hardening release for v1.2.0. It
+v1.2.0 introduces a focused local-first retrieval hardening release for v1.2.0. It
 keeps `config.v2`, preserves lexical retrieval for base installs, and adds
 optional retrieval settings, index lifecycle commands, deterministic dense test
 embeddings, persistent local Qdrant, optional loopback-only Qdrant server
@@ -43,13 +43,13 @@ The primary user workflow is:
    untrusted evidence and must pass policy and sensitivity filtering before it
    can enter context, provider input, run execution, evals, or demos.
 
-V5 deliberately avoids remote embeddings, hosted embedding providers, remote
+v1.2.0 deliberately avoids remote embeddings, hosted embedding providers, remote
 vector databases, cloud Qdrant, production Qdrant server operations, MCP,
 API/UI work, multi-agent workflows, and enterprise or compliance claims.
 
-## Implemented in V5
+## Implemented in v1.2.0
 
-The V5 target scope is local-first retrieval hardening:
+The v1.2.0 target scope is local-first retrieval hardening:
 
 - deterministic lexical retrieval in the base install
 - optional `agent-harness[retrieval]` dependencies for FastEmbed and Qdrant
@@ -70,7 +70,7 @@ The V5 target scope is local-first retrieval hardening:
 
 ## Roadmap / Not implemented yet
 
-The following are not part of V5:
+The following are not part of v1.2.0:
 
 - cloud Qdrant
 - hosted embeddings
@@ -112,20 +112,20 @@ The following are not part of V5:
 9. As a local developer, I want optional loopback-only Qdrant server support, so
    that I can test local server infrastructure without enabling remote Qdrant.
 10. As a release reviewer, I want a local retrieval demo and release-readiness
-    checks, so that V5 can be accepted from a clean checkout with retrieval
+    checks, so that v1.2.0 can be accepted from a clean checkout with retrieval
     extras installed.
 
 ## Behavioral Requirements
 
-1. Existing `config.v2` files without V5 retrieval settings remain valid.
+1. Existing `config.v2` files without v1.2.0 retrieval settings remain valid.
 2. `config.v2` accepts backward-compatible optional retrieval settings for
    default mode, lexical settings, dense settings, Qdrant settings, and fallback
    policy.
-3. `remote_embeddings: true` is rejected with a clear V5 validation error.
+3. `remote_embeddings: true` is rejected with a clear v1.2.0 validation error.
 4. Hosted embedding providers, remote embedding APIs, remote vector databases,
    cloud Qdrant URLs, API-key-backed Qdrant endpoints, HTTPS remote Qdrant
    endpoints, public IP endpoints, and private LAN Qdrant endpoints are rejected
-   in V5.
+   in v1.2.0.
 5. Base install supports lexical retrieval without Qdrant or FastEmbed.
 6. Missing optional retrieval dependencies produce actionable diagnostics and
    follow configured lexical fallback behavior.
@@ -211,7 +211,7 @@ The following are not part of V5:
 - Extend release readiness rather than creating a separate release evidence
   command.
 - Keep cloud retrieval, hosted embedding providers, remote vector databases, MCP,
-  API/UI, and multi-agent behavior out of V5.
+  API/UI, and multi-agent behavior out of v1.2.0.
 
 ## Testing Decisions
 
@@ -236,7 +236,7 @@ The following are not part of V5:
   rejection, dense retrieval of sensitive chunks followed by policy rejection,
   lexical retrieval of denied paths followed by policy rejection, and unknown
   sensitivity rejection where policy requires it.
-- Add e2e coverage for `examples/retrieval_quality/`, V5 golden path commands,
+- Add e2e coverage for `examples/retrieval_quality/`, v1.2.0 golden path commands,
   retrieval scorecard generation, and release-readiness retrieval checks.
 - Keep tests focused on public CLI/runtime/schema behavior, not fragile private
   function names.
@@ -266,13 +266,13 @@ The following are not part of V5:
 ## Further Notes
 
 - The highest-risk boundary is retrieval bypassing policy by treating dense or
-  lexical results as authoritative. V5 must keep retrieval as evidence only.
+  lexical results as authoritative. v1.2.0 must keep retrieval as evidence only.
 - The second highest-risk boundary is accidental remote data transfer through
-  embeddings or vector storage. V5 must reject remote retrieval configuration
+  embeddings or vector storage. v1.2.0 must reject remote retrieval configuration
   early and record `remote_embeddings: false` in relevant artifacts.
 - The deterministic dense backend is a testing strategy, not a product claim.
 - FastEmbed model downloads are acceptable only as local model acquisition for
   an explicitly installed extra; normal CI must not depend on network access.
-- V5 is accepted when a reviewer can run the local retrieval demo, inspect
+- v1.2.0 is accepted when a reviewer can run the local retrieval demo, inspect
   Qdrant-backed context manifests, compare lexical/dense/hybrid scorecards, and
   verify denied or sensitive chunks are filtered before context assembly.

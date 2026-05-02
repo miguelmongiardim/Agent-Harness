@@ -170,16 +170,16 @@ def _write_minimal_release_project(root: Path) -> None:
     )
     docs = root / "docs"
     docs.mkdir()
-    (docs / "prd-agent-harness-v3.md").write_text(
+    (docs / "prd-agent-harness-v1.0.0-mature-cli-runtime.md").write_text(
         "\n".join(
             [
-                "# Agent Harness V3 / v1.0.0 PRD",
+                "# Agent Harness v1.0.0 / v1.0.0 PRD",
                 "",
-                "Agent Harness V3 is the v1.0.0 maturity release.",
+                "Agent Harness v1.0.0 is the v1.0.0 Mature CLI/runtime release.",
                 "",
                 "## Compatibility And Deprecation Policy",
                 "",
-                "V2 schemas are the v1.0.0 public baseline.",
+                "v0.3.0 schemas are the v1.0.0 public baseline.",
                 "",
                 "## Implemented vs Roadmap",
                 "",

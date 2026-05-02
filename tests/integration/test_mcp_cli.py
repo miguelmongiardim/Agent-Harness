@@ -19,7 +19,7 @@ def test_mcp_optional_extra_is_declared() -> None:
     assert optional["mcp"] == ["mcp>=1,<2"]
 
 
-def test_mcp_help_states_v9_resources_prompts_only(capsys) -> None:  # type: ignore[no-untyped-def]
+def test_mcp_help_states_v160_resources_prompts_only(capsys) -> None:  # type: ignore[no-untyped-def]
     with pytest.raises(SystemExit) as raised:
         main(["mcp", "--help"])
 
@@ -29,7 +29,7 @@ def test_mcp_help_states_v9_resources_prompts_only(capsys) -> None:  # type: ign
     assert "no tools" in help_text
 
 
-def test_mcp_prompts_list_exposes_v9_review_prompts(
+def test_mcp_prompts_list_exposes_v160_review_prompts(
     tmp_path: Path,
     monkeypatch,
     capsys,

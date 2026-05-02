@@ -1,6 +1,6 @@
-# V11 Orchestration Workflow
+# v1.7.0 Orchestration Workflow
 
-This example is the V11 local orchestration golden path. It runs a sequential
+This example is the v1.7.0 local orchestration golden path. It runs a sequential
 planner, implementer, reviewer, and tester workflow over a small Python fixture
 without external services.
 

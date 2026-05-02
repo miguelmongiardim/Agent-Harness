@@ -1,6 +1,6 @@
 # PRD: Agent Harness v1.9.0 Compliance Evidence Pack
 
-v1.9.0 targets the Compliance Evidence Pack after the v1.8.0 / V12 Local
+v1.9.0 targets the Compliance Evidence Pack after the v1.8.0 Local
 Governance Console is complete. The feature packages existing governance and
 release evidence into portable, redaction-safe review artifacts.
 
@@ -12,7 +12,7 @@ organizational compliance.
 
 Agent Harness already emits local evidence across runs, policy, approvals,
 provider use, retrieval provenance, templates, skills, MCP resources,
-orchestration, security findings, docs checks, and release readiness. V12 adds
+orchestration, security findings, docs checks, and release readiness. v1.8.0 adds
 local governance aggregation over those artifacts. Reviewers still need a
 portable way to export the resulting evidence for review outside the local
 operator session.
@@ -33,14 +33,14 @@ The affected actors are:
 
 ## Solution
 
-Add an `agent_harness.evidence` boundary that consumes completed V12 governance
+Add an `agent_harness.evidence` boundary that consumes completed v1.8.0 governance
 outputs and packages them into canonical JSON artifacts, optional Markdown
 presentation, deterministic checksums, and an optional archive.
 
 The primary workflow is:
 
 1. Run normal Agent Harness workflows or demos.
-2. Generate V12 governance exports under `.agent-harness/governance/`.
+2. Generate v1.8.0 governance exports under `.agent-harness/governance/`.
 3. Run `agent-harness evidence pack --output .agent-harness/evidence/`.
 4. Inspect `evidence_pack.v1.json`, `evidence_index.v1.json`,
    `control_mapping.v1.json`, `evidence_findings.v1.json`,
@@ -54,12 +54,12 @@ The primary workflow is:
 8. Run `agent-harness release readiness`; readiness validates an existing pack
    but does not generate one.
 
-v1.9 packages evidence. It does not rebuild V12 governance aggregation. If the
-required V12 governance outputs are unavailable, evidence pack generation fails
+v1.9.0 packages evidence. It does not rebuild v1.8.0 governance aggregation. If the
+required v1.8.0 governance outputs are unavailable, evidence pack generation fails
 with a clear prerequisite error that tells the user to run governance export or
 the relevant governance check first.
 
-Required V12 prerequisite artifacts are:
+Required v1.8.0 prerequisite artifacts are:
 
 - `governance_summary.v1`
 - `governance_report.v1`
@@ -142,13 +142,13 @@ This evidence pack supports review and audit preparation. It does not certify co
 16. No archive is created unless `--archive` is supplied.
 17. `checksums.sha256` excludes itself, uses normalized relative paths, hashes
     only exported evidence files, and sorts lines deterministically.
-18. The pack builder reads only known artifact roots and V12 governance export
+18. The pack builder reads only known artifact roots and v1.8.0 governance export
     files through existing boundaries.
 19. The pack builder does not scan arbitrary workspace files.
 20. The pack builder does not rebuild governance aggregation.
-21. Missing required V12 governance outputs fail pack generation with a
+21. Missing required v1.8.0 governance outputs fail pack generation with a
     prerequisite error and exit code `2`.
-22. Malformed required V12 governance outputs fail clearly or create blocking
+22. Malformed required v1.8.0 governance outputs fail clearly or create blocking
     evidence findings, depending on whether a safe partial pack can be built.
 23. `agent-harness evidence check` builds evidence state in memory and
     validates existing pack files when present.
@@ -220,12 +220,12 @@ This evidence pack supports review and audit preparation. It does not certify co
 
 ## Implementation Decisions
 
-- Add `agent_harness.evidence` as the v1.9 boundary. It owns prerequisite
+- Add `agent_harness.evidence` as the v1.9.0 boundary. It owns prerequisite
   validation, pack construction, artifact indexing, redaction-safe packaging,
   control mapping, check semantics, checksum generation, archive creation, and
   evidence API payload construction.
-- Keep V12 governance aggregation in `agent_harness.governance`. The evidence
-  boundary consumes V12 outputs instead of recreating domain aggregation.
+- Keep v1.8.0 governance aggregation in `agent_harness.governance`. The evidence
+  boundary consumes v1.8.0 outputs instead of recreating domain aggregation.
 - Add evidence contracts with `StrictModel` for `evidence_pack.v1`,
   `evidence_index.v1`, `control_mapping.v1`, `evidence_findings.v1`,
   `evidence_manifest.v1`, and an export result contract.
@@ -263,7 +263,7 @@ This evidence pack supports review and audit preparation. It does not certify co
   sorting, safe relative path validation, hash generation, control mapping,
   disclaimer presence, finding severity mapping, redaction classification, and
   export result contracts.
-- Integration tests should cover pack generation from fixture V12 governance
+- Integration tests should cover pack generation from fixture v1.8.0 governance
   data, bundle output, JSON-only output, Markdown output, artifact index
   printing, evidence check pass/fail paths, archive opt-in behavior, operator
   API evidence routes, UI smoke behavior, and release-readiness integration.
@@ -276,18 +276,18 @@ This evidence pack supports review and audit preparation. It does not certify co
   not private helper names.
 - Tests may assert deterministic ordering where the output contract requires
   deterministic files, checksums, or indexes.
-- V0 acceptance is the ability to fail clearly when V12 prerequisites are
-  absent and to generate a minimal canonical pack from fixture V12 outputs.
-- Full v1.9 acceptance requires CLI pack/check/index, redaction-safe JSON and
+- Phase 0 acceptance is the ability to fail clearly when v1.8.0 prerequisites are
+  absent and to generate a minimal canonical pack from fixture v1.8.0 outputs.
+- Full v1.9.0 acceptance requires CLI pack/check/index, redaction-safe JSON and
   Markdown artifacts, checksums, control mapping, operator API/UI visibility,
   release-readiness validation, docs claim guards, and explicit
   non-certification disclaimers.
 
 ## Out of Scope
 
-- Implementing v1.9 in this planning task.
-- Rebuilding V12 governance aggregation inside `agent_harness.evidence`.
-- Generating V12 governance outputs as a side effect of evidence pack
+- Implementing v1.9.0 in this planning task.
+- Rebuilding v1.8.0 governance aggregation inside `agent_harness.evidence`.
+- Generating v1.8.0 governance outputs as a side effect of evidence pack
   generation.
 - Creating evidence packs as a side effect of release readiness.
 - Claiming SOC2, ISO, GDPR, NIST, OWASP, legal, regulatory, auditor-approved,
@@ -311,7 +311,7 @@ This evidence pack supports review and audit preparation. It does not certify co
 
 ## Further Notes
 
-The central architectural risk is duplication. v1.9 must package V12
+The central architectural risk is duplication. v1.9.0 must package v1.8.0
 governance evidence rather than becoming a second governance aggregator.
 
 The central safety risk is disclosure. The pack is portable, so every artifact
@@ -322,8 +322,8 @@ The central product risk is overclaiming. Control mapping should help humans
 review evidence against selected themes, but every public surface must preserve
 the non-certification disclaimer and avoid implying formal compliance.
 
-The current roadmap marks V12 as in progress with governance summary, check,
+The current roadmap marks v1.8.0 as in progress with governance summary, check,
 report, and export implemented through Phase 3 while operator API/UI and
-release-readiness governance gates remain future-only. v1.9 implementation
-should either start only after V12 is completed or make its prerequisite
+release-readiness governance gates remain future-only. v1.9.0 implementation
+should either start only after v1.8.0 is completed or make its prerequisite
 failure path the first tested behavior.

@@ -1,6 +1,6 @@
-# PRD: Agent Harness V9 MCP Boundary
+# PRD: Agent Harness v1.6.0 MCP Boundary
 
-V9 targets `v1.6.0`.
+v1.6.0 targets `v1.6.0`.
 
 ## Problem Statement
 
@@ -25,12 +25,12 @@ The affected actors are:
 
 ## Solution
 
-V9 adds a local, optional, read-only MCP boundary under `agent_harness.mcp`.
+v1.6.0 adds a local, optional, read-only MCP boundary under `agent_harness.mcp`.
 It exposes selected Agent Harness evidence through MCP resources and review
 prompts while preserving policy, redaction, approval, and audit boundaries.
 
-The V9 MCP surface is not a runtime adapter. The existing
-`agent_harness.runtimes.mcp_adapter` may remain unsupported because V9 does not
+The v1.6.0 MCP surface is not a runtime adapter. The existing
+`agent_harness.runtimes.mcp_adapter` may remain unsupported because v1.6.0 does not
 run tasks through MCP. MCP is an interoperability boundary over existing local
 evidence.
 
@@ -89,11 +89,11 @@ hosted operation, remote clients, and enterprise registry behavior.
 13. As a maintainer, I want MCP SDK code isolated under `agent_harness.mcp`, so
     that core registries, CLI commands, policy filtering, and evidence logging
     remain SDK-independent.
-14. As a documentation reviewer, I want MCP docs to separate V9 behavior from
+14. As a documentation reviewer, I want MCP docs to separate v1.6.0 behavior from
     future MCP tools, HTTP, hosted, and registry scope, so that public claims stay
     aligned with implemented behavior.
 15. As a release reviewer, I want an MCP boundary demo and release-readiness
-    gates, so that V9 can be accepted from a clean checkout.
+    gates, so that v1.6.0 can be accepted from a clean checkout.
 
 ## Behavioral Requirements
 
@@ -132,11 +132,11 @@ hosted operation, remote clients, and enterprise registry behavior.
 16. MCP reads do not mutate run summaries, artifact indexes, approval records,
     tool state, provider state, eval results, template metadata, skill metadata,
     config files, policy files, or workspace files.
-17. Release readiness reports MCP boundary evidence once V9 is implemented.
+17. Release readiness reports MCP boundary evidence once v1.6.0 is implemented.
 
 ## Implementation Decisions
 
-- Add a new `agent_harness.mcp` package for V9 MCP boundary behavior.
+- Add a new `agent_harness.mcp` package for v1.6.0 MCP boundary behavior.
 - Keep `agent_harness.runtimes.mcp_adapter` unsupported unless a later runtime
   track explicitly implements task execution through MCP.
 - Use the official MCP Python SDK package `mcp>=1,<2` only for stdio server
@@ -185,11 +185,11 @@ hosted operation, remote clients, and enterprise registry behavior.
   - `agent-harness-retrieval-review`
 - Store MCP access evidence as append-only JSONL at
   `.agent-harness/mcp/access-log.jsonl`.
-- Treat access logging as the only allowed mutation in V9 MCP reads.
+- Treat access logging as the only allowed mutation in v1.6.0 MCP reads.
 
 ## Testing Decisions
 
-- Test V9 through public interfaces: CLI commands, persisted artifacts, MCP
+- Test v1.6.0 through public interfaces: CLI commands, persisted artifacts, MCP
   stdio protocol messages, release-readiness reports, and documentation checks.
 - Unit tests should cover URI parsing, allowlist behavior, response and prompt
   model serialization, prompt hashing, prompt argument validation, profile
@@ -204,7 +204,7 @@ hosted operation, remote clients, and enterprise registry behavior.
   absolute paths, unknown runs, denied artifacts, raw provider payload requests,
   secret or env-var requests, nonexistent tool requests, policy-bypass prompt
   attempts, write-action prompt attempts, query/fragment abuse, and unsafe ids.
-- E2E tests should cover `examples/mcp_boundary/`, the V9 golden path, and
+- E2E tests should cover `examples/mcp_boundary/`, the v1.6.0 golden path, and
   release-readiness MCP gates.
 - The required gates are docs check, pytest, Ruff, mypy, compileall, and release
   readiness. A real external MCP client smoke test may be optional if it is
@@ -245,7 +245,7 @@ MCP tools or hosted behavior. The implementation should keep these risks visible
 through allowlists, denial envelopes, access logs, docs checks, and release
 readiness.
 
-V9 is complete only when this command path works from a clean checkout with the
+v1.6.0 is complete only when this command path works from a clean checkout with the
 MCP extra installed:
 
 ```bash

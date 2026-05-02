@@ -1,8 +1,8 @@
-# Plan: Agent Harness V8 Skills System
+# Plan: Agent Harness v1.5.0 Skill Pack System
 
-> Source PRD: [docs/prd-agent-harness-v8.md](../docs/prd-agent-harness-v8.md)
+> Source PRD: [docs/prd-agent-harness-v1.5.0-skill-pack-system.md](../docs/prd-agent-harness-v1.5.0-skill-pack-system.md)
 
-V8 targets `v1.5.0`. All implementation phases are complete. Release tagging
+v1.5.0 targets `v1.5.0`. All implementation phases are complete. Release tagging
 and package publishing remain outside this implementation plan.
 
 ## Architectural Decisions
@@ -33,7 +33,7 @@ Durable decisions that apply across all phases:
   recommendations, but recommendations do not force runtime use by default.
 - **Audit boundary**: every run that uses skills records source, version, hash,
   inclusion status, policy decision, and context manifest id.
-- **External service boundary**: V8 uses only bundled and configured local skill
+- **External service boundary**: v1.5.0 uses only bundled and configured local skill
   sources.
 - **Release boundary**: release readiness is the acceptance surface for bundled
   skill validation, resolution, manifests, context provenance, demo evidence,
@@ -41,18 +41,18 @@ Durable decisions that apply across all phases:
 
 ---
 
-## Phase 0: V8 Scope Is Documented And Guarded
+## Phase 0: v1.5.0 Scope Is Documented And Guarded
 
 **User stories covered**
 
-- Story 10: documentation reviewer can distinguish local V8 behavior from
+- Story 10: documentation reviewer can distinguish local v1.5.0 behavior from
   deferred distribution and governance work.
 - Story 12: existing users understand that current workflows remain stable
   unless skills are selected.
 
 **Observable behaviors**
 
-- V8 PRD and plan exist.
+- v1.5.0 PRD and plan exist.
 - Skills docs describe skills as workflow guidance, not tools, templates,
   policy, approvals, or code execution.
 - Docs checks reject implemented-scope claims for deferred distribution,
@@ -65,22 +65,22 @@ Durable decisions that apply across all phases:
 
 ### What to build
 
-Add the durable V8 docs and docs-check guarded phrases before implementation
+Add the durable v1.5.0 docs and docs-check guarded phrases before implementation
 starts. Update README, roadmap, architecture, security model, and release
-readiness docs only enough to state the local V8 scope and keep deferred
+readiness docs only enough to state the local v1.5.0 scope and keep deferred
 features in the correct section.
 
 ### Acceptance criteria
 
-- [x] `docs/prd-agent-harness-v8.md` exists and follows the PRD template.
-- [x] `plans/agent-harness-v8.md` exists and uses vertical slices.
-- [x] `docs/skills-system.md` describes V8 local skills.
-- [x] README and roadmap describe V8 without claiming deferred features.
+- [x] `docs/prd-agent-harness-v1.5.0-skill-pack-system.md` exists and follows the PRD template.
+- [x] `plans/agent-harness-v1.5.0-skill-pack-system.md` exists and uses vertical slices.
+- [x] `docs/skills-system.md` describes v1.5.0 local skills.
+- [x] README and roadmap describe v1.5.0 without claiming deferred features.
 - [x] Architecture docs identify `agent_harness.skills` as the skill-system
       boundary.
 - [x] Security docs state that skills cannot grant tools, widen policy,
       approve actions, execute code, or mutate files.
-- [x] Release-readiness docs name the V8 skill gates.
+- [x] Release-readiness docs name the v1.5.0 skill gates.
 - [x] Docs check rejects unsupported skill claims outside roadmap sections.
 - [x] Docs check passes after docs are corrected.
 
@@ -408,7 +408,7 @@ artifact statuses.
 
 ---
 
-## Phase 7: Demo And Release Readiness Close V8
+## Phase 7: Demo And Release Readiness Close v1.5.0
 
 **User stories covered**
 
@@ -418,7 +418,7 @@ artifact statuses.
 
 **Observable behaviors**
 
-- `examples/skills_workflow/` demonstrates the V8 golden path.
+- `examples/skills_workflow/` demonstrates the v1.5.0 golden path.
 - Release readiness validates bundled skills and verifies skill resolution,
   context provenance, manifest emission, docs, and demo evidence.
 - The final acceptance command path works from a clean checkout.
@@ -437,7 +437,7 @@ deferred-scope claim guards.
 
 ### Acceptance criteria
 
-- [x] `examples/skills_workflow/README.md` documents the V8 golden path.
+- [x] `examples/skills_workflow/README.md` documents the v1.5.0 golden path.
 - [x] `examples/skills_workflow/task.yaml` references
       `prd-plan-tdd-workflow`.
 - [x] Expected example `skill_manifest` and `context_manifest` artifacts exist.

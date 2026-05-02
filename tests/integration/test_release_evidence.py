@@ -82,7 +82,7 @@ def test_release_readiness_defaults_to_project_version_and_reports_missing_evide
     assert report["demos"]["python-refactor"]["command"].startswith("agent-harness run")
 
     assert report["docs"]["check"]["status"] in {"passed", "failed"}
-    assert report["docs"]["schema_compatibility"]["path"] == "docs/prd-agent-harness-v3.md"
+    assert report["docs"]["schema_compatibility"]["path"] == "docs/prd-agent-harness-v1.0.0-mature-cli-runtime.md"
     assert report["docs"]["schema_compatibility"]["present"] is True
     assert report["docs"]["roadmap_claims"]["status"] in {"passed", "failed"}
 
@@ -167,7 +167,7 @@ def test_release_readiness_reports_ready_when_required_evidence_is_present(
     assert all(entry["status"] == "passed" for entry in report["operator"].values())
 
 
-def test_release_readiness_runs_v7_bundled_template_pack_acceptance(
+def test_release_readiness_runs_v140_bundled_template_pack_acceptance(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -219,7 +219,7 @@ def test_release_readiness_runs_v7_bundled_template_pack_acceptance(
         assert pack["docs"]["status"] == "passed"
 
 
-def test_release_readiness_requires_v8_skills_workflow_demo_evidence(
+def test_release_readiness_requires_v150_skills_workflow_demo_evidence(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -240,7 +240,7 @@ def test_release_readiness_requires_v8_skills_workflow_demo_evidence(
     assert "skills.workflow_demo" in {entry["gate"] for entry in report["diagnostics"]}
 
 
-def test_release_readiness_verifies_v8_skill_gates(
+def test_release_readiness_verifies_v150_skill_gates(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -276,7 +276,7 @@ def test_release_readiness_verifies_v8_skill_gates(
     assert skills["docs"]["status"] == "passed"
 
 
-def test_release_readiness_requires_v9_mcp_boundary_evidence(
+def test_release_readiness_requires_v160_mcp_boundary_evidence(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -301,7 +301,7 @@ def test_release_readiness_requires_v9_mcp_boundary_evidence(
     }
 
 
-def test_release_readiness_requires_v11_orchestration_evidence(
+def test_release_readiness_requires_v170_orchestration_evidence(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -322,7 +322,7 @@ def test_release_readiness_requires_v11_orchestration_evidence(
     assert "orchestration.demo" in {entry["gate"] for entry in report["diagnostics"]}
 
 
-def test_release_readiness_verifies_v11_orchestration_gates(
+def test_release_readiness_verifies_v170_orchestration_gates(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -478,7 +478,7 @@ def test_release_readiness_validates_pack_links_and_blocks_critical_findings(
     assert "C:/Users/example" not in serialized
 
 
-def test_release_readiness_verifies_v9_mcp_gates(
+def test_release_readiness_verifies_v160_mcp_gates(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -514,7 +514,7 @@ def test_release_readiness_verifies_v9_mcp_gates(
     assert mcp["stdio_protocol"]["tools_advertised"] is False
 
 
-def test_v7_template_pack_golden_path_example_and_cli_sequence(
+def test_v140_template_pack_golden_path_example_and_cli_sequence(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -574,7 +574,7 @@ def test_v7_template_pack_golden_path_example_and_cli_sequence(
     assert readiness["templates"]["remote_catalog_defaults"]["status"] == "passed"
 
 
-def test_v8_skills_workflow_golden_path_example_and_cli_sequence(
+def test_v150_skills_workflow_golden_path_example_and_cli_sequence(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -629,7 +629,7 @@ def test_v8_skills_workflow_golden_path_example_and_cli_sequence(
     assert inspected["skill_manifest"] == skill_manifest
 
 
-def test_v9_mcp_boundary_golden_path_example_and_cli_sequence(
+def test_v160_mcp_boundary_golden_path_example_and_cli_sequence(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -738,7 +738,7 @@ def test_v9_mcp_boundary_golden_path_example_and_cli_sequence(
     }
 
 
-def test_v11_orchestration_workflow_golden_path_example_and_cli_sequence(
+def test_v170_orchestration_workflow_golden_path_example_and_cli_sequence(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -883,7 +883,7 @@ def test_release_readiness_rejects_remote_template_catalog_defaults(
     assert "templates.remote_catalog_defaults" in {entry["gate"] for entry in report["diagnostics"]}
 
 
-def test_release_readiness_requires_v1_release_closure_docs(
+def test_release_readiness_requires_v100_release_closure_docs(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -921,7 +921,7 @@ def test_release_readiness_requires_v1_release_closure_docs(
     assert {"docs.migration_notes", "docs.release_process"} <= diagnostic_gates
 
 
-def test_current_release_metadata_and_v1_closure_docs_are_complete() -> None:
+def test_current_release_metadata_and_v100_closure_docs_are_complete() -> None:
     pyproject = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
     assert pyproject["project"]["version"] == "1.9.0"
     assert __version__ == "1.9.0"
@@ -965,7 +965,7 @@ def test_ci_installs_operator_extra_and_runs_operator_release_gates() -> None:
     assert "python -m agent_harness evidence pack --output .agent-harness/evidence" in workflow
 
 
-def test_operator_release_docs_cover_v6_golden_path_and_evidence() -> None:
+def test_operator_release_docs_cover_v130_golden_path_and_evidence() -> None:
     operator_docs = Path("docs/operator-ui.md").read_text(encoding="utf-8")
     release_docs = Path("docs/release-readiness.md").read_text(encoding="utf-8")
     combined = f"{operator_docs}\n{release_docs}"
@@ -980,7 +980,7 @@ def test_operator_release_docs_cover_v6_golden_path_and_evidence() -> None:
     assert "Roadmap / Not implemented yet" in operator_docs
 
 
-def test_mcp_release_docs_cover_v9_golden_path_and_evidence() -> None:
+def test_mcp_release_docs_cover_v160_golden_path_and_evidence() -> None:
     release_docs = Path("docs/release-readiness.md").read_text(encoding="utf-8")
     mcp_example = Path("examples/mcp_boundary/README.md").read_text(encoding="utf-8")
     combined = f"{release_docs}\n{mcp_example}"
@@ -992,10 +992,10 @@ def test_mcp_release_docs_cover_v9_golden_path_and_evidence() -> None:
     assert "agent-harness mcp serve" in combined
     assert "mcp.extra_install" in release_docs
     assert "mcp.stdio_protocol" in release_docs
-    assert "Planned V9 MCP Gates" not in release_docs
+    assert "Planned v1.6.0 MCP Gates" not in release_docs
 
 
-def test_orchestration_release_docs_cover_v11_golden_path_and_evidence() -> None:
+def test_orchestration_release_docs_cover_v170_golden_path_and_evidence() -> None:
     release_docs = Path("docs/release-readiness.md").read_text(encoding="utf-8")
     orchestration_example = Path("examples/orchestration_workflow/README.md").read_text(
         encoding="utf-8"
@@ -1016,7 +1016,7 @@ def test_orchestration_release_docs_cover_v11_golden_path_and_evidence() -> None
     assert "orchestration.mcp_access_log" in release_docs
     assert "Parallel execution" in combined
     assert "hosted APIs" in combined
-    assert "Planned V11" not in release_docs
+    assert "Planned v1.7.0" not in release_docs
 
 
 def test_release_package_check_builds_installs_and_records_evidence(
@@ -1192,16 +1192,16 @@ def _write_release_ready_project(
     )
     docs = root / "docs"
     docs.mkdir()
-    (docs / "prd-agent-harness-v3.md").write_text(
+    (docs / "prd-agent-harness-v1.0.0-mature-cli-runtime.md").write_text(
         "\n".join(
             [
-                "# Agent Harness V3 / v1.0.0 PRD",
+                "# Agent Harness v1.0.0 / v1.0.0 PRD",
                 "",
-                "Agent Harness V3 is the v1.0.0 maturity release.",
+                "Agent Harness v1.0.0 is the v1.0.0 Mature CLI/runtime release.",
                 "",
                 "## Compatibility And Deprecation Policy",
                 "",
-                "V2 schemas are the v1.0.0 public baseline.",
+                "v0.3.0 schemas are the v1.0.0 public baseline.",
                 "",
                 "## Implemented vs Roadmap",
                 "",
@@ -1218,7 +1218,7 @@ def _write_release_ready_project(
                 "",
                 "## Migration Notes From v0.3.0 To v1.0.0",
                 "",
-                "v1.0.0 keeps the v0.3.0 V2 schemas as the public baseline.",
+                "v1.0.0 keeps the v0.3.0 schemas as the public baseline.",
                 "",
             ]
         ),
@@ -1495,11 +1495,11 @@ def _write_skills_workflow_demo(root: Path) -> None:
     (docs / "skills-system.md").write_text(
         "\n".join(
             [
-                "# Skills System",
+                "# Skill Pack System",
                 "",
                 "## Current Capabilities",
                 "",
-                "V8 local skills are bundled or explicitly configured local guidance.",
+                "v1.5.0 local skills are bundled or explicitly configured local guidance.",
                 "Runs with skills emit skill_manifest.v1 evidence.",
                 "",
                 "## Roadmap / Not Implemented Yet",
@@ -1559,7 +1559,7 @@ def _write_inline_orchestration_workflow_demo(root: Path) -> None:
     demo = root / "examples" / "orchestration_workflow"
     (demo / "policies").mkdir(parents=True, exist_ok=True)
     (demo / "src").mkdir(parents=True, exist_ok=True)
-    (demo / "README.md").write_text("V11 orchestration workflow demo\n", encoding="utf-8")
+    (demo / "README.md").write_text("v1.7.0 orchestration workflow demo\n", encoding="utf-8")
     (demo / "agent-harness.yaml").write_text(
         "\n".join(
             [
@@ -1603,7 +1603,7 @@ def _orchestration_workflow_spec() -> dict[str, Any]:
     return {
         "schema_version": "orchestration.v1",
         "orchestration_id": "workflow-demo",
-        "title": "V11 local orchestration workflow",
+        "title": "v1.7.0 local orchestration workflow",
         "children": [
             {
                 "child_id": "planner",
@@ -1675,16 +1675,16 @@ def _write_release_project_without_evidence(root: Path, version: str) -> None:
     )
     docs = root / "docs"
     docs.mkdir()
-    (docs / "prd-agent-harness-v3.md").write_text(
+    (docs / "prd-agent-harness-v1.0.0-mature-cli-runtime.md").write_text(
         "\n".join(
             [
-                "# Agent Harness V3 / v1.0.0 PRD",
+                "# Agent Harness v1.0.0 / v1.0.0 PRD",
                 "",
-                "Agent Harness V3 is the v1.0.0 maturity release.",
+                "Agent Harness v1.0.0 is the v1.0.0 Mature CLI/runtime release.",
                 "",
                 "## Compatibility And Deprecation Policy",
                 "",
-                "V2 schemas are the v1.0.0 public baseline.",
+                "v0.3.0 schemas are the v1.0.0 public baseline.",
                 "",
                 "## Implemented vs Roadmap",
                 "",

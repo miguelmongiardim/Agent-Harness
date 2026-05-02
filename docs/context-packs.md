@@ -71,7 +71,7 @@ text.
 
 Local dense fixture behavior is opt-in with `retrieval_backend: qdrant`.
 Qdrant/FastEmbed dependency checks are used as the local optional-dependency
-gate, but V2 does not expose production Qdrant server mode and does not use
+gate, but v0.3.0 does not expose production Qdrant server mode and does not use
 remote embeddings. Missing optional dependencies produce doctor warnings and
 run manifests fall back to lexical retrieval.
 
@@ -105,13 +105,13 @@ A minimal JSON fixture looks like:
 }
 ```
 
-## V5 Local-First Retrieval Hardening
+## v1.2.0 Local-First Retrieval
 
-The V5 implementation track is local-first retrieval hardening for v1.2.0. It
+The v1.2.0 implementation track is local-first retrieval hardening for v1.2.0. It
 keeps lexical retrieval available in the base install while adding inspectable
 local retrieval artifacts and quality evidence.
 
-The V5 target scope is:
+The v1.2.0 target scope is:
 
 - lexical retrieval remains deterministic and available without optional
   dependencies
@@ -130,7 +130,7 @@ The V5 target scope is:
 - context assembly keeps policy filtering, sensitivity classification, and
   provider-input checks as the boundary before retrieved chunks can be used
 
-V5 treats retrieved text as untrusted evidence. Retrieval results do not widen
+v1.2.0 treats retrieved text as untrusted evidence. Retrieval results do not widen
 path policy, sensitivity policy, approval requirements, provider-input policy,
 or tool permissions.
 
@@ -141,4 +141,4 @@ APIs, remote vector databases, API-key-backed Qdrant endpoints, HTTPS remote
 Qdrant endpoints, production Qdrant server operation, deployment-scale
 retrieval tuning, MCP retrieval workflows, API/UI surfaces, multi-agent
 retrieval workflows, enterprise retrieval claims, and compliance-ready
-retrieval claims are outside V5.
+retrieval claims are outside v1.2.0.

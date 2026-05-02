@@ -1,10 +1,10 @@
-# Plan: Agent Harness V2
+# Plan: Agent Harness v0.3.0
 
-> Source PRD: [docs/prd-agent-harness-v2.md](../docs/prd-agent-harness-v2.md)
+> Source PRD: [docs/prd-agent-harness-v0.3.0-schema-and-policy-completion.md](../docs/prd-agent-harness-v0.3.0-schema-and-policy-completion.md)
 
 ## Delivery Status
 
-Status initialized from the V2 PRD on 2026-04-26.
+Status initialized from the v0.3.0 PRD on 2026-04-26.
 
 - Phase 0: completed
 - Phase 1: completed
@@ -17,30 +17,30 @@ Status initialized from the V2 PRD on 2026-04-26.
 - Phase 8: completed
 - Phase 9: completed
 - Phase 10: completed
-- V2 status: closed at `v0.3.0`.
-- Next target: start V3 from [plans/agent-harness-v3.md](agent-harness-v3.md).
+- v0.3.0 status: closed at `v0.3.0`.
+- Next target: start v1.0.0 from [plans/agent-harness-v1.0.0-mature-cli-runtime.md](agent-harness-v1.0.0-mature-cli-runtime.md).
 
 ## Architectural Decisions
 
 Durable decisions that apply across all phases:
 
-- **Public interface**: V2 extends the existing CLI. New public commands are
+- **Public interface**: v0.3.0 extends the existing CLI. New public commands are
   `migrate schemas` and either `docs check` or `doctor --docs`. Existing
-  commands keep their shape unless a V2 behavior requires additional evidence.
+  commands keep their shape unless a v0.3.0 behavior requires additional evidence.
 - **Key models**: `HarnessConfig`, `TaskSpec`, `PolicyProfile`,
   `TemplateSpec`, `ProviderCallAudit`, `ProviderInputManifest`,
   `SecurityFinding`, `ContextManifest`, `BenchmarkPackRecord`, and run summary
-  evidence remain the public model families. V2 adds version-aware wrappers or
+  evidence remain the public model families. v0.3.0 adds version-aware wrappers or
   fields where original/effective schema evidence is required.
 - **Schema**: new public inputs default to `config.v2`, `task.v2`,
-  `policy.v2`, and `template.v2`. V1 inputs remain readable through explicit
+  `policy.v2`, and `template.v2`. v0.2.0 inputs remain readable through explicit
   compatibility loaders. Compatibility loading must never widen policy or
   template capabilities.
 - **Storage**: run artifacts stay under `.agent-harness/runs/<run-id>` with
   JSON artifacts, append-only events, approvals, checkpoints, and an artifact
   index. Migration and docs-check reports write deterministic JSON and optional
   Markdown artifacts under `.agent-harness/` when useful.
-- **Runtime boundary**: the native runtime remains primary. V2 hardens schema,
+- **Runtime boundary**: the native runtime remains primary. v0.3.0 hardens schema,
   policy, provider, security, retrieval, template, benchmark, docs, demo, and
   release evidence around the existing runtime.
 - **Policy boundary**: `policy.v2` is the permission ceiling for provider use,
@@ -48,9 +48,9 @@ Durable decisions that apply across all phases:
   migration behavior, retrieval inclusion, tool execution, exports, and
   approvals.
 - **Approval model**: provider-use, provider-input, template apply, patch, and
-  `git_commit` approvals remain distinct. V2 strengthens provider-use approval
+  `git_commit` approvals remain distinct. v0.3.0 strengthens provider-use approval
   binding; patch and commit approval semantics must not regress.
-- **Audit model**: every public workflow added by V2 emits inspectable evidence:
+- **Audit model**: every public workflow added by v0.3.0 emits inspectable evidence:
   migration reports, original/effective schema versions, docs-check reports,
   policy decisions, provider-call hashes, redacted artifacts or summaries,
   security findings, retrieval manifests, template compatibility decisions,
@@ -70,18 +70,18 @@ Durable decisions that apply across all phases:
 
 ---
 
-## Phase 0: V2 Public Baseline Walking Skeleton
+## Phase 0: v0.3.0 Public Baseline Walking Skeleton
 
 **User stories covered**
 
-- Story 1: new users start on V2 schemas.
+- Story 1: new users start on v0.3.0 schemas.
 - Story 4: reviewers can see original and effective schema evidence.
 - Story 23: release work has evidence from the start.
 
 **Observable behaviors**
 
 - `agent-harness init` creates `config.v2` and `policy.v2`.
-- A bundled V2 task validates, runs through the existing runtime, and can be
+- A bundled v0.3.0 task validates, runs through the existing runtime, and can be
   inspected.
 - `inspect run` shows original and effective schema versions for config, task,
   and policy inputs.
@@ -90,14 +90,14 @@ Durable decisions that apply across all phases:
 **First RED test**
 
 - `tests/integration/test_public_schema_baseline.py::test_init_run_and_inspect_emit_default_schema_evidence`
-  should initialize a project, run a minimal V2 task, inspect the run, and fail
+  should initialize a project, run a minimal v0.3.0 task, inspect the run, and fail
   until the run artifacts record original/effective schema versions.
 
 ### GREEN implementation scope
 
-Thread the smallest V2 default path through `init`, task validation, run, run
+Thread the smallest v0.3.0 default path through `init`, task validation, run, run
 artifacts, and inspect output. Keep v1 compatibility narrow: a readable v1 input
-normalizes to an effective V2 contract only when policy and capabilities are not
+normalizes to an effective v0.3.0 contract only when policy and capabilities are not
 widened.
 
 ### Refactor candidates
@@ -111,11 +111,11 @@ widened.
 
 - [x] `agent-harness init` emits `config.v2`.
 - [x] `agent-harness init` emits default `policy.v2`.
-- [x] V2 examples use `task.v2`.
-- [x] A minimal V2 run completes or pauses exactly as policy requires.
+- [x] v0.3.0 examples use `task.v2`.
+- [x] A minimal v0.3.0 run completes or pauses exactly as policy requires.
 - [x] `inspect run` exposes original and effective schema versions.
-- [x] v1 config/task/policy files remain readable where V1 behavior maps safely
-      to V2.
+- [x] v1 config/task/policy files remain readable where v0.2.0 behavior maps safely
+      to v0.3.0.
 - [x] Compatibility loading cannot widen provider input, trust-zone, scanner, or
       template capability behavior.
 
@@ -124,7 +124,7 @@ widened.
 - Added `schema_versions.json` run artifacts and `inspect run` output for
   original/effective config, task, and policy schema versions.
 - New public inputs default to `config.v2`, `task.v2`, and `policy.v2`; v1
-  config/task/policy inputs are compatibility-loaded as effective V2 contracts.
+  config/task/policy inputs are compatibility-loaded as effective v0.3.0 contracts.
 - Compatibility coverage asserts provider-input, trust-zone, and scanner policy
   fields are preserved rather than widened. Template capability widening remains
   structurally unavailable until `template.v2` lands in Phase 7.
@@ -190,7 +190,7 @@ defined by behavior tests.
 - Added `agent-harness migrate schemas` with non-mutating report mode by
   default and optional `--output` report storage.
 - Added `agent-harness migrate schemas --write` for safe deterministic
-  config/task/policy schema upgrades from v1 to effective V2 contracts.
+  config/task/policy schema upgrades from v1 to effective v0.3.0 contracts.
 - Local `template.v1` inputs are discovered and reported but left unchanged with
   an unsupported-upgrade reason until `template.v2` compatibility metadata lands
   in Phase 7.
@@ -284,7 +284,7 @@ a time.
 **Observable behaviors**
 
 - Default policy validates as `policy.v2`.
-- Provider-input decisions follow the V2 matrix exactly.
+- Provider-input decisions follow the v0.3.0 matrix exactly.
 - Task specs and CLI flags can deny additional sensitivities but cannot turn a
   deny or approval requirement into allow.
 - Looser profiles must be explicit, named, documented, and deliberately
@@ -298,7 +298,7 @@ a time.
 
 ### GREEN implementation scope
 
-Promote `policy.v2` from V1-era fields to a direct public schema with explicit
+Promote `policy.v2` from v0.2.0-era fields to a direct public schema with explicit
 provider-input, trust-zone, approval, scanner, template-capability, and
 migration-policy sections. Keep the runtime using the policy engine through its
 public evaluation methods.
@@ -328,8 +328,8 @@ public evaluation methods.
   `trust_zones`, `provider_input`, `approvals`, `scanner`,
   `template_capabilities`, and `migration`.
 - The runtime keeps using the existing policy engine through compatibility
-  mirror fields populated from the V2 sections, so v1 flat policies remain
-  readable while default V2 is structurally distinct.
+  mirror fields populated from the v0.3.0 sections, so v1 flat policies remain
+  readable while default v0.3.0 is structurally distinct.
 - Looser-than-default profiles require a non-default name, documentation, and
   deliberate-selection metadata.
 
@@ -417,7 +417,7 @@ live smoke marker coverage.
 
 - Mandatory live provider tests
 - Raw provider payload capture by default
-- New provider transports beyond existing V1 transports
+- New provider transports beyond existing v0.2.0 transports
 
 ---
 
@@ -531,7 +531,7 @@ provider input and context policy filtering remain unchanged.
 
 - Extract a retrieval backend manifest record after lexical fallback and dense
   fixture paths both need it.
-- Separate Qdrant fixture setup from production server configuration to keep V2
+- Separate Qdrant fixture setup from production server configuration to keep v0.3.0
   scope explicit.
 
 ### Acceptance criteria
@@ -547,7 +547,7 @@ provider input and context policy filtering remain unchanged.
 - [x] Missing optional retrieval dependencies produce doctor warnings.
 - [x] Missing optional retrieval dependencies fall back gracefully.
 - [x] Remote embeddings are not used.
-- [x] Production Qdrant server mode is not exposed as V2 behavior.
+- [x] Production Qdrant server mode is not exposed as v0.3.0 behavior.
 
 ### Phase 6 implementation notes
 
@@ -586,13 +586,13 @@ provider input and context policy filtering remain unchanged.
   requirements, retrieval assumptions, and eval/demo metadata.
 - `template.v1` bundles remain readable through compatibility loading.
 - Applying an incompatible template rejects before write planning.
-- Applying a compatible V2 template records template id and version in
+- Applying a compatible v0.3.0 template records template id and version in
   workspace metadata.
 
 **First RED test**
 
 - `tests/integration/test_template_v2_catalog.py::test_incompatible_template_v2_rejects_before_write_planning`
-  should load a V2 template requiring an unsupported capability, run
+  should load a v0.3.0 template requiring an unsupported capability, run
   `template apply`, and assert no pending write approval or destination files
   are created.
 
@@ -600,14 +600,14 @@ provider input and context policy filtering remain unchanged.
 
 Extend template schemas and registry records just enough for capability
 validation, then migrate `python-lib` and add `cli-tool` and `fastapi-service`
-with V2 metadata. Preserve approval-bound apply from V1.
+with v0.3.0 metadata. Preserve approval-bound apply from v0.2.0.
 
 ### Refactor candidates
 
 - Split template compatibility decisions from registry loading if apply and
   show both expose compatibility evidence.
 - Add reusable template schema-version generation helpers once two templates
-  need the same V2 generated schema set.
+  need the same v0.3.0 generated schema set.
 
 ### Acceptance criteria
 
@@ -620,9 +620,9 @@ with V2 metadata. Preserve approval-bound apply from V1.
 - [x] `template.v2` includes retrieval assumptions.
 - [x] `template.v2` includes eval or demo metadata.
 - [x] `template.v1` bundles remain readable.
-- [x] `python-lib` is migrated to V2 metadata.
-- [x] `cli-tool` exists as a V2 template.
-- [x] `fastapi-service` exists as a V2 template.
+- [x] `python-lib` is migrated to v0.3.0 metadata.
+- [x] `cli-tool` exists as a v0.3.0 template.
+- [x] `fastapi-service` exists as a v0.3.0 template.
 - [x] Incompatible templates fail before write planning.
 - [x] Workspace metadata records template id and version after successful apply.
 
@@ -630,18 +630,18 @@ with V2 metadata. Preserve approval-bound apply from V1.
 
 - `TemplateSpec` now accepts `template.v2` manifests with explicit compatibility
   metadata while keeping `template.v1` readable.
-- Bundled `python-lib`, `cli-tool`, and `fastapi-service` templates expose V2
+- Bundled `python-lib`, `cli-tool`, and `fastapi-service` templates expose v0.3.0
   metadata through `agent-harness template show`.
 - Template apply rejects unsupported required template capabilities before run
   artifact creation, approval planning, or destination writes.
-- Approval-bound apply and workspace metadata recording from V1 remain the
+- Approval-bound apply and workspace metadata recording from v0.2.0 remain the
   mutation path for compatible templates.
 
 ### Out of scope
 
 - External template catalogs
 - Remote template discovery
-- Non-Python template expansion in V2
+- Non-Python template expansion in v0.3.0
 
 ---
 
@@ -716,7 +716,7 @@ local fixture behavior.
 
 ---
 
-## Phase 9: Provider Audit Demo And V2 Example Migration
+## Phase 9: Provider Audit Demo And v0.3.0 Example Migration
 
 **User stories covered**
 
@@ -731,7 +731,7 @@ local fixture behavior.
 - The demo proves pause/resume, provider-use approval linkage, provider-input
   policy evidence, redacted provider-call artifacts, inspect output, and JSON,
   Markdown, and SARIF exports.
-- `python_refactor` is migrated to V2 and remains a secondary demo.
+- `python_refactor` is migrated to v0.3.0 and remains a secondary demo.
 
 **First RED test**
 
@@ -742,7 +742,7 @@ local fixture behavior.
 ### GREEN implementation scope
 
 Build `examples/provider_audit/` as a thin real walkthrough over existing CLI
-behavior, not a parallel demo harness. Migrate `python_refactor` after the V2
+behavior, not a parallel demo harness. Migrate `python_refactor` after the v0.3.0
 schema and policy defaults are stable.
 
 ### Refactor candidates
@@ -767,11 +767,11 @@ schema and policy defaults are stable.
 - [x] The demo exports JSON.
 - [x] The demo exports Markdown.
 - [x] The demo exports SARIF.
-- [x] `python_refactor` is migrated to V2 as a secondary demo.
+- [x] `python_refactor` is migrated to v0.3.0 as a secondary demo.
 
 ### Phase 9 implementation notes
 
-- `examples/provider_audit/` is a runnable V2 workspace with recorded
+- `examples/provider_audit/` is a runnable v0.3.0 workspace with recorded
   OpenAI-compatible fixture transport, `local_endpoint` trust zone,
   `network: false`, and required provider-use approval.
 - The provider audit e2e test copies the real example, proves pause/resume,
@@ -781,7 +781,7 @@ schema and policy defaults are stable.
 - Markdown exports now include the task title when the run has a task artifact,
   making example walkthrough exports self-identifying.
 - The existing `examples/tasks/python_refactor.json` secondary demo validates
-  as `task.v2` and runs as a V2 dry run.
+  as `task.v2` and runs as a v0.3.0 dry run.
 
 ### Out of scope
 
@@ -801,7 +801,7 @@ schema and policy defaults are stable.
 **Observable behaviors**
 
 - README, architecture, security, retrieval, template, benchmark, migration,
-  roadmap, and changelog docs describe implemented V2 behavior and isolate
+  roadmap, and changelog docs describe implemented v0.3.0 behavior and isolate
   roadmap items.
 - Docs gates pass.
 - Local checks pass.
@@ -833,8 +833,8 @@ wire CI and advisory artifacts into the release checklist.
 ### Acceptance criteria
 
 - [x] README uses `provider_audit` as the main walkthrough.
-- [x] README documents V2 defaults without unsupported claims.
-- [x] Architecture docs reflect V2 boundaries.
+- [x] README documents v0.3.0 defaults without unsupported claims.
+- [x] Architecture docs reflect v0.3.0 boundaries.
 - [x] Security docs reflect `policy.v2`, provider approvals, and advisory
       scanner scope.
 - [x] Retrieval docs reflect lexical default, local dense fixtures, fallback,
@@ -843,7 +843,7 @@ wire CI and advisory artifacts into the release checklist.
 - [x] Benchmark docs reflect adapter interfaces, miniature samples, dense
       scenario, and no benchmark-comparability claim.
 - [x] Migration docs explain report mode and `--write`.
-- [x] Roadmap separates V3/future items: MCP, web API/UI, multi-agent workflows,
+- [x] Roadmap separates v1.0.0/future items: MCP, web API/UI, multi-agent workflows,
       external catalogs, production Qdrant server mode, deployment tuning, and
       enterprise/compliance readiness.
 - [x] CHANGELOG includes `v0.3.0`.
@@ -858,15 +858,15 @@ wire CI and advisory artifacts into the release checklist.
 ### Phase 10 implementation notes
 
 - README now uses `examples/provider_audit/` as the main walkthrough and
-  documents V2 defaults with roadmap exclusions.
+  documents v0.3.0 defaults with roadmap exclusions.
 - Architecture, security, retrieval, template, benchmark/evaluation, migration,
-  release-readiness, and roadmap docs now describe implemented V2 behavior and
+  release-readiness, and roadmap docs now describe implemented v0.3.0 behavior and
   isolate future work.
 - `agent-harness release readiness --version 0.3.0 --ci-run-id <run-id>` writes
   a `release_readiness.v1` report with docs gate status, local check commands,
   target-commit CI evidence, advisory report references, changelog presence,
   and tag target evidence.
-- `CHANGELOG.md` includes the `0.3.0` V2 completion release entry.
+- `CHANGELOG.md` includes the `0.3.0` v0.3.0 completion release entry.
 - Remote CI run `24962697751` passed for
   `f6fef27c4af6f4dc424ff8b5a96fdd8ceda9a118`, including Python 3.11 and 3.12
   compatibility jobs.
@@ -883,8 +883,8 @@ wire CI and advisory artifacts into the release checklist.
 ## Cross-Phase Invariants
 
 - No subsystem bypasses the policy engine.
-- Public input defaults are V2 after Phase 0.
-- V1/v0.2.0 remains the compatibility baseline.
+- Public input defaults are v0.3.0 after Phase 0.
+- v0.2.0/v0.2.0 remains the compatibility baseline.
 - Compatibility loading and migration never widen policy or template
   capabilities.
 - Task specs and CLI flags can narrow permissions but cannot widen policy
@@ -898,7 +898,7 @@ wire CI and advisory artifacts into the release checklist.
   revalidated before execution.
 - Raw provider request/response payloads are not stored by default.
 - Lexical retrieval remains the deterministic default.
-- Dense retrieval is local-only in V2.
+- Dense retrieval is local-only in v0.3.0.
 - Missing optional dependencies produce clear diagnostics and graceful fallback.
 - External scanner and SBOM integrations are advisory and non-blocking by
   default.
@@ -909,5 +909,5 @@ wire CI and advisory artifacts into the release checklist.
   red-green-refactor one behavior at a time.
 - Every new subsystem is exercised by a behavior in the same phase or the
   immediately following phase.
-- No V3/future roadmap feature is implemented without a new PRD or explicit
+- No v1.0.0/future roadmap feature is implemented without a new PRD or explicit
   scope decision.

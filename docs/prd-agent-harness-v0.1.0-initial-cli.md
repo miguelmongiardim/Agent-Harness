@@ -1,8 +1,8 @@
-# PRD: Agent Harness V0
+# PRD: Agent Harness v0.1.0
 
 ## Problem Statement
 
-Agent Harness V0 exists to recover a controlled local agent workflow from an
+Agent Harness v0.1.0 exists to recover a controlled local agent workflow from an
 overgrown spike. The current repository has useful code, docs, and tests, but
 the product boundary was not written down first. That creates three risks:
 
@@ -13,12 +13,12 @@ the product boundary was not written down first. That creates three risks:
 
 The primary users are developers and reviewers who want to inspect, test, and
 demonstrate a local agent workflow for software-engineering tasks. They need a
-small V0 that proves policy-gated execution, reproducible artifacts, and
+small v0.1.0 that proves policy-gated execution, reproducible artifacts, and
 approval-bound changes without claiming enterprise readiness.
 
 ## Solution
 
-Agent Harness V0 is a local-first Python CLI that runs deterministic mock-agent
+Agent Harness v0.1.0 is a local-first Python CLI that runs deterministic mock-agent
 software-engineering tasks against fixture projects. A task run creates an
 inspectable run directory with policy-mediated context, JSONL events,
 checkpoints, approval records, summaries, and exports.
@@ -27,7 +27,7 @@ The solution deliberately rebuilds from public behavior using TDD. The current
 spike is frozen as reference material. Code may be reused only after the
 behavior it supports is covered by a public-interface test.
 
-V0 focuses on these workflows:
+v0.1.0 focuses on these workflows:
 
 - initialize a project scaffold and default policy
 - validate task, policy, tool, context, approval, eval, and template models
@@ -39,7 +39,7 @@ V0 focuses on these workflows:
 - run evals that fail on policy bypass and emit scorecard artifacts
 - export policy evidence as JSON, Markdown, and SARIF
 
-V0 avoids production identity, network model providers, web APIs, web UIs,
+v0.1.0 avoids production identity, network model providers, web APIs, web UIs,
 multi-agent execution, broad template catalogs, and enterprise assurance claims.
 
 ## User Stories
@@ -114,7 +114,7 @@ multi-agent execution, broad template catalogs, and enterprise assurance claims.
 
 ## Implementation Decisions
 
-- **Public interface**: V0 is CLI-first. Required commands are `init`,
+- **Public interface**: v0.1.0 is CLI-first. Required commands are `init`,
   `template list/show/apply`, `ingest docs`, `task validate`, `run`,
   `approve`, `inspect run/context/policy`, `eval`, `export sarif`, and
   `doctor`.
@@ -134,16 +134,16 @@ multi-agent execution, broad template catalogs, and enterprise assurance claims.
   general shell. `run_tests` accepts allow-listed argv arrays only.
 - **Approval boundary**: approval records are hash-bound to the exact proposed
   effect and re-checked before mutation.
-- **Runtime boundary**: V0 uses a native plan-act-observe loop with a
+- **Runtime boundary**: v0.1.0 uses a native plan-act-observe loop with a
   deterministic mock model. Framework adapters are roadmap items only.
 - **Storage**: run artifacts live under `.agent-harness/runs/<run-id>`.
   JSONL events are append-only evidence. SQLite stores metadata needed for
   inspection and resumption.
 - **Retrieval**: deterministic local retrieval is the normal path. Fake
   retrieval is for isolated unit tests. Qdrant/FastEmbed is optional smoke-path
-  only in V0.
+  only in v0.1.0.
 - **Docs**: public docs describe implemented behavior only. Roadmap material is
-  separated from V0 behavior.
+  separated from v0.1.0 behavior.
 
 ## Testing Decisions
 
@@ -159,7 +159,7 @@ multi-agent execution, broad template catalogs, and enterprise assurance claims.
   inspection and export.
 - Adversarial tests cover prompt injection in docs, forbidden access, denied
   context, policy bypass attempts, stale approvals, and patch tampering.
-- V0 acceptance requires reproducible fixed-seed artifacts, no policy bypass,
+- v0.1.0 acceptance requires reproducible fixed-seed artifacts, no policy bypass,
   concrete output assertions, and docs that do not overclaim implemented
   behavior.
 
@@ -174,15 +174,15 @@ multi-agent execution, broad template catalogs, and enterprise assurance claims.
 - Production identity, tenant isolation, centralized secrets management,
   enterprise DLP, hardened sandboxing, or compliance assurance.
 - Broad benchmark adapters such as SWE-bench or Terminal-Bench.
-- V1/V2 roadmap features unless promoted by a later PRD and behavior test.
+- v0.2.0/v0.3.0 roadmap features unless promoted by a later PRD and behavior test.
 
 ## Further Notes
 
-- The current spike is useful reference material, not accepted V0
+- The current spike is useful reference material, not accepted v0.1.0
   implementation by default.
 - `deep-research-report.md` remains private and untracked unless cleaned into
   public docs.
-- The highest-risk V0 behaviors are policy mediation, denied-context exclusion,
+- The highest-risk v0.1.0 behaviors are policy mediation, denied-context exclusion,
   approval binding, dry-run non-mutation, and documentation accuracy.
 - The first implementation step after this PRD is a walking skeleton test:
   CLI dry-run emits required artifacts and `inspect run` works.

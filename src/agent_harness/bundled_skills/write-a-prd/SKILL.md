@@ -69,7 +69,7 @@ Resolve:
 - security boundaries
 - integration boundaries
 - implementation constraints
-- what belongs in V0 versus later versions
+- what belongs in v0.1.0 versus later versions
 
 Do not ask low-value questions that can be resolved by sensible defaults.
 
@@ -228,7 +228,7 @@ Include:
 - which behaviors must be tested
 - which modules should be tested through public interfaces
 - which risks require adversarial or regression tests
-- which tests define V0 acceptance
+- which tests define initial acceptance
 - relevant prior test patterns, if any
 
 Tests should verify behavior through public interfaces, not implementation details.

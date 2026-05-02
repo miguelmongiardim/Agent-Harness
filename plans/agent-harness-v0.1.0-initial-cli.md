@@ -1,12 +1,12 @@
-# Plan: Agent Harness V0 Recovery
+# Plan: Agent Harness v0.1.0 Recovery
 
-> Source PRD: `docs/prd-agent-harness-v0.md`
+> Source PRD: `docs/prd-agent-harness-v0.1.0-initial-cli.md`
 
 ## Architectural Decisions
 
 Durable decisions that apply across all phases:
 
-- **Public interface**: V0 is a Python CLI with `init`, `template
+- **Public interface**: v0.1.0 is a Python CLI with `init`, `template
   list/show/apply`, `ingest docs`, `task validate`, `run`, `approve`,
   `inspect run/context/policy`, `eval`, `export sarif`, and `doctor`.
 - **Key models**: task, tool, policy, template, eval, approval, context
@@ -15,8 +15,8 @@ Durable decisions that apply across all phases:
   restructure only when a vertical slice requires it.
 - **Storage**: each run writes artifacts under `.agent-harness/runs/<run-id>`;
   JSONL events are the audit trail and SQLite stores inspectable metadata.
-- **Runtime boundary**: V0 uses a native plan-act-observe loop and a
-  deterministic mock model. Framework adapters stay out of V0 implementation.
+- **Runtime boundary**: v0.1.0 uses a native plan-act-observe loop and a
+  deterministic mock model. Framework adapters stay out of v0.1.0 implementation.
 - **Policy boundary**: policy profiles are permission ceilings. No subsystem
   may bypass policy.
 - **Context boundary**: all external data, retrieved content, prompts, model
@@ -26,7 +26,7 @@ Durable decisions that apply across all phases:
 - **Retrieval boundary**: deterministic local retrieval is default, fake
   retrieval is for isolated unit tests, and Qdrant/FastEmbed is optional smoke
   path only.
-- **Docs boundary**: public docs describe implemented behavior; V1/V2 remain
+- **Docs boundary**: public docs describe implemented behavior; v0.2.0/v0.3.0 remain
   roadmap only.
 
 ---
@@ -39,7 +39,7 @@ Durable decisions that apply across all phases:
 
 **Observable behaviors**
 
-- The repository has a V0 PRD.
+- The repository has a v0.1.0 PRD.
 - The repository has a vertical implementation plan.
 - The current spike is classified as salvage, rewrite, or discard.
 
@@ -54,8 +54,8 @@ migrating code or restructuring the repository.
 
 ### Acceptance criteria
 
-- [x] `docs/prd-agent-harness-v0.md` exists and defines V0 scope.
-- [x] `plans/agent-harness-v0.md` exists and slices work by public behavior.
+- [x] `docs/prd-agent-harness-v0.1.0-initial-cli.md` exists and defines v0.1.0 scope.
+- [x] `plans/agent-harness-v0.1.0-initial-cli.md` exists and slices work by public behavior.
 - [x] `docs/spike-audit.md` exists and classifies spike material.
 - [x] No code migration or package restructuring occurs in this phase.
 - [x] The first Phase 0 RED test is identified.
@@ -124,12 +124,12 @@ writing, and run inspection.
 - `init` creates expected config, policy, artifact directories, and starter
   docs.
 - `template list/show/apply` works for `python-lib`.
-- Generated docs contain no unsupported V0 claims.
+- Generated docs contain no unsupported v0.1.0 claims.
 
 **First RED test**
 
 - `agent-harness init` in an empty directory creates expected structure, and a
-  documentation scanner fails if V0 docs claim behavior not yet implemented.
+  documentation scanner fails if v0.1.0 docs claim behavior not yet implemented.
 
 ### What to build
 
@@ -142,7 +142,7 @@ incrementally when these commands need it.
 - [x] `init` is idempotent unless `--force` is supplied.
 - [x] `python-lib` template application is policy-mediated.
 - [x] `task validate` returns concrete validation errors for invalid specs.
-- [x] Public docs separate implemented V0 behavior from roadmap items.
+- [x] Public docs separate implemented v0.1.0 behavior from roadmap items.
 - [x] Project metadata supports local install and test execution.
 
 ### Out of scope
@@ -373,7 +373,7 @@ provider-neutral.
   flow, and reproducible replay.
 - Evals fail hard on policy bypass.
 - Exports emit JSON, Markdown, and SARIF artifacts from run evidence.
-- CI runs the V0 acceptance checks.
+- CI runs the v0.1.0 acceptance checks.
 
 **First RED test**
 
@@ -412,4 +412,4 @@ formats and CI after they have real evidence to consume.
 - Docs match implemented behavior and avoid overclaiming.
 - Mock model behavior depends on real task specs, context, and observations.
 - Spike code is reused only after behavior-test coverage.
-- V1/V2 remain roadmap only.
+- v0.2.0/v0.3.0 remain roadmap only.

@@ -1,8 +1,8 @@
-# Plan: Agent Harness V7 Template Pack System
+# Plan: Agent Harness v1.4.0 Template Pack System
 
-> Source PRD: [docs/prd-agent-harness-v7.md](../docs/prd-agent-harness-v7.md)
+> Source PRD: [docs/prd-agent-harness-v1.4.0-template-pack-system.md](../docs/prd-agent-harness-v1.4.0-template-pack-system.md)
 
-V7 targets `v1.4.0`. All implementation phases are complete. Release tagging
+v1.4.0 targets `v1.4.0`. All implementation phases are complete. Release tagging
 and package publishing remain outside this implementation plan.
 
 ## Architectural Decisions
@@ -15,7 +15,7 @@ Durable decisions that apply across all phases:
 - **Manifest format**: use `template.v2.toml` with `tomllib`; do not add PyYAML
   solely for template manifests.
 - **Compatibility model**: keep legacy `template.v1` and bundled JSON
-  readability; use simple min/max Agent Harness version fields for V7 pack
+  readability; use simple min/max Agent Harness version fields for v1.4.0 pack
   compatibility.
 - **Key models**: add or extend public template detail, validation, apply-plan,
   and `template_application.v1` evidence models without changing existing
@@ -35,24 +35,24 @@ Durable decisions that apply across all phases:
   filters, includes, or code execution.
 - **Local source boundary**: discover local packs only from explicit
   `config.v2` `templates.local_dirs`; never scan arbitrary directories.
-- **Release boundary**: release readiness is the V7 control surface for bundled
+- **Release boundary**: release readiness is the v1.4.0 control surface for bundled
   pack validation, dry-run, clean apply, generated schema checks, docs, and
   remote catalog default rejection.
 
 ---
 
-## Phase 0: V7 Scope Is Documented And Guarded
+## Phase 0: v1.4.0 Scope Is Documented And Guarded
 
 **User stories covered**
 
-- Story 10: release reviewer can verify V7 from a clean checkout.
+- Story 10: release reviewer can verify v1.4.0 from a clean checkout.
 - Story 12: documentation reviewer can distinguish implemented local behavior
   from roadmap behavior.
 
 **Observable behaviors**
 
-- V7 PRD and plan exist.
-- Template-pack docs describe local-first V7 behavior.
+- v1.4.0 PRD and plan exist.
+- Template-pack docs describe local-first v1.4.0 behavior.
 - Docs checks reject implemented-scope claims for remote catalogs,
   marketplaces, signing, organization catalogs, cloud registries, hooks,
   scripts, enterprise governance, and conditional file inclusion.
@@ -64,21 +64,21 @@ Durable decisions that apply across all phases:
 
 ### What to build
 
-Add the durable V7 docs and docs-check guarded phrases needed to lock scope
+Add the durable v1.4.0 docs and docs-check guarded phrases needed to lock scope
 before implementation starts. Update README, roadmap, architecture, and release
-readiness docs only enough to point at the planned V7 local template-pack
+readiness docs only enough to point at the planned v1.4.0 local template-pack
 boundary and keep roadmap-only claims out of implemented sections.
 
 ### Acceptance criteria
 
-- [x] `docs/prd-agent-harness-v7.md` exists and follows the PRD template.
-- [x] `plans/agent-harness-v7.md` exists and uses vertical slices.
-- [x] `docs/template-pack-system.md` describes V7 local template packs.
-- [x] README and roadmap describe V7 as local-first and keep remote template
+- [x] `docs/prd-agent-harness-v1.4.0-template-pack-system.md` exists and follows the PRD template.
+- [x] `plans/agent-harness-v1.4.0-template-pack-system.md` exists and uses vertical slices.
+- [x] `docs/template-pack-system.md` describes v1.4.0 local template packs.
+- [x] README and roadmap describe v1.4.0 as local-first and keep remote template
       features future-only.
 - [x] Architecture docs identify `agent_harness.templates` as the pack-system
       boundary.
-- [x] Release-readiness docs name the V7 template-pack gates.
+- [x] Release-readiness docs name the v1.4.0 template-pack gates.
 - [x] Docs check rejects unsupported template-pack claims outside roadmap
       sections.
 - [x] Docs check passes after docs are corrected.
@@ -150,7 +150,7 @@ format.
 
 **Observable behaviors**
 
-- `template validate python-lib` uses the V7 validator.
+- `template validate python-lib` uses the v1.4.0 validator.
 - `template pack validate <path>` validates a local pack directory without
   installing it.
 - Unsafe packs fail with actionable diagnostics.
@@ -182,7 +182,7 @@ the pack can be used by planning or apply.
 - [x] Hook and script declarations are rejected.
 - [x] Unsupported placeholders and undeclared placeholders are rejected.
 - [x] Secret-like values, generated citation markers, and private uploaded-file
-      references are rejected or reported according to the V7 policy decision.
+      references are rejected or reported according to the v1.4.0 policy decision.
 - [x] Hidden or unlisted generated files are denied.
 - [x] Generated config, task, policy, and eval examples validate where present.
 - [x] Diagnostics are actionable and machine-readable.
@@ -367,7 +367,7 @@ binding for non-empty targets and `--force` overwrite planning.
 **Observable behaviors**
 
 - `python-lib`, `cli-tool`, `fastapi-service`, `provider-audit`, and
-  `retrieval-quality` are all bundled V7 packs.
+  `retrieval-quality` are all bundled v1.4.0 packs.
 - Each bundled pack validates, dry-runs, and clean-applies.
 - Each generated scaffold includes schema-valid Agent Harness workflow files.
 
@@ -409,19 +409,19 @@ task, eval, docs, and demo metadata behavior without remote catalogs or hooks.
 
 ---
 
-## Phase 7: V7 Golden Path And Release Readiness Close The Loop
+## Phase 7: v1.4.0 Golden Path And Release Readiness Close The Loop
 
 **User stories covered**
 
-- Story 10: release reviewer can accept V7 from a clean checkout.
+- Story 10: release reviewer can accept v1.4.0 from a clean checkout.
 - Story 12: docs remain aligned with implemented behavior.
 
 **Observable behaviors**
 
-- `examples/template_pack_system/` demonstrates the V7 golden path.
+- `examples/template_pack_system/` demonstrates the v1.4.0 golden path.
 - `agent-harness release readiness` fails when template-pack evidence is
   missing or unsafe.
-- The final V7 golden path works from a clean checkout.
+- The final v1.4.0 golden path works from a clean checkout.
 
 **First RED test**
 
@@ -431,14 +431,14 @@ task, eval, docs, and demo metadata behavior without remote catalogs or hooks.
 
 ### What to build
 
-Add the V7 example walkthrough and extend release readiness to execute or
+Add the v1.4.0 example walkthrough and extend release readiness to execute or
 verify the complete template-pack evidence set. Update CI release-evidence
-commands only where needed so required V7 checks run in the standard release
+commands only where needed so required v1.4.0 checks run in the standard release
 path.
 
 ### Acceptance criteria
 
-- [x] `examples/template_pack_system/` exists and documents the V7 golden path.
+- [x] `examples/template_pack_system/` exists and documents the v1.4.0 golden path.
 - [x] Release readiness validates all bundled packs.
 - [x] Release readiness dry-runs all bundled packs.
 - [x] Release readiness clean-applies all bundled packs to temporary targets.
@@ -448,7 +448,7 @@ path.
       clean applies.
 - [x] Release readiness confirms template docs exist.
 - [x] Release readiness rejects remote catalog defaults.
-- [x] Docs check passes with V7 implemented and roadmap boundaries intact.
+- [x] Docs check passes with v1.4.0 implemented and roadmap boundaries intact.
 - [x] The final acceptance path works:
       `template list`, `template show python-lib`, `template validate
       python-lib`, dry-run apply, preview-diff apply, clean apply, and
@@ -475,7 +475,7 @@ path.
 - Approval bindings include the rendered effect, not just the command request.
 - Rendering is deterministic text substitution only.
 - No hooks, scripts, environment reads, shell expansion, remote reads, or
-  conditional file inclusion enter V7.
-- Release readiness remains the evidence control surface for V7 acceptance.
+  conditional file inclusion enter v1.4.0.
+- Release readiness remains the evidence control surface for v1.4.0 acceptance.
 - Tests verify behavior through CLI commands, public models, persisted
   artifacts, and release reports rather than private helper details.

@@ -1,4 +1,4 @@
-# PRD: Agent Harness V8 Skills System
+# PRD: Agent Harness v1.5.0 Skill Pack System
 
 ## Problem Statement
 
@@ -7,7 +7,7 @@ templates, approvals, runs, exports, and release evidence. What it does not yet
 have is a first-class way to manage reusable workflow procedures as inspectable
 artifacts.
 
-Without V8, reusable procedures such as writing a PRD, converting that PRD into
+Without v1.5.0, reusable procedures such as writing a PRD, converting that PRD into
 vertical implementation slices, and executing those slices with TDD remain
 informal prompt text. That weakens auditability because a reviewer cannot list,
 inspect, validate, resolve, hash, include, or reject workflow guidance with the
@@ -21,7 +21,7 @@ and whether they stayed inside the active policy ceiling.
 
 ## Solution
 
-V8 targets `v1.5.0` and introduces the Skills System: local, versioned,
+v1.5.0 targets `v1.5.0` and introduces the Skill Pack System: local, versioned,
 validated Markdown workflow instructions with YAML frontmatter and deterministic
 provenance. A skill is workflow guidance. It is not a tool, not a template, not
 policy, not approval authority, and not executable code.
@@ -53,9 +53,9 @@ The initial bundled skills are:
 These bundled skills define the PRD to plan to TDD workflow and must remain
 repo-agnostic.
 
-## Implemented in V8
+## Implemented in v1.5.0
 
-The V8 target scope includes:
+The v1.5.0 target scope includes:
 
 - `SKILL.md` files with `skill.v1` YAML frontmatter and Markdown body
 - bundled skills shipped with Agent Harness
@@ -80,7 +80,7 @@ The V8 target scope includes:
 
 ## Roadmap / Not implemented yet
 
-The following are not part of V8:
+The following are not part of v1.5.0:
 
 - remote skill catalogs
 - skill marketplace
@@ -120,15 +120,15 @@ The following are not part of V8:
 9. As an operator using inspect, I want run inspection to show skills used and
    skill manifest evidence, so that review does not require manually browsing
    artifact directories.
-10. As a documentation reviewer, I want docs to distinguish V8 local skills from
+10. As a documentation reviewer, I want docs to distinguish v1.5.0 local skills from
     future distribution and governance features, so that public claims stay
     aligned with implemented behavior.
 11. As a workflow reviewer, I want a demo showing `prd-plan-tdd-workflow`
-    resolving and entering run artifacts, so that V8 proves reusable workflow
+    resolving and entering run artifacts, so that v1.5.0 proves reusable workflow
     guidance end to end.
 12. As an existing user, I want current task, policy, context, provider,
     template, approval, and run behavior to keep working unless a task opts into
-    skills, so that V8 does not break existing workflows.
+    skills, so that v1.5.0 does not break existing workflows.
 
 ## Behavioral Requirements
 
@@ -158,7 +158,7 @@ The following are not part of V8:
 13. `skill_id` values must be stable and URL/path safe.
 14. `version` values must be semantic-version-like.
 15. `description` and Markdown body must be non-empty.
-16. Compatibility ranges such as `>=1.5.0,<2.0.0` are accepted for V8 skills.
+16. Compatibility ranges such as `>=1.5.0,<2.0.0` are accepted for v1.5.0 skills.
 17. Unsupported compatibility expressions fail clearly.
 18. Skill hashes are computed deterministically from normalized frontmatter and
     body.
@@ -205,7 +205,7 @@ The following are not part of V8:
 44. Release readiness validates all bundled skills.
 45. Release readiness verifies skill registry, skill resolution, skill manifest
     emission, context manifest provenance, docs presence, and demo evidence.
-46. The V8 golden path works from a clean checkout:
+46. The v1.5.0 golden path works from a clean checkout:
     `skill list`, `skill show prd-plan-tdd-workflow`,
     `skill validate prd-plan-tdd-workflow`,
     `skill resolve --task examples/skills_workflow/task.yaml`,
@@ -234,7 +234,7 @@ The following are not part of V8:
   deterministic; do not add a broad dependency only for skill frontmatter unless
   implementation proves the existing simple YAML subset is insufficient.
 - Use compatibility range support for `compatible_agent_harness_versions`
-  because V8 skill metadata requires version ranges, unlike V7 template packs.
+  because v1.5.0 skill metadata requires version ranges, unlike v1.4.0 template packs.
 - Store bundled skills under package data so they are available from clean
   installs.
 - Treat local skill content as untrusted until validation succeeds.
@@ -244,7 +244,7 @@ The following are not part of V8:
   local configured skills, task-requested skills, and template-recommended
   skills in resolution and run evidence.
 - Extend release readiness rather than adding a separate release command.
-- Keep optional `skill create` and `skill export` outside V8 unless a later plan
+- Keep optional `skill create` and `skill export` outside v1.5.0 unless a later plan
   explicitly pulls them in.
 
 ## Testing Decisions
@@ -271,7 +271,7 @@ The following are not part of V8:
   skill resolution from task specs, context manifest inclusion and rejection,
   `skill_manifest.v1` emission, inspect output, eval assertions, and release
   readiness checks.
-- Add E2E coverage for `examples/skills_workflow/` and the V8 golden path.
+- Add E2E coverage for `examples/skills_workflow/` and the v1.5.0 golden path.
 - Run the smallest relevant checks first during implementation, then broaden to
   unit, integration, adversarial, E2E, docs check, and release readiness.
 
@@ -298,7 +298,7 @@ The following are not part of V8:
 
 ## Further Notes
 
-The highest-risk parts of V8 are authority confusion, context provenance, hash
+The highest-risk parts of v1.5.0 are authority confusion, context provenance, hash
 stability, local skill validation, duplicate handling, and documentation claim
 drift. The first implementation phases should prove a skill can be listed,
 validated, resolved, included, rejected, and audited without crossing the policy
@@ -309,6 +309,6 @@ configuration should be generated, while skills answer what workflow procedure
 should be followed. That distinction should remain visible in CLI copy, docs,
 schemas, and tests.
 
-The TDD workflow applies to V8 implementation itself: each phase should be
+The TDD workflow applies to v1.5.0 implementation itself: each phase should be
 implemented one observable behavior at a time, with refactoring only after the
 relevant behavior is green.

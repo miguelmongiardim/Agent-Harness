@@ -1,8 +1,8 @@
-# Plan: Agent Harness V5 Local-First Retrieval Hardening
+# Plan: Agent Harness v1.2.0 Local-First Retrieval
 
-> Source PRD: [docs/prd-agent-harness-v5.md](../docs/prd-agent-harness-v5.md)
+> Source PRD: [docs/prd-agent-harness-v1.2.0-local-first-retrieval.md](../docs/prd-agent-harness-v1.2.0-local-first-retrieval.md)
 
-This plan has been implemented through the V5 TDD sessions. Acceptance boxes
+This plan has been implemented through the v1.2.0 TDD sessions. Acceptance boxes
 remain checked only for behavior backed by tests, docs, or release evidence.
 
 ## Architectural Decisions
@@ -29,7 +29,7 @@ Durable decisions that apply across all phases:
   `qdrant-server` is optional loopback-only developer infrastructure.
 - **Fallback model**: lexical retrieval remains deterministic, inspectable, and
   available when dense dependencies or indexes are unavailable.
-- **Release boundary**: V5 targets v1.2.0 and stays limited to local-first
+- **Release boundary**: v1.2.0 targets v1.2.0 and stays limited to local-first
   retrieval hardening.
 
 ---
@@ -44,32 +44,32 @@ Durable decisions that apply across all phases:
 
 **Observable behaviors**
 
-- Retrieval docs identify V5 as local-first retrieval hardening.
-- Docs distinguish V5 behavior from roadmap behavior.
+- Retrieval docs identify v1.2.0 as local-first retrieval hardening.
+- Docs distinguish v1.2.0 behavior from roadmap behavior.
 - Docs checks fail when guarded retrieval phrases are claimed as implemented
   behavior outside roadmap sections.
 
 **First RED test**
 
 - `agent-harness docs check` passes while a doc claims cloud or remote retrieval
-  as implemented V5 behavior.
+  as implemented v1.2.0 behavior.
 
 ### What to build
 
-Add the V5 PRD, plan, retrieval docs, roadmap positioning, and README links.
-Extend docs-check coverage only as needed to guard V5 retrieval scope claims.
+Add the v1.2.0 PRD, plan, retrieval docs, roadmap positioning, and README links.
+Extend docs-check coverage only as needed to guard v1.2.0 retrieval scope claims.
 
 ### Acceptance criteria
 
-- [x] `docs/prd-agent-harness-v5.md` exists and follows the PRD template.
-- [x] `plans/agent-harness-v5.md` is a vertical-slice implementation plan.
+- [x] `docs/prd-agent-harness-v1.2.0-local-first-retrieval.md` exists and follows the PRD template.
+- [x] `plans/agent-harness-v1.2.0-local-first-retrieval.md` is a vertical-slice implementation plan.
 - [x] `docs/context-retrieval.md` or the current context retrieval doc explains
       lexical retrieval, deterministic dense tests, FastEmbed local embeddings,
       persistent local Qdrant, loopback-only Qdrant server, fallback behavior,
       scorecards, and policy filtering.
 - [x] `docs/roadmap.md` marks cloud and remote retrieval as future only.
 - [x] `README.md` links to the retrieval demo once it exists.
-- [x] Docs distinguish implemented V5 behavior from roadmap behavior.
+- [x] Docs distinguish implemented v1.2.0 behavior from roadmap behavior.
 - [x] Docs check passes.
 
 ### Out of scope
@@ -111,8 +111,8 @@ enough to prove invalid config cannot be used.
 ### Acceptance criteria
 
 - [x] Existing `config.v2` files remain valid.
-- [x] Valid V5 local-first retrieval config validates.
-- [x] `remote_embeddings: true` fails with a clear V5 validation error.
+- [x] Valid v1.2.0 local-first retrieval config validates.
+- [x] `remote_embeddings: true` fails with a clear v1.2.0 validation error.
 - [x] Hosted embedding providers fail validation.
 - [x] Cloud Qdrant URLs fail validation.
 - [x] API-key-backed Qdrant endpoints fail validation.
@@ -434,32 +434,32 @@ backend comparison output, and release-readiness evidence hooks.
 
 - Large public benchmark datasets.
 - Hosted model evaluation.
-- Ranking optimization beyond basic V5 comparison.
+- Ranking optimization beyond basic v1.2.0 comparison.
 
 ---
 
-## Phase 8: Retrieval Demo And V5 Golden Path Are Release-Ready
+## Phase 8: Retrieval Demo And v1.2.0 Golden Path Are Release-Ready
 
 **User stories covered**
 
 - Story 2: developer can run persistent local retrieval.
 - Story 3: reviewer can inspect Qdrant-backed manifests.
 - Story 7: policy filtering is visible in the demo.
-- Story 10: release reviewer can run the V5 golden path.
+- Story 10: release reviewer can run the v1.2.0 golden path.
 
 **Observable behaviors**
 
 - `examples/retrieval_quality/` demonstrates lexical build, dense local build
   when extras are installed, hybrid query, context manifest provenance,
   denied/sensitive rejection, and scorecard comparison.
-- The final V5 golden path works from a clean checkout with retrieval extras
+- The final v1.2.0 golden path works from a clean checkout with retrieval extras
   installed.
 - Release readiness reports retrieval evidence and rejects default remote
   retrieval settings.
 
 **First RED test**
 
-- The documented V5 golden path cannot run end to end from a clean checkout with
+- The documented v1.2.0 golden path cannot run end to end from a clean checkout with
   retrieval extras installed.
 
 ### What to build
@@ -483,7 +483,7 @@ example enables remote embeddings or cloud Qdrant.
 - [x] Context manifest shows lexical, dense, and both provenance.
 - [x] Denied or sensitive chunks are rejected before context assembly.
 - [x] Precision@k and Recall@k scorecard comparison is visible.
-- [x] V5 golden path works:
+- [x] v1.2.0 golden path works:
 
       ```powershell
       uv sync --extra retrieval
@@ -522,7 +522,7 @@ example enables remote embeddings or cloud Qdrant.
 - Tests verify public CLI, runtime, schema, and artifact behavior.
 - No subsystem is added unless the current or next slice exercises it through an
   observable behavior.
-- Docs keep V5 implemented behavior separate from roadmap behavior.
+- Docs keep v1.2.0 implemented behavior separate from roadmap behavior.
 
 ## TDD Execution Rules
 
@@ -538,7 +538,7 @@ example enables remote embeddings or cloud Qdrant.
 
 ## Final Acceptance
 
-V5 is complete only when the following path works from a clean checkout with
+v1.2.0 is complete only when the following path works from a clean checkout with
 retrieval extras installed:
 
 ```powershell
@@ -562,7 +562,7 @@ uv run agent-harness retrieval scorecard examples/retrieval_quality/scorecard.ya
 uv run agent-harness release readiness
 ```
 
-V5 is also complete only when base install lexical retrieval still works,
+v1.2.0 is also complete only when base install lexical retrieval still works,
 retrieval docs are accurate, scorecards are generated, Qdrant-backed context
 manifests are inspectable, lexical/dense/hybrid comparison is visible,
 denied/sensitive chunks are rejected before context assembly, default examples

@@ -2,7 +2,7 @@
 
 ## Current Capabilities
 
-Provider Core is the V4 boundary for controlled provider participation in Agent
+Provider Core is the v1.1.0 boundary for controlled provider participation in Agent
 Harness runs. Provider profiles are selected from `agent-harness.yaml`; tasks
 or CLI flags can choose a configured profile but cannot define ad hoc provider
 endpoints, models, transports, or trust zones.
@@ -36,7 +36,7 @@ approval drift.
 
 ## Roadmap
 
-Out of scope for V4 Provider Core:
+Out of scope for v1.1.0 Provider Core:
 
 - Fixture capture tooling or fixture replay commands.
 - API or web UI surfaces.

@@ -169,7 +169,7 @@ def _missing_governance_export(schema_version: str, reference: str) -> EvidenceD
         severity="error",
         domain="evidence",
         message=(
-            f"missing V12 governance export prerequisite: {schema_version}; "
+            f"missing v1.8.0 governance export prerequisite: {schema_version}; "
             f"generate it first with `{GOVERNANCE_EXPORT_HINT}`"
         ),
         artifact_reference=reference,
@@ -181,7 +181,7 @@ def _malformed_governance_export(schema_version: str, reference: str) -> Evidenc
         severity="error",
         domain="evidence",
         message=(
-            f"malformed V12 governance export prerequisite: {schema_version}; "
+            f"malformed v1.8.0 governance export prerequisite: {schema_version}; "
             f"regenerate it with `{GOVERNANCE_EXPORT_HINT}`"
         ),
         artifact_reference=reference,

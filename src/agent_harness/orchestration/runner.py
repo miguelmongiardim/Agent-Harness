@@ -58,7 +58,7 @@ def run_orchestration(
     dry_run: bool = False,
 ) -> OrchestrationSummary:
     if not dry_run:
-        raise ValueError("V11 orchestration supports --dry-run only")
+        raise ValueError("v1.7.0 orchestration supports --dry-run only")
     root = project_root.resolve()
     resolved_spec_path = spec_path.resolve()
     spec = load_orchestration_spec(resolved_spec_path)

@@ -1,8 +1,8 @@
-# Plan: Agent Harness V11 Policy-Mediated Multi-Agent Orchestration
+# Plan: Agent Harness v1.7.0 Policy-Mediated Multi-Agent Orchestration
 
-> Source PRD: [docs/prd-agent-harness-v11.md](../docs/prd-agent-harness-v11.md)
+> Source PRD: [docs/prd-agent-harness-v1.7.0-policy-mediated-multi-agent-orchestration.md](../docs/prd-agent-harness-v1.7.0-policy-mediated-multi-agent-orchestration.md)
 
-V11 targets `v1.7.0`. This plan is intentionally sliced around observable
+v1.7.0 targets `v1.7.0`. This plan is intentionally sliced around observable
 policy-mediated orchestration behavior. Implementation should follow the
 PRD -> Plan -> TDD workflow and proceed one public behavior at a time. Do not
 build horizontal orchestration infrastructure unless a phase exercises it
@@ -38,25 +38,25 @@ Durable decisions that apply across all phases:
 - **MCP boundary**: expose orchestration evidence as read-only MCP resources
   only. Do not add MCP tools, approval mutation, run execution, provider
   execution, or resume behavior.
-- **External service boundary**: V11 is local and deterministic by default.
+- **External service boundary**: v1.7.0 is local and deterministic by default.
   Networked providers remain explicit child choices and use existing provider
   gates.
 
 ---
 
-## Phase 0: V11 Scope Is Documented And Guarded
+## Phase 0: v1.7.0 Scope Is Documented And Guarded
 
 **User stories covered**
 
-- Story 15: release maintainer can see the planned V11 acceptance path.
-- Story 16: documentation reviewer can separate implemented V11 behavior from
+- Story 15: release maintainer can see the planned v1.7.0 acceptance path.
+- Story 16: documentation reviewer can separate implemented v1.7.0 behavior from
   later multi-agent scope.
-- Story 17: maintainer can place orchestration contracts in the post-V10
+- Story 17: maintainer can place orchestration contracts in the post-v1.6.1
   boundary layout.
 
 **Observable behaviors**
 
-- V11 PRD and vertical plan exist.
+- v1.7.0 PRD and vertical plan exist.
 - Capability docs continue to treat multi-agent orchestration as future work
   until implementation phases land.
 - Docs checks guard against claims for parallel, hosted, nested, MCP-execution,
@@ -70,17 +70,17 @@ Durable decisions that apply across all phases:
 
 ### What to build
 
-Add V11 PRD and plan, then extend docs-check claim guards only enough to keep
+Add v1.7.0 PRD and plan, then extend docs-check claim guards only enough to keep
 public documentation honest while implementation proceeds. Do not add
 orchestration CLI behavior in this phase.
 
 ### Acceptance criteria
 
-- [x] `docs/prd-agent-harness-v11.md` exists and follows the PRD template.
-- [x] `plans/agent-harness-v11.md` exists and uses vertical tracer-bullet
+- [x] `docs/prd-agent-harness-v1.7.0-policy-mediated-multi-agent-orchestration.md` exists and follows the PRD template.
+- [x] `plans/agent-harness-v1.7.0-policy-mediated-multi-agent-orchestration.md` exists and uses vertical tracer-bullet
       phases.
 - [x] Docs checks fail on unsupported multi-agent capability claims.
-- [x] README and roadmap do not describe V11 orchestration as implemented until
+- [x] README and roadmap do not describe v1.7.0 orchestration as implemented until
       code and release evidence exist.
 - [x] No runtime, policy, storage, MCP, or CLI implementation is added in this
       phase beyond documentation guards.
@@ -90,7 +90,7 @@ orchestration CLI behavior in this phase.
 - Added `unsupported_orchestration_scope_claim` docs-check coverage for current
   docs that claim parallel, hosted, nested, MCP-execution, or enterprise
   multi-agent orchestration behavior.
-- README and roadmap now link the V11 PRD and plan only as future local,
+- README and roadmap now link the v1.7.0 PRD and plan only as future local,
   sequential, policy-mediated orchestration scope.
 - No orchestration runtime, policy, storage, MCP, release-readiness, or CLI
   implementation was added.
@@ -212,7 +212,7 @@ inspect output.
 - Added `agent-harness orchestration inspect <id>` to return aggregate evidence
   and child artifact references without loading raw child run content.
 - Multiple children, dependencies, handoffs, risky approvals, resume behavior,
-  provider-backed children, MCP resources, and release gates remain later V11
+  provider-backed children, MCP resources, and release gates remain later v1.7.0
   phases.
 
 ### Out of scope
@@ -329,7 +329,7 @@ detection, orchestration-plan approval records, exact binding validation,
 
 ### Acceptance criteria
 
-- [x] Role ceilings are enforced for all four V11 roles.
+- [x] Role ceilings are enforced for all four v1.7.0 roles.
 - [x] Effective authority records are inspectable in orchestration evidence.
 - [x] Risky plans pause before any child starts.
 - [x] Approved risky plans resume only when bindings still match.
@@ -339,7 +339,7 @@ detection, orchestration-plan approval records, exact binding validation,
 
 ### Phase 4 implementation notes
 
-- Added fixed V11 role ceilings for planner, implementer, reviewer, and tester;
+- Added fixed v1.7.0 role ceilings for planner, implementer, reviewer, and tester;
   child-declared tools outside the role ceiling are rejected before artifacts
   or child runs are created.
 - Added effective child authority records to orchestration summaries and
@@ -499,7 +499,7 @@ artifacts.
 
 ---
 
-## Phase 7: Golden Path And Release Readiness Prove V11
+## Phase 7: Golden Path And Release Readiness Prove v1.7.0
 
 **User stories covered**
 
@@ -515,24 +515,24 @@ artifacts.
   artifact checks, inspect/export evidence, MCP resource reads, MCP access-log
   evidence, docs check, and changelog entry.
 - README, roadmap, architecture, security, MCP boundary, and release-readiness
-  docs describe implemented V11 behavior and keep deferred multi-agent features
+  docs describe implemented v1.7.0 behavior and keep deferred multi-agent features
   in roadmap/future scope.
 
 **First RED test**
 
-- A release-readiness integration test runs the V11 orchestration smoke path in
+- A release-readiness integration test runs the v1.7.0 orchestration smoke path in
   a temporary workspace and expects required orchestration gates to be present
   and passing in the readiness report.
 
 ### What to build
 
-Add the V11 example, expected outputs where useful, release-readiness evidence
+Add the v1.7.0 example, expected outputs where useful, release-readiness evidence
 collectors, docs updates, changelog entry, and docs-check claim guards for the
 new implemented scope and deferred future scope.
 
 ### Acceptance criteria
 
-- [x] The V11 example runs from a clean checkout without external services.
+- [x] The v1.7.0 example runs from a clean checkout without external services.
 - [x] Release readiness reports required orchestration gates.
 - [x] Docs claim local sequential policy-mediated orchestration only.
 - [x] Docs explicitly defer parallel execution, nested orchestration, hosted
@@ -541,15 +541,15 @@ new implemented scope and deferred future scope.
 
 ### Phase 7 implementation notes
 
-- Added `examples/orchestration_workflow/` as the deterministic V11 golden path
+- Added `examples/orchestration_workflow/` as the deterministic v1.7.0 golden path
   with local config, explicit orchestration policy, a Python fixture, and a
   planner -> implementer -> reviewer -> tester dry-run spec.
-- Extended `release_readiness.v1` with V11 orchestration gates for demo
+- Extended `release_readiness.v1` with v1.7.0 orchestration gates for demo
   presence, policy/role authority, aggregate and child artifacts, generated
   handoffs, inspect/export evidence, read-only MCP orchestration reads, and
   metadata-only MCP access logs.
 - Updated public docs and release metadata for `v1.7.0`. Operator UI support
-  and enterprise governance remain future-only. V11 does not support hosted
+  and enterprise governance remain future-only. v1.7.0 does not support hosted
   APIs. Parallel multi-agent orchestration remains future-only. Nested
   orchestration remains future-only. MCP execution for multi-agent
   orchestration remains future-only.

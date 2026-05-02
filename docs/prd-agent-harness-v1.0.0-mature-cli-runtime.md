@@ -1,8 +1,8 @@
-# Agent Harness V3 / v1.0.0 PRD
+# Agent Harness v1.0.0 / v1.0.0 PRD
 
 ## Status
 
-Agent Harness V3 is the v1.0.0 maturity release. It converts the v0.3.0 V2
+Agent Harness v1.0.0 is the v1.0.0 Mature CLI/runtime release. It converts the v0.3.0
 architecture-completion prototype into the first stable CLI/runtime release for
 controlled, auditable, policy-aware agentic software-engineering workflows.
 
@@ -72,7 +72,7 @@ web/API platform.
   deployment.
 - Add `.pre-commit-config.yaml` with Ruff lint/format, type/check hygiene, docs
   checks, and basic secret/large-file guards.
-- Keep V2 schemas as the v1.0.0 public compatibility baseline.
+- Keep v0.3.0 schemas as the v1.0.0 public compatibility baseline.
 
 ## Compatibility And Deprecation Policy
 
@@ -105,7 +105,7 @@ need release notes explaining the break.
 Implemented in v1.0.0:
 
 - local-first CLI/runtime workflows,
-- V2 public schema compatibility baseline,
+- v0.3.0 public schema compatibility baseline,
 - deterministic provider-audit and Python-refactor demos,
 - policy-mediated provider input, approvals, templates, context, and exports,
 - release-readiness evidence for local package/demo/docs/template gates,

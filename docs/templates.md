@@ -16,7 +16,7 @@ registry metadata and public template manifests.
 - retrieval assumptions
 - eval or demo metadata
 
-The bundled V7 pack set is:
+The bundled v1.4.0 pack set is:
 
 - `python-lib`
 - `cli-tool`
@@ -57,7 +57,7 @@ rejected before write planning.
 External catalogs, remote template discovery, and organization-wide template
 distribution are not part of the current release.
 
-The planned V7 Template Pack System is documented in
-[template-pack-system.md](template-pack-system.md). V7 keeps template packs
+The planned v1.4.0 Template Pack System is documented in
+[template-pack-system.md](template-pack-system.md). v1.4.0 keeps template packs
 local-first, explicit, and inspectable while adding pack manifests, dry-run
 planning, preview diffs, clean-apply evidence, and release-readiness gates.

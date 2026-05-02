@@ -137,7 +137,7 @@ def test_task_v2_accepts_skills(
             {
                 "schema_version": "task.v2",
                 "task_id": "task-v2-skills",
-                "title": "Task V2 Skills",
+                "title": "Task v0.3.0 Skills",
                 "intent": "Validate task-requested skills.",
                 "skills": ["prd-plan-tdd-workflow"],
             }

@@ -8,10 +8,8 @@ All notable changes to this project will be documented in this file.
 
 ## [1.9.0] - 2026-05-01
 
-V1.9 Compliance Evidence Pack release.
+v1.9.0 Compliance Evidence Pack release.
 
-- Added the V12 local governance console surface for summary, check, report,
-  and export evidence that feeds review-ready governance artifacts.
 - Added `agent-harness evidence pack`, `check`, and `index` with canonical
   evidence-pack JSON artifacts, review Markdown, optional archives, checksums,
   redaction-safe artifact indexing, domain summaries, and malformed-domain
@@ -23,9 +21,24 @@ V1.9 Compliance Evidence Pack release.
   existing pack files, schemas, checksums, blocking findings, advisory
   visibility, and safe project-relative artifact links.
 
+## [1.8.0] - 2026-05-01
+
+v1.8.0 Local Governance Console release.
+
+- Added the local governance console surface for summary, check, report, and
+  export evidence that feeds review-ready governance artifacts.
+- Added `agent-harness governance summary`, `check`, `report`, and `export`
+  for local governance summaries, blocking/advisory findings, report exports,
+  and safe project-relative evidence indexes.
+- Added governance artifact schemas for `governance_summary.v1`,
+  `governance_check.v1`, `governance_report.v1`, `governance_index.v1`, and
+  `governance_findings.v1`.
+- Added redaction-safe checks for unsafe artifact references and raw provider
+  payload artifacts without exposing raw payload contents.
+
 ## [1.7.1] - 2026-04-30
 
-V11 Multi-Agent Complexity Benchmark maintenance release.
+v1.7.1 Multi-Agent Complexity Benchmark maintenance release.
 
 - Added baseline-first benchmark comparison for bundled local samples with
   `benchmark_comparison_result.v1` per-case artifacts and
@@ -42,7 +55,7 @@ V11 Multi-Agent Complexity Benchmark maintenance release.
 
 ## [1.7.0] - 2026-04-30
 
-V11 Policy-Mediated Multi-Agent Orchestration release.
+v1.7.0 Policy-Mediated Multi-Agent Orchestration release.
 
 - Added local, sequential `orchestration.v1` supervision over normal child
   `task.v2` dry-run executions, with explicit `policy.v2.orchestration`
@@ -54,13 +67,13 @@ V11 Policy-Mediated Multi-Agent Orchestration release.
 - Added read-only MCP resources for orchestration summary, manifest, events,
   children, and handoffs, with metadata-only access logs and no MCP tools or
   execution surface.
-- Added `examples/orchestration_workflow/` as the V11 golden path and expanded
+- Added `examples/orchestration_workflow/` as the v1.7.0 golden path and expanded
   release readiness to verify orchestration demo, policy, artifacts,
   inspect/export, MCP resource reads, and MCP access-log evidence.
 
 ## [1.6.1] - 2026-04-29
 
-V10 Schema Boundary maintenance release.
+v1.6.1 Schema Internals Refactor maintenance release.
 
 - Moved Pydantic contracts from the root `agent_harness.schemas` surface into
   owner package schema modules for tasks, config, policy, tools, model,
@@ -77,7 +90,7 @@ V10 Schema Boundary maintenance release.
 
 ## [1.6.0] - 2026-04-29
 
-V9 MCP Boundary release.
+v1.6.0 MCP Boundary release.
 
 - Added a local, optional, read-only MCP boundary under `agent_harness.mcp`
   exposing policy-filtered resources and deterministic review prompts.
@@ -85,7 +98,7 @@ V9 MCP Boundary release.
   safe denial envelopes and metadata-only `mcp_access_log.v1` evidence.
 - Added an optional stdio MCP server backed by the existing resource and prompt
   registries, advertising resources and prompts only with no tools capability.
-- Added `examples/mcp_boundary/` as the V9 golden path with expected resource,
+- Added `examples/mcp_boundary/` as the v1.6.0 golden path with expected resource,
   prompt, and denied-resource examples.
 - Expanded release readiness and CI to verify the MCP extra, CLI behavior,
   denied resources, access evidence, and stdio resources/prompts-only protocol
@@ -93,7 +106,7 @@ V9 MCP Boundary release.
 
 ## [1.5.0] - 2026-04-28
 
-V8 Skills System release.
+v1.5.0 Skill Pack System release.
 
 - Added local, versioned, validated Markdown skills as policy-mediated workflow
   guidance with bundled and explicitly configured local sources.
@@ -108,14 +121,14 @@ V8 Skills System release.
 - Added policy-gated skill context provenance and `skill_manifest.v1` run
   artifacts linked from summaries, artifact indexes, inspect output, operator
   run detail, and eval expected-skill assertions.
-- Added `examples/skills_workflow/` as the V8 golden path and expanded release
+- Added `examples/skills_workflow/` as the v1.5.0 golden path and expanded release
   readiness to verify bundled skill validation, skill registry commands, task
   resolution, dry-run manifest emission, context provenance, inspect output,
   skills docs, and deferred-scope docs hygiene.
 
 ## [1.4.0] - 2026-04-28
 
-V7 Template Pack System release.
+v1.4.0 Template Pack System release.
 
 - Added local-first `template.v2.toml` template packs with bundled and
   configured local-pack discovery while preserving legacy bundled JSON
@@ -131,17 +144,17 @@ V7 Template Pack System release.
   artifacts, application evidence, or workspace metadata.
 - Added clean empty-target apply evidence with rollback on safe write failures,
   `template_application.v1` records, and workspace metadata references.
-- Added bundled V7 packs for `python-lib`, `cli-tool`, `fastapi-service`,
+- Added bundled v1.4.0 packs for `python-lib`, `cli-tool`, `fastapi-service`,
   `provider-audit`, and `retrieval-quality`, each with docs, demo metadata,
   and generated config/policy/task/eval examples.
-- Added `examples/template_pack_system/` as the V7 golden path and expanded
+- Added `examples/template_pack_system/` as the v1.4.0 golden path and expanded
   release readiness to validate, dry-run, clean-apply, schema-check, docs-check,
   and evidence-check all bundled packs while rejecting remote template catalog
   defaults.
 
 ## [1.3.0] - 2026-04-28
 
-V6 Local Operator Surface release.
+v1.3.0 Local Operator Surface release.
 
 - Added the optional `agent-harness[operator]` extra with FastAPI/Uvicorn
   dependencies while keeping the base install CLI-first.
@@ -153,7 +166,7 @@ V6 Local Operator Surface release.
 - Added packaged offline static operator UI assets with no Node build, CDN,
   remote fonts, analytics, external API calls, or persisted browser token
   storage.
-- Preserved V6 mutation boundaries: no run creation, config editing, template
+- Preserved v1.3.0 mutation boundaries: no run creation, config editing, template
   application, direct patch/commit/provider execution, MCP, multi-agent
   orchestration, hosted API claim, enterprise auth claim, or compliance claim.
 - Added release-readiness and CI evidence for operator app import, API smoke,
@@ -162,7 +175,7 @@ V6 Local Operator Surface release.
 
 ## [1.2.0] - 2026-04-27
 
-V5 Local-First Retrieval Hardening release.
+v1.2.0 Local-First Retrieval release.
 
 - Added local retrieval index lifecycle commands for lexical, deterministic
   dense, hybrid, qdrant-local, and loopback-only qdrant-server indexes.
@@ -184,7 +197,7 @@ V5 Local-First Retrieval Hardening release.
 
 ## [1.1.0] - 2026-04-27
 
-V4 Provider Core release.
+v1.1.0 Provider Core release.
 
 - Added strict `provider_action_envelope.v1` validation before runtime action
   planning, so malformed provider output, refusals, unsupported responses,
@@ -203,11 +216,11 @@ V4 Provider Core release.
   provider-input exclusion, approval drift blocking, redacted evidence, and
   live-smoke skip behavior.
 - Documented Provider Core setup, safety boundaries, recorded fixture
-  expectations, live smoke behavior, and V4 out-of-scope work.
+  expectations, live smoke behavior, and v1.1.0 out-of-scope work.
 
 ## [1.0.0] - 2026-04-27
 
-V3 maturity release.
+v1.0.0 Mature CLI/runtime release.
 
 - Added the v1.0.0 public compatibility and deprecation policy for core CLI
   commands, public schemas, run artifacts, and bundled template manifests.
@@ -229,9 +242,9 @@ V3 maturity release.
 
 ## [0.3.0] - 2026-04-26
 
-V2 completion release.
+v0.3.0 completion release.
 
-- Added public V2 defaults for `config.v2`, `task.v2`, `policy.v2`, and
+- Added public v0.3.0 defaults for `config.v2`, `task.v2`, `policy.v2`, and
   `template.v2`, with compatibility loading and non-widening migration reports
   for readable v1 inputs.
 - Added first-class `policy.v2` provider-input, trust-zone, approval, scanner,
@@ -251,7 +264,7 @@ V2 completion release.
 - Added benchmark adapter evidence for SWE-bench-style and terminal-task
   miniature sample packs, including a local dense-retrieval sample whose
   benchmark result points to real run evidence.
-- Added `examples/provider_audit/` as the main V2 walkthrough for offline
+- Added `examples/provider_audit/` as the main v0.3.0 walkthrough for offline
   provider-use approval, inspectable provider-input policy evidence, redacted
   provider-call artifacts, and JSON/Markdown/SARIF exports.
 - Added release-readiness reporting for docs gates, local checks, CI evidence
@@ -260,7 +273,7 @@ V2 completion release.
 
 ## [0.2.0] - 2026-04-26
 
-V1 release.
+v0.2.0 release.
 
 - Added configured provider profiles, explicit trust-zone policy, provider-use
   approvals, and provider-input sensitivity gates with inspectable evidence.
@@ -284,9 +297,9 @@ V1 release.
 
 ## [0.1.0] - 2026-04-26
 
-Initial V0 release.
+Initial v0.1.0 release.
 
-- Added the V0 CLI surface for project initialization, template application,
+- Added the v0.1.0 CLI surface for project initialization, template application,
   task validation, dry-run and approval-bound execution, run inspection, evals,
   exports, and environment checks.
 - Added deterministic run storage with JSONL audit events, context manifests,

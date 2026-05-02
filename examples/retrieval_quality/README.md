@@ -1,6 +1,6 @@
 # Retrieval Quality Demo
 
-This demo is the V5 local-first retrieval golden path. It shows a hybrid local
+This demo is the v1.2.0 local-first retrieval golden path. It shows a hybrid local
 index, Qdrant-backed query evidence, scorecard comparison, and runtime context
 assembly where denied or sensitive chunks stay out of accepted context.
 

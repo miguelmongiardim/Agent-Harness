@@ -1,4 +1,4 @@
-# PRD: Agent Harness V7 Template Pack System
+# PRD: Agent Harness v1.4.0 Template Pack System
 
 ## Problem Statement
 
@@ -9,7 +9,7 @@ template-pack system. The existing `python-lib`, `cli-tool`, and
 they do not yet provide a first-class way to bootstrap complete Agent Harness
 workflow profiles into new repositories.
 
-Without V7, each new repository still needs too much hand wiring for
+Without v1.4.0, each new repository still needs too much hand wiring for
 configuration, policy, task specs, eval specs, docs, contributor instructions,
 approval expectations, and release-readiness evidence. That weakens the core
 Agent Harness thesis: controlled agent workflows should be repeatable across
@@ -22,7 +22,7 @@ catalog behavior.
 
 ## Solution
 
-V7 targets `v1.4.0` and introduces the Template Pack System: a local-first
+v1.4.0 targets `v1.4.0` and introduces the Template Pack System: a local-first
 template-pack capability for bootstrapping controlled Agent Harness workflows
 into new or existing repositories. It preserves the current public template IDs,
 keeps legacy `template.v1` and bundled JSON readability where supported, and
@@ -44,9 +44,9 @@ The primary reviewer workflow is:
 8. Confirm generated config, task, policy, and eval examples validate.
 9. Confirm release readiness rejects unsafe or incomplete template packs.
 
-## Implemented in V7
+## Implemented in v1.4.0
 
-The V7 target scope is local template packs:
+The v1.4.0 target scope is local template packs:
 
 - `template.v2.toml` pack manifests loaded with the Python standard library
 - bundled template packs plus legacy bundled JSON templates
@@ -70,7 +70,7 @@ The V7 target scope is local template packs:
 
 ## Roadmap / Not implemented yet
 
-The following are not part of V7:
+The following are not part of v1.4.0:
 
 - remote template catalogs
 - template marketplace behavior
@@ -117,9 +117,9 @@ The following are not part of V7:
    files, hashes, parameters, approvals, policy profile, diagnostics, and final
    status are auditable.
 10. As a release reviewer, I want release readiness to exercise every bundled
-    template pack, so that V7 can be accepted from a clean checkout.
+    template pack, so that v1.4.0 can be accepted from a clean checkout.
 11. As an existing user, I want current template IDs and legacy JSON template
-    readability to remain stable, so that V7 does not break existing workflows.
+    readability to remain stable, so that v1.4.0 does not break existing workflows.
 12. As a documentation reviewer, I want docs to separate implemented local
     template-pack behavior from future remote or governance features, so that
     public claims stay aligned with tested behavior.
@@ -143,10 +143,10 @@ The following are not part of V7:
    apply interface.
 9. `--destination <path>` remains a backward-compatible alias for `--target`.
 10. Repeated `--param key=value` options provide template parameter values.
-11. `template.v2.toml` is the preferred V7 pack manifest format.
+11. `template.v2.toml` is the preferred v1.4.0 pack manifest format.
 12. The manifest loader uses `tomllib` and does not add a YAML dependency only
     for template manifests.
-13. V7 compatibility uses simple `minimum_agent_harness_version` and
+13. v1.4.0 compatibility uses simple `minimum_agent_harness_version` and
     `maximum_agent_harness_version` fields.
 14. Unsupported arbitrary version expressions such as `>=1.4,<2.0`, `^1.4`,
     or `~1.4` are rejected clearly unless a future implementation adds an
@@ -214,22 +214,22 @@ The following are not part of V7:
     ID, policy profile, diagnostics, and status.
 44. Dry-run and preview emit the same evidence shape to stdout without
     persisting files.
-45. Bundled V7 packs include `python-lib`, `cli-tool`, `fastapi-service`,
+45. Bundled v1.4.0 packs include `python-lib`, `cli-tool`, `fastapi-service`,
     `provider-audit`, and `retrieval-quality`.
 46. Each bundled pack includes a README or docs fragment, generated config
     example, generated policy example, generated task example, generated eval
     example using `eval.v1`, demo metadata, schema-valid generated files, and
     at least one runnable validation or demo command where practical.
-47. `examples/template_pack_system/` demonstrates the V7 golden path.
+47. `examples/template_pack_system/` demonstrates the v1.4.0 golden path.
 48. `agent-harness release readiness` validates all bundled packs, dry-runs all
     bundled packs, clean-applies all bundled packs to a temporary workspace,
     validates generated schemas, confirms template application evidence exists,
     confirms docs exist, and rejects remote catalog defaults.
-49. V7 docs distinguish implemented local template-pack behavior from roadmap
+49. v1.4.0 docs distinguish implemented local template-pack behavior from roadmap
     remote catalog, marketplace, signing, organization catalog, cloud registry,
     hook execution, script execution, enterprise governance, and conditional
     file inclusion behavior.
-50. The V7 golden path works from a clean checkout:
+50. The v1.4.0 golden path works from a clean checkout:
     `template list`, `template show python-lib`, `template validate
     python-lib`, dry-run apply, preview-diff apply, clean apply, and
     `release readiness`.
@@ -244,11 +244,11 @@ The following are not part of V7:
   absorbing detailed pack parsing or validation logic.
 - Keep `agent_harness.policy` as the shared gate for filesystem writes,
   capabilities, non-empty target mutation, and overwrite approval.
-- Add `template.v2.toml` as the V7 pack manifest format and parse it with
+- Add `template.v2.toml` as the v1.4.0 pack manifest format and parse it with
   `tomllib`.
 - Do not add PyYAML solely for template manifests.
 - Use simple min/max compatibility fields instead of arbitrary semver ranges in
-  V7.
+  v1.4.0.
 - Extend `config.v2` with `templates.local_dirs` while preserving
   `template_catalog: bundled`.
 - Treat local template metadata and contents as untrusted until validation
@@ -256,7 +256,7 @@ The following are not part of V7:
 - Use deterministic text substitution only. Rendering must not read
   environment variables, execute code, execute shell commands, or fetch remote
   content.
-- Keep file inclusion manifest-static in V7. Parameters substitute values but
+- Keep file inclusion manifest-static in v1.4.0. Parameters substitute values but
   do not conditionally include or exclude files.
 - Store actual apply evidence as `template_application.v1` under
   `.agent-harness/template_applications/` and link it from run or workspace
@@ -267,7 +267,7 @@ The following are not part of V7:
 - Keep `--destination` as an alias while documenting `--target` as preferred.
 - Keep remote catalogs, signing, marketplace behavior, org catalogs, cloud
   registries, hooks, scripts, template create/export, and enterprise governance
-  outside V7.
+  outside v1.4.0.
 
 ## Testing Decisions
 
@@ -288,7 +288,7 @@ The following are not part of V7:
   declarations, undeclared placeholders, malicious path parameters, overwrite
   without force, force without approval, hidden or unlisted generated files, and
   hook/script declarations.
-- Add release-readiness tests proving V7 fails when bundled packs lack
+- Add release-readiness tests proving v1.4.0 fails when bundled packs lack
   validation, dry-run, clean apply, generated schema checks, docs, or evidence.
 - Use behavior-oriented integration tests for generated config, task, policy,
   and eval example validation.
@@ -310,20 +310,20 @@ The following are not part of V7:
 - `template create`.
 - `template export`.
 - `eval.v2`.
-- Adding a YAML dependency solely for V7 manifests.
+- Adding a YAML dependency solely for v1.4.0 manifests.
 - Adding arbitrary semver range parsing unless a future implementation decision
   explicitly justifies a dependency or parser.
 
 ## Further Notes
 
-The highest-risk parts of V7 are path safety, symlink handling, mutation
+The highest-risk parts of v1.4.0 are path safety, symlink handling, mutation
 semantics, approval binding, and docs claim drift. Those risks should drive the
 first adversarial and integration tests.
 
-V7 intentionally favors a small, deterministic rendering model over template
+v1.4.0 intentionally favors a small, deterministic rendering model over template
 expressiveness. This keeps template packs inspectable and prevents them from
 becoming a hidden execution surface.
 
 The current repo has a bundled SQLite-backed template registry and legacy JSON
-bundles. V7 should evolve that surface without breaking existing IDs or
+bundles. v1.4.0 should evolve that surface without breaking existing IDs or
 compatibility paths.

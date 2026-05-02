@@ -1,8 +1,8 @@
-# Plan: Agent Harness V10 Schema Boundary Refactor
+# Plan: Agent Harness v1.6.1 Schema Internals Refactor
 
-> Source PRD: [docs/prd-agent-harness-v10.md](../docs/prd-agent-harness-v10.md)
+> Source PRD: [docs/prd-agent-harness-v1.6.1-schema-internals-refactor.md](../docs/prd-agent-harness-v1.6.1-schema-internals-refactor.md)
 
-V10 targets `v1.6.1` as a maintenance architecture track. This plan is
+v1.6.1 targets `v1.6.1` as a maintenance architecture track. This plan is
 intentionally sliced around observable behavior and import-boundary enforcement.
 Implementation should proceed through TDD, one behavior at a time.
 
@@ -43,7 +43,7 @@ Durable decisions that apply across all phases:
 
 **Observable behaviors**
 
-- V10 PRD and vertical plan exist.
+- v1.6.1 PRD and vertical plan exist.
 - A future implementation has a failing import-boundary test while
   `agent_harness.schemas` exists or source imports it.
 - The guard describes allowed owner-module imports without requiring the schema
@@ -62,8 +62,8 @@ failure. Do not move schemas in this phase.
 
 ### Acceptance criteria
 
-- [x] The V10 PRD exists and follows the PRD template.
-- [x] The V10 plan exists and uses vertical slices.
+- [x] The v1.6.1 PRD exists and follows the PRD template.
+- [x] The v1.6.1 plan exists and uses vertical slices.
 - [x] The import-boundary test fails against the current root schema module.
 - [x] No production code is changed in the planning-only branch.
 

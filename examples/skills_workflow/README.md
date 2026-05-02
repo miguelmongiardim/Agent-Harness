@@ -1,6 +1,6 @@
 # Skills Workflow Demo
 
-This demo exercises the V8 local skills workflow with the bundled
+This demo exercises the v1.5.0 local skills workflow with the bundled
 `prd-plan-tdd-workflow` skill. The task is intentionally small and local: it
 asks Agent Harness to use workflow guidance while inspecting a feature brief.
 

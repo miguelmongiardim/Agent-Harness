@@ -1,13 +1,13 @@
 # Plan: Agent Harness v1.9.0 Compliance Evidence Pack
 
 > Source PRD:
-> [docs/prd-agent-harness-v1.9-compliance-evidence-pack.md](../docs/prd-agent-harness-v1.9-compliance-evidence-pack.md)
+> [docs/prd-agent-harness-v1.9.0-compliance-evidence-pack.md](../docs/prd-agent-harness-v1.9.0-compliance-evidence-pack.md)
 
 This plan follows the PRD -> Plan -> TDD workflow. It is intentionally limited
 to planning; do not implement these phases until a separate implementation
 request starts TDD execution.
 
-v1.9.0 depends on completed v1.8.0 / V12 governance exports. The evidence
+v1.9.0 depends on completed v1.8.0 governance exports. The evidence
 boundary packages governance evidence into portable review artifacts. It does
 not rebuild governance aggregation or claim formal compliance.
 
@@ -26,7 +26,7 @@ Durable decisions that apply across all phases:
   evidence export result contract using `StrictModel`.
 - **Storage**: default writes go under `.agent-harness/evidence/`; archives go
   under `.agent-harness/evidence/archive/` only when requested. The pack reads
-  completed V12 exports under `.agent-harness/governance/` and known artifact
+  completed v1.8.0 exports under `.agent-harness/governance/` and known artifact
   roots only.
 - **Runtime boundary**: evidence packaging is non-executing. It does not run
   tasks, providers, retrieval, scanners, governance aggregation, templates, MCP
@@ -62,8 +62,8 @@ Durable decisions that apply across all phases:
 
 **Observable behaviors**
 
-- v1.9 PRD and implementation plan exist as durable planning artifacts.
-- Public docs can describe v1.9 as planned or implemented only within the
+- v1.9.0 PRD and implementation plan exist as durable planning artifacts.
+- Public docs can describe v1.9.0 as planned or implemented only within the
   actual behavior delivered by tests.
 - Docs checks reject unsupported implemented claims for formal compliance,
   certification, auditor approval, and framework compliance wording.
@@ -78,15 +78,15 @@ Durable decisions that apply across all phases:
 
 ### What to build
 
-Add or update the v1.9 PRD, vertical plan, evidence pack docs, roadmap links,
+Add or update the v1.9.0 PRD, vertical plan, evidence pack docs, roadmap links,
 and claim scanner rules. Keep this phase documentation and claim-boundary only.
 Do not add evidence CLI, schemas, pack writing, operator routes, UI, or release
 readiness behavior.
 
 ### Acceptance criteria
 
-- [x] `docs/prd-agent-harness-v1.9-compliance-evidence-pack.md` exists.
-- [x] `plans/agent-harness-v1.9-compliance-evidence-pack.md` exists.
+- [x] `docs/prd-agent-harness-v1.9.0-compliance-evidence-pack.md` exists.
+- [x] `plans/agent-harness-v1.9.0-compliance-evidence-pack.md` exists.
 - [x] `docs/compliance-evidence-pack.md` describes implemented behavior only
       after the behavior exists.
 - [x] README, roadmap, release-readiness, operator, architecture, and security
@@ -94,7 +94,7 @@ readiness behavior.
       compliance work.
 - [x] Docs checks reject unsupported implemented compliance or certification
       claims.
-- [x] V12 governance prerequisite is documented.
+- [x] v1.8.0 governance prerequisite is documented.
 
 ### Phase 0 implementation notes
 
@@ -103,11 +103,11 @@ readiness behavior.
   enterprise-certified, regulatory compliant, auditor-approved, NIST compliant,
   and OWASP compliant evidence-pack claims outside roadmap, denial, or
   disclaimer context.
-- Added `docs/compliance-evidence-pack.md` with the planned V1.9 boundary,
-  required V12 prerequisite artifacts, non-certification disclaimer, and unsafe
+- Added `docs/compliance-evidence-pack.md` with the planned v1.9.0 boundary,
+  required v1.8.0 prerequisite artifacts, non-certification disclaimer, and unsafe
   artifact exclusions.
 - Updated README, roadmap, release-readiness, operator, architecture, and
-  security docs to keep V1.9 planned, V12-dependent, local-only, and
+  security docs to keep v1.9.0 planned, v1.8.0-dependent, local-only, and
   non-certifying.
 - Scope stayed Phase 0-only: no evidence CLI, schema, pack writing, operator
   route, UI, or release-readiness behavior was added.
@@ -121,7 +121,7 @@ readiness behavior.
 
 ---
 
-## Phase 1: Missing V12 Governance Fails Clearly
+## Phase 1: Missing v1.8.0 Governance Fails Clearly
 
 **User stories covered**
 
@@ -131,11 +131,11 @@ readiness behavior.
 
 **Observable behaviors**
 
-- `agent-harness evidence pack` fails with exit code `2` when required V12
+- `agent-harness evidence pack` fails with exit code `2` when required v1.8.0
   exports are absent.
 - The failure names the missing prerequisite class without exposing absolute
   local paths or raw artifact content.
-- The error tells the user to generate V12 governance exports first.
+- The error tells the user to generate v1.8.0 governance exports first.
 - `agent-harness evidence check` returns exit code `2` for the same missing
   prerequisite state.
 
@@ -149,7 +149,7 @@ readiness behavior.
 ### What to build
 
 Create the narrowest evidence boundary and CLI wiring needed to load config,
-resolve the governance export directory, validate the four required V12
+resolve the governance export directory, validate the four required v1.8.0
 contracts, and fail safely. This phase proves the prerequisite contract before
 any pack output exists.
 
@@ -162,14 +162,14 @@ any pack output exists.
 - [x] Missing `governance_findings.v1` fails with a prerequisite error.
 - [x] Failure output uses project-relative references or artifact class names
       only.
-- [x] No V12 governance files are generated by evidence commands.
+- [x] No v1.8.0 governance files are generated by evidence commands.
 
 ### Phase 1 implementation notes
 
 - Added the `agent_harness.evidence` boundary with an `evidence_check.v1`
   result contract for prerequisite validation.
 - Added `agent-harness evidence pack`, `check`, and `index` CLI wiring.
-- `pack` and `check` validate the four required V12 governance export files
+- `pack` and `check` validate the four required v1.8.0 governance export files
   under `.agent-harness/governance/` and return exit code `2` with
   redaction-safe diagnostics when exports are absent.
 - Scope stayed Phase 1-only: no successful pack generation, checksums, control
@@ -185,7 +185,7 @@ any pack output exists.
 
 ---
 
-## Phase 2: Minimal Canonical Pack From V12 Exports
+## Phase 2: Minimal Canonical Pack From v1.8.0 Exports
 
 **User stories covered**
 
@@ -195,7 +195,7 @@ any pack output exists.
 
 **Observable behaviors**
 
-- Given fixture V12 governance exports, `agent-harness evidence pack` writes
+- Given fixture v1.8.0 governance exports, `agent-harness evidence pack` writes
   canonical JSON artifacts and `checksums.sha256`.
 - The generated pack records profile, workspace identity, Agent Harness
   version, governance references, release-readiness reference when present,
@@ -212,7 +212,7 @@ any pack output exists.
 
 ### What to build
 
-Build the first successful end-to-end pack path from V12 exports to canonical
+Build the first successful end-to-end pack path from v1.8.0 exports to canonical
 JSON artifacts. Introduce only the models and rendering needed by this path:
 pack summary, manifest, findings export, index pass-through/normalization, and
 export result.
@@ -235,7 +235,7 @@ export result.
   `evidence_findings.v1`, and `evidence_export_result.v1` contracts under the
   evidence boundary.
 - Added `agent-harness evidence pack --format json` generation from existing
-  V12 governance exports into canonical JSON files and deterministic
+  v1.8.0 governance exports into canonical JSON files and deterministic
   `checksums.sha256`.
 - Pack ids use the fixed generation time hook in tests and the selected
   profile, Agent Harness version, workspace identity, governance references,
@@ -276,7 +276,7 @@ export result.
 
 **First RED test**
 
-- Seed a V12 governance index that references a safe run summary, an absolute
+- Seed a v1.8.0 governance index that references a safe run summary, an absolute
   local path, a path traversal ref, a raw provider payload, and a private upload
   marker. Run `evidence pack` and assert safe inclusion for the run summary,
   exclusion findings for unsafe refs, no leaked content, and no absolute
@@ -479,7 +479,7 @@ existing-pack validation, check exit code mapping, and index printing.
 
 - Pack summaries cover governance, policy, approval, provider, retrieval,
   template, skill, MCP, multi-agent, supply-chain, security, docs claim, and
-  release-readiness domains as represented by V12 governance outputs and safe
+  release-readiness domains as represented by v1.8.0 governance outputs and safe
   referenced artifacts.
 - Present domains include safe summaries and refs.
 - Absent optional domains report `not_present`.
@@ -496,13 +496,13 @@ existing-pack validation, check exit code mapping, and index printing.
 
 ### What to build
 
-Expand the evidence pack domain summary and manifest construction using V12
+Expand the evidence pack domain summary and manifest construction using v1.8.0
 governance outputs as the source of aggregation. Read extra source artifacts
 only when they are known, allowlisted, and needed to package safe metadata.
 
 ### Acceptance criteria
 
-- [x] Governance evidence refs point to V12 governance outputs.
+- [x] Governance evidence refs point to v1.8.0 governance outputs.
 - [x] Policy evidence answers what controls execution, what can widen
       permissions, and what is denied by default.
 - [x] Approval evidence answers whether risky actions were reviewed and bound
@@ -521,7 +521,7 @@ only when they are known, allowlisted, and needed to package safe metadata.
 
 ### Out of scope
 
-- Recomputing V12 governance aggregation.
+- Recomputing v1.8.0 governance aggregation.
 - Running scanners or SBOM generation as part of pack generation.
 - Creating new provider, retrieval, template, skill, MCP, or orchestration
   evidence.
@@ -532,7 +532,7 @@ only when they are known, allowlisted, and needed to package safe metadata.
   from `governance_summary.v1` rather than recomputed by evidence packaging.
 - Packaged safe summaries and refs for governance, policy, approvals, provider,
   retrieval, templates, skills, MCP, multi-agent, supply-chain, security, docs
-  claim, and release-readiness domains when V12 reports them.
+  claim, and release-readiness domains when v1.8.0 reports them.
 - Kept absent optional domains as `not_present` with empty summaries.
 - Malformed domain summary payloads now become `malformed_domain_summary`
   evidence findings and set the affected domain to `malformed_evidence`
@@ -733,7 +733,7 @@ release readiness.
 
 ## Cross-Phase Invariants
 
-- Evidence packaging never rebuilds V12 governance aggregation.
+- Evidence packaging never rebuilds v1.8.0 governance aggregation.
 - Evidence commands never run tasks, providers, retrieval, scanners, templates,
   MCP tools, orchestration children, or release automation.
 - Release readiness validates existing packs and never generates packs.

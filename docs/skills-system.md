@@ -1,10 +1,10 @@
-# Skills System
+# Skill Pack System
 
 ## Status
 
-V8 is the complete `v1.5.0` skills-system track. The durable source documents are the
-[V8 PRD](prd-agent-harness-v8.md) and
-[V8 implementation plan](../plans/agent-harness-v8.md).
+v1.5.0 is the complete `v1.5.0` skill-pack track. The durable source documents are the
+[v1.5.0 PRD](prd-agent-harness-v1.5.0-skill-pack-system.md) and
+[v1.5.0 implementation plan](../plans/agent-harness-v1.5.0-skill-pack-system.md).
 
 Phase 0 added documentation scope and docs-check guards. Phase 1 added the
 first validation slice for `agent-harness skill validate write-a-prd` and
@@ -92,14 +92,14 @@ The current implementation provides:
   and authority-expanding skill content or metadata
 - a docs-check guard that rejects implemented-scope claims for unsupported skill
   distribution and governance features
-- `examples/skills_workflow/` as the V8 skill-guided golden path
+- `examples/skills_workflow/` as the v1.5.0 skill-guided golden path
 - release readiness gates for required bundled skill validation, skill
   list/show/validate behavior, task resolution, context manifest skill
   provenance, `skill_manifest.v1`, inspect output, skills docs, and demo files
 
-## V8 Local Skill Boundary
+## v1.5.0 Local Skill Boundary
 
-V8 introduces local Markdown skills as reusable workflow guidance.
+v1.5.0 introduces local Markdown skills as reusable workflow guidance.
 A skill is an inspectable `SKILL.md` file with `skill.v1` YAML frontmatter and
 a Markdown body. Skills explain how to perform a workflow; they are not tools,
 templates, policies, approvals, provider profiles, or executable code.
@@ -136,7 +136,7 @@ or approval rules.
 
 ## Planned Reviewer Workflow
 
-The V8 implementation plan proves the skills system through these public
+The v1.5.0 implementation plan proves the skill pack system through these public
 behaviors:
 
 - list bundled and configured local skills
@@ -153,7 +153,7 @@ behaviors:
 
 ## Guarded Scope
 
-The V8 docs-check guard rejects implemented-scope claims that skills already
+The v1.5.0 docs-check guard rejects implemented-scope claims that skills already
 provide remote skill catalogs, skill marketplaces, skill signing, hosted skill
 services, enterprise skill registries, organization-wide skill governance,
 centralized skill governance, or skill installation from network locations.
@@ -167,4 +167,4 @@ Remote skill catalogs, skill marketplace behavior, signed skill distribution,
 enterprise skill registries, organization-wide skill governance, remote skills,
 hosted skill services, automatic code execution from skills, skill installation
 from network locations, centralized skill governance policy, skill signing,
-`skill create`, and `skill export` remain outside the V8 implementation target.
+`skill create`, and `skill export` remain outside the v1.5.0 implementation target.

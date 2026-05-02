@@ -1,4 +1,4 @@
-# PRD: Agent Harness V4 Provider Core
+# PRD: Agent Harness v1.1.0 Provider Core
 
 ## Problem Statement
 
@@ -14,12 +14,12 @@ provider response must fail before it can influence tool execution. Reviewers
 also need provider-call evidence that ties provider input, approvals,
 checkpoints, redacted artifacts, and validated action envelopes together.
 
-Without V4 Provider Core, the project remains a strong control-plane
+Without v1.1.0 Provider Core, the project remains a strong control-plane
 demonstration rather than a policy-safe provider runtime.
 
 ## Solution
 
-V4 introduces a provider-core release boundary. Provider output is treated as
+v1.1.0 introduces a provider-core release boundary. Provider output is treated as
 untrusted data and parsed into a strict `provider_action_envelope.v1` before any
 runtime action planning. Mock, recorded-fixture, and opt-in live
 OpenAI-compatible paths use the same validation boundary.
@@ -94,9 +94,9 @@ deployment, and enterprise or compliance claims.
   runtime action planning.
 - Keep provider adapters behind a contract that returns validated envelopes and
   provider-call evidence, not direct tool execution.
-- Use OpenAI-compatible live smoke as the only V4 live provider path.
+- Use OpenAI-compatible live smoke as the only v1.1.0 live provider path.
 - Keep Anthropic live support, MCP, API/UI, retention profiles, fixture capture,
-  and fixture replay commands out of V4.
+  and fixture replay commands out of v1.1.0.
 - Use the existing recorded-fixture mechanism for normal provider tests.
 - Require recorded fixtures to use public or synthetic prompts only and contain
   no secrets, raw credentials, private data, or sensitive payloads.
@@ -140,7 +140,7 @@ deployment, and enterprise or compliance claims.
 
 ## Further Notes
 
-- V4 should be implemented as a controlled extension of the v1.0.0 public
+- v1.1.0 should be implemented as a controlled extension of the v1.0.0 public
   contract, not as a new product surface.
 - The highest-risk boundary is allowing untrusted model output to influence tool
   execution. The envelope validator and policy re-check must remain central to

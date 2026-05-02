@@ -2,18 +2,18 @@
 
 ## Status
 
-The V1.9 Compliance Evidence Pack is implemented through release-readiness
+The v1.9.0 Compliance Evidence Pack is implemented through release-readiness
 validation. The durable PRD lives in
-[docs/prd-agent-harness-v1.9-compliance-evidence-pack.md](prd-agent-harness-v1.9-compliance-evidence-pack.md)
+[docs/prd-agent-harness-v1.9.0-compliance-evidence-pack.md](prd-agent-harness-v1.9.0-compliance-evidence-pack.md)
 and the implementation plan lives in
-[plans/agent-harness-v1.9-compliance-evidence-pack.md](../plans/agent-harness-v1.9-compliance-evidence-pack.md).
+[plans/agent-harness-v1.9.0-compliance-evidence-pack.md](../plans/agent-harness-v1.9.0-compliance-evidence-pack.md).
 
 Through Phase 9, the `agent-harness evidence` CLI surface exposes `pack`,
 `check`, and `index` commands. `pack`, `check`, and `index` validate the
-required V12 governance export prerequisites and fail with exit code `2` when
+required v1.8.0 governance export prerequisites and fail with exit code `2` when
 they are missing, without generating governance exports.
 
-When the V12 exports are present, `agent-harness evidence pack --format json`
+When the v1.8.0 exports are present, `agent-harness evidence pack --format json`
 writes canonical JSON evidence artifacts under the selected evidence output
 directory:
 
@@ -42,7 +42,7 @@ Phase 6 packages safe domain summaries from `governance_summary.v1` into
 `evidence_pack.v1`. Present domains can include safe summary metadata and
 evidence refs for governance, policy, approvals, provider, retrieval,
 templates, skills, MCP, multi-agent, supply-chain, security, docs claim, and
-release-readiness evidence. Optional domains that V12 does not report remain
+release-readiness evidence. Optional domains that v1.8.0 does not report remain
 `not_present`. Malformed domain summary payloads are omitted, the domain is
 marked `malformed_evidence`, and `evidence_findings.v1` records a
 `malformed_domain_summary` finding instead of crashing pack generation.
@@ -90,12 +90,12 @@ release-readiness output links only fixed project-relative evidence artifacts.
 ## Boundary
 
 The evidence-pack boundary packages existing governance evidence into
-portable review artifacts. It consumes completed V12 governance exports instead
+portable review artifacts. It consumes completed v1.8.0 governance exports instead
 of rebuilding governance aggregation, running tasks, calling providers, running
 retrieval, executing scanners, applying templates, serving MCP, launching
 orchestration children, or creating release evidence.
 
-Required V12 prerequisite artifacts are:
+Required v1.8.0 prerequisite artifacts are:
 
 - `governance_summary.v1`
 - `governance_report.v1`
@@ -103,7 +103,7 @@ Required V12 prerequisite artifacts are:
 - `governance_findings.v1`
 
 If those exports are missing, evidence commands fail clearly
-and tell the user to generate V12 governance exports first.
+and tell the user to generate v1.8.0 governance exports first.
 
 ## Claim Boundary
 

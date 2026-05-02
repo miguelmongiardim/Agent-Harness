@@ -1,8 +1,8 @@
-# Plan: Agent Harness V9 MCP Boundary
+# Plan: Agent Harness v1.6.0 MCP Boundary
 
-> Source PRD: [docs/prd-agent-harness-v9.md](../docs/prd-agent-harness-v9.md)
+> Source PRD: [docs/prd-agent-harness-v1.6.0-mcp-boundary.md](../docs/prd-agent-harness-v1.6.0-mcp-boundary.md)
 
-V9 targets `v1.6.0`. This plan is intentionally sliced around observable
+v1.6.0 targets `v1.6.0`. This plan is intentionally sliced around observable
 read-only MCP boundary behavior. Implementation should proceed with TDD, one
 public behavior at a time.
 
@@ -24,7 +24,7 @@ Durable decisions that apply across all phases:
   `.agent-harness/mcp/access-log.jsonl`; do not update run summaries, artifact
   indexes, approvals, provider state, eval results, templates, skills, config,
   policy, or workspace files during MCP reads.
-- **Runtime boundary**: V9 is not a runtime. `agent_harness.runtimes.mcp_adapter`
+- **Runtime boundary**: v1.6.0 is not a runtime. `agent_harness.runtimes.mcp_adapter`
   remains unsupported unless a later track explicitly implements MCP task
   execution.
 - **MCP boundary**: new code lives under `agent_harness.mcp`; only stdio server
@@ -36,26 +36,26 @@ Durable decisions that apply across all phases:
   deny, resume, or mutate approvals.
 - **Audit model**: every resource and prompt request appends metadata-only MCP
   access evidence, including denials and redactions.
-- **External service boundary**: V9 is local stdio only. HTTP, Streamable HTTP,
+- **External service boundary**: v1.6.0 is local stdio only. HTTP, Streamable HTTP,
   hosted MCP, remote gateways, and registry behavior are roadmap-only.
 
 ---
 
-## Phase 0: V9 Scope Is Documented And Guarded
+## Phase 0: v1.6.0 Scope Is Documented And Guarded
 
 **User stories covered**
 
-- Story 14: documentation reviewer can separate V9 MCP boundary behavior from
+- Story 14: documentation reviewer can separate v1.6.0 MCP boundary behavior from
   later MCP execution or hosted scope.
-- Story 15: release reviewer can see the planned V9 acceptance path before code
+- Story 15: release reviewer can see the planned v1.6.0 acceptance path before code
   changes begin.
 
 **Observable behaviors**
 
-- V9 PRD and plan exist.
+- v1.6.0 PRD and plan exist.
 - MCP boundary docs identify `agent_harness.mcp` as the planned boundary and
-  explicitly state that V9 is not a runtime adapter.
-- Current docs do not claim MCP behavior as implemented before V9 code lands.
+  explicitly state that v1.6.0 is not a runtime adapter.
+- Current docs do not claim MCP behavior as implemented before v1.6.0 code lands.
 
 **First RED test**
 
@@ -65,26 +65,26 @@ Durable decisions that apply across all phases:
 
 ### What to build
 
-Add the V9 PRD, vertical-slice plan, and MCP boundary docs. Update README,
-roadmap, architecture, security, and release-readiness docs with planned V9
+Add the v1.6.0 PRD, vertical-slice plan, and MCP boundary docs. Update README,
+roadmap, architecture, security, and release-readiness docs with planned v1.6.0
 scope and guarded future language.
 
 ### Acceptance criteria
 
-- [x] `docs/prd-agent-harness-v9.md` exists and follows the PRD template.
-- [x] `plans/agent-harness-v9.md` exists and uses vertical slices.
-- [x] `docs/mcp-boundary.md` explains the V9 boundary.
-- [x] README and roadmap link to the V9 docs without claiming current MCP
+- [x] `docs/prd-agent-harness-v1.6.0-mcp-boundary.md` exists and follows the PRD template.
+- [x] `plans/agent-harness-v1.6.0-mcp-boundary.md` exists and uses vertical slices.
+- [x] `docs/mcp-boundary.md` explains the v1.6.0 boundary.
+- [x] README and roadmap link to the v1.6.0 docs without claiming current MCP
       support.
 - [x] Architecture docs identify `agent_harness.mcp` as the planned boundary
-      and keep `runtimes.mcp_adapter` out of V9.
-- [x] Security docs state the planned V9 read-only MCP boundary and exclusions.
+      and keep `runtimes.mcp_adapter` out of v1.6.0.
+- [x] Security docs state the planned v1.6.0 read-only MCP boundary and exclusions.
 - [x] Release-readiness docs name planned MCP gates.
 - [x] Docs check passes.
 
 ### Phase 0 implementation notes
 
-- Added docs-check coverage for unsupported V9 MCP implemented-scope claims via
+- Added docs-check coverage for unsupported v1.6.0 MCP implemented-scope claims via
   `unsupported_mcp_scope_claim`.
 - Guarded MCP tools, write-capable MCP, HTTP/Streamable HTTP MCP, hosted MCP,
   and MCP runtime adapter behavior outside roadmap, out-of-scope,
@@ -138,7 +138,7 @@ envelopes through `RunStore`.
       exists.
 - [x] `agent-harness://runs` lists available run summary resources.
 - [x] Run summary and context resources resolve through artifact storage.
-- [x] CLI help states V9 is resources/prompts only.
+- [x] CLI help states v1.6.0 is resources/prompts only.
 - [x] CLI inspection commands do not import the MCP SDK.
 
 ### Phase 1 implementation notes
@@ -353,7 +353,7 @@ redacted artifacts, summaries, hashes, policy decision ids, and metadata.
 
 **Observable behaviors**
 
-- `agent-harness mcp prompts list --json` lists all V9 review prompts.
+- `agent-harness mcp prompts list --json` lists all v1.6.0 review prompts.
 - `agent-harness mcp prompts get agent-harness-run-review --json` returns a
   deterministic prompt response with a stable hash.
 - Invalid arguments fail clearly.
@@ -387,7 +387,7 @@ approval, context, eval, template, skill, and retrieval review prompts.
 ### Phase 5 implementation notes
 
 - Added SDK-independent `agent_harness.mcp` prompt registry behavior for the
-  eight V9 review prompts.
+  eight v1.6.0 review prompts.
 - Added `agent-harness mcp prompts list --json` and
   `agent-harness mcp prompts get <name> [--arg key=value] --json`.
 - Prompt responses use `mcp_prompt_response.v1`, deterministic Markdown
@@ -444,12 +444,12 @@ stdio transport and protocol handlers backed by the existing registries.
 - [x] Server responds to prompts/get.
 - [x] Server emits only valid MCP messages on stdout.
 - [x] Diagnostics go to stderr.
-- [x] No HTTP transport exists in V9.
+- [x] No HTTP transport exists in v1.6.0.
 - [x] SDK-specific code remains isolated under `agent_harness.mcp`.
 
 ### Phase 6 implementation notes
 
-- Added `agent_harness.mcp.server` as the only SDK-dependent V9 module.
+- Added `agent_harness.mcp.server` as the only SDK-dependent v1.6.0 module.
 - `agent-harness mcp serve` now starts the official MCP SDK stdio server when
   `agent-harness[mcp]` is installed and keeps the existing missing-SDK install
   hint in base environments.
@@ -469,17 +469,17 @@ stdio transport and protocol handlers backed by the existing registries.
 
 ---
 
-## Phase 7: Demo And Release Readiness Close V9
+## Phase 7: Demo And Release Readiness Close v1.6.0
 
 **User stories covered**
 
-- Story 15: release reviewer can accept V9 from a clean checkout.
+- Story 15: release reviewer can accept v1.6.0 from a clean checkout.
 - Story 14: docs stay aligned with implemented behavior.
 - Story 10: no MCP tools are advertised in release evidence.
 
 **Observable behaviors**
 
-- `examples/mcp_boundary/` demonstrates the V9 golden path.
+- `examples/mcp_boundary/` demonstrates the v1.6.0 golden path.
 - Release readiness verifies MCP extra install path, CLI resource/prompt
   behavior, denial behavior, access evidence, and stdio capabilities.
 - Docs checks keep MCP tools, HTTP, hosted, and runtime-adapter claims out of
@@ -498,7 +498,7 @@ MCP extra for relevant jobs, and docs claim guards.
 
 ### Acceptance criteria
 
-- [x] `examples/mcp_boundary/README.md` documents the V9 golden path.
+- [x] `examples/mcp_boundary/README.md` documents the v1.6.0 golden path.
 - [x] Expected resources list, prompts list, and denied resource examples exist.
 - [x] Release readiness verifies MCP extra installed in the CI path.
 - [x] Release readiness verifies MCP CLI commands exist.
@@ -511,11 +511,11 @@ MCP extra for relevant jobs, and docs claim guards.
 - [x] Release readiness verifies stdio server does not advertise tools.
 - [x] Docs do not claim MCP tools, HTTP, hosted service, or runtime adapter
       behavior as implemented.
-- [x] Final V9 golden path works from a clean checkout.
+- [x] Final v1.6.0 golden path works from a clean checkout.
 
 ### Phase 7 implementation notes
 
-- Added `examples/mcp_boundary/` with the V9 golden-path commands and expected
+- Added `examples/mcp_boundary/` with the v1.6.0 golden-path commands and expected
   resource list, prompt list, and denied resource envelope examples.
 - Release readiness now records an `mcp` evidence section covering demo files,
   optional extra importability, CI install coverage, CLI command discovery,
@@ -526,7 +526,7 @@ MCP extra for relevant jobs, and docs claim guards.
   other captured stdio callers do not affect the real MCP stdio transport.
 - CI installs `agent-harness[dev,operator,mcp]` in Python jobs and includes the
   MCP protocol test in the release-evidence gate.
-- Release-readiness docs now describe the V9 MCP gates as implemented, with
+- Release-readiness docs now describe the v1.6.0 MCP gates as implemented, with
   `mcp.extra_install`, `mcp.ci_install`, `mcp.resource_listing`,
   `mcp.access_log`, and `mcp.stdio_protocol` as named report gates.
 
@@ -539,7 +539,7 @@ MCP extra for relevant jobs, and docs claim guards.
 ## Cross-Phase Invariants
 
 - MCP is a read-only interoperability boundary over existing evidence.
-- V9 MCP behavior lives under `agent_harness.mcp`, not runtime adapters.
+- v1.6.0 MCP behavior lives under `agent_harness.mcp`, not runtime adapters.
 - CLI resource and prompt inspection remain SDK-independent.
 - Only `agent-harness mcp serve` requires the MCP SDK.
 - MCP never grants tools, approvals, provider calls, run creation, template

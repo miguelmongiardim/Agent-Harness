@@ -1,6 +1,6 @@
 # Template Pack System Golden Path
 
-This example is the V7 template-pack acceptance path for a clean local checkout.
+This example is the v1.4.0 template-pack acceptance path for a clean local checkout.
 It uses only bundled packs and local temporary targets.
 
 ## Commands
@@ -59,4 +59,4 @@ also writes a `template_pack_acceptance.v1` summary under
 ## Not Implemented
 
 Remote catalogs, marketplace installs, cloud registries, template signing,
-hooks, and script execution are not part of the V7 golden path.
+hooks, and script execution are not part of the v1.4.0 golden path.

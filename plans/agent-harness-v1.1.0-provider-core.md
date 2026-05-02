@@ -1,13 +1,13 @@
-# Plan: Agent Harness V4 Provider Core
+# Plan: Agent Harness v1.1.0 Provider Core
 
-> Source PRD: [docs/prd-agent-harness-v4.md](../docs/prd-agent-harness-v4.md)
+> Source PRD: [docs/prd-agent-harness-v1.1.0-provider-core.md](../docs/prd-agent-harness-v1.1.0-provider-core.md)
 
 ## Architectural Decisions
 
 Durable decisions that apply across all phases:
 
 - **Public interface**: preserve `run`, `approve`, `inspect run`, `eval`, and
-  `docs check`; add no new provider command in V4.
+  `docs check`; add no new provider command in v1.1.0.
 - **Key models**: add `provider_action_envelope.v1` as the only provider-output
   shape that can enter runtime action planning.
 - **Schema**: extend provider artifact schemas for envelope hashes, checkpoint
@@ -25,13 +25,13 @@ Durable decisions that apply across all phases:
 - **Audit model**: provider-call evidence links provider profile, trust zone,
   mode, approval ids, provider-input hash, action-envelope hash, checkpoint
   hash, redacted artifact refs, latency, and token metrics when available.
-- **External service boundary**: OpenAI-compatible live smoke is the only V4
+- **External service boundary**: OpenAI-compatible live smoke is the only v1.1.0
   live provider path and is disabled unless explicit opt-in and credentials are
   present.
 
 ---
 
-## Phase 0: V4 Provider-Core Scope Docs
+## Phase 0: v1.1.0 Provider-Core Scope Docs
 
 **User stories covered**
 
@@ -41,26 +41,26 @@ Durable decisions that apply across all phases:
 
 **Observable behaviors**
 
-- Public docs identify V4 Provider Core as the next implementation boundary.
-- Roadmap links the V4 PRD and plan.
+- Public docs identify v1.1.0 Provider Core as the next implementation boundary.
+- Roadmap links the v1.1.0 PRD and plan.
 - Docs keep deferred work clearly out of scope.
 
 **First RED test**
 
-- `agent-harness docs check` or a focused docs guard fails until V4
+- `agent-harness docs check` or a focused docs guard fails until v1.1.0
   provider-core scope is documented without unsupported capability claims.
 
 ### What to build
 
-Write the durable V4 PRD and vertical-slice plan. Update roadmap references so
+Write the durable v1.1.0 PRD and vertical-slice plan. Update roadmap references so
 the next track points at Provider Core specifically, not the broader
 conception-alignment draft.
 
 ### Acceptance criteria
 
-- [x] `docs/prd-agent-harness-v4.md` exists and follows the PRD template.
-- [x] `plans/agent-harness-v4.md` is a vertical-slice provider-core plan.
-- [x] `docs/roadmap.md` points to the V4 provider-core PRD and plan.
+- [x] `docs/prd-agent-harness-v1.1.0-provider-core.md` exists and follows the PRD template.
+- [x] `plans/agent-harness-v1.1.0-provider-core.md` is a vertical-slice provider-core plan.
+- [x] `docs/roadmap.md` points to the v1.1.0 provider-core PRD and plan.
 - [x] Fixture capture, API/UI, MCP, multi-agent workflows, retention profiles,
       retrieval redesign, and enterprise claims are explicitly out of scope.
 - [x] Docs check passes.
@@ -301,7 +301,7 @@ approval drift.
 - [x] Provider setup and safety-boundary docs pass `agent-harness docs check`.
 - [x] Docs state that fixture capture, API/UI, MCP, multi-agent workflows,
       retention profiles, retrieval redesign, Anthropic live support, and
-      enterprise claims are outside V4.
+      enterprise claims are outside v1.1.0.
 
 ### Out of scope
 
@@ -338,11 +338,11 @@ approval drift.
 
 ## Later Tracks
 
-- V5: retrieval hardening, optional production-grade retrieval paths, and
+- v1.2.0: retrieval hardening, optional production-grade retrieval paths, and
   retrieval quality metrics.
-- V6: local web API and approval/inspection UI over existing artifacts.
-- V7: read-only MCP resources/prompts, then separately gated MCP tool execution.
-- V8: supply-chain and governance hardening with stronger scanner/SBOM evidence,
+- v1.3.0: local web API and approval/inspection UI over existing artifacts.
+- v1.4.0: read-only MCP resources/prompts, then separately gated MCP tool execution.
+- v1.5.0: supply-chain and governance hardening with stronger scanner/SBOM evidence,
   `SECURITY.md`, Dependabot, docs build workflow, and retention reporting.
-- V9: policy-mediated multi-agent orchestration only after single-agent live
+- v1.6.0: policy-mediated multi-agent orchestration only after single-agent live
   provider execution is safe and measurable.

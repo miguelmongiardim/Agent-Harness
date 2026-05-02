@@ -73,7 +73,7 @@ agent-harness doctor
 agent-harness release package-check
 ```
 
-The secondary V2 example remains the deterministic Python refactor task:
+The secondary v0.3.0 example remains the deterministic Python refactor task:
 
 ```powershell
 agent-harness task validate examples/tasks/python_refactor.json
@@ -84,12 +84,12 @@ When the secondary demo is run from the repo root, it records
 `.agent-harness/release/evidence/demo-python-refactor.json` for release
 readiness.
 
-The V7 bundled template-pack golden path is documented in
+The v1.4.0 bundled template-pack golden path is documented in
 [`examples/template_pack_system/`](examples/template_pack_system/). It covers
 `template list`, `template show python-lib`, `template validate python-lib`,
 dry-run apply, preview-diff apply, clean apply, and release readiness.
 
-The V8 skills-system scope is documented in
+The v1.5.0 skill-pack scope is documented in
 [`docs/skills-system.md`](docs/skills-system.md). Current slices provide
 bundled and configured local skill discovery, validation, inspection, rendered
 Markdown review, read-only skill-pack validation, task-requested skill
@@ -97,7 +97,7 @@ resolution, template-recommended skill evidence, and policy-gated skill
 guidance in run context manifests. Runs that use selected skills now emit
 `skill_manifest.json`, link it from summaries and artifact indexes, expose it
 through `inspect run`, and allow eval specs to assert expected skill ids. The
-V8 golden path lives in
+v1.5.0 golden path lives in
 [`examples/skills_workflow/`](examples/skills_workflow/) and release readiness
 verifies bundled skill validation, resolution, manifest evidence, inspect
 output, docs, and the demo.
@@ -173,7 +173,7 @@ agent-harness doctor
 
 - `agent-harness init` emits `config.v2` and `policy.v2`.
 - Bundled examples use `task.v2`; bundled Python templates use `template.v2`.
-- V1 config, task, policy, and template inputs remain readable through
+- v0.2.0 config, task, policy, and template inputs remain readable through
   compatibility paths that do not widen policy or template capabilities.
 - `policy.v2` owns provider-input rules, trust-zone rules, approval policy,
   scanner handling, template capability rules, and migration policy.
@@ -207,12 +207,12 @@ agent-harness doctor
   and writes `retrieval_scorecard.v1` artifacts under
   `.agent-harness/retrieval-scorecards/`. Release readiness reports at least
   one passing retrieval scorecard as retrieval evidence.
-- [examples/retrieval_quality/](examples/retrieval_quality/) is the V5
+- [examples/retrieval_quality/](examples/retrieval_quality/) is the v1.2.0
   local-first retrieval demo. It includes runnable local config/policy files,
   public and internal sample documents, expected retrieval artifacts, a
   scorecard fixture, and commands for lexical build, qdrant-local hybrid build,
   hybrid query, scorecard comparison, and policy-filtered context assembly.
-- `examples/provider_audit/` is the main V2 walkthrough. It uses recorded
+- `examples/provider_audit/` is the main v0.3.0 walkthrough. It uses recorded
   provider transport, a non-mock local endpoint trust zone, `network: false`,
   required provider-use approval, inspectable provider-input evidence, redacted
   provider-call artifacts, and JSON/Markdown/SARIF exports.
@@ -237,10 +237,10 @@ The retrieval quality demo is runnable under
 remote embeddings, hosted embedding providers, and production Qdrant server
 operation remain roadmap scope, not default behavior.
 
-V6 adds a local operator surface:
+v1.3.0 adds a local operator surface:
 [docs/operator-ui.md](docs/operator-ui.md),
-[docs/prd-agent-harness-v6.md](docs/prd-agent-harness-v6.md), and
-[plans/agent-harness-v6.md](plans/agent-harness-v6.md). It provides
+[docs/prd-agent-harness-v1.3.0-local-operator-surface.md](docs/prd-agent-harness-v1.3.0-local-operator-surface.md), and
+[plans/agent-harness-v1.3.0-local-operator-surface.md](plans/agent-harness-v1.3.0-local-operator-surface.md). It provides
 `agent-harness serve`, a loopback-only local operator app, `/health`,
 token-gated run list/detail APIs, context manifest inspection, policy
 inspection, approval listing, approve/deny decisions through the existing
@@ -251,10 +251,10 @@ target remains a loopback-only inspection and approval UI over existing
 artifacts, not hosted API/UI operation, enterprise authentication, MCP, or
 multi-agent orchestration.
 
-V7 is the local-first template-pack system:
+v1.4.0 is the local-first template-pack system:
 [docs/template-pack-system.md](docs/template-pack-system.md),
-[docs/prd-agent-harness-v7.md](docs/prd-agent-harness-v7.md), and
-[plans/agent-harness-v7.md](plans/agent-harness-v7.md). The target keeps
+[docs/prd-agent-harness-v1.4.0-template-pack-system.md](docs/prd-agent-harness-v1.4.0-template-pack-system.md), and
+[plans/agent-harness-v1.4.0-template-pack-system.md](plans/agent-harness-v1.4.0-template-pack-system.md). The target keeps
 template packs local and inspectable, adds `template.v2.toml` pack manifests,
 dry-run and preview evidence, clean empty-target apply evidence, and
 release-readiness gates. Remote template catalogs, marketplace behavior,
@@ -262,50 +262,50 @@ template signing, organization catalogs, cloud registries, lifecycle hooks,
 script execution, enterprise governance, and conditional file inclusion remain
 future-only scope.
 
-V8 is the local skills system:
+v1.5.0 is the local skill pack system:
 [docs/skills-system.md](docs/skills-system.md),
-[docs/prd-agent-harness-v8.md](docs/prd-agent-harness-v8.md), and
-[plans/agent-harness-v8.md](plans/agent-harness-v8.md). The implementation keeps
+[docs/prd-agent-harness-v1.5.0-skill-pack-system.md](docs/prd-agent-harness-v1.5.0-skill-pack-system.md), and
+[plans/agent-harness-v1.5.0-skill-pack-system.md](plans/agent-harness-v1.5.0-skill-pack-system.md). The implementation keeps
 skills local, inspectable, validated, and policy-mediated. Skills are workflow
 guidance, not tools, templates, policy, approvals, provider profiles, or
 executable code. Remote skill catalogs, marketplaces, signing, hosted skill
 services, enterprise registries, organization-wide governance, centralized
 governance, network installation, and automatic execution from skills remain
-future-only scope. The V8 path includes the skills workflow demo and
+future-only scope. The v1.5.0 path includes the skills workflow demo and
 release-readiness gates for local skill evidence.
 
-V9 is the MCP Boundary track:
+v1.6.0 is the MCP Boundary track:
 [docs/mcp-boundary.md](docs/mcp-boundary.md),
-[docs/prd-agent-harness-v9.md](docs/prd-agent-harness-v9.md), and
-[plans/agent-harness-v9.md](plans/agent-harness-v9.md). The implementation is a
+[docs/prd-agent-harness-v1.6.0-mcp-boundary.md](docs/prd-agent-harness-v1.6.0-mcp-boundary.md), and
+[plans/agent-harness-v1.6.0-mcp-boundary.md](plans/agent-harness-v1.6.0-mcp-boundary.md). The implementation is a
 local, optional, read-only MCP boundary over existing Agent Harness evidence
 under `agent_harness.mcp`, not a runtime adapter. It keeps MCP tools, write
 actions, approval mutation, provider execution, run creation, arbitrary
 filesystem resources, HTTP transport, hosted MCP service, remote gateways, and
 enterprise registries future-only.
 
-V11 planning is captured in
-[`docs/prd-agent-harness-v11.md`](docs/prd-agent-harness-v11.md) and
-[`plans/agent-harness-v11.md`](plans/agent-harness-v11.md). The current V11
+v1.7.0 planning is captured in
+[`docs/prd-agent-harness-v1.7.0-policy-mediated-multi-agent-orchestration.md`](docs/prd-agent-harness-v1.7.0-policy-mediated-multi-agent-orchestration.md) and
+[`plans/agent-harness-v1.7.0-policy-mediated-multi-agent-orchestration.md`](plans/agent-harness-v1.7.0-policy-mediated-multi-agent-orchestration.md). The current v1.7.0
 implementation supports local, sequential, policy-mediated
 `agent-harness orchestration run <spec> --dry-run` workflows with explicit
 `policy.v2.orchestration` enablement, role ceilings, supervisor plan approvals,
 normal child `task.v2` run artifacts, generated dependency handoffs, child
 provider gates, child pause/failure propagation, approval-bound resume,
 `orchestration export`, and read-only MCP resources for orchestration summary,
-manifest, events, children, and handoffs. The V11 golden path lives in
+manifest, events, children, and handoffs. The v1.7.0 golden path lives in
 `examples/orchestration_workflow/`, and release readiness verifies the
 orchestration demo, policy gates, artifacts, inspect/export, MCP resource
 reads, and MCP access-log evidence. Operator UI support and enterprise
 governance remain future scope. Parallel multi-agent orchestration remains
 future-only. Nested orchestration remains future-only. MCP execution for
-multi-agent orchestration remains future-only. V11 does not support hosted
+multi-agent orchestration remains future-only. v1.7.0 does not support hosted
 APIs.
 
-The V11 multi-agent complexity benchmark is planned separately in
-[`docs/prd-agent-harness-v11-multi-agent-complexity-benchmark.md`](docs/prd-agent-harness-v11-multi-agent-complexity-benchmark.md)
+The v1.7.1 multi-agent complexity benchmark is planned separately in
+[`docs/prd-agent-harness-v1.7.1-multi-agent-complexity-benchmark.md`](docs/prd-agent-harness-v1.7.1-multi-agent-complexity-benchmark.md)
 and
-[`plans/agent-harness-v11-multi-agent-complexity-benchmark.md`](plans/agent-harness-v11-multi-agent-complexity-benchmark.md).
+[`plans/agent-harness-v1.7.1-multi-agent-complexity-benchmark.md`](plans/agent-harness-v1.7.1-multi-agent-complexity-benchmark.md).
 The implemented comparison path supports
 `agent-harness benchmark compare local-samples terminal-readonly-inspect` for a
 single case and `agent-harness benchmark compare local-samples` for the bundled
@@ -328,10 +328,10 @@ allowlists and automatic default-role promotion remain future scope.
 Role-count expansion requires comparative outcome evidence before
 recommendation or promotion.
 
-V12 local governance evidence surface:
-[docs/prd-agent-harness-v12-local-governance-console.md](docs/prd-agent-harness-v12-local-governance-console.md)
+v1.8.0 local governance evidence surface:
+[docs/prd-agent-harness-v1.8.0-local-governance-console.md](docs/prd-agent-harness-v1.8.0-local-governance-console.md)
 and
-[plans/agent-harness-v12-local-governance-console.md](plans/agent-harness-v12-local-governance-console.md).
+[plans/agent-harness-v1.8.0-local-governance-console.md](plans/agent-harness-v1.8.0-local-governance-console.md).
 Phase 3 implements `agent-harness governance summary`,
 `agent-harness governance check`, `agent-harness governance report`, and
 `agent-harness governance export` as local, read-only views over config,
@@ -345,27 +345,27 @@ only when explicitly requested. Operator API/UI and release-readiness gates
 remain future-only.
 Compliance readiness and formal certification remain future-only.
 
-V1.9 Compliance Evidence Pack planning is captured in
+v1.9.0 Compliance Evidence Pack planning is captured in
 [docs/compliance-evidence-pack.md](docs/compliance-evidence-pack.md),
-[docs/prd-agent-harness-v1.9-compliance-evidence-pack.md](docs/prd-agent-harness-v1.9-compliance-evidence-pack.md),
+[docs/prd-agent-harness-v1.9.0-compliance-evidence-pack.md](docs/prd-agent-harness-v1.9.0-compliance-evidence-pack.md),
 and
-[plans/agent-harness-v1.9-compliance-evidence-pack.md](plans/agent-harness-v1.9-compliance-evidence-pack.md).
-The pack depends on completed V12 governance exports and packages existing
+[plans/agent-harness-v1.9.0-compliance-evidence-pack.md](plans/agent-harness-v1.9.0-compliance-evidence-pack.md).
+The pack depends on completed v1.8.0 governance exports and packages existing
 evidence for review. Through Phase 9 it provides `agent-harness evidence pack`,
-`check`, and `index` command discovery, prerequisite validation for missing V12
+`check`, and `index` command discovery, prerequisite validation for missing v1.8.0
 governance exports, `evidence pack --format json` generation of canonical
 `evidence_pack.v1`, `evidence_manifest.v1`, `evidence_index.v1`,
 `evidence_findings.v1`, `control_mapping.v1`, and checksum files, plus
-redaction-safe artifact indexing from V12 governance indexes and review-only
+redaction-safe artifact indexing from v1.8.0 governance indexes and review-only
 Markdown output for bundle/markdown formats. It supports opt-in archive
 creation, `evidence check` pass/fail/invalid/internal-error exit semantics,
 and `evidence index` JSON output. Absolute paths, traversal references, raw
 provider payloads, private uploads, credential-like references, and raw vector
 database internals are omitted with evidence findings, and absent optional
 domains are recorded as `not_present`. Pack domains now include safe
-V12-provided summary metadata for governance, policy, approvals, provider,
+v1.8.0-provided summary metadata for governance, policy, approvals, provider,
 retrieval, templates, skills, MCP, multi-agent, supply-chain, security, docs
-claim, and release-readiness domains when V12 reports those summaries;
+claim, and release-readiness domains when v1.8.0 reports those summaries;
 malformed domain summaries produce evidence findings without crashing pack
 generation. The local operator API exposes token-protected read-only evidence
 routes for overview, exported packs, pack detail, control mapping, artifact
@@ -391,30 +391,30 @@ security, or organizational framework.
 - [Compliance evidence pack](docs/compliance-evidence-pack.md)
 - [Template catalog](docs/templates.md)
 - [Template pack system](docs/template-pack-system.md)
-- [Skills system](docs/skills-system.md)
+- [Skill pack system](docs/skills-system.md)
 - [MCP boundary](docs/mcp-boundary.md)
 - [Schema migration](docs/migration.md)
 - [Release readiness](docs/release-readiness.md)
 - [Conception alignment](docs/conception-alignment.md)
-- [V4 Provider Core PRD](docs/prd-agent-harness-v4.md)
-- [V5 Local-First Retrieval Hardening PRD](docs/prd-agent-harness-v5.md)
-- [V6 Local Operator Surface PRD](docs/prd-agent-harness-v6.md)
-- [V7 Template Pack System PRD](docs/prd-agent-harness-v7.md)
-- [V8 Skills System PRD](docs/prd-agent-harness-v8.md)
-- [V9 MCP Boundary PRD](docs/prd-agent-harness-v9.md)
-- [V11 Policy-Mediated Multi-Agent Orchestration PRD](docs/prd-agent-harness-v11.md)
-- [V11 Multi-Agent Complexity Benchmark PRD](docs/prd-agent-harness-v11-multi-agent-complexity-benchmark.md)
-- [V12 Local Governance Console PRD](docs/prd-agent-harness-v12-local-governance-console.md)
-- [V1.9 Compliance Evidence Pack PRD](docs/prd-agent-harness-v1.9-compliance-evidence-pack.md)
-- [V5 implementation plan](plans/agent-harness-v5.md)
-- [V6 implementation plan](plans/agent-harness-v6.md)
-- [V7 implementation plan](plans/agent-harness-v7.md)
-- [V8 implementation plan](plans/agent-harness-v8.md)
-- [V9 implementation plan](plans/agent-harness-v9.md)
-- [V11 implementation plan](plans/agent-harness-v11.md)
-- [V11 multi-agent complexity benchmark plan](plans/agent-harness-v11-multi-agent-complexity-benchmark.md)
-- [V12 local governance console plan](plans/agent-harness-v12-local-governance-console.md)
-- [V1.9 compliance evidence pack plan](plans/agent-harness-v1.9-compliance-evidence-pack.md)
+- [v1.1.0 Provider Core PRD](docs/prd-agent-harness-v1.1.0-provider-core.md)
+- [v1.2.0 Local-First Retrieval PRD](docs/prd-agent-harness-v1.2.0-local-first-retrieval.md)
+- [v1.3.0 Local Operator Surface PRD](docs/prd-agent-harness-v1.3.0-local-operator-surface.md)
+- [v1.4.0 Template Pack System PRD](docs/prd-agent-harness-v1.4.0-template-pack-system.md)
+- [v1.5.0 Skill Pack System PRD](docs/prd-agent-harness-v1.5.0-skill-pack-system.md)
+- [v1.6.0 MCP Boundary PRD](docs/prd-agent-harness-v1.6.0-mcp-boundary.md)
+- [v1.7.0 Policy-Mediated Multi-Agent Orchestration PRD](docs/prd-agent-harness-v1.7.0-policy-mediated-multi-agent-orchestration.md)
+- [v1.7.1 Multi-Agent Complexity Benchmark PRD](docs/prd-agent-harness-v1.7.1-multi-agent-complexity-benchmark.md)
+- [v1.8.0 Local Governance Console PRD](docs/prd-agent-harness-v1.8.0-local-governance-console.md)
+- [v1.9.0 Compliance Evidence Pack PRD](docs/prd-agent-harness-v1.9.0-compliance-evidence-pack.md)
+- [v1.2.0 implementation plan](plans/agent-harness-v1.2.0-local-first-retrieval.md)
+- [v1.3.0 implementation plan](plans/agent-harness-v1.3.0-local-operator-surface.md)
+- [v1.4.0 implementation plan](plans/agent-harness-v1.4.0-template-pack-system.md)
+- [v1.5.0 implementation plan](plans/agent-harness-v1.5.0-skill-pack-system.md)
+- [v1.6.0 implementation plan](plans/agent-harness-v1.6.0-mcp-boundary.md)
+- [v1.7.0 implementation plan](plans/agent-harness-v1.7.0-policy-mediated-multi-agent-orchestration.md)
+- [v1.7.1 multi-agent complexity benchmark plan](plans/agent-harness-v1.7.1-multi-agent-complexity-benchmark.md)
+- [v1.8.0 local governance console plan](plans/agent-harness-v1.8.0-local-governance-console.md)
+- [v1.9.0 compliance evidence pack plan](plans/agent-harness-v1.9.0-compliance-evidence-pack.md)
 - [Roadmap](docs/roadmap.md)
 
 ## License

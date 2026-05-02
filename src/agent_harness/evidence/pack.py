@@ -472,7 +472,7 @@ def _source_index_entries(
                     message="Governance index is malformed and cannot be packaged safely.",
                     artifact_reference=governance_index_reference,
                     omission_reason="malformed_governance_index",
-                    recommendation="Regenerate V12 governance exports before packaging evidence.",
+                    recommendation="Regenerate v1.8.0 governance exports before packaging evidence.",
                 )
             ],
         )
@@ -486,7 +486,7 @@ def _source_index_entries(
                     message="Governance index entries are malformed and cannot be packaged safely.",
                     artifact_reference=governance_index_reference,
                     omission_reason="malformed_governance_index",
-                    recommendation="Regenerate V12 governance exports before packaging evidence.",
+                    recommendation="Regenerate v1.8.0 governance exports before packaging evidence.",
                 )
             ],
         )
@@ -502,7 +502,7 @@ def _source_index_entries(
                     message="Governance index entry is malformed and was omitted.",
                     artifact_reference=governance_index_reference,
                     omission_reason="malformed_governance_index_entry",
-                    recommendation="Regenerate V12 governance exports before packaging evidence.",
+                    recommendation="Regenerate v1.8.0 governance exports before packaging evidence.",
                 )
             )
             continue
@@ -530,7 +530,7 @@ def _source_index_entry(
             message="Governance index entry does not contain a usable artifact reference.",
             artifact_reference=governance_index_reference,
             omission_reason="malformed_artifact_reference",
-            recommendation="Regenerate V12 governance exports with normalized artifact references.",
+            recommendation="Regenerate v1.8.0 governance exports with normalized artifact references.",
         )
     if _is_private_upload_reference(reference):
         return None, _finding(
@@ -726,7 +726,7 @@ def _domain_summaries(
         if not isinstance(raw_domain, dict):
             result[domain] = EvidenceDomainSummary(
                 status="not_present",
-                message=f"{domain} evidence not present in V12 governance exports",
+                message=f"{domain} evidence not present in v1.8.0 governance exports",
             )
             continue
         status = _domain_status(raw_domain.get("status"))
@@ -761,7 +761,7 @@ def _safe_domain_summary(
             message="Governance domain summary is malformed and was omitted.",
             artifact_reference=governance_summary_reference,
             omission_reason="malformed_domain_summary",
-            recommendation="Regenerate V12 governance summary domain metadata.",
+            recommendation="Regenerate v1.8.0 governance summary domain metadata.",
             severity="high",
             domain=domain,
         )

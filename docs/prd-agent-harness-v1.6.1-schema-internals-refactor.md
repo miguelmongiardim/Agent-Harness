@@ -1,6 +1,6 @@
-# PRD: Agent Harness V10 Schema Boundary Refactor
+# PRD: Agent Harness v1.6.1 Schema Internals Refactor
 
-V10 targets `v1.6.1` as a maintenance architecture track after the V9 MCP
+v1.6.1 targets `v1.6.1` as a maintenance architecture track after the v1.6.0 MCP
 Boundary release.
 
 ## Problem Statement
@@ -37,7 +37,7 @@ The affected actors are:
 
 ## Solution
 
-V10 moves schema model definitions into boundary-owned `schema.py` modules and
+v1.6.1 moves schema model definitions into boundary-owned `schema.py` modules and
 removes the root `agent_harness.schemas` import surface.
 
 The intended developer workflow becomes:
@@ -54,7 +54,7 @@ The solution introduces a tiny neutral schema foundation at
 helpers. Domain models and domain literals stay with their owning boundary.
 
 The solution deliberately avoids a compatibility aggregator. In this project
-stage, breaking `from agent_harness.schemas import ...` is acceptable. V10 must
+stage, breaking `from agent_harness.schemas import ...` is acceptable. v1.6.1 must
 not change JSON schema versions, serialized artifact shapes, CLI command
 behavior, policy behavior, provider behavior, approval behavior, or release
 readiness semantics.

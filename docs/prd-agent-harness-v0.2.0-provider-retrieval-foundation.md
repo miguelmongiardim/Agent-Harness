@@ -1,8 +1,8 @@
-# PRD: Agent Harness V1
+# PRD: Agent Harness v0.2.0
 
 ## Problem Statement
 
-Agent Harness V0 proves a local, policy-gated software-engineering workflow
+Agent Harness v0.1.0 proves a local, policy-gated software-engineering workflow
 with deterministic mock execution, inspectable artifacts, approval-bound patch
 flow, provenance-aware retrieval, evals, and exports. That is enough to prove
 the core runtime shape, but it is not yet enough to support the main product
@@ -20,15 +20,15 @@ That gap matters for three groups:
 - security and governance stakeholders who need strong controls over provider
   use, retrieved context, sensitive data handling, and high-risk git actions
 
-Without V1, Agent Harness remains a credible V0 proof but not yet a credible
+Without v0.2.0, Agent Harness remains a credible v0.1.0 proof but not yet a credible
 runtime for controlled provider-backed engineering workflows. The short
 [docs/roadmap.md](roadmap.md) also
-compresses V1 too aggressively, so V1 needs a stronger product boundary than a
+compresses v0.2.0 too aggressively, so v0.2.0 needs a stronger product boundary than a
 few roadmap bullets.
 
 ## Solution
 
-Agent Harness V1 extends the existing CLI-first, local-first runtime so users
+Agent Harness v0.2.0 extends the existing CLI-first, local-first runtime so users
 can run tasks against named provider profiles defined in project config, while
 keeping policy mediation and auditability as the system's primary identity.
 
@@ -46,7 +46,7 @@ From a user perspective, the workflow is:
 - inspect run artifacts that show exactly what happened, what was blocked, and
   why
 
-V1 also broadens the harness around that core:
+v0.2.0 also broadens the harness around that core:
 
 - hybrid lexical+dense retrieval with transparent provenance
 - richer public sensitivity classes and provider-input policy
@@ -55,7 +55,7 @@ V1 also broadens the harness around that core:
 - normalized scanner findings with graded policy thresholds
 - optional LangGraph boundary proof without replacing the native runtime
 
-V1 deliberately avoids:
+v0.2.0 deliberately avoids:
 
 - implicit trust based on endpoint URL or localhost
 - inline secrets or secret values in artifacts
@@ -90,7 +90,7 @@ V1 deliberately avoids:
    packaged registry and approval-bound writes, so that scaffolding remains
    reusable and auditable.
 9. As a maintainer, I want benchmark-shaped sample packs for issue-style and
-   terminal-style tasks, so that V1 demonstrates benchmark integration without
+   terminal-style tasks, so that v0.2.0 demonstrates benchmark integration without
    depending on large public datasets.
 10. As a security reviewer, I want normalized security findings and graded
     scanner thresholds, so that risky runs fail early but optional tools do not
@@ -104,7 +104,7 @@ V1 deliberately avoids:
 
 ## Behavioral Requirements
 
-1. A user can define V2 provider profiles in project config with required
+1. A user can define v0.3.0 provider profiles in project config with required
    fields `provider_profile_id`, `transport`, `trust_zone`, `model`,
    `endpoint_env`, `network`, and `requires_approval`, plus optional
    `api_key_env`.
@@ -128,7 +128,7 @@ V1 deliberately avoids:
    artifacts, or audit logs.
 10. Policy can restrict which env-var names are allowed for each provider
     profile.
-11. Public sensitivity classes in V1 are `public`, `internal`,
+11. Public sensitivity classes in v0.2.0 are `public`, `internal`,
     `confidential`, `restricted`, `secret`, `pii`, `customer`, `credential`,
     `generated`, and `unknown`.
 12. Unlabeled repo files default to `internal`, `generated` content is treated
@@ -179,7 +179,7 @@ V1 deliberately avoids:
 29. `git_commit` stages only the exact approved file set and never performs
     push, branch switching, rebase, broad staging, or inclusion of unapproved
     files.
-30. V1 benchmark adapters can import local SWE-bench-style and terminal-task
+30. v0.2.0 benchmark adapters can import local SWE-bench-style and terminal-task
     sample packs into task, workspace, policy, eval, and export flows without
     large external downloads.
 31. Pre-run scanner gates normalize findings into a shared security-finding
@@ -192,20 +192,20 @@ V1 deliberately avoids:
 
 ## Implementation Decisions
 
-- **Core system boundary**: V1 remains CLI-first and local-first. It extends
+- **Core system boundary**: v0.2.0 remains CLI-first and local-first. It extends
   the current runtime rather than replacing it with a different execution
   framework.
 - **Source of truth**: [research-foundations.md](research-foundations.md) is
-  the public conceptual anchor for V1. The short roadmap should be updated to
+  the public conceptual anchor for v0.2.0. The short roadmap should be updated to
   match this PRD after acceptance.
 - **Schema strategy**: materially changed public models move to `v2` while
-  loaders remain backward-compatible with V0/V1 files where practical.
+  loaders remain backward-compatible with v0.1.0/v0.2.0 files where practical.
 - **Provider profile boundary**: provider selection lives in project config as
   named provider profiles. The public contract separates `transport` from
   `trust_zone`.
-- **Transport decisions**: V1 supports `mock`, `openai_compatible`, and
+- **Transport decisions**: v0.2.0 supports `mock`, `openai_compatible`, and
   `anthropic` transports. Local-compatible endpoints use
-  `openai_compatible` transport with an explicit `trust_zone`; V1 does not add
+  `openai_compatible` transport with an explicit `trust_zone`; v0.2.0 does not add
   a separate `local_compatible` provider type.
 - **Trust-zone policy**: allowed trust zones are `mock`, `local_process`,
   `local_endpoint`, `private_network`, and `hosted_provider`. Policy evaluates
@@ -213,9 +213,9 @@ V1 deliberately avoids:
 - **Credential boundary**: provider profiles store only env-var names for
   secrets. Secret values are resolved at execution time and never persisted in
   task specs, checked-in config, templates, run artifacts, or audit logs.
-- **Sensitivity model**: V1 promotes the richer public sensitivity classes and
+- **Sensitivity model**: v0.2.0 promotes the richer public sensitivity classes and
   treats classification as a first-class field in policy, manifests, audit, and
-  provider-input decisions. V0 aliases may be supported only for migration.
+  provider-input decisions. v0.1.0 aliases may be supported only for migration.
 - **Provider-input policy ceiling**: policy profiles define the maximum allowed
   provider-input behavior by sensitivity class. Task specs and CLI flags cannot
   widen that ceiling.
@@ -238,21 +238,21 @@ V1 deliberately avoids:
   sources in a fixed hybrid pipeline: retrieve, normalize, filter, deduplicate,
   rank or merge, then emit provenance.
 - **Embedding policy**: dense retrieval uses local embeddings by default.
-  Remote embeddings are out of the default V1 path and require a future
+  Remote embeddings are out of the default v0.2.0 path and require a future
   explicit policy-approved adapter.
 - **Context manifest model**: `context_manifest.v2` includes both included and
   rejected items as first-class evidence so reviewers can inspect not only what
   entered context but also what was blocked and why.
-- **Deep modules**: the main V1 deep modules are the provider gateway,
+- **Deep modules**: the main v0.2.0 deep modules are the provider gateway,
   trust-zone and provider-input policy evaluator, hybrid retrieval coordinator,
   context-manifest builder, template registry, benchmark-pack adapter,
   security-finding normalizer, and commit-approval binder.
 - **Template catalog**: template bundles remain in-repo, but discovery uses a
   packaged read-only SQLite registry with metadata for validation,
   compatibility, versioning, and future extension.
-- **Bundled templates**: V1 bundles `python-lib`, `fastapi-service`,
+- **Bundled templates**: v0.2.0 bundles `python-lib`, `fastapi-service`,
   `cli-tool`, `docs-rag`, `dotnet-service`, and `embedded-cpp`.
-- **Benchmark scope**: V1 supports benchmark-shaped execution through local
+- **Benchmark scope**: v0.2.0 supports benchmark-shaped execution through local
   sample packs only. Full public dataset ingestion and large-scale benchmark
   execution are deferred.
 - **Scanner scope**: scanner outputs normalize into a common
@@ -266,7 +266,7 @@ V1 deliberately avoids:
 
 ## Testing Decisions
 
-- Good V1 tests verify public behavior through CLI commands, runtime entry
+- Good v0.2.0 tests verify public behavior through CLI commands, runtime entry
   points, manifests, approval artifacts, exports, and benchmark or scanner
   outputs rather than private implementation details.
 - Highest-risk behaviors are:
@@ -278,7 +278,7 @@ V1 deliberately avoids:
   hybrid retrieval provenance,
   and `git_commit` approval binding.
 - Unit tests should cover:
-  V2 schema validation,
+  v0.3.0 schema validation,
   trust-zone policy evaluation,
   provider-input matrix evaluation,
   env-var restriction logic,
@@ -310,7 +310,7 @@ V1 deliberately avoids:
   and optional live smoke tests only when explicitly enabled.
 - Normal CI must not require provider credentials and must not make outbound
   model calls.
-- V1 acceptance is defined by externally observable behavior across provider
+- v0.2.0 acceptance is defined by externally observable behavior across provider
   selection, provider-input filtering, retrieval provenance, approval flow,
   template application, scanner gating, benchmark-shaped execution, and audit
   evidence.
@@ -318,25 +318,25 @@ V1 deliberately avoids:
 ## Out of Scope
 
 - Inline config secrets or secret backends.
-- Remote embeddings in the default V1 retrieval path.
+- Remote embeddings in the default v0.2.0 retrieval path.
 - Arbitrary provider, model, endpoint, or trust-zone definition at runtime.
 - Full benchmark dataset ingestion or benchmark-scale execution.
 - Push, branch switching, rebase, or broad git staging.
 - Raw provider payload capture by default.
-- External template catalogs in V1.
+- External template catalogs in v0.2.0.
 - Mandatory optional-scanner availability for normal local runs.
 - Web API, web UI, approval dashboard, MCP-centric architecture, multi-agent
   execution, or full LangGraph parity.
 
 ## Further Notes
 
-- V1 should be implemented as vertical slices on top of the completed V0 base,
+- v0.2.0 should be implemented as vertical slices on top of the completed v0.1.0 base,
   not as a horizontal rewrite.
 - The main product risk is policy erosion while adding real provider support.
-  V1 should bias toward explicit permission ceilings, approval checkpoints, and
+  v0.2.0 should bias toward explicit permission ceilings, approval checkpoints, and
   audit-first behavior.
 - The public docs should define each sensitivity class clearly and explain the
   difference between untrusted generated evidence, denied unknown inputs, and
   hard-denied sensitive classes.
-- The roadmap should be realigned after this PRD is accepted so the public V1
+- The roadmap should be realigned after this PRD is accepted so the public v0.2.0
   description matches the actual delivery boundary.

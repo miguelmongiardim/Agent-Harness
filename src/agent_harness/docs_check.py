@@ -9,28 +9,28 @@ from agent_harness.utils import now_utc, write_json
 DOC_SUBJECT_PATTERN = r"(?:Agent Harness|This repo|The current implementation)"
 DOC_CAPABILITY_VERB_PATTERN = r"(?:provides|supports|includes|ships|offers)"
 RETRIEVAL_DOC_SUBJECT_PATTERN = (
-    r"(?:Agent Harness|This repo|The current implementation|V5|The V5 implementation)"
+    r"(?:Agent Harness|This repo|The current implementation|v1.2.0|The v1.2.0 implementation)"
 )
 OPERATOR_DOC_SUBJECT_PATTERN = (
-    r"(?:Agent Harness|This repo|The current implementation|V6|The V6 implementation)"
+    r"(?:Agent Harness|This repo|The current implementation|v1.3.0|The v1.3.0 implementation)"
 )
 TEMPLATE_PACK_DOC_SUBJECT_PATTERN = (
-    r"(?:Agent Harness|This repo|The current implementation|V7|The V7 implementation)"
+    r"(?:Agent Harness|This repo|The current implementation|v1.4.0|The v1.4.0 implementation)"
 )
 SKILL_DOC_SUBJECT_PATTERN = (
-    r"(?:Agent Harness|This repo|The current implementation|V8|The V8 implementation)"
+    r"(?:Agent Harness|This repo|The current implementation|v1.5.0|The v1.5.0 implementation)"
 )
 MCP_DOC_SUBJECT_PATTERN = (
-    r"(?:Agent Harness|This repo|The current implementation|V9|The V9 implementation)"
+    r"(?:Agent Harness|This repo|The current implementation|v1.6.0|The v1.6.0 implementation)"
 )
 ORCHESTRATION_DOC_SUBJECT_PATTERN = (
-    r"(?:Agent Harness|This repo|The current implementation|V11|The V11 implementation)"
+    r"(?:Agent Harness|This repo|The current implementation|v1.7.0|The v1.7.0 implementation)"
 )
 GOVERNANCE_DOC_SUBJECT_PATTERN = (
-    r"(?:Agent Harness|This repo|The current implementation|V12|The V12 implementation)"
+    r"(?:Agent Harness|This repo|The current implementation|v1.8.0|The v1.8.0 implementation)"
 )
 EVIDENCE_PACK_DOC_SUBJECT_PATTERN = (
-    r"(?:Agent Harness|This repo|The current implementation|V1\.9|The V1\.9 implementation|"
+    r"(?:Agent Harness|This repo|The current implementation|v1\.9\.0|The v1\.9\.0 implementation|"
     r"The evidence pack|This evidence pack|The Compliance Evidence Pack)"
 )
 
@@ -534,7 +534,7 @@ PUBLIC_SCHEMA_REFERENCES = {
     "template.v2",
 }
 V1_CONTRACT_MARKERS = (
-    "v1.0.0 maturity release",
+    "v1.0.0 Mature CLI/runtime release",
     "Compatibility And Deprecation Policy",
     "Implemented vs Roadmap",
 )
@@ -551,7 +551,7 @@ V1_SCOPE_DOCS = (
     "docs/architecture.md",
     "docs/security-model.md",
     "docs/release-readiness.md",
-    "plans/agent-harness-v3.md",
+    "plans/agent-harness-v1.0.0-mature-cli-runtime.md",
 )
 
 
@@ -610,14 +610,14 @@ def _agent_harness_v1_release_scope_findings(project_root: Path) -> list[dict[st
         return []
 
     findings: list[dict[str, object]] = []
-    prd = project_root / "docs" / "prd-agent-harness-v3.md"
+    prd = project_root / "docs" / "prd-agent-harness-v1.0.0-mature-cli-runtime.md"
     if not prd.exists():
         findings.append(
             _finding(
                 "missing_v1_compatibility_contract",
-                "docs/prd-agent-harness-v3.md",
+                "docs/prd-agent-harness-v1.0.0-mature-cli-runtime.md",
                 1,
-                "V3 requires a v1.0.0 compatibility and deprecation contract",
+                "v1.0.0 requires a v1.0.0 compatibility and deprecation contract",
                 "",
             )
         )
@@ -628,9 +628,9 @@ def _agent_harness_v1_release_scope_findings(project_root: Path) -> list[dict[st
             findings.append(
                 _finding(
                     "missing_v1_compatibility_contract",
-                    "docs/prd-agent-harness-v3.md",
+                    "docs/prd-agent-harness-v1.0.0-mature-cli-runtime.md",
                     1,
-                    "V3 PRD is missing required v1.0.0 scope markers: " + ", ".join(missing),
+                    "v1.0.0 PRD is missing required v1.0.0 scope markers: " + ", ".join(missing),
                     "",
                 )
             )
@@ -646,10 +646,10 @@ def _agent_harness_v1_release_scope_findings(project_root: Path) -> list[dict[st
                 if stale.lower() in lowered:
                     findings.append(
                         _finding(
-                            "stale_v3_scope",
+                            "stale_v100_scope",
                             relative,
                             line_number,
-                            "V3 docs must describe v1.0.0 release maturity, "
+                            "v1.0.0 docs must describe v1.0.0 release maturity, "
                             "not deferred platform scope",
                             line,
                         )
@@ -705,7 +705,7 @@ def _unsupported_retrieval_scope_findings(
                         "unsupported_retrieval_scope_claim",
                         relative,
                         line_number,
-                        f"Docs claim unsupported V5 retrieval behavior as available: {label}",
+                        f"Docs claim unsupported v1.2.0 retrieval behavior as available: {label}",
                         line,
                     )
                 )
@@ -743,7 +743,7 @@ def _unsupported_operator_scope_findings(
                         "unsupported_operator_scope_claim",
                         relative,
                         line_number,
-                        f"Docs claim unsupported V6 operator behavior as available: {label}",
+                        f"Docs claim unsupported v1.3.0 operator behavior as available: {label}",
                         line,
                     )
                 )
@@ -783,7 +783,7 @@ def _unsupported_template_pack_scope_findings(
                         "unsupported_template_pack_scope_claim",
                         relative,
                         line_number,
-                        f"Docs claim unsupported V7 template-pack behavior as available: {label}",
+                        f"Docs claim unsupported v1.4.0 template-pack behavior as available: {label}",
                         line,
                     )
                 )
@@ -819,7 +819,7 @@ def _unsupported_skill_scope_findings(relative: str, lines: list[str]) -> list[d
                         "unsupported_skill_scope_claim",
                         relative,
                         line_number,
-                        f"Docs claim unsupported V8 skill behavior as available: {label}",
+                        f"Docs claim unsupported v1.5.0 skill behavior as available: {label}",
                         line,
                     )
                 )
@@ -855,7 +855,7 @@ def _unsupported_mcp_scope_findings(relative: str, lines: list[str]) -> list[dic
                         "unsupported_mcp_scope_claim",
                         relative,
                         line_number,
-                        f"Docs claim unsupported V9 MCP behavior as available: {label}",
+                        f"Docs claim unsupported v1.6.0 MCP behavior as available: {label}",
                         line,
                     )
                 )
@@ -896,7 +896,7 @@ def _unsupported_orchestration_scope_findings(
                         "unsupported_orchestration_scope_claim",
                         relative,
                         line_number,
-                        f"Docs claim unsupported V11 orchestration behavior as available: {label}",
+                        f"Docs claim unsupported v1.7.0 orchestration behavior as available: {label}",
                         line,
                     )
                 )
@@ -978,7 +978,7 @@ def _unsupported_governance_scope_findings(
                         "unsupported_governance_scope_claim",
                         relative,
                         line_number,
-                        "Docs claim unsupported V12 governance or compliance "
+                        "Docs claim unsupported v1.8.0 governance or compliance "
                         f"behavior as available: {label}",
                         line,
                     )
@@ -1021,7 +1021,7 @@ def _unsupported_evidence_pack_findings(
                         "unsupported_evidence_pack_claim",
                         relative,
                         line_number,
-                        "Docs claim unsupported v1.9 evidence-pack compliance "
+                        "Docs claim unsupported v1.9.0 evidence-pack compliance "
                         f"behavior as available: {label}",
                         line,
                     )

@@ -1,7 +1,7 @@
-# Plan: Agent Harness V11 Multi-Agent Complexity Benchmark
+# Plan: Agent Harness v1.7.1 Multi-Agent Complexity Benchmark
 
 > Source PRD:
-> [docs/prd-agent-harness-v11-multi-agent-complexity-benchmark.md](../docs/prd-agent-harness-v11-multi-agent-complexity-benchmark.md)
+> [docs/prd-agent-harness-v1.7.1-multi-agent-complexity-benchmark.md](../docs/prd-agent-harness-v1.7.1-multi-agent-complexity-benchmark.md)
 
 This plan follows the PRD -> Plan -> TDD workflow. It is intentionally limited
 to planning; do not implement these phases until a separate implementation

@@ -1,8 +1,8 @@
-# PRD: Agent Harness V2
+# PRD: Agent Harness v0.3.0
 
 ## Problem Statement
 
-Agent Harness V1 closed the v0.2.0 baseline as a credible local-first,
+Agent Harness v0.2.0 closed the v0.2.0 baseline as a credible local-first,
 policy-gated agent workflow harness. It now has configured provider profiles,
 provider-input gates, hybrid context manifests, approval-bound template
 application, separate `git_commit` approval, packaged benchmark sample packs,
@@ -12,7 +12,7 @@ proof.
 That baseline is strong enough for a pre-1.0 infrastructure prototype, but the
 public contract is still uneven for a v0.3.0 release:
 
-- some public inputs still default to v1 schemas while V2 behavior exists
+- some public inputs still default to v1 schemas while v0.3.0 behavior exists
 - `policy.v2` and `template.v2` are not yet first-class release contracts
 - migration, compatibility evidence, and original/effective schema recording
   are not yet a coherent user workflow
@@ -24,7 +24,7 @@ public contract is still uneven for a v0.3.0 release:
   completion pass rather than more prototype-only additions
 
 This matters for maintainers, reviewers, and serious users evaluating Agent
-Harness as an OSS infrastructure prototype. Without V2, the repo can demonstrate
+Harness as an OSS infrastructure prototype. Without v0.3.0, the repo can demonstrate
 interesting controlled-agent behavior, but it cannot cleanly explain what is
 implemented, what remains roadmap-only, which schemas are public defaults, how
 legacy inputs migrate, and which evidence gates must pass before a v0.3.0
@@ -32,14 +32,14 @@ release.
 
 ## Solution
 
-Agent Harness V2 is a completion release targeting `v0.3.0`. It establishes the
-public V2 contract first, then hardens provider and policy handling, security
+Agent Harness v0.3.0 is a completion release targeting `v0.3.0`. It establishes the
+public v0.3.0 contract first, then hardens provider and policy handling, security
 findings, retrieval manifests, template manifests, benchmark adapters, demos,
 docs, and release evidence.
 
-From a user perspective, V2 should make the default path clear:
+From a user perspective, v0.3.0 should make the default path clear:
 
-- `agent-harness init`, examples, templates, docs, and demos emit V2 schemas by
+- `agent-harness init`, examples, templates, docs, and demos emit v0.3.0 schemas by
   default
 - v1 inputs remain readable through compatibility loaders
 - users can run `agent-harness migrate schemas` to see what would change, and
@@ -56,7 +56,7 @@ From a user perspective, V2 should make the default path clear:
 - release readiness is proven through local checks, blocking CI, non-blocking
   advisory reports, docs gates, changelog update, and tag push
 
-V2 deliberately remains pre-1.0. It does not claim enterprise readiness,
+v0.3.0 deliberately remains pre-1.0. It does not claim enterprise readiness,
 production readiness, compliance readiness, full security, autonomous coding
 platform behavior, MCP support, multi-agent support, external template catalogs,
 web API/UI support, production Qdrant server mode, large benchmark dataset
@@ -64,7 +64,7 @@ execution, or deployment tuning.
 
 ## User Stories
 
-1. As a new user, I want `agent-harness init` and examples to default to V2
+1. As a new user, I want `agent-harness init` and examples to default to v0.3.0
    schemas, so that I start on the current public contract.
 2. As an existing user, I want v1 inputs to remain readable, so that v0.2.0
    workspaces do not break when the project moves to v0.3.0.
@@ -98,7 +98,7 @@ execution, or deployment tuning.
     artifacts when available, so that release evidence improves without making
     optional local tooling brittle.
 13. As a user, I want lexical retrieval to remain the deterministic default, so
-    that V2 runs stay reproducible without optional dense-retrieval dependencies.
+    that v0.3.0 runs stay reproducible without optional dense-retrieval dependencies.
 14. As a retrieval reviewer, I want hybrid manifests to record backend,
     embedding model, index id, chunk ids, scores, sensitivity, policy evidence,
     and provenance, so that dense retrieval can be audited.
@@ -111,7 +111,7 @@ execution, or deployment tuning.
 17. As a user applying a template, I want incompatible templates to fail with a
     clear error before writes, so that scaffolding cannot silently create an
     unsupported workspace.
-18. As a maintainer, I want V2 Python trio templates for `python-lib`,
+18. As a maintainer, I want v0.3.0 Python trio templates for `python-lib`,
     `cli-tool`, and `fastapi-service`, so that the main template catalog covers
     common Python OSS workflows.
 19. As a benchmark maintainer, I want SWE-bench-style and Terminal-Bench-style
@@ -123,7 +123,7 @@ execution, or deployment tuning.
     hygiene, internal links, required sections, citation marker bans, and schema
     consistency, so that public docs stay aligned with the implemented system.
 22. As a release manager, I want `examples/provider_audit/` to be the main
-    README walkthrough, so that V2 demonstrates provider approval and audit
+    README walkthrough, so that v0.3.0 demonstrates provider approval and audit
     evidence with deterministic offline behavior.
 23. As a release manager, I want a v0.3.0 release gate with local checks,
     remote blocking CI, advisory report visibility, clean docs gates, changelog
@@ -148,7 +148,7 @@ execution, or deployment tuning.
    reasons.
 8. Run artifacts record original and effective schema versions for config,
    task, policy, and template inputs that affected the run.
-9. `examples/provider_audit/` exists as a V2 demo skeleton and uses deterministic
+9. `examples/provider_audit/` exists as a v0.3.0 demo skeleton and uses deterministic
    mock transport with a non-mock trust zone, `network: false`, and required
    provider-use approval.
 10. Major docs include implemented-vs-roadmap sections where public capability
@@ -217,19 +217,19 @@ execution, or deployment tuning.
 38. Hybrid lexical+dense retrieval manifests record backend, embedding model,
     index id, chunk ids, per-source scores, sensitivity, policy evidence, and
     provenance.
-39. Dense retrieval uses only local embedding paths in V2.
+39. Dense retrieval uses only local embedding paths in v0.3.0.
 40. Qdrant and FastEmbed support is opt-in and tested with deterministic local
     fixtures.
 41. Missing optional retrieval dependencies produce clear doctor warnings and
     graceful fallback to lexical retrieval.
-42. V2 does not use remote embeddings.
-43. V2 does not support production Qdrant server mode.
+42. v0.3.0 does not use remote embeddings.
+43. v0.3.0 does not support production Qdrant server mode.
 44. `template.v2` manifests include minimum Agent Harness version, required
     capabilities, generated schema versions, provider and profile requirements,
     policy requirements, retrieval assumptions, and eval or demo metadata.
 45. Template loaders can read `template.v1` bundles through compatibility paths.
-46. V2 includes `python-lib`, `cli-tool`, and `fastapi-service` template bundles
-    with V2 metadata.
+46. v0.3.0 includes `python-lib`, `cli-tool`, and `fastapi-service` template bundles
+    with v0.3.0 metadata.
 47. Template application rejects incompatible templates before write planning
     with a clear validation error.
 48. Template application records template id and template version in workspace
@@ -243,11 +243,11 @@ execution, or deployment tuning.
     deterministic fixtures.
 52. Benchmark artifacts point to real run evidence and do not replace run
     artifacts with synthetic reports.
-53. `examples/provider_audit/` is the main README walkthrough for V2.
+53. `examples/provider_audit/` is the main README walkthrough for v0.3.0.
 54. The `provider_audit` demo proves offline pause/resume, provider-use
     approval, provider-input policy evidence, redacted provider-call artifacts,
     inspect output, and JSON, Markdown, and SARIF exports.
-55. The existing `python_refactor` demo is migrated to V2 and remains available
+55. The existing `python_refactor` demo is migrated to v0.3.0 and remains available
     as a secondary demo.
 56. Release readiness for `v0.3.0` requires local checks, remote blocking CI
     green, visible non-blocking advisory reports, changelog update, clean docs
@@ -257,11 +257,11 @@ execution, or deployment tuning.
 
 ## Implementation Decisions
 
-- **Release boundary**: V2 targets `v0.3.0` as a pre-1.0 completion release,
+- **Release boundary**: v0.3.0 targets `v0.3.0` as a pre-1.0 completion release,
   not as a product expansion release.
-- **Compatibility baseline**: V1/v0.2.0 is closed and remains the compatibility
+- **Compatibility baseline**: v0.2.0/v0.2.0 is closed and remains the compatibility
   baseline for v1 loaders and migration behavior.
-- **Core system boundary**: V2 remains CLI-first, local-first, and
+- **Core system boundary**: v0.3.0 remains CLI-first, local-first, and
   evidence-first. It hardens the current runtime, schemas, policy, artifacts,
   docs, and demos rather than adding web, MCP, multi-agent, or deployment
   surfaces.
@@ -299,18 +299,18 @@ execution, or deployment tuning.
 - **Template module**: `template.v2` carries compatibility, capability,
   provider, policy, retrieval, schema, and demo metadata. Apply rejects
   incompatible templates before write planning.
-- **Bundled template scope**: V2 focuses on a Python trio:
+- **Bundled template scope**: v0.3.0 focuses on a Python trio:
   `python-lib`, `cli-tool`, and `fastapi-service`.
 - **Benchmark module**: adapter interfaces must import sample packs, prepare
   workspaces, choose policy, execute runs, map eval results, and export
   benchmark-style results that point to real run evidence.
 - **Demo strategy**: `provider_audit` is the primary README walkthrough because
-  it exercises V2's provider approval and audit identity. `python_refactor`
+  it exercises v0.3.0's provider approval and audit identity. `python_refactor`
   remains a secondary demo after schema migration.
 - **Release strategy**: release evidence includes local validation, remote
   blocking CI, advisory scanner visibility, docs gate output, changelog update,
   and tag push.
-- **Deep modules**: the main V2 deep modules are the schema compatibility and
+- **Deep modules**: the main v0.3.0 deep modules are the schema compatibility and
   migrator boundary, docs checker, policy.v2 evaluator, provider approval
   binder, provider-call artifact recorder, security finding normalizer, scanner
   advisory reporter, retrieval manifest coordinator, template.v2 manifest
@@ -318,7 +318,7 @@ execution, or deployment tuning.
 
 ## Testing Decisions
 
-- Good V2 tests verify behavior through public CLI commands, loaders, runtime
+- Good v0.3.0 tests verify behavior through public CLI commands, loaders, runtime
   entry points, run artifacts, inspect output, exports, docs-check commands,
   template apply behavior, benchmark adapter outputs, and release evidence.
 - Tests should not depend on private function names or exact internal module
@@ -336,7 +336,7 @@ execution, or deployment tuning.
   template capability rejection,
   docs claim drift,
   and benchmark artifacts pointing to real run evidence.
-- Schema/default tests must cover V2 scaffolding, v1 compatibility loading,
+- Schema/default tests must cover v0.3.0 scaffolding, v1 compatibility loading,
   migration report mode, migration `--write`, and original/effective schema
   artifact evidence.
 - Provider audit end-to-end tests must cover offline pause/resume, provider-use
@@ -348,7 +348,7 @@ execution, or deployment tuning.
 - Retrieval tests must cover deterministic lexical fallback, local dense
   retrieval, optional Qdrant/FastEmbed fixture behavior, dependency-missing
   fallback, and policy-filtered manifests.
-- Template tests must cover V2 metadata validation, capability rejection, V2
+- Template tests must cover v0.3.0 metadata validation, capability rejection, v0.3.0
   scaffolding, template id/version workspace metadata, and v1 template
   compatibility.
 - Benchmark tests must cover SWE-bench-style and terminal-task adapter
@@ -360,7 +360,7 @@ execution, or deployment tuning.
   CI or release criteria.
 - Blocking CI must run on Python 3.11 and Python 3.12. Python 3.13 may be
   allowed failure while compatibility is evaluated.
-- V2 acceptance is defined by observable behavior across V2 defaults,
+- v0.3.0 acceptance is defined by observable behavior across v0.3.0 defaults,
   compatibility migration, policy.v2 enforcement, provider audit artifacts,
   security gates, retrieval manifests, template compatibility, benchmark
   adapters, docs gates, and release evidence.
@@ -386,7 +386,7 @@ execution, or deployment tuning.
 
 ## Further Notes
 
-- V2 should be implemented as vertical slices in the stated phase order:
+- v0.3.0 should be implemented as vertical slices in the stated phase order:
   public baseline, provider and policy completion, security findings and gates,
   retrieval hardening, template catalog expansion, benchmark adapters, then
   demo/docs/release hardening.
@@ -394,7 +394,7 @@ execution, or deployment tuning.
   could imply support beyond the implemented pre-1.0 contract. Blocking docs
   checks exist to control that risk.
 - The main security risk is policy erosion while making provider workflows more
-  usable. V2 should bias toward explicit denials, approval binding, redacted
+  usable. v0.3.0 should bias toward explicit denials, approval binding, redacted
   artifacts, and non-widening compatibility behavior.
 - The main operational risk is optional tooling brittleness. Dense retrieval,
   Qdrant/FastEmbed, Gitleaks, CycloneDX, live providers, and Python 3.13

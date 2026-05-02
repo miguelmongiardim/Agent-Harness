@@ -394,7 +394,7 @@ def _demo_evidence(project_root: Path) -> dict[str, Any]:
 
 
 def _docs_evidence(project_root: Path, docs_report: dict[str, Any]) -> dict[str, Any]:
-    compatibility_path = project_root / "docs" / "prd-agent-harness-v3.md"
+    compatibility_path = project_root / "docs" / "prd-agent-harness-v1.0.0-mature-cli-runtime.md"
     return {
         "check": {
             "command": "agent-harness docs check",
@@ -402,10 +402,10 @@ def _docs_evidence(project_root: Path, docs_report: dict[str, Any]) -> dict[str,
             "findings": docs_report["counts"]["findings"],
         },
         "schema_compatibility": {
-            "path": "docs/prd-agent-harness-v3.md",
+            "path": "docs/prd-agent-harness-v1.0.0-mature-cli-runtime.md",
             "present": compatibility_path.exists(),
             "status": "passed" if compatibility_path.exists() else "missing_evidence",
-            "action": "Document the public schema compatibility policy in the V3 PRD.",
+            "action": "Document the public schema compatibility policy in the v1.0.0 PRD.",
         },
         "roadmap_claims": {
             "command": "agent-harness docs check",
@@ -578,7 +578,7 @@ def _bundled_template_pack_acceptance(project_root: Path) -> dict[str, Any]:
         "work_root": _project_relative(project_root, work_root),
         "packs": packs,
         "action": (
-            "Ensure every bundled V7 pack validates, dry-runs, clean-applies, "
+            "Ensure every bundled v1.4.0 pack validates, dry-runs, clean-applies, "
             "generates valid config/task/policy/eval examples, records "
             "template_application.v1 evidence, and includes docs."
         ),
@@ -808,7 +808,7 @@ def _template_remote_catalog_defaults(project_root: Path) -> dict[str, Any]:
         "remote_defaults": findings,
         "action": (
             "Keep executable template configuration on bundled/local sources; "
-            "remote catalogs, marketplace URLs, and cloud registries are not V7 defaults."
+            "remote catalogs, marketplace URLs, and cloud registries are not v1.4.0 defaults."
         ),
     }
 
@@ -1218,7 +1218,7 @@ def _orchestration_evidence(project_root: Path) -> dict[str, Any]:
     if demo["status"] != "passed":
         return {
             "demo": demo,
-            **_orchestration_failed_smoke_gates("V11 orchestration workflow demo is missing."),
+            **_orchestration_failed_smoke_gates("v1.7.0 orchestration workflow demo is missing."),
         }
 
     try:
@@ -1314,7 +1314,7 @@ def _orchestration_demo_evidence(project_root: Path) -> dict[str, Any]:
         "required_files": list(ORCHESTRATION_WORKFLOW_REQUIRED_FILES),
         "missing_files": missing,
         "action": (
-            "Add the V11 orchestration workflow demo README, local policy, "
+            "Add the v1.7.0 orchestration workflow demo README, local policy, "
             "orchestration spec, and fixture."
         ),
     }
@@ -1322,7 +1322,7 @@ def _orchestration_demo_evidence(project_root: Path) -> dict[str, Any]:
 
 def _orchestration_failed_smoke_gates(detail: str) -> dict[str, Any]:
     action = (
-        "Run the V11 orchestration workflow demo and verify release-readiness "
+        "Run the v1.7.0 orchestration workflow demo and verify release-readiness "
         "policy, artifact, inspect/export, MCP, and access-log gates."
     )
     return {
@@ -1400,7 +1400,7 @@ def _orchestration_policy_gate_evidence(
         "policy_profile": summary.get("policy_profile") if isinstance(summary, dict) else None,
         "orchestration_policy": orchestration_policy,
         "denied_children": denied_children,
-        "action": "Verify V11 orchestration policy enablement and effective role authority.",
+        "action": "Verify v1.7.0 orchestration policy enablement and effective role authority.",
     }
 
 
@@ -1619,7 +1619,7 @@ def _mcp_demo_evidence(project_root: Path) -> dict[str, Any]:
         "required_files": list(required_files),
         "missing_files": missing,
         "action": (
-            "Add the V9 MCP boundary demo README and expected resources, prompts, "
+            "Add the v1.6.0 MCP boundary demo README and expected resources, prompts, "
             "and denied-resource examples."
         ),
     }
@@ -1831,7 +1831,7 @@ def _mcp_resource_listing_evidence(
             "status": status,
             "run_id": run_id,
             "missing_uris": sorted(expected - resource_uris),
-            "action": "Verify mcp resources list returns core V9 resources.",
+            "action": "Verify mcp resources list returns core v1.6.0 resources.",
         },
         payload,
     )
@@ -2132,7 +2132,7 @@ def _bundled_skill_validation_evidence(project_root: Path) -> dict[str, Any]:
             "skill_ids": [],
             "missing_skills": list(REQUIRED_BUNDLED_SKILLS),
             "detail": _safe_error(exc),
-            "action": "Keep all required bundled V8 skills valid and packaged.",
+            "action": "Keep all required bundled v1.5.0 skills valid and packaged.",
         }
     failed = sorted(
         skill_id for skill_id, report in reports.items() if report.get("status") != "passed"
@@ -2522,7 +2522,7 @@ def _skills_docs_evidence(
             "path": "docs/skills-system.md",
             "missing_markers": list(markers),
             "docs_check_status": docs_report.get("status"),
-            "action": "Document the V8 local skills scope and deferred features.",
+            "action": "Document the v1.5.0 local skills scope and deferred features.",
         }
     text = path.read_text(encoding="utf-8")
     missing = [marker for marker in markers if marker not in text]

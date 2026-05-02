@@ -26,7 +26,7 @@ class RetrievalDenseConfig(StrictModel):
         if value is None or value in {"deterministic", "fastembed"}:
             return value
         raise ValueError(
-            "V5 local-first retrieval forbids hosted embedding providers; "
+            "v1.2.0 local-first retrieval forbids hosted embedding providers; "
             "use deterministic or fastembed"
         )
 
@@ -34,7 +34,7 @@ class RetrievalDenseConfig(StrictModel):
     @classmethod
     def validate_remote_embeddings(cls, value: bool) -> bool:
         if value:
-            raise ValueError("V5 local-first retrieval forbids remote_embeddings: true")
+            raise ValueError("v1.2.0 local-first retrieval forbids remote_embeddings: true")
         return value
 
 
@@ -55,18 +55,18 @@ class RetrievalQdrantConfig(StrictModel):
         parsed = urlparse(value)
         hostname = (parsed.hostname or "").lower()
         if hostname.endswith("cloud.qdrant.io"):
-            raise ValueError("V5 local-first retrieval forbids cloud Qdrant URLs")
+            raise ValueError("v1.2.0 local-first retrieval forbids cloud Qdrant URLs")
         if parsed.scheme.lower() == "https":
-            raise ValueError("V5 local-first retrieval forbids remote HTTPS Qdrant endpoints")
+            raise ValueError("v1.2.0 local-first retrieval forbids remote HTTPS Qdrant endpoints")
         if not _is_loopback_qdrant_host(hostname):
-            raise ValueError("V5 local-first retrieval forbids non-loopback Qdrant endpoints")
+            raise ValueError("v1.2.0 local-first retrieval forbids non-loopback Qdrant endpoints")
         return value
 
     @field_validator("api_key_env")
     @classmethod
     def validate_api_key_env(cls, value: str | None) -> str | None:
         if value is not None:
-            raise ValueError("V5 local-first retrieval forbids API-key-backed Qdrant endpoints")
+            raise ValueError("v1.2.0 local-first retrieval forbids API-key-backed Qdrant endpoints")
         return value
 
 

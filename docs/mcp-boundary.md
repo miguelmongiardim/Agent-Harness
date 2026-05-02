@@ -1,10 +1,10 @@
 # MCP Boundary
 
-This document defines the V9 MCP Boundary release for `v1.6.0` and the
-implemented local read-only MCP behavior. V11 adds read-only orchestration
+This document defines the v1.6.0 MCP Boundary release for `v1.6.0` and the
+implemented local read-only MCP behavior. v1.7.0 adds read-only orchestration
 evidence resources to the same boundary without adding MCP tools or execution.
 
-## Implemented in V9
+## Implemented in v1.6.0
 
 Agent Harness exposes a local, read-only MCP boundary under:
 
@@ -17,7 +17,7 @@ not a runtime adapter and it does not replace the CLI, runtime, policy engine,
 approval service, storage layer, operator UI, template system, skill system, or
 provider gateway.
 
-The V9 implementation supports:
+The v1.6.0 implementation supports:
 
 - read-only MCP resources
 - MCP prompts
@@ -82,7 +82,7 @@ traversal, unsafe identifiers, query and fragment abuse, unknown resource
 shapes, and mutation-shaped orchestration resource requests such as run,
 approve, or resume.
 
-V11 release readiness reads the orchestration summary and handoff resources
+v1.7.0 release readiness reads the orchestration summary and handoff resources
 from `examples/orchestration_workflow/` and verifies metadata-only access-log
 records for those reads.
 
@@ -94,7 +94,7 @@ text/markdown
 text/plain
 ```
 
-Binary resources are out of scope for V9.
+Binary resources are out of scope for v1.6.0.
 
 ## Resource Envelope
 
@@ -121,7 +121,7 @@ filesystem internals beyond safe relative artifact paths.
 
 ## Prompt Surface
 
-The V9 prompt registry includes:
+The v1.6.0 prompt registry includes:
 
 ```text
 agent-harness-run-review
@@ -191,7 +191,7 @@ config files, policy files, or workspace files.
 
 ## Roadmap / Not implemented yet
 
-The following remain future-only and must not be described as V9 behavior:
+The following remain future-only and must not be described as v1.6.0 behavior:
 
 - MCP tools
 - write-capable MCP
@@ -213,6 +213,6 @@ The following remain future-only and must not be described as V9 behavior:
 - MCP runtime adapter behavior
 - parallel, nested, hosted, or write-capable MCP orchestration
 
-The existing `agent_harness.runtimes.mcp_adapter` can remain unsupported for V9.
+The existing `agent_harness.runtimes.mcp_adapter` can remain unsupported for v1.6.0.
 If a later release implements MCP runtime behavior, it needs its own PRD, plan,
 policy model, approval model, and release evidence.

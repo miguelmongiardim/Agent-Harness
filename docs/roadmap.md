@@ -3,7 +3,7 @@
 ## Current Capabilities
 
 Agent Harness currently provides a controlled local software-engineering workflow
-using V2 config, task, policy, and template inputs; a deterministic mock agent;
+using v0.3.0 config, task, policy, and template inputs; a deterministic mock agent;
 configured provider profiles; provider-input policy gates; strict provider
 action envelopes; opt-in OpenAI-compatible live smoke; redacted provider-call
 evidence; local retrieval indexes, hybrid retrieval, qdrant-local evidence,
@@ -12,18 +12,18 @@ retrieval scorecards, approval-bound template application, separate
 comparison artifact for the local terminal sample, validated bundled and
 configured local skill discovery, task-requested skill resolution,
 template-recommended skill evidence, policy-gated skill context evidence,
-skill manifest run evidence, a skills workflow demo, V8 skill release gates,
+skill manifest run evidence, a skills workflow demo, v1.5.0 skill release gates,
 provider audit demos, release-readiness reports, audit logs, evals, an
 optional LangGraph boundary proof, and reproducible artifacts.
 
 ## v1.0.0 Status
 
-v1.0.0 closes the V3 release-maturity track. The stable local OSS scope covers
+v1.0.0 closes the v1.0.0 Mature CLI/runtime track. The stable local OSS scope covers
 core CLI behavior, public schema compatibility policy, package and
 clean-install evidence, reproducible demos, Docker demo packaging, pre-commit
 and CI hygiene, bundled template validation, and release-readiness evidence.
 
-The detailed V3 plan lives in [plans/agent-harness-v3.md](../plans/agent-harness-v3.md).
+The detailed v1.0.0 plan lives in [plans/agent-harness-v1.0.0-mature-cli-runtime.md](../plans/agent-harness-v1.0.0-mature-cli-runtime.md).
 
 The current conception alignment review lives in
 [docs/conception-alignment.md](conception-alignment.md). It compares the
@@ -32,22 +32,22 @@ defines the remaining drift.
 
 ## v1.1.0 Status
 
-v1.1.0 closes the V4 Provider Core track:
-[docs/prd-agent-harness-v4.md](prd-agent-harness-v4.md) and
-[plans/agent-harness-v4.md](../plans/agent-harness-v4.md). It adds strict
+v1.1.0 closes the v1.1.0 Provider Core track:
+[docs/prd-agent-harness-v1.1.0-provider-core.md](prd-agent-harness-v1.1.0-provider-core.md) and
+[plans/agent-harness-v1.1.0-provider-core.md](../plans/agent-harness-v1.1.0-provider-core.md). It adds strict
 provider action envelopes, profile validation, opt-in OpenAI-compatible live
 smoke, provider-call evidence, redacted prompt/response artifacts,
 provider-core evals, and setup/safety docs.
 
-V4 does not promote fixture capture tooling, retention profiles, web UI, MCP
+v1.1.0 does not promote fixture capture tooling, retention profiles, web UI, MCP
 execution, multi-agent orchestration, production Qdrant server mode, Anthropic
 live support, or enterprise readiness.
 
 ## v1.2.0 Status
 
-v1.2.0 closes the V5 local-first retrieval hardening track:
-[docs/prd-agent-harness-v5.md](prd-agent-harness-v5.md) and
-[plans/agent-harness-v5.md](../plans/agent-harness-v5.md). The track keeps
+v1.2.0 closes the v1.2.0 local-first retrieval hardening track:
+[docs/prd-agent-harness-v1.2.0-local-first-retrieval.md](prd-agent-harness-v1.2.0-local-first-retrieval.md) and
+[plans/agent-harness-v1.2.0-local-first-retrieval.md](../plans/agent-harness-v1.2.0-local-first-retrieval.md). The track keeps
 base-install lexical retrieval available while adding local index lifecycle
 commands, deterministic dense test embeddings, local-only FastEmbed behavior,
 persistent local Qdrant storage, loopback-only Qdrant server developer support,
@@ -58,20 +58,20 @@ Cloud Qdrant, hosted embedding providers, remote embeddings, remote embedding
 APIs, remote vector databases, API-key-backed Qdrant endpoints, HTTPS remote
 Qdrant endpoints, production Qdrant server operation, MCP, API/UI surfaces,
 multi-agent workflows, enterprise retrieval claims, and compliance-ready
-retrieval claims remain future-only and are not V5 behavior.
+retrieval claims remain future-only and are not v1.2.0 behavior.
 
 ## v1.3.0 Status
 
-v1.3.0 is the V6 local operator surface target:
-[docs/prd-agent-harness-v6.md](prd-agent-harness-v6.md) and
-[plans/agent-harness-v6.md](../plans/agent-harness-v6.md). The implemented
+v1.3.0 is the v1.3.0 local operator surface target:
+[docs/prd-agent-harness-v1.3.0-local-operator-surface.md](prd-agent-harness-v1.3.0-local-operator-surface.md) and
+[plans/agent-harness-v1.3.0-local-operator-surface.md](../plans/agent-harness-v1.3.0-local-operator-surface.md). The implemented
 track adds a loopback-only API and packaged static UI for inspecting existing
 run artifacts and approving or denying existing pending approvals through the
 same approval service as the CLI. Release readiness records operator evidence
 for app import, API smoke, token enforcement, host rejection, approval binding,
 and static UI packaging.
 
-V6 does not target hosted API behavior, remote web UI operation, multi-user
+v1.3.0 does not target hosted API behavior, remote web UI operation, multi-user
 authentication, an enterprise control plane, cloud deployment, production web
 service operation, compliance readiness, MCP, multi-agent orchestration, run
 creation, config editing, direct patch application, direct git commit creation,
@@ -79,10 +79,10 @@ or direct provider execution.
 
 ## v1.4.0 Status
 
-v1.4.0 is the V7 Template Pack System track:
+v1.4.0 is the v1.4.0 Template Pack System track:
 [docs/template-pack-system.md](template-pack-system.md),
-[docs/prd-agent-harness-v7.md](prd-agent-harness-v7.md), and
-[plans/agent-harness-v7.md](../plans/agent-harness-v7.md). The implemented
+[docs/prd-agent-harness-v1.4.0-template-pack-system.md](prd-agent-harness-v1.4.0-template-pack-system.md), and
+[plans/agent-harness-v1.4.0-template-pack-system.md](../plans/agent-harness-v1.4.0-template-pack-system.md). The implemented
 track keeps template packs local-first and inspectable through `template.v2.toml`
 pack manifests, explicit local directories, deterministic parameter
 substitution, dry-run and preview-diff planning, clean empty-target apply
@@ -93,21 +93,21 @@ evidence, and remote catalog default rejection.
 Remote template catalogs, template marketplace behavior, template signing,
 organization template catalogs, cloud template registries, executable lifecycle
 hooks, script execution, enterprise template governance, and conditional file
-inclusion remain future-only and are not V7 behavior.
+inclusion remain future-only and are not v1.4.0 behavior.
 
 ## v1.5.0 Status
 
-v1.5.0 is the V8 Skills System release:
+v1.5.0 is the v1.5.0 Skill Pack System release:
 [docs/skills-system.md](skills-system.md),
-[docs/prd-agent-harness-v8.md](prd-agent-harness-v8.md), and
-[plans/agent-harness-v8.md](../plans/agent-harness-v8.md). Implemented slices
+[docs/prd-agent-harness-v1.5.0-skill-pack-system.md](prd-agent-harness-v1.5.0-skill-pack-system.md), and
+[plans/agent-harness-v1.5.0-skill-pack-system.md](../plans/agent-harness-v1.5.0-skill-pack-system.md). Implemented slices
 add local, versioned, validated Markdown workflow guidance with deterministic
 provenance for bundled and explicitly configured local skill sources,
 task-requested skill resolution, template-recommended skill evidence, and
 context-manifest provenance for accepted or rejected task-requested guidance.
 Runs that use skills now emit `skill_manifest.v1` evidence and expose it
 through run summaries, artifact indexes, inspect output, operator run detail,
-and eval expected-skill assertions. The V8 golden path is implemented under
+and eval expected-skill assertions. The v1.5.0 golden path is implemented under
 `examples/skills_workflow/`, and release readiness verifies required bundled
 skill validation, registry behavior, task resolution, context provenance,
 `skill_manifest.v1`, inspect output, skills docs, and demo evidence. Skills are
@@ -117,31 +117,31 @@ policy, approvals, provider profiles, or executable code.
 Remote skill catalogs, skill marketplace behavior, skill signing, hosted skill
 services, enterprise skill registries, organization-wide skill governance,
 centralized skill governance, skill installation from network locations, and
-automatic execution from skills remain future-only and are not V8 behavior.
+automatic execution from skills remain future-only and are not v1.5.0 behavior.
 
 ## v1.6.0 Status
 
-v1.6.0 is the V9 MCP Boundary release:
+v1.6.0 is the v1.6.0 MCP Boundary release:
 [docs/mcp-boundary.md](mcp-boundary.md),
-[docs/prd-agent-harness-v9.md](prd-agent-harness-v9.md), and
-[plans/agent-harness-v9.md](../plans/agent-harness-v9.md). The implemented
+[docs/prd-agent-harness-v1.6.0-mcp-boundary.md](prd-agent-harness-v1.6.0-mcp-boundary.md), and
+[plans/agent-harness-v1.6.0-mcp-boundary.md](../plans/agent-harness-v1.6.0-mcp-boundary.md). The implemented
 track adds a local, optional, read-only MCP boundary under `agent_harness.mcp`
 for exposing selected Agent Harness evidence through MCP resources and review
 prompts.
 
-V9 is not a runtime adapter. The existing `agent_harness.runtimes.mcp_adapter`
-remains unsupported while V9 proves resources, prompts, stdio transport,
+v1.6.0 is not a runtime adapter. The existing `agent_harness.runtimes.mcp_adapter`
+remains unsupported while v1.6.0 proves resources, prompts, stdio transport,
 policy-filtered artifacts, release-readiness gates, and MCP access evidence.
 MCP tools, write-capable MCP, MCP approval actions, MCP run execution, MCP
 provider execution, Streamable HTTP MCP, hosted MCP service, remote MCP
 gateways, enterprise MCP registries, and multi-agent orchestration remain
 future-only.
 
-## v1.7.x V11 Planning And Evidence
+## v1.7.x v1.7.0 Planning And Evidence
 
-V11 planning is captured in
-[docs/prd-agent-harness-v11.md](prd-agent-harness-v11.md) and
-[plans/agent-harness-v11.md](../plans/agent-harness-v11.md). It describes
+v1.7.0 planning is captured in
+[docs/prd-agent-harness-v1.7.0-policy-mediated-multi-agent-orchestration.md](prd-agent-harness-v1.7.0-policy-mediated-multi-agent-orchestration.md) and
+[plans/agent-harness-v1.7.0-policy-mediated-multi-agent-orchestration.md](../plans/agent-harness-v1.7.0-policy-mediated-multi-agent-orchestration.md). It describes
 local, sequential, policy-mediated orchestration over normal child task runs.
 The current implementation supports `agent-harness orchestration run <spec>
 --dry-run`, `approve`, `resume`, and `inspect` for explicitly enabled
@@ -152,18 +152,18 @@ handoffs, prevents provider default inheritance, uses existing provider gates
 for explicit provider children, stops on child pause/failure, and resumes
 without rerunning completed children. It also writes stable orchestration JSON
 exports and exposes read-only MCP resources for orchestration summary, manifest,
-events, children, and handoffs with metadata-only access logs. The V11 golden
+events, children, and handoffs with metadata-only access logs. The v1.7.0 golden
 path lives in `examples/orchestration_workflow/`, and release readiness verifies
 orchestration demo, policy, artifact, inspect/export, MCP resource-read, and
 access-log gates. Operator UI support and enterprise governance remain
-future-only. V11 does not support hosted APIs. Parallel multi-agent
+future-only. v1.7.0 does not support hosted APIs. Parallel multi-agent
 orchestration remains future-only. Nested orchestration remains future-only.
 MCP execution for multi-agent orchestration remains future-only.
 
-The V11 multi-agent complexity benchmark is planned separately in
-[docs/prd-agent-harness-v11-multi-agent-complexity-benchmark.md](prd-agent-harness-v11-multi-agent-complexity-benchmark.md)
+The v1.7.1 multi-agent complexity benchmark is planned separately in
+[docs/prd-agent-harness-v1.7.1-multi-agent-complexity-benchmark.md](prd-agent-harness-v1.7.1-multi-agent-complexity-benchmark.md)
 and
-[plans/agent-harness-v11-multi-agent-complexity-benchmark.md](../plans/agent-harness-v11-multi-agent-complexity-benchmark.md).
+[plans/agent-harness-v1.7.1-multi-agent-complexity-benchmark.md](../plans/agent-harness-v1.7.1-multi-agent-complexity-benchmark.md).
 The implemented comparison path supports
 `agent-harness benchmark compare local-samples terminal-readonly-inspect` for a
 single case and `agent-harness benchmark compare local-samples` for the bundled
@@ -192,13 +192,13 @@ promotion.
 
 ## v1.8.0 Implemented
 
-V12 implementation has started with a local governance summary, blocking
+v1.8.0 implementation has started with a local governance summary, blocking
 governance check, report generation, and explicit export writing.
 
-The V12 Local Governance Console planning artifacts are
-[docs/prd-agent-harness-v12-local-governance-console.md](prd-agent-harness-v12-local-governance-console.md)
+The v1.8.0 Local Governance Console planning artifacts are
+[docs/prd-agent-harness-v1.8.0-local-governance-console.md](prd-agent-harness-v1.8.0-local-governance-console.md)
 and
-[plans/agent-harness-v12-local-governance-console.md](../plans/agent-harness-v12-local-governance-console.md).
+[plans/agent-harness-v1.8.0-local-governance-console.md](../plans/agent-harness-v1.8.0-local-governance-console.md).
 Phase 3 implements `agent-harness governance summary`, `check`, `report`, and
 `export`. The summary emits `governance_summary.v1` data from local config,
 default policy, run-summary artifacts, domain status classification, run
@@ -217,21 +217,21 @@ formal certification remain future-only.
 
 ## v1.9.0 Release
 
-V1.9 Compliance Evidence Pack planning lives in
+v1.9.0 Compliance Evidence Pack planning lives in
 [docs/compliance-evidence-pack.md](compliance-evidence-pack.md),
-[docs/prd-agent-harness-v1.9-compliance-evidence-pack.md](prd-agent-harness-v1.9-compliance-evidence-pack.md),
+[docs/prd-agent-harness-v1.9.0-compliance-evidence-pack.md](prd-agent-harness-v1.9.0-compliance-evidence-pack.md),
 and
-[plans/agent-harness-v1.9-compliance-evidence-pack.md](../plans/agent-harness-v1.9-compliance-evidence-pack.md).
+[plans/agent-harness-v1.9.0-compliance-evidence-pack.md](../plans/agent-harness-v1.9.0-compliance-evidence-pack.md).
 
-The pack depends on completed V12 governance exports:
+The pack depends on completed v1.8.0 governance exports:
 `governance_summary.v1`, `governance_report.v1`, `governance_index.v1`, and
 `governance_findings.v1`. Through Phase 9 the evidence-pack track adds evidence command discovery,
-prerequisite validation for missing V12 governance exports,
+prerequisite validation for missing v1.8.0 governance exports,
 `evidence pack --format json` generation of canonical evidence pack, manifest,
 index, findings, control mapping, and checksum files, redaction-safe artifact
-indexing from V12 governance indexes, review-only Markdown output for
+indexing from v1.8.0 governance indexes, review-only Markdown output for
 bundle/markdown formats, opt-in archive creation, `evidence check` exit-code
-semantics, `evidence index` JSON output, safe V12 domain summary packaging,
+semantics, `evidence index` JSON output, safe v1.8.0 domain summary packaging,
 optional-domain `not_present` reporting, and malformed-domain evidence
 findings. The local operator API now exposes token-protected read-only evidence
 routes for overview, packs, pack detail, control mapping, artifact index, and
@@ -274,7 +274,7 @@ The pack is not legal, regulatory, security, or organizational certification.
 - Add OpenTelemetry dashboards.
 - Add cloud or production Qdrant modes and deployment-scale retrieval tuning.
 - Add hosted or remote retrieval providers.
-- After V9, consider MCP tools or hosted MCP only with a separate policy,
+- After v1.6.0, consider MCP tools or hosted MCP only with a separate policy,
   approval, identity, and release-evidence plan.
 - Add enterprise/compliance readiness work, including production identity,
   centralized secrets management, hardened sandboxing, and attestation.

@@ -16,7 +16,7 @@ runtime around explicit ownership boundaries.
   workspace staging, result mapping, evidence-backed benchmark exports, and
   baseline-first comparison artifacts for benchmark cases.
 - `agent_harness.templates` owns bundled template catalog behavior today and is
-  the V7 boundary for local pack source discovery, manifest loading,
+  the v1.4.0 boundary for local pack source discovery, manifest loading,
   validation, deterministic rendering, planning, application evidence, and
   policy-mediated template writes.
 - `agent_harness.skills` owns local skill discovery, frontmatter/body parsing,
@@ -24,11 +24,11 @@ runtime around explicit ownership boundaries.
   Runtime context assembly consumes resolved skill guidance as policy-mediated
   context evidence, and the same boundary constructs `skill_manifest.v1` run
   evidence from resolution plus context-manifest decisions.
-- The V9 MCP work belongs under `agent_harness.mcp` as a read-only
+- The v1.6.0 MCP work belongs under `agent_harness.mcp` as a read-only
   interoperability boundary over existing evidence. It owns MCP URI parsing,
   resource and prompt registries, response envelopes, access evidence, and
   stdio SDK integration without becoming a runtime.
-- The V11 orchestration work belongs under `agent_harness.orchestration`. The
+- The v1.7.0 orchestration work belongs under `agent_harness.orchestration`. The
   current implementation owns `orchestration.v1` spec loading/validation and
   the denial-first policy gate that requires explicit `policy.v2.orchestration`
   before any child run can start. It also owns the minimal one-child read-only
@@ -41,16 +41,16 @@ runtime around explicit ownership boundaries.
   `agent_harness.mcp`, which delegates to orchestration artifacts without
   becoming an execution surface.
 - `agent_harness.release` owns local release-readiness evidence collection,
-  including V11 orchestration demo, policy, artifact, inspect/export, MCP
+  including v1.7.0 orchestration demo, policy, artifact, inspect/export, MCP
   resource-read, and access-log gates.
-- `agent_harness.evidence` owns the V1.9 Compliance Evidence Pack boundary.
-  Phase 9 validates completed V12 governance export prerequisites, writes
+- `agent_harness.evidence` owns the v1.9.0 Compliance Evidence Pack boundary.
+  Phase 9 validates completed v1.8.0 governance export prerequisites, writes
   canonical JSON evidence pack, manifest, index, findings, control mapping,
-  and checksum files, filters V12 governance-index artifact references so
+  and checksum files, filters v1.8.0 governance-index artifact references so
   unsafe refs become evidence findings instead of pack content, renders
   review-only Markdown for bundle/markdown formats, creates opt-in archives,
   validates check exit states, prints `evidence_index.v1` JSON, packages safe
-  V12 domain summaries into `evidence_pack.v1`, and turns malformed domain
+  v1.8.0 domain summaries into `evidence_pack.v1`, and turns malformed domain
   summary payloads into evidence findings. The local operator app exposes
   token-protected read-only evidence routes that read existing pack artifacts
   without generating packs or browsing arbitrary files. The packaged operator
@@ -87,7 +87,7 @@ features. For example, `agent_harness.runtimes.mcp_adapter` and the live
 OpenAI-compatible adapter entry point fail clearly with `UnsupportedAdapterError`
 until those phases are implemented.
 
-V6 adds an `agent_harness.operator` boundary for the local operator surface.
+v1.3.0 adds an `agent_harness.operator` boundary for the local operator surface.
 The current implementation has the app factory, `/health`, token-gated run
 list/detail APIs for existing run artifacts, context manifest inspection, policy
 inspection, and artifact-status reporting for denied, missing, and malformed
@@ -139,7 +139,7 @@ demo metadata. Clean template application writes declared files only, persists
 target, and evidence path in workspace metadata. Non-empty targets and
 overwrites remain approval-bound.
 
-The V7 template-pack plan keeps local pack behavior inside
+The v1.4.0 template-pack plan keeps local pack behavior inside
 `agent_harness.templates`: `template.v2.toml` loading, configured local
 directory discovery, validation diagnostics, deterministic substitution,
 dry-run and preview planning, clean apply evidence, and
@@ -147,7 +147,7 @@ dry-run and preview planning, clean apply evidence, and
 coordinate approvals and write permissions without absorbing pack parsing or
 rendering rules.
 
-The V8 skills work keeps reusable workflow guidance inside
+The v1.5.0 skills work keeps reusable workflow guidance inside
 `agent_harness.skills`. Skills are Markdown guidance artifacts, not tools,
 templates, policy, approvals, provider profiles, or executable code. Skill
 resolution records task requests and template recommendations without changing
@@ -170,14 +170,14 @@ runtime, and records `runtime_adapter.json` plus a `runtime_adapter_selected`
 event. It proves the framework boundary can share policy and audit artifacts
 without making LangGraph the primary runtime.
 
-The V9 MCP plan treats MCP as a read-only evidence boundary, not as a runtime
+The v1.6.0 MCP plan treats MCP as a read-only evidence boundary, not as a runtime
 adapter. SDK-independent URI parsing, resource lookup, prompt rendering, policy
 filtering, and access logging should stay usable by CLI inspection commands even
 when the optional MCP SDK is absent. The stdio server may depend on the SDK, but
 it should delegate to the same resource and prompt registries and advertise only
 resources and prompts.
 
-The V11 orchestration path remains a supervisor over the native runtime rather
+The v1.7.0 orchestration path remains a supervisor over the native runtime rather
 than a second runtime. The CLI can load and validate an `orchestration.v1` spec,
 reject policies without explicit orchestration enablement before creating child
 runs, run read-only children in deterministic dependency order by materializing
@@ -195,20 +195,20 @@ already-started children after child approvals complete. Orchestration export
 now writes aggregate JSON evidence with child artifact references rather than
 copying raw provider payloads, and MCP exposes read-only orchestration
 collection, summary, manifest, events, children, and handoff resources with
-metadata-only access logs. Later V11 phases should keep release gates inside
+metadata-only access logs. Later v1.7.0 phases should keep release gates inside
 the release boundary while preserving native runtime delegation for child
 execution.
 
 ## Compatibility And Roadmap Boundaries
 
 The v1.0.0 compatibility and deprecation policy is defined in
-[the V3 PRD](prd-agent-harness-v3.md). Until later phases implement and test
+[the v1.0.0 PRD](prd-agent-harness-v1.0.0-mature-cli-runtime.md). Until later phases implement and test
 them, enterprise readiness, compliance readiness, parallel or nested
 orchestration, MCP execution, production Qdrant server mode, external catalogs,
 hosted web/API platform behavior, and cloud deployment remain roadmap scope.
-V6 narrows the
+v1.3.0 narrows the
 near-term platform direction to loopback-only local operator inspection and
-approval over existing artifacts. V9 narrows the MCP direction to local stdio,
+approval over existing artifacts. v1.6.0 narrows the MCP direction to local stdio,
 read-only resources, prompts, and access evidence; MCP tools, write-capable MCP,
 HTTP transports, hosted MCP, remote gateways, enterprise registries, and MCP
 runtime adapter behavior remain future-only.

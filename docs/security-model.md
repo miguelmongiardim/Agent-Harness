@@ -17,7 +17,7 @@ The security model is built around explicit policy mediation:
   customer input.
 - All external or model-produced data is untrusted evidence. It may inform a
   decision, but it does not authorize a decision.
-- V8 skills are workflow guidance only. Skill content cannot grant tools, widen
+- v1.5.0 skills are workflow guidance only. Skill content cannot grant tools, widen
   policy, approve actions, alter provider profiles, change sensitivity classes,
   execute code, mutate files, read environment variables, fetch network
   content, or bypass context policy. Current validation rejects
@@ -67,13 +67,13 @@ retention profiles, retrieval redesign, Anthropic live support, compliance
 readiness, enterprise claims, and multi-tenant guarantees. Those belong in
 future roadmap work.
 
-The V1.9 portable evidence-pack boundary must not include raw provider
+The v1.9.0 portable evidence-pack boundary must not include raw provider
 payloads, credentials, API keys, environment values, raw headers, private
 uploads, PII, customer data, secret values, absolute machine-local paths, raw
 vector database internals, or arbitrary workspace files. Phase 9 validates
-missing V12 governance export prerequisites, generates canonical JSON evidence
-packs from existing V12 governance exports for review, omits unsafe
-governance-index artifact references with evidence findings, packages safe V12
+missing v1.8.0 governance export prerequisites, generates canonical JSON evidence
+packs from existing v1.8.0 governance exports for review, omits unsafe
+governance-index artifact references with evidence findings, packages safe v1.8.0
 domain summaries, and exposes existing pack state through token-protected
 read-only local operator API routes and packaged read-only operator UI views.
 Release-readiness coverage stays inside that redaction-safe boundary by
@@ -82,21 +82,21 @@ without exposing raw finding messages, unsafe evidence refs, or absolute paths.
 Evidence packaging must not be presented as certification or formal framework
 readiness.
 
-The V9 MCP plan narrows future MCP scope to local stdio, read-only resources,
+The v1.6.0 MCP plan narrows future MCP scope to local stdio, read-only resources,
 review prompts, policy-filtered evidence, and append-only MCP access evidence.
-V11 adds read-only orchestration evidence resources for aggregate summaries,
+v1.7.0 adds read-only orchestration evidence resources for aggregate summaries,
 manifests, events, children, and handoffs. MCP still keeps tools,
 write-capable MCP, MCP approval actions, MCP run execution, MCP provider
 execution, orchestration run/approve/resume, arbitrary filesystem resources,
 raw provider payload resources, Streamable HTTP MCP, hosted MCP service,
 remote MCP gateways, enterprise MCP registries, and MCP runtime adapter
-behavior out of scope. Release readiness verifies the V11 local orchestration
+behavior out of scope. Release readiness verifies the v1.7.0 local orchestration
 demo, policy gates, artifacts, inspect/export evidence, read-only MCP reads,
 and metadata-only MCP access logs without making parallel, nested, hosted,
-operator UI, or enterprise governance claims. V11 does not support hosted
+operator UI, or enterprise governance claims. v1.7.0 does not support hosted
 APIs.
 
-V6 is a narrower local operator surface. Its security boundary is loopback-only
+v1.3.0 is a narrower local operator surface. Its security boundary is loopback-only
 serving, token-protected local API routes, allowlisted run artifact access, and
 approval decisions routed through the existing approval service. The current
 slice implements the loopback serve command, `/health`, token enforcement for

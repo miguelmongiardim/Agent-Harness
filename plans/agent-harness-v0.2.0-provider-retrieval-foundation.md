@@ -1,6 +1,6 @@
-# Plan: Agent Harness V1
+# Plan: Agent Harness v0.2.0
 
-> Source PRD: [docs/prd-agent-harness-v1.md](../docs/prd-agent-harness-v1.md)
+> Source PRD: [docs/prd-agent-harness-v0.2.0-provider-retrieval-foundation.md](../docs/prd-agent-harness-v0.2.0-provider-retrieval-foundation.md)
 
 ## Delivery Status
 
@@ -17,21 +17,21 @@ Status synced to the repository implementation on 2026-04-26.
 - Phase 7: implemented
 - Phase 8: implemented
 - Phase 9: implemented
-- Next target: V1 closure review
+- Next target: v0.2.0 closure review
 
 ## Architectural Decisions
 
 Durable decisions that apply across all phases:
 
-- **Public interface**: V1 extends the existing CLI. `run` becomes
+- **Public interface**: v0.2.0 extends the existing CLI. `run` becomes
   provider-profile-aware, while `inspect`, `export`, `template`, `eval`, and
-  `doctor` surface new V1 evidence without replacing the V0 command shape.
+  `doctor` surface new v0.2.0 evidence without replacing the v0.1.0 command shape.
 - **Key models**: `ProviderProfile`, `ProviderCallAudit`,
   `ProviderInputRecord`, `SecurityFinding`, `TemplateRegistryRecord`,
   `BenchmarkPackRecord`, `GitCommitApproval`, and `context_manifest.v2`
-  included or rejected item records become the core new V1 boundary models.
-- **Schema**: V0/V1 files remain readable where practical, but materially
-  changed public contracts move to `v2`, and new writers emit V2 by default.
+  included or rejected item records become the core new v0.2.0 boundary models.
+- **Schema**: v0.1.0/v0.2.0 files remain readable where practical, but materially
+  changed public contracts move to `v2`, and new writers emit v0.3.0 by default.
 - **Storage**: run artifacts remain under `.agent-harness/runs/<run-id>` with
   append-only JSONL evidence and SQLite-backed inspectable metadata; the
   template registry is packaged as read-only SQLite metadata over in-repo
@@ -79,24 +79,24 @@ Durable decisions that apply across all phases:
 
 **Observable behaviors**
 
-- V2 config accepts provider profiles and a project default.
+- v0.3.0 config accepts provider profiles and a project default.
 - A task can select a configured `mock` provider profile.
 - `run` and `inspect run` record `provider_profile_id`, `transport`,
   `trust_zone`, `model`, endpoint identity, and network flag.
 
 **First RED test**
 
-- A V2 task using a configured `mock` provider profile completes, and
+- A v0.3.0 task using a configured `mock` provider profile completes, and
   `inspect run` exposes the expected provider metadata from recorded artifacts.
 
 ### What to build
 
 Thread provider-profile selection and run-metadata recording through the
-existing V0 runtime without adding real provider calls yet.
+existing v0.1.0 runtime without adding real provider calls yet.
 
 ### Acceptance criteria
 
-- [x] V2 provider profiles load from config and validate the required fields.
+- [x] v0.3.0 provider profiles load from config and validate the required fields.
 - [x] Tasks can select a configured provider profile by id, or inherit the
       project default.
 - [x] CLI override can switch only to another configured provider profile.
@@ -166,7 +166,7 @@ the provider gateway, while keeping the transport interface small.
 
 - Implemented on 2026-04-26 in the current working tree.
 - Coverage: `tests/integration/test_provider_input.py`
-- Main surfaces: richer V1 sensitivity classes, default provider-input policy
+- Main surfaces: richer v0.2.0 sensitivity classes, default provider-input policy
   matrix, `provider_input.json` artifacts, separate `provider_input`
   approvals, deny-only narrowing via task specs and CLI flags, and inspectable
   provider-input policy evidence.
@@ -202,7 +202,7 @@ evidence.
 
 - [x] Unlabeled repo files default to `internal`, `generated` remains untrusted
       evidence, and `unknown` defaults to denied.
-- [x] The default provider-input matrix matches the accepted V1 policy.
+- [x] The default provider-input matrix matches the accepted v0.2.0 policy.
 - [x] Hard-denied classes cannot be overridden by normal run approval.
 - [x] CLI flags and task specs can narrow permissions but cannot widen them.
 - [x] Provider-bound context records store class, decision, redaction status,
@@ -344,7 +344,7 @@ policy-filtered, inspectable artifact rather than an internal helper detail.
 
 **First RED test**
 
-- Applying a bundled V1 template produces approval-bound proposed writes and
+- Applying a bundled v0.2.0 template produces approval-bound proposed writes and
   records the selected template version after approval.
 
 ### What to build
@@ -354,7 +354,7 @@ approval-bound apply flow while keeping actual template bundles in-repo.
 
 ### Acceptance criteria
 
-- [x] Registry metadata exposes the agreed V1 template fields.
+- [x] Registry metadata exposes the agreed v0.2.0 template fields.
 - [x] Bundled templates are discoverable without arbitrary filesystem scanning.
 - [x] `template apply` uses the mutation approval path rather than direct copy.
 - [x] Workspace metadata records applied template id and version.
@@ -374,7 +374,7 @@ approval-bound apply flow while keeping actual template bundles in-repo.
 - Coverage: focused import and behavior checks plus full repo validation.
 - Main surfaces: report-shaped package homes for core, policy, context, tools,
   model, runtimes, templates, storage, telemetry, evals, and exporters while
-  preserving existing V0/V1 imports.
+  preserving existing v0.1.0/v0.2.0 imports.
 
 **Rationale**
 

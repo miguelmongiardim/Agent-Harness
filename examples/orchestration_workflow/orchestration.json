@@ -1,7 +1,7 @@
 {
   "schema_version": "orchestration.v1",
   "orchestration_id": "workflow-demo",
-  "title": "V11 local orchestration workflow",
+  "title": "v1.7.0 local orchestration workflow",
   "children": [
     {
       "child_id": "planner",
