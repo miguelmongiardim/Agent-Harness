@@ -46,7 +46,7 @@ boundary around local template packs. The target behavior is:
 - release-readiness gates for bundled pack validation, dry-run, clean apply,
   generated schema validation, docs presence, and evidence presence
 
-The preferred future apply option is `--target`; `--destination` remains a
+The preferred apply option is `--target`; `--destination` remains a
 compatibility alias.
 
 ## Golden Path

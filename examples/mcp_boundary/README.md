@@ -7,15 +7,23 @@ From a clean checkout:
 ```powershell
 uv sync --extra mcp
 uv run agent-harness demo provider-audit
-cd examples/provider_audit
+cd examples\provider_audit
 uv run agent-harness mcp resources list --json
 uv run agent-harness mcp resources read agent-harness://runs/<run-id>/summary --json
 uv run agent-harness mcp resources read agent-harness://runs/<run-id>/context --json
 uv run agent-harness mcp prompts list --json
 uv run agent-harness mcp prompts get agent-harness-run-review --arg run_id=<run-id> --json
 uv run agent-harness mcp resources read file:///tmp/secret.txt --json
-uv run agent-harness mcp serve
+cd ..\..
 uv run agent-harness release readiness
+```
+
+Run the optional stdio server from the demo workspace when a client will
+connect to it:
+
+```powershell
+cd examples\provider_audit
+uv run agent-harness mcp serve
 ```
 
 The expected outputs under `expected/` show the public shapes for resource

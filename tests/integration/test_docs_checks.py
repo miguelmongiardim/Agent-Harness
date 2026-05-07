@@ -599,19 +599,22 @@ def test_v180_governance_report_and_export_scope_is_current_in_public_docs() -> 
     assert "agent-harness governance export --output .agent-harness/governance/" in readme
     assert "`governance_report.v1`" in readme
     assert "`governance_index.v1`" in readme
-    assert "Operator API/UI and release-readiness gates" in readme
-    assert "remain future-only" in readme
+    assert "read local config, policy, run" in readme
     assert "Compliance readiness and formal certification remain future-only." in readme
 
     assert "prd-agent-harness-v1.8.0-local-governance-console.md" in roadmap
     assert "agent-harness-v1.8.0-local-governance-console.md" in roadmap
     assert "v1.8.0 Implemented" in roadmap
+    assert "v1.8.0 implements a local governance evidence surface" in roadmap
     assert (
-        "Phase 3 implements `agent-harness governance summary`, `check`, `report`, and" in roadmap
+        "The implemented CLI surface includes `agent-harness governance summary`" in roadmap
     )
     assert "`export`." in roadmap
     assert "`governance_report.v1`" in roadmap
     assert "`governance_index.v1`" in roadmap
+    assert "Governance-specific operator API" in roadmap
+    assert "v1.9.0 adds the" in roadmap
+    assert "separate read-only Evidence Pack operator views" in roadmap
     assert "compliance readiness, SOC2 readiness, ISO readiness" in roadmap
     assert "formal certification remain future-only." in roadmap
 
@@ -631,7 +634,9 @@ def test_v19_evidence_pack_release_gate_scope_is_documented() -> None:
     assert prd_link in readme
     assert plan_link in readme
     assert "v1.9.0 Compliance Evidence Pack" in readme
-    assert "planned" in readme
+    assert "implemented as a local review packaging boundary" in readme
+    assert "non-mutating release-readiness gate" in readme
+    assert "token-protected read-only operator API/UI views" in readme
     assert "does not certify compliance" in readme
 
     assert "v1.9.0 Release" in roadmap
@@ -652,6 +657,7 @@ def test_v19_evidence_pack_release_gate_scope_is_documented() -> None:
     assert "packaged local operator UI now includes read-only Evidence Pack" in roadmap
     assert "Release readiness now validates existing evidence" in roadmap
     assert "blocks on critical or release-blocking" in roadmap
+    assert "implemented pack packages existing governance evidence" in roadmap
     assert "does not certify compliance" in roadmap
 
     assert "governance_summary.v1" in evidence_docs

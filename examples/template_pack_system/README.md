@@ -8,37 +8,37 @@ It uses only bundled packs and local temporary targets.
 List the bundled packs:
 
 ```powershell
-agent-harness template list
+uv run agent-harness template list
 ```
 
 Inspect the Python library pack:
 
 ```powershell
-agent-harness template show python-lib
+uv run agent-harness template show python-lib
 ```
 
 Validate the pack before use:
 
 ```powershell
-agent-harness template validate python-lib
+uv run agent-harness template validate python-lib
 ```
 
 Preview the write plan without creating files:
 
 ```powershell
-agent-harness template apply python-lib --target ./scratch/python-lib --dry-run
+uv run agent-harness template apply python-lib --target ./scratch/python-lib --dry-run
 ```
 
 Preview the generated diff without creating files:
 
 ```powershell
-agent-harness template apply python-lib --target ./scratch/python-lib --preview-diff
+uv run agent-harness template apply python-lib --target ./scratch/python-lib --preview-diff
 ```
 
 Apply the pack to an empty local target:
 
 ```powershell
-agent-harness template apply python-lib --target ./scratch/python-lib
+uv run agent-harness template apply python-lib --target ./scratch/python-lib
 ```
 
 Run release readiness, which validates bundled packs, dry-runs them,
@@ -46,7 +46,7 @@ clean-applies them to temporary release workspaces, validates generated
 config/task/policy/eval examples, and confirms template application evidence:
 
 ```powershell
-agent-harness release readiness
+uv run agent-harness release readiness
 ```
 
 ## Expected Evidence

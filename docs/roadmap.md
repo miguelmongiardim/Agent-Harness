@@ -3,18 +3,19 @@
 ## Current Capabilities
 
 Agent Harness currently provides a controlled local software-engineering workflow
-using v0.3.0 config, task, policy, and template inputs; a deterministic mock agent;
-configured provider profiles; provider-input policy gates; strict provider
-action envelopes; opt-in OpenAI-compatible live smoke; redacted provider-call
-evidence; local retrieval indexes, hybrid retrieval, qdrant-local evidence,
-retrieval scorecards, approval-bound template application, separate
-`git_commit` approval, packaged benchmark adapters, a single-case benchmark
-comparison artifact for the local terminal sample, validated bundled and
-configured local skill discovery, task-requested skill resolution,
-template-recommended skill evidence, policy-gated skill context evidence,
-skill manifest run evidence, a skills workflow demo, v1.5.0 skill release gates,
-provider audit demos, release-readiness reports, audit logs, evals, an
-optional LangGraph boundary proof, and reproducible artifacts.
+using current public config, task, policy, and template inputs; deterministic
+mock and recorded-fixture provider paths; configured provider profiles;
+provider-input policy gates; strict provider action envelopes; opt-in
+OpenAI-compatible live smoke; redacted provider-call evidence; local retrieval
+indexes, hybrid retrieval, qdrant-local evidence, and retrieval scorecards;
+approval-bound template application; separate `git_commit` approval; validated
+bundled and configured local skills; policy-gated skill context evidence; a
+loopback-only operator API and packaged static UI for existing artifacts; local
+MCP evidence resources and review prompts; sequential policy-mediated orchestration
+evidence; benchmark comparison artifacts; governance summaries, checks,
+reports, and exports; local evidence-pack packaging and validation; provider
+audit demos; release-readiness reports; audit logs; evals; an optional
+LangGraph boundary proof; and reproducible artifacts.
 
 ## v1.0.0 Status
 
@@ -192,25 +193,27 @@ promotion.
 
 ## v1.8.0 Implemented
 
-v1.8.0 implementation has started with a local governance summary, blocking
-governance check, report generation, and explicit export writing.
+v1.8.0 implements a local governance evidence surface with a local governance
+summary, blocking governance check, report generation, and explicit export
+writing.
 
 The v1.8.0 Local Governance Console planning artifacts are
 [docs/prd-agent-harness-v1.8.0-local-governance-console.md](prd-agent-harness-v1.8.0-local-governance-console.md)
 and
 [plans/agent-harness-v1.8.0-local-governance-console.md](../plans/agent-harness-v1.8.0-local-governance-console.md).
-Phase 3 implements `agent-harness governance summary`, `check`, `report`, and
-`export`. The summary emits `governance_summary.v1` data from local config,
-default policy, run-summary artifacts, domain status classification, run
-counts, initial finding counts, safe diagnostics, and project-relative evidence
-references. The check emits `governance_check.v1`, returns documented
-blocking/advisory exit codes, rejects unsafe artifact references, and reports
-raw provider payload artifacts without exposing their contents. The report and
-export commands emit `governance_report.v1`, `governance_index.v1`, and
-`governance_findings.v1` artifacts with safe project-relative evidence refs,
-content hashes for included evidence, and raw provider payload artifacts marked
-excluded. Operator API, operator UI, and release-readiness gates remain
-future-only.
+The implemented CLI surface includes `agent-harness governance summary`,
+`check`, `report`, and `export`. The summary emits `governance_summary.v1` data
+from local config, default policy, run-summary artifacts, domain status
+classification, run counts, initial finding counts, safe diagnostics, and
+project-relative evidence references. The check emits `governance_check.v1`,
+returns documented blocking/advisory exit codes, rejects unsafe artifact
+references, and reports raw provider payload artifacts without exposing their
+contents. The report and export commands emit `governance_report.v1`,
+`governance_index.v1`, and `governance_findings.v1` artifacts with safe
+project-relative evidence refs, content hashes for included evidence, and raw
+provider payload artifacts marked excluded. Governance-specific operator API
+and UI routes remain outside this v1.8.0 CLI/export surface; v1.9.0 adds the
+separate read-only Evidence Pack operator views and release-readiness pack gate.
 Hosted governance, enterprise governance control planes, multi-tenant admin,
 cloud deployment, compliance readiness, SOC2 readiness, ISO readiness, and
 formal certification remain future-only.
@@ -245,7 +248,7 @@ evidence artifacts.
 The implementation includes redaction-safe artifact indexing for portable
 review bundles.
 
-The planned pack packages existing governance evidence for review and audit
+The implemented pack packages existing governance evidence for review and audit
 preparation. It does not rebuild governance aggregation, run workflows, call
 providers, execute scanners, or create release evidence. It does not certify compliance.
 The pack is not legal, regulatory, security, or organizational certification.

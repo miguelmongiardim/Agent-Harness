@@ -57,7 +57,7 @@ rejected before write planning.
 External catalogs, remote template discovery, and organization-wide template
 distribution are not part of the current release.
 
-The planned v1.4.0 Template Pack System is documented in
-[template-pack-system.md](template-pack-system.md). v1.4.0 keeps template packs
+The v1.4.0 Template Pack System is documented in
+[template-pack-system.md](template-pack-system.md). It keeps template packs
 local-first, explicit, and inspectable while adding pack manifests, dry-run
 planning, preview diffs, clean-apply evidence, and release-readiness gates.
