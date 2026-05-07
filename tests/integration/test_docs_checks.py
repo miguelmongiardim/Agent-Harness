@@ -606,9 +606,7 @@ def test_v180_governance_report_and_export_scope_is_current_in_public_docs() -> 
     assert "agent-harness-v1.8.0-local-governance-console.md" in roadmap
     assert "v1.8.0 Implemented" in roadmap
     assert "v1.8.0 implements a local governance evidence surface" in roadmap
-    assert (
-        "The implemented CLI surface includes `agent-harness governance summary`" in roadmap
-    )
+    assert "The implemented CLI surface includes `agent-harness governance summary`" in roadmap
     assert "`export`." in roadmap
     assert "`governance_report.v1`" in roadmap
     assert "`governance_index.v1`" in roadmap
@@ -766,6 +764,105 @@ def test_docs_check_rejects_stale_v100_scope_for_agent_harness_repo(
 
     assert "stale_v100_scope" in rule_ids
     assert "missing_v1_compatibility_contract" in rule_ids
+
+
+def test_docs_check_rejects_stale_next_version_guidance_after_v19(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "agent-harness"\n', encoding="utf-8"
+    )
+    (tmp_path / "README.md").write_text(
+        "\n".join(
+            [
+                "# Agent Harness",
+                "",
+                "## What This Repo Proves",
+                "",
+                "Agent Harness provides controlled local workflows.",
+                "",
+                "## Roadmap / Not Enabled By Init",
+                "",
+                "Roadmap features remain future scope.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "prd-agent-harness-v1.0.0-mature-cli-runtime.md").write_text(
+        "\n".join(
+            [
+                "# Agent Harness v1.0.0 PRD",
+                "",
+                "v1.0.0 Mature CLI/runtime release.",
+                "",
+                "## Compatibility And Deprecation Policy",
+                "",
+                "The compatibility policy is documented.",
+                "",
+                "## Implemented vs Roadmap",
+                "",
+                "Implemented capabilities remain separate from roadmap scope.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (docs / "roadmap.md").write_text(
+        "\n".join(
+            [
+                "# Roadmap",
+                "",
+                "## Current Capabilities",
+                "",
+                "Agent Harness provides controlled local workflows.",
+                "",
+                "## v1.9.0 Release",
+                "",
+                "v1.9.0 is implemented.",
+                "",
+                "## Release Maintenance Priorities",
+                "",
+                "- Keep CI stable.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (docs / "conception-alignment.md").write_text(
+        "\n".join(
+            [
+                "# Conception Alignment Review",
+                "",
+                "## Status",
+                "",
+                "This review is stale.",
+                "",
+                "## Roadmap",
+                "",
+                "The recommended next version is v1.1.0: live provider.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["docs", "check"]) == 1
+    report = json.loads(capsys.readouterr().out)
+    stale_next = [
+        finding
+        for finding in report["findings"]
+        if finding["rule_id"] == "stale_next_version_guidance"
+    ]
+
+    assert stale_next
+    assert stale_next[0]["path"] == "docs/conception-alignment.md"
+    assert stale_next[0]["line"] == 9
 
 
 def _write_eval_inputs(root: Path) -> None:

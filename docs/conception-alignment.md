@@ -2,18 +2,22 @@
 
 ## Status
 
-This review compares the original project conception with the current v1.0.0
+This review compares the original project conception with the current post-v1.9
 repository state.
 
-The short version: v1.0.0 successfully proves the local, policy-gated harness
-foundation. It does not yet prove the full applied-AI system originally
-envisioned, because live model execution, production retrieval, operator
-surfaces, MCP, retention, and enterprise-grade evidence remain deliberately
-deferred.
+The short version: the repository has grown from the v1.0.0 local CLI/runtime
+foundation into a local evidence and review platform with provider-core gates,
+local retrieval, operator inspection, template and skill packs, read-only MCP
+evidence, sequential orchestration, governance exports, and compliance evidence
+packaging. It still does not claim hosted platform behavior, enterprise
+readiness, formal compliance certification, broad benchmark success, or
+production retrieval deployment.
 
 The original conception should remain the north star, but future work should not
-copy its old MVP/v1/v2 labels. The real release history is now v0.1.0 through v1.0.0,
-with v1.0.0 closing the stable local CLI/runtime baseline.
+copy its old MVP/v1/v2 labels or stale next-version guidance. The durable
+release history now runs from v0.1.0 through v1.9.0, with near-term work focused
+on CI/release hardening and public-doc consistency unless a new PRD chooses a
+larger product track.
 
 ## What This Repo Proves
 
@@ -57,9 +61,10 @@ with v1.0.0 closing the stable local CLI/runtime baseline.
 
 ## Drift Diagnosis
 
-The main drift is not architectural collapse. The package boundaries mostly match
-the original report. The drift is that the project matured into a rigorous local
-control-plane release before it became a live applied-AI runtime.
+The main drift is not architectural collapse. The package boundaries mostly
+match the intended ownership model. The drift is that the project matured into
+a rigorous local control-plane and evidence-packaging tool before it became a
+broad live applied-AI runtime.
 
 Important drift points:
 
@@ -120,12 +125,11 @@ The highest-value remaining work is ordered below. This is the path from
 
 ## Roadmap
 
-The recommended next version is v1.1.0: live provider and structured-output
-alignment. That is the most direct fix for the concept drift because the
-original project was conceived as an LLM-powered software-engineering harness,
-while the current release is primarily a deterministic, auditable control-plane
-baseline.
+The immediate maintenance direction is CI/release hardening and docs
+consistency. That keeps the current local evidence platform reliable while the
+next larger product track is chosen deliberately.
 
-v1.1.0 should not add web UI, MCP execution, multi-agent orchestration, or
-enterprise/compliance claims. Those become credible only after the live provider
-path is policy-safe, inspectable, and covered by evals.
+The next product-track PRD should choose one narrow boundary from the remaining
+work above. It should not add hosted platform behavior, MCP execution,
+production retrieval, or enterprise/compliance claims without a separate
+security, identity, approval, and release-evidence plan.

@@ -545,6 +545,14 @@ STALE_V3_SCOPE_PATTERNS = (
     "template catalog expansion starting with `docs-rag`",
     "local Qdrant server mode without remote embeddings",
 )
+POST_V19_ROADMAP_MARKERS = (
+    "## v1.9.0 Release",
+    "## Release Maintenance Priorities",
+)
+STALE_NEXT_VERSION_PATTERNS = (
+    re.compile(r"\brecommended\s+next\s+version\s+is\s+v1\.[0-8]\b", re.IGNORECASE),
+    re.compile(r"\bnext\s+version\s+is\s+v1\.[0-8]\b", re.IGNORECASE),
+)
 V1_SCOPE_DOCS = (
     "README.md",
     "docs/roadmap.md",
@@ -577,6 +585,7 @@ def run_docs_check(project_root: Path) -> dict[str, Any]:
         findings.extend(_schema_reference_findings(relative, lines))
         findings.extend(_markdown_hygiene_findings(relative, lines))
     findings.extend(_agent_harness_v1_release_scope_findings(project_root))
+    findings.extend(_agent_harness_post_v19_consistency_findings(project_root))
 
     return {
         "schema_version": "docs_check.v1",
@@ -654,6 +663,34 @@ def _agent_harness_v1_release_scope_findings(project_root: Path) -> list[dict[st
                             line,
                         )
                     )
+    return findings
+
+
+def _agent_harness_post_v19_consistency_findings(project_root: Path) -> list[dict[str, object]]:
+    if not _is_agent_harness_repo(project_root):
+        return []
+    roadmap = project_root / "docs" / "roadmap.md"
+    if not roadmap.exists():
+        return []
+    roadmap_text = roadmap.read_text(encoding="utf-8")
+    if not all(marker in roadmap_text for marker in POST_V19_ROADMAP_MARKERS):
+        return []
+
+    findings: list[dict[str, object]] = []
+    for path in _candidate_docs(project_root):
+        relative = path.relative_to(project_root).as_posix()
+        for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+            if any(pattern.search(line) for pattern in STALE_NEXT_VERSION_PATTERNS):
+                findings.append(
+                    _finding(
+                        "stale_next_version_guidance",
+                        relative,
+                        line_number,
+                        "Docs must not describe an already-implemented earlier release "
+                        "as the next project version after the v1.9.0 roadmap.",
+                        line,
+                    )
+                )
     return findings
 
 
@@ -783,7 +820,8 @@ def _unsupported_template_pack_scope_findings(
                         "unsupported_template_pack_scope_claim",
                         relative,
                         line_number,
-                        f"Docs claim unsupported v1.4.0 template-pack behavior as available: {label}",
+                        "Docs claim unsupported v1.4.0 template-pack behavior "
+                        f"as available: {label}",
                         line,
                     )
                 )
@@ -896,7 +934,8 @@ def _unsupported_orchestration_scope_findings(
                         "unsupported_orchestration_scope_claim",
                         relative,
                         line_number,
-                        f"Docs claim unsupported v1.7.0 orchestration behavior as available: {label}",
+                        "Docs claim unsupported v1.7.0 orchestration behavior "
+                        f"as available: {label}",
                         line,
                     )
                 )
@@ -1000,9 +1039,7 @@ def _denies_unsupported_governance_scope(line: str, label: str) -> bool:
     )
 
 
-def _unsupported_evidence_pack_findings(
-    relative: str, lines: list[str]
-) -> list[dict[str, object]]:
+def _unsupported_evidence_pack_findings(relative: str, lines: list[str]) -> list[dict[str, object]]:
     findings: list[dict[str, object]] = []
     in_roadmap_scope = False
     for line_number, line in enumerate(lines, start=1):

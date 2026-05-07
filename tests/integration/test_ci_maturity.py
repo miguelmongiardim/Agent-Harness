@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 
@@ -23,6 +24,15 @@ def test_ci_workflow_runs_release_maturity_gates() -> None:
     assert "actions/upload-artifact" in workflow
     assert ".agent-harness/release" in workflow
     assert "dist/" in workflow
+
+
+def test_release_evidence_waits_for_blocking_quality_gates() -> None:
+    workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+    release_job = _workflow_job_block(workflow, "release-evidence")
+
+    assert "needs:" in release_job
+    for job_name in ("pre-commit", "compatibility", "docs-check", "static"):
+        assert f"    - {job_name}" in release_job
 
 
 def test_ci_workflow_uses_node24_ready_action_versions() -> None:
@@ -78,3 +88,12 @@ def test_advisory_scanners_are_visible_optional_ci_evidence() -> None:
     assert "advisory" in docs.lower()
     assert "optional" in docs.lower()
     assert "must not block" in docs
+
+
+def _workflow_job_block(workflow: str, job_name: str) -> str:
+    match = re.search(
+        rf"(?ms)^  {re.escape(job_name)}:\n(?P<body>.*?)(?=^  [A-Za-z0-9_-]+:|\Z)",
+        workflow,
+    )
+    assert match is not None
+    return match.group("body")

@@ -69,6 +69,11 @@ jobs:
         run: python -m compileall -q src tests scripts
 
   release-evidence:
+    needs:
+      - pre-commit
+      - compatibility
+      - docs-check
+      - static
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
