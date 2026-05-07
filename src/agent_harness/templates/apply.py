@@ -56,9 +56,7 @@ def build_template_application_evidence(
     template_apply = plan.record
     planned_files = list(plan.rendered_hashes)
     operation_types = {
-        write.path: "create"
-        if write.before_hash == sha256_text("")
-        else "overwrite"
+        write.path: "create" if write.before_hash == sha256_text("") else "overwrite"
         for write in template_apply.proposed_writes
     }
     operation_types.update({path: "skip" for path in plan.skipped_files})

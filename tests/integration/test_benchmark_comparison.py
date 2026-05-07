@@ -173,9 +173,7 @@ def test_benchmark_compare_generates_sequential_modes_and_tester_eligibility(
         if child["child_id"] == "tester"
     )
     comparison_workspace = tester_export_path.parents[2]
-    tester_task = json.loads(
-        (comparison_workspace / tester_task_path).read_text(encoding="utf-8")
-    )
+    tester_task = json.loads((comparison_workspace / tester_task_path).read_text(encoding="utf-8"))
     assert tester_task["allowed_tools"] == ["read_file", "run_tests"]
     assert tester_task["test_commands"] == [["python", "-m", "pytest", "tests"]]
 
@@ -195,17 +193,13 @@ def test_benchmark_compare_carries_context_queries_to_generated_children(
 
     assert main(["benchmark", "compare", "local-samples", "swebench-dense-retrieval"]) == 0
     result = json.loads(capsys.readouterr().out)
-    mode = next(
-        mode for mode in result["modes"] if mode["mode_id"] == "planner_implementer"
-    )
+    mode = next(mode for mode in result["modes"] if mode["mode_id"] == "planner_implementer")
     export_path = tmp_path / mode["orchestration_export"]
     exported = json.loads(export_path.read_text(encoding="utf-8"))
     comparison_workspace = export_path.parents[2]
     materialized_tasks = {
         child["child_id"]: json.loads(
-            (comparison_workspace / child["materialized_task_path"]).read_text(
-                encoding="utf-8"
-            )
+            (comparison_workspace / child["materialized_task_path"]).read_text(encoding="utf-8")
         )
         for child in exported["child_artifacts"]
     }
@@ -267,9 +261,7 @@ def test_benchmark_compare_records_required_metrics_from_linked_evidence(
     assert baseline_metrics["tests_passed"]["reason"] == "no successful run_tests evidence"
 
     tester = next(
-        mode
-        for mode in result["modes"]
-        if mode["mode_id"] == "planner_implementer_reviewer_tester"
+        mode for mode in result["modes"] if mode["mode_id"] == "planner_implementer_reviewer_tester"
     )
     tester_metrics = {metric["name"]: metric for metric in tester["metrics"]}
     assert tester_metrics["tests_passed"]["status"] == "available"
@@ -319,19 +311,14 @@ def test_benchmark_compare_interprets_handoffs_and_role_recommendations(
     )
     handoff_usefulness = planner_implementer["handoff_usefulness"]
     assert len(handoff_usefulness) == 1
-    assert handoff_usefulness[0]["schema_version"] == (
-        "benchmark_comparison_handoff_usefulness.v1"
-    )
+    assert handoff_usefulness[0]["schema_version"] == ("benchmark_comparison_handoff_usefulness.v1")
     assert handoff_usefulness[0]["handoff_id"] == (
-        "cmp-local-samples-terminal-readonly-inspect-planner-implementer"
-        "-planner-to-implementer"
+        "cmp-local-samples-terminal-readonly-inspect-planner-implementer-planner-to-implementer"
     )
     assert handoff_usefulness[0]["from_child_id"] == "planner"
     assert handoff_usefulness[0]["to_child_id"] == "implementer"
     assert handoff_usefulness[0]["classification"] == "used_by_downstream"
-    assert handoff_usefulness[0]["reason_codes"] == [
-        "present_in_downstream_context_manifest"
-    ]
+    assert handoff_usefulness[0]["reason_codes"] == ["present_in_downstream_context_manifest"]
     assert handoff_usefulness[0]["supporting_metric_names"] == [
         "handoff_count",
         "handoff_size_bytes",
@@ -350,13 +337,14 @@ def test_benchmark_compare_interprets_handoffs_and_role_recommendations(
     assert "policy_violations" in recommendations["reviewer"]["supporting_metric_names"]
     assert recommendations["tester"]["recommendation"] == "neutral"
     assert recommendations["tester"]["reason_codes"] == ["mode_not_eligible"]
-    assert {
-        item["default_recommendation"] for item in result["role_recommendations"]
-    } == {"not_recommended"}
+    assert {item["default_recommendation"] for item in result["role_recommendations"]} == {
+        "not_recommended"
+    }
 
     artifact_path = tmp_path / result["result_artifact"]
-    assert json.loads(artifact_path.read_text(encoding="utf-8"))["role_recommendations"] == (
-        result["role_recommendations"]
+    assert (
+        json.loads(artifact_path.read_text(encoding="utf-8"))["role_recommendations"]
+        == (result["role_recommendations"])
     )
 
 
@@ -394,9 +382,7 @@ def test_benchmark_compare_pack_writes_suite_artifact_with_case_links_and_mode_s
     )
     assert readonly["status"] == "completed"
     assert readonly["passed"] is True
-    assert readonly["comparison_result"].endswith(
-        "local-samples-terminal-readonly-inspect.json"
-    )
+    assert readonly["comparison_result"].endswith("local-samples-terminal-readonly-inspect.json")
     assert (tmp_path / readonly["comparison_result"]).exists()
     assert readonly["mode_statuses"][-1] == {
         "mode_id": "planner_implementer_reviewer_tester",

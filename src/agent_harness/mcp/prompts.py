@@ -80,9 +80,7 @@ def list_mcp_prompts(
         for name, definition in PROMPT_DEFINITIONS.items()
     ]
     prompt_models = [McpPromptDescriptor.model_validate(prompt) for prompt in prompts]
-    payload = McpPromptList(prompts=prompt_models, count=len(prompt_models)).model_dump(
-        mode="json"
-    )
+    payload = McpPromptList(prompts=prompt_models, count=len(prompt_models)).model_dump(mode="json")
     if project_root is not None:
         append_mcp_access_log(
             _artifact_root(project_root),

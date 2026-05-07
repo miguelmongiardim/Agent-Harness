@@ -45,14 +45,17 @@ def load_template_spec(
         raise FileNotFoundError(f"template bundle not found: {record.template_id}")
     return TemplateSpec.model_validate(json.loads(path.read_text(encoding="utf-8")))
 
+
 def bundled_template_source(record: TemplateRegistryRecord) -> tuple[str, str]:
     manifest = _bundled_pack_manifest(record.template_id)
     if manifest.is_file():
         return "bundled_pack", f"bundled_templates/{record.template_id}/template.v2.toml"
     return "bundled_json", record.bundle_path
 
+
 def _bundled_pack_manifest(template_id: str) -> Any:
     return _BUNDLED_TEMPLATES.joinpath(template_id).joinpath("template.v2.toml")
+
 
 def _load_template_pack(manifest: Any, pack_dir: Any) -> TemplateSpec:
     raw = tomllib.loads(manifest.read_text(encoding="utf-8"))

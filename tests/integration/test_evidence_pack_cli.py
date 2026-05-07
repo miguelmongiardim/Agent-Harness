@@ -706,8 +706,7 @@ def test_evidence_pack_packages_governance_domain_summaries_and_malformed_findin
     )
 
     assert (
-        main(["evidence", "pack", "--output", ".agent-harness/evidence", "--format", "json"])
-        == 0
+        main(["evidence", "pack", "--output", ".agent-harness/evidence", "--format", "json"]) == 0
     )
     capsys.readouterr()
 
@@ -911,9 +910,13 @@ def test_evidence_pack_bundle_writes_review_only_control_mapping(
         "documentation_claim_control",
         "release_readiness",
     }
-    assert {
-        entry["coverage_status"] for entry in control_mapping_payload["mappings"]
-        } <= {"covered", "partially_covered", "not_covered", "not_applicable", "roadmap_only"}
+    assert {entry["coverage_status"] for entry in control_mapping_payload["mappings"]} <= {
+        "covered",
+        "partially_covered",
+        "not_covered",
+        "not_applicable",
+        "roadmap_only",
+    }
     assert all(
         not Path(ref).is_absolute() and ".." not in Path(ref).parts
         for entry in control_mapping_payload["mappings"]
@@ -959,26 +962,23 @@ def test_evidence_pack_formats_write_documented_file_sets(
         ("markdown", expected_markdown),
     ):
         output = f".agent-harness/evidence-{pack_format}"
-        assert (
-            main(["evidence", "pack", "--output", output, "--format", pack_format]) == 0
-        )
+        assert main(["evidence", "pack", "--output", output, "--format", pack_format]) == 0
         result = json.loads(capsys.readouterr().out)
         evidence_root = tmp_path / output
 
         assert {Path(path).name for path in result["files"]} == expected_names
-        assert {
-            path.name for path in evidence_root.iterdir() if path.is_file()
-        } == expected_names
+        assert {path.name for path in evidence_root.iterdir() if path.is_file()} == expected_names
         assert not (evidence_root / "archive").exists()
-        assert "evidence_pack.v1.md" in expected_names or not (
-            evidence_root / "evidence_pack.v1.md"
-        ).exists()
+        assert (
+            "evidence_pack.v1.md" in expected_names
+            or not (evidence_root / "evidence_pack.v1.md").exists()
+        )
 
         checksum_paths = {
             line.split("  ", 1)[1]
-            for line in (evidence_root / "checksums.sha256").read_text(
-                encoding="utf-8"
-            ).splitlines()
+            for line in (evidence_root / "checksums.sha256")
+            .read_text(encoding="utf-8")
+            .splitlines()
         }
         assert checksum_paths == expected_names - {"checksums.sha256"}
 
@@ -989,9 +989,7 @@ def test_evidence_pack_formats_write_documented_file_sets(
             "checksums.sha256"
         }
         if "evidence_pack.v1.md" in expected_names:
-            markdown = (evidence_root / "evidence_pack.v1.md").read_text(
-                encoding="utf-8"
-            )
+            markdown = (evidence_root / "evidence_pack.v1.md").read_text(encoding="utf-8")
             assert "# Evidence Pack" in markdown
             assert "This evidence pack supports review and audit preparation." in markdown
 
@@ -1027,8 +1025,7 @@ def test_evidence_pack_archive_is_created_only_when_requested(
     archive_root = tmp_path / ".agent-harness" / "evidence-archive" / "archive"
     archive_path = archive_root / "agent-harness-evidence-pack-20260101T000000Z.zip"
     archive_ref = (
-        ".agent-harness/evidence-archive/archive/"
-        "agent-harness-evidence-pack-20260101T000000Z.zip"
+        ".agent-harness/evidence-archive/archive/agent-harness-evidence-pack-20260101T000000Z.zip"
     )
 
     assert archive_path.exists()
@@ -1178,8 +1175,7 @@ def test_evidence_index_prints_current_evidence_index_json(
     )
 
     assert (
-        main(["evidence", "pack", "--output", ".agent-harness/evidence", "--format", "json"])
-        == 0
+        main(["evidence", "pack", "--output", ".agent-harness/evidence", "--format", "json"]) == 0
     )
     capsys.readouterr()
     generated_index = json.loads(

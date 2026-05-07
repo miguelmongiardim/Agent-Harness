@@ -125,9 +125,7 @@ def test_template_apply_to_non_empty_destination_is_approval_bound_and_records_v
     }
     planned_files = [entry["path"] for entry in action["proposed_writes"]]
     operation_types = {path: "create" for path in planned_files}
-    rendered_hashes = {
-        entry["path"]: entry["after_hash"] for entry in action["proposed_writes"]
-    }
+    rendered_hashes = {entry["path"]: entry["after_hash"] for entry in action["proposed_writes"]}
     plan_payload = {
         "template_id": "python-lib",
         "template_version": "1.0.0",
@@ -143,9 +141,7 @@ def test_template_apply_to_non_empty_destination_is_approval_bound_and_records_v
         "checkpoint_hash": action["checkpoint_hash"],
     }
 
-    approval = json.loads(
-        (run_dir / "approvals" / f"{action_id}.json").read_text(encoding="utf-8")
-    )
+    approval = json.loads((run_dir / "approvals" / f"{action_id}.json").read_text(encoding="utf-8"))
     assert approval["policy_profile"] == action["approval_binding"]["policy_profile"]
     assert approval["checkpoint_hash"] == action["approval_binding"]["checkpoint_hash"]
 

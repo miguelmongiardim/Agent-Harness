@@ -140,7 +140,7 @@ def test_template_apply_dry_run_reports_conflicts_without_artifacts(
     target = tmp_path / "scaffold"
     target.mkdir()
     existing = target / "pyproject.toml"
-    existing.write_text("[project]\nname = \"already-here\"\n", encoding="utf-8")
+    existing.write_text('[project]\nname = "already-here"\n', encoding="utf-8")
 
     assert (
         main(
@@ -168,13 +168,11 @@ def test_template_apply_dry_run_reports_conflicts_without_artifacts(
         "scaffold/examples/python-lib.task.json",
         "scaffold/examples/python-lib.eval.json",
     ]
-    assert [conflict["path"] for conflict in evidence["conflicts"]] == [
-        "scaffold/pyproject.toml"
-    ]
+    assert [conflict["path"] for conflict in evidence["conflicts"]] == ["scaffold/pyproject.toml"]
     assert evidence["operation_types"]["scaffold/pyproject.toml"] == "conflict"
     assert evidence["approval_required"] is True
 
-    assert existing.read_text(encoding="utf-8") == "[project]\nname = \"already-here\"\n"
+    assert existing.read_text(encoding="utf-8") == '[project]\nname = "already-here"\n'
     assert not (target / "src" / "example_python_lib" / "core.py").exists()
     assert not (tmp_path / ".agent-harness").exists()
 

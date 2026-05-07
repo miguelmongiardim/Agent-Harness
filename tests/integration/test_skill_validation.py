@@ -177,7 +177,7 @@ def test_invalid_local_skill_is_visible_with_diagnostics_but_not_rendered(
                 "skill_id: invalid-local",
                 "name: Invalid Local",
                 "version: 1.0.0",
-                "description: \"\"",
+                'description: ""',
                 "category: planning",
                 'compatible_agent_harness_versions: ">=1.4.0,<2.0.0"',
                 "required_capabilities: []",
@@ -232,9 +232,7 @@ def test_non_utf8_local_skill_is_visible_with_diagnostics(
     assert detail["validation_status"] == "failed"
     assert detail["source_type"] == "local"
     assert detail["source"] == "skills/binary-local/SKILL.md"
-    assert {diagnostic["rule_id"] for diagnostic in detail["diagnostics"]} == {
-        "non_utf8_skill"
-    }
+    assert {diagnostic["rule_id"] for diagnostic in detail["diagnostics"]} == {"non_utf8_skill"}
 
     assert main(["skill", "render", "binary-local"]) == 1
     assert "skill validation failed: binary-local" in capsys.readouterr().err
@@ -363,7 +361,7 @@ def test_skill_pack_validate_reports_all_skills_without_mutation(
                 "skill_id: invalid-local-skill",
                 "name: Invalid Local Skill",
                 "version: 1.0.0",
-                "description: \"\"",
+                'description: ""',
                 "category: planning",
                 'compatible_agent_harness_versions: ">=1.4.0,<2.0.0"',
                 "required_capabilities: []",
@@ -387,10 +385,7 @@ def test_skill_pack_validate_reports_all_skills_without_mutation(
     by_id = {entry["skill_id"]: entry for entry in report["skills"]}
     assert by_id["valid-local-skill"]["status"] == "passed"
     assert by_id["invalid-local-skill"]["status"] == "failed"
-    rule_ids = {
-        diagnostic["rule_id"]
-        for diagnostic in by_id["invalid-local-skill"]["diagnostics"]
-    }
+    rule_ids = {diagnostic["rule_id"] for diagnostic in by_id["invalid-local-skill"]["diagnostics"]}
     assert {"empty_skill_description", "missing_body"} <= rule_ids
 
 
@@ -400,10 +395,12 @@ def test_skill_pack_validate_accepts_bundled_skills(capsys) -> None:  # type: ig
 
     assert report["status"] == "passed"
     assert report["skill_count"] == 4
-    assert {
-        skill["skill_id"]
-        for skill in report["skills"]
-    } == {"write-a-prd", "prd-to-plan", "tdd", "prd-plan-tdd-workflow"}
+    assert {skill["skill_id"] for skill in report["skills"]} == {
+        "write-a-prd",
+        "prd-to-plan",
+        "tdd",
+        "prd-plan-tdd-workflow",
+    }
     assert all(skill["status"] == "passed" for skill in report["skills"])
 
 
@@ -539,7 +536,7 @@ def test_skill_validate_rejects_empty_description_and_body(
                 "skill_id: incomplete-skill",
                 "name: Incomplete Skill",
                 "version: 1.0.0",
-                "description: \"\"",
+                'description: ""',
                 "category: testing",
                 'compatible_agent_harness_versions: ">=1.4.0,<2.0.0"',
                 "required_capabilities: []",

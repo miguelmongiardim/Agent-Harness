@@ -343,7 +343,7 @@ def _write_invalid_local_skill(path: Path) -> None:
                 "skill_id: invalid-local",
                 "name: Invalid Local",
                 "version: 1.0.0",
-                "description: \"\"",
+                'description: ""',
                 "category: planning",
                 'compatible_agent_harness_versions: ">=1.4.0,<2.0.0"',
                 "required_capabilities: []",

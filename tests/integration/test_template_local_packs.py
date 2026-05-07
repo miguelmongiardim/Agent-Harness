@@ -148,9 +148,7 @@ def test_invalid_local_pack_reports_diagnostics_and_is_not_usable(
 
     assert main(["template", "validate", "--all"]) == 1
     report = json.loads(capsys.readouterr().out)
-    invalid = next(
-        entry for entry in report["templates"] if entry["template_id"] == "invalid-pack"
-    )
+    invalid = next(entry for entry in report["templates"] if entry["template_id"] == "invalid-pack")
 
     assert invalid["status"] == "failed"
     assert invalid["source_type"] == "local_pack"

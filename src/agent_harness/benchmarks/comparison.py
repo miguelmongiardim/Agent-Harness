@@ -292,9 +292,7 @@ def _orchestration_mode(
         ),
     }
     run_events = [
-        event
-        for child in summary.children
-        for event in _run_events(workspace, child.run_id)
+        event for child in summary.children for event in _run_events(workspace, child.run_id)
     ]
     tool_call_count = _tool_activity_count(run_events)
     handoff_count = len(handoffs)
@@ -644,9 +642,7 @@ def _policy_violation_details(
         if isinstance(decision, dict) and decision.get("allowed") is False:
             denied_decisions += 1
     denied_observations = sum(
-        1
-        for observation in _tool_observations(run_events)
-        if observation.get("status") == "denied"
+        1 for observation in _tool_observations(run_events) if observation.get("status") == "denied"
     )
     authority_failures = sum(
         1
@@ -720,10 +716,7 @@ def _coordination_overhead_ratio(
     if not orchestration_events:
         return 0.0
     overhead_units = (
-        len(orchestration_events)
-        + max(0, child_run_count - 1)
-        + len(approvals)
-        + handoff_count
+        len(orchestration_events) + max(0, child_run_count - 1) + len(approvals) + handoff_count
     )
     return round(overhead_units / max(1, tool_call_count), 4)
 

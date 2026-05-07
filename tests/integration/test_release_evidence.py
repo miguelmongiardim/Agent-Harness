@@ -82,7 +82,10 @@ def test_release_readiness_defaults_to_project_version_and_reports_missing_evide
     assert report["demos"]["python-refactor"]["command"].startswith("agent-harness run")
 
     assert report["docs"]["check"]["status"] in {"passed", "failed"}
-    assert report["docs"]["schema_compatibility"]["path"] == "docs/prd-agent-harness-v1.0.0-mature-cli-runtime.md"
+    assert (
+        report["docs"]["schema_compatibility"]["path"]
+        == "docs/prd-agent-harness-v1.0.0-mature-cli-runtime.md"
+    )
     assert report["docs"]["schema_compatibility"]["present"] is True
     assert report["docs"]["roadmap_claims"]["status"] in {"passed", "failed"}
 

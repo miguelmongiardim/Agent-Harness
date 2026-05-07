@@ -153,6 +153,7 @@ class TemplateApplyRecord(StrictModel):
     def validate_destination(cls, value: str) -> str:
         return normalize_relative_path(value)
 
+
 __all__ = [
     "TemplateCompatibilityStatus",
     "TemplateApplyRecord",

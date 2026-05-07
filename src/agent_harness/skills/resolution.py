@@ -24,14 +24,9 @@ def resolve_task_skills(task_path: Path, project_root: Path | None = None) -> Sk
     requested = _requested_skill_map(task, task_reference)
     _merge_template_recommendations(requested, root)
     records = [
-        _resolve_skill(skill_id, requested_by, root)
-        for skill_id, requested_by in requested.items()
+        _resolve_skill(skill_id, requested_by, root) for skill_id, requested_by in requested.items()
     ]
-    diagnostics = [
-        diagnostic
-        for record in records
-        for diagnostic in record.diagnostics
-    ]
+    diagnostics = [diagnostic for record in records for diagnostic in record.diagnostics]
     required_failures = [
         record for record in records if record.required and record.resolution_status != "resolved"
     ]

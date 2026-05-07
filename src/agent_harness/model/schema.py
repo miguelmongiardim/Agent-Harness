@@ -155,9 +155,7 @@ class ProviderCallAuditManifest(StrictModel):
 
 
 class ProviderUseApprovalBinding(StrictModel):
-    schema_version: Literal["provider_use_approval_binding.v1"] = (
-        "provider_use_approval_binding.v1"
-    )
+    schema_version: Literal["provider_use_approval_binding.v1"] = "provider_use_approval_binding.v1"
     provider_profile_id: str
     trust_zone: TrustZone
     model_id: str

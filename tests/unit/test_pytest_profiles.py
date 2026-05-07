@@ -70,9 +70,7 @@ def test_release_evidence_module_is_an_explicit_release_gate() -> None:
 
 
 def test_ci_runs_slow_release_gate_explicitly() -> None:
-    workflow = (PROJECT_ROOT / ".github" / "workflows" / "ci.yml").read_text(
-        encoding="utf-8"
-    )
+    workflow = (PROJECT_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
 
     assert '-m "slow and release_gate"' in workflow
 

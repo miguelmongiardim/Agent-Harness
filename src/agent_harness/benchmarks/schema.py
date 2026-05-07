@@ -182,9 +182,7 @@ class BenchmarkComparisonModeResult(StrictModel):
     handoff_count: int = 0
     artifact_completeness: dict[str, bool] = Field(default_factory=dict)
     metrics: list[BenchmarkComparisonMetric] = Field(default_factory=list)
-    handoff_usefulness: list[BenchmarkComparisonHandoffUsefulness] = Field(
-        default_factory=list
-    )
+    handoff_usefulness: list[BenchmarkComparisonHandoffUsefulness] = Field(default_factory=list)
 
 
 class BenchmarkComparisonResult(StrictModel):
@@ -196,9 +194,7 @@ class BenchmarkComparisonResult(StrictModel):
     baseline_mode_id: Literal["single_agent_baseline"] = "single_agent_baseline"
     result_artifact: str
     modes: list[BenchmarkComparisonModeResult]
-    role_recommendations: list[BenchmarkComparisonRoleRecommendation] = Field(
-        default_factory=list
-    )
+    role_recommendations: list[BenchmarkComparisonRoleRecommendation] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=now_utc)
 
 
