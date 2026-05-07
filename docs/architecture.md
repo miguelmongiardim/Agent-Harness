@@ -62,15 +62,14 @@ runtime around explicit ownership boundaries.
   orchestration boundary.
 - `agent_harness.model`, `agent_harness.runtimes`, `agent_harness.storage`,
   `agent_harness.telemetry`, `agent_harness.evals`, and
-  `agent_harness.exporters` provide the report's package-level structural
+  `agent_harness.exporters` provide package-level structural
   boundaries.
 
-## Deep Research Layout Reconciliation
+## Source Layout Reconciliation
 
-`deep-research-report.md` describes the target source layout. The current
-implementation now materializes that `src/agent_harness` tree for the named
-packages and leaf modules. Legacy top-level compatibility shims have been
-removed; callers should import from the report-shaped package paths directly.
+The current implementation materializes the `src/agent_harness` tree for the
+named packages and leaf modules. Legacy top-level compatibility shims have been
+removed; callers should import from the package paths directly.
 
 Current public paths:
 
@@ -82,7 +81,7 @@ Current public paths:
   `agent_harness.context.builder`, and `agent_harness.context.chunking`.
 - Provider adapters: `agent_harness.model.adapters`.
 
-Some report leaf modules are explicit adapter boundaries rather than completed
+Some leaf modules are explicit adapter boundaries rather than completed
 features. For example, `agent_harness.runtimes.mcp_adapter` and the live
 OpenAI-compatible adapter entry point fail clearly with `UnsupportedAdapterError`
 until those phases are implemented.

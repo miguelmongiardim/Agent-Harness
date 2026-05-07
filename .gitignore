@@ -36,8 +36,11 @@ build/
 .agent-harness/workspace.json
 examples/**/.agent-harness/
 
-# Local planning artifacts
+# Local/private research artifacts
 deep-research-report.md
+deep-research-review.md
+deep_research_review.md
+deep_research_report.md
 
 # Local meeting preparation files
 docs/meeting prep/

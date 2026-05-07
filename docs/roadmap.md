@@ -27,8 +27,8 @@ The detailed v1.0.0 plan lives in [plans/agent-harness-v1.0.0-mature-cli-runtime
 
 The current conception alignment review lives in
 [docs/conception-alignment.md](conception-alignment.md). It compares the
-original `deep-research-report.md` vision with the v1.0.0 implementation and
-defines the remaining drift.
+original product vision with the v1.0.0 implementation and defines the
+remaining drift.
 
 ## v1.1.0 Status
 

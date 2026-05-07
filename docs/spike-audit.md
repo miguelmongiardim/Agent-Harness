@@ -12,8 +12,8 @@ covered by a failing test, made green, and refactored while green.
 - Branch: `main`
 - Tracked files before this recovery pass: `README.md`
 - Existing spike state before this recovery pass: `README.md` modified,
-  package code/docs/tests/project files untracked, `deep-research-report.md`
-  ignored and private.
+  package code/docs/tests/project files untracked, and private local planning
+  artifacts ignored.
 - Root `AGENTS.md` and `RTK.md` are not present in the repository; the active
   instructions came from the prompt.
 
@@ -50,7 +50,6 @@ baseline in the current environment.
 | `docs/research-foundations.md`, `docs/security-model.md`, `docs/context-packs.md`, `docs/evaluations.md`, `docs/roadmap.md` | Salvage with edits | The boundaries mostly match the accepted design, but claims must track implemented behavior. | Update incrementally after each green slice. |
 | Examples, fixtures, and `python-lib` template | Salvage | They provide useful local behavior targets. | Fixture and template tests through CLI workflows. |
 | `.venv`, `__pycache__`, live artifacts | Discard | Generated environment/cache state is not source. | Keep ignored; recreate from documented setup. |
-| `deep-research-report.md` | Salvage privately | It controls target structure and research background but remains private/untracked. | Clean only stable, non-private conclusions into public docs when needed. |
 
 ## Immediate Recovery Sequence
 

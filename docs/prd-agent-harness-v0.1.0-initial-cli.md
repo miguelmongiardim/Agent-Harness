@@ -118,7 +118,7 @@ multi-agent execution, broad template catalogs, and enterprise assurance claims.
   `template list/show/apply`, `ingest docs`, `task validate`, `run`,
   `approve`, `inspect run/context/policy`, `eval`, `export sarif`, and
   `doctor`.
-- **Repo structure**: the research skeleton controls target structure:
+- **Repo structure**: the initial recovery structure is:
   `docs/`, `plans/`, `specs/`, `src/agent_harness/`, `tests/`, `.github/`,
   `mkdocs.yml`, `SECURITY.md`, `CONTRIBUTING.md`, and `CHANGELOG.md`.
   Restructure only when a vertical slice needs it.
@@ -180,8 +180,6 @@ multi-agent execution, broad template catalogs, and enterprise assurance claims.
 
 - The current spike is useful reference material, not accepted v0.1.0
   implementation by default.
-- `deep-research-report.md` remains private and untracked unless cleaned into
-  public docs.
 - The highest-risk v0.1.0 behaviors are policy mediation, denied-context exclusion,
   approval binding, dry-run non-mutation, and documentation accuracy.
 - The first implementation step after this PRD is a walking skeleton test:

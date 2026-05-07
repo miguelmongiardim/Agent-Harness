@@ -2,8 +2,8 @@
 
 ## Status
 
-This review compares the original `deep-research-report.md` conception with the
-current v1.0.0 repository state.
+This review compares the original project conception with the current v1.0.0
+repository state.
 
 The short version: v1.0.0 successfully proves the local, policy-gated harness
 foundation. It does not yet prove the full applied-AI system originally
@@ -36,11 +36,11 @@ with v1.0.0 closing the stable local CLI/runtime baseline.
 
 ## Coverage Matrix
 
-| Deep research area | Current state | Gap |
+| Conception area | Current state | Gap |
 | --- | --- | --- |
 | CLI-first local runtime | Strong | CLI surface is broader than the original MVP contract and is now stable at v1.0.0. |
 | Framework-agnostic core | Strong | LangGraph is only an optional boundary proof; MCP is still a stub. |
-| Typed task and policy contracts | Strong | Current schemas are JSON/Pydantic rather than the YAML examples from the report. |
+| Typed task and policy contracts | Strong | Current schemas are JSON/Pydantic rather than the early YAML examples. |
 | Tool mediation and approvals | Strong | Core read/search/test/patch/template/provider/git flows are policy mediated. |
 | Explicit context packs | Strong | Context manifests exist, but retrieval quality is still local and fixture-grade. |
 | Append-only auditability | Strong | Run events and artifacts are inspectable; retention profiles are not implemented. |
@@ -63,9 +63,9 @@ control-plane release before it became a live applied-AI runtime.
 
 Important drift points:
 
-- The original report's MVP/v1/v2 milestone labels no longer map to the actual
+- The original MVP/v1/v2 milestone labels no longer map to the actual
   release history. The project now has v0.1.0, v0.2.0, v0.3.0, and v1.0.0/v1.0.0.
-- Some report-shaped modules are boundary placeholders rather than implemented
+- Some planned modules are boundary placeholders rather than implemented
   systems, especially MCP, OpenTelemetry, and production Qdrant.
 - The current provider path is auditable and well controlled, but still relies
   on deterministic mock behavior or recorded fixtures by default.
@@ -73,8 +73,7 @@ Important drift points:
   competence against the original 8/10 dry-run and 6/10 write-enabled success
   targets.
 - The public docs correctly avoid unsupported claims, but the original product
-  ambition now lives mostly in `deep-research-report.md` and roadmap bullets
-  instead of an explicit alignment plan.
+  ambition is still split across roadmap bullets and this alignment plan.
 
 ## Remaining Work To Reach The Conception
 
