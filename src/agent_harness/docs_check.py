@@ -33,6 +33,10 @@ EVIDENCE_PACK_DOC_SUBJECT_PATTERN = (
     r"(?:Agent Harness|This repo|The current implementation|v1\.9\.0|The v1\.9\.0 implementation|"
     r"The evidence pack|This evidence pack|The Compliance Evidence Pack)"
 )
+REVIEW_ERGONOMICS_DOC_SUBJECT_PATTERN = (
+    r"(?:Agent Harness|This repo|The current implementation|v2\.0\.0|The v2\.0\.0 implementation|"
+    r"The review command|The review workflow)"
+)
 
 
 def _unsupported_doc_pattern(claim: str, *, uses_is: bool = False) -> re.Pattern[str]:
@@ -493,6 +497,32 @@ UNSUPPORTED_EVIDENCE_PACK_CLAIMS = [
         _evidence_pack_scope_pattern(r"OWASP\s+compliant(?:\s+evidence packs?)?"),
     ),
 ]
+
+
+def _review_ergonomics_scope_pattern(claim_pattern: str) -> re.Pattern[str]:
+    return re.compile(
+        rf"\b{REVIEW_ERGONOMICS_DOC_SUBJECT_PATTERN}\s+"
+        rf"(?:{DOC_CAPABILITY_VERB_PATTERN}\b|is\b|replaces?\b)[^\n]*"
+        rf"\b(?:{claim_pattern})\b",
+        re.IGNORECASE,
+    )
+
+
+UNSUPPORTED_REVIEW_ERGONOMICS_SCOPE_CLAIMS = [
+    ("hosted operation", _review_ergonomics_scope_pattern(r"hosted operation")),
+    ("destructive cleanup", _review_ergonomics_scope_pattern(r"destructive cleanup")),
+    ("MCP tool execution", _review_ergonomics_scope_pattern(r"MCP tool execution")),
+    ("live provider expansion", _review_ergonomics_scope_pattern(r"live provider expansion")),
+    ("production retrieval", _review_ergonomics_scope_pattern(r"production retrieval")),
+    (
+        "compliance certification",
+        _review_ergonomics_scope_pattern(r"compliance certification"),
+    ),
+    (
+        "release-readiness replacement",
+        _review_ergonomics_scope_pattern(r"release[-\s]readiness|release readiness"),
+    ),
+]
 RETRIEVAL_ROADMAP_HEADINGS = (
     "roadmap",
     "out of scope",
@@ -509,6 +539,10 @@ ORCHESTRATION_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 BENCHMARK_COMPARISON_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 GOVERNANCE_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
 EVIDENCE_PACK_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS
+REVIEW_ERGONOMICS_ROADMAP_HEADINGS = RETRIEVAL_ROADMAP_HEADINGS + (
+    "planned",
+    "implementation plan",
+)
 
 IMPLEMENTED_SECTION_MARKERS = (
     "## What This Repo Proves",
@@ -579,6 +613,7 @@ def run_docs_check(project_root: Path) -> dict[str, Any]:
         findings.extend(_unsupported_benchmark_comparison_findings(relative, lines))
         findings.extend(_unsupported_governance_scope_findings(relative, lines))
         findings.extend(_unsupported_evidence_pack_findings(relative, lines))
+        findings.extend(_unsupported_review_ergonomics_scope_findings(relative, lines))
         findings.extend(_required_section_findings(relative, text))
         findings.extend(_internal_link_findings(project_root, path, relative, lines))
         findings.extend(_citation_placeholder_findings(relative, lines))
@@ -1076,6 +1111,54 @@ def _denies_unsupported_evidence_pack_claim(line: str, label: str) -> bool:
             rf"|\b{phrase}\s+remain(?:s)?\s+(?:future-only|roadmap-only)\b"
             rf"|\bwithout\s+claiming\b[^\n]*\b{phrase}\b"
             rf"|\b(?:reject|rejects|avoid|avoids)\b[^\n]*\b{phrase}\b",
+            line,
+            re.IGNORECASE,
+        )
+    )
+
+
+def _unsupported_review_ergonomics_scope_findings(
+    relative: str,
+    lines: list[str],
+) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    in_roadmap_scope = False
+    for line_number, line in enumerate(lines, start=1):
+        heading = re.match(r"^#{1,6}\s+(.+?)\s*$", line)
+        if heading is not None:
+            heading_text = heading.group(1).lower()
+            in_roadmap_scope = any(
+                marker in heading_text for marker in REVIEW_ERGONOMICS_ROADMAP_HEADINGS
+            )
+        if in_roadmap_scope:
+            continue
+        for label, pattern in UNSUPPORTED_REVIEW_ERGONOMICS_SCOPE_CLAIMS:
+            if pattern.search(line) and not _denies_unsupported_review_ergonomics_claim(
+                line, label
+            ):
+                findings.append(
+                    _finding(
+                        "unsupported_review_ergonomics_scope_claim",
+                        relative,
+                        line_number,
+                        "Docs claim unsupported v2.0.0 reviewer ergonomics behavior "
+                        f"as available: {label}",
+                        line,
+                    )
+                )
+    return findings
+
+
+def _denies_unsupported_review_ergonomics_claim(line: str, label: str) -> bool:
+    phrase = re.escape(label).replace(r"\ ", r"\s+")
+    return bool(
+        re.search(
+            rf"\b(?:do|does|will)\s+not\s+(?:provide|include|support|offer|replace)\s+{phrase}\b"
+            rf"|\b(?:reject|rejects|prevent|prevents|guard|guards)\s+"
+            rf"(?:claims?\s+that\s+)?[^\n]*\b{phrase}\b"
+            rf"|\b{phrase}\s+(?:remain|remains|is|are)\s+future[-\s]only\b"
+            rf"|\bwithout\s+{phrase}\b"
+            rf"|\bno\s+{phrase}\b",
             line,
             re.IGNORECASE,
         )

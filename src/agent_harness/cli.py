@@ -71,6 +71,14 @@ from agent_harness.retrieval_indexes import (
     query_index,
 )
 from agent_harness.retrieval_scorecards import run_retrieval_scorecard
+from agent_harness.review import (
+    build_artifact_review,
+    build_profile_catalog,
+    build_review_run,
+    build_review_status,
+    render_profile_catalog_text,
+    render_review_status_text,
+)
 from agent_harness.skills import (
     list_skills,
     load_skill_detail,
@@ -327,6 +335,25 @@ def build_parser() -> argparse.ArgumentParser:
     evidence_check.set_defaults(func=cmd_evidence_check)
     evidence_index = evidence_sub.add_parser("index")
     evidence_index.set_defaults(func=cmd_evidence_index)
+
+    review = sub.add_parser("review")
+    review_sub = review.add_subparsers(required=True)
+    review_profiles = review_sub.add_parser("profiles")
+    review_profiles.add_argument("--json", action="store_true")
+    review_profiles.set_defaults(func=cmd_review_profiles)
+    review_status = review_sub.add_parser("status")
+    review_status.add_argument("--profile", default="quick")
+    review_status.add_argument("--json", action="store_true")
+    review_status.set_defaults(func=cmd_review_status)
+    review_run = review_sub.add_parser("run")
+    review_run.add_argument("--profile", default="quick")
+    review_run.add_argument("--ci-run-id")
+    review_run.add_argument("--json", action="store_true")
+    review_run.set_defaults(func=cmd_review_run)
+    review_artifacts = review_sub.add_parser("artifacts")
+    review_artifacts.add_argument("--older-than-days", type=int, default=7)
+    review_artifacts.add_argument("--json", action="store_true")
+    review_artifacts.set_defaults(func=cmd_review_artifacts)
 
     mcp = sub.add_parser(
         "mcp",
@@ -873,6 +900,66 @@ def cmd_evidence_index(args: argparse.Namespace) -> int:
         return result.exit_code
     state = build_evidence_state(Path.cwd(), profile="default")
     print(state.index.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_review_profiles(args: argparse.Namespace) -> int:
+    catalog = build_profile_catalog()
+    if args.json:
+        print(json.dumps(catalog.model_dump(mode="json"), indent=2))
+    else:
+        print(render_profile_catalog_text(catalog))
+    return 0
+
+
+def cmd_review_status(args: argparse.Namespace) -> int:
+    try:
+        status = build_review_status(Path.cwd(), args.profile)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if args.json:
+        print(json.dumps(status.model_dump(mode="json"), indent=2))
+    else:
+        print(render_review_status_text(status))
+    return 0
+
+
+def cmd_review_run(args: argparse.Namespace) -> int:
+    try:
+        run, exit_code = build_review_run(
+            Path.cwd(),
+            args.profile,
+            ci_run_id=args.ci_run_id,
+        )
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if args.json:
+        print(json.dumps(run.model_dump(mode="json"), indent=2))
+    else:
+        print(f"{run.profile_id}: {run.status}")
+        print(f"artifact: {run.artifact}")
+        for command in run.commands:
+            print(f"- {command.command}: {command.status}")
+    return exit_code
+
+
+def cmd_review_artifacts(args: argparse.Namespace) -> int:
+    try:
+        result = build_artifact_review(
+            Path.cwd(),
+            older_than_days=args.older_than_days,
+        )
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if args.json:
+        print(json.dumps(result.model_dump(mode="json"), indent=2))
+    else:
+        print(f"inventory: {result.inventory_ref}")
+        print(f"cleanup plan: {result.cleanup_plan_ref}")
+        print(f"cleanup candidates: {result.candidate_count}")
     return 0
 
 

@@ -27,6 +27,8 @@ from agent_harness.evidence.schema import (
     EvidenceManifest,
     EvidencePack,
 )
+from agent_harness.review import build_profile_catalog
+from agent_harness.review.schema import ArtifactCleanupPlan, ArtifactInventory, ReviewRun
 from agent_harness.utils import hash_file, now_utc, write_json
 
 LOCAL_RELEASE_CHECKS = {
@@ -124,6 +126,7 @@ def build_release_readiness_report(
     mcp = _mcp_evidence(project_root)
     orchestration = _orchestration_evidence(project_root)
     evidence_pack = _evidence_pack_evidence(project_root)
+    review = _review_evidence(project_root, normalized_version)
     release_artifacts = _release_artifact_evidence(project_root, normalized_version)
     diagnostics = _diagnostics(
         package=package,
@@ -136,6 +139,7 @@ def build_release_readiness_report(
         mcp=mcp,
         orchestration=orchestration,
         evidence_pack=evidence_pack,
+        review=review,
         release_artifacts=release_artifacts,
         changelog_present=changelog_present,
         tag_exists=tag_exists,
@@ -184,6 +188,7 @@ def build_release_readiness_report(
         "mcp": mcp,
         "orchestration": orchestration,
         "evidence_pack": evidence_pack,
+        "review": review,
         "release_artifacts": release_artifacts,
         "local_checks": {
             name: {
@@ -1031,6 +1036,112 @@ def _validate_evidence_pack_release_gate(
             else "Keep the evidence pack artifacts with the release evidence."
         ),
     }
+
+
+def _review_evidence(project_root: Path, version: str) -> dict[str, Any]:
+    if not _requires_review_evidence(version):
+        return {
+            "command": "agent-harness review",
+            "status": "passed",
+            "required": False,
+            "action": "v2.0.0 review evidence is not required for this release version.",
+        }
+    try:
+        catalog = build_profile_catalog()
+    except Exception as exc:
+        return {
+            "command": "agent-harness review profiles",
+            "status": "failed",
+            "required": True,
+            "diagnostics": [_safe_error(exc)],
+            "action": "Keep the built-in review profile catalog valid.",
+        }
+
+    review_root = project_root / ".agent-harness" / "review"
+    quick_run_path = _latest_file(review_root, "review-run-*-quick.json")
+    inventory_path = _latest_file(review_root, "artifact-inventory-*.json")
+    cleanup_path = _latest_file(review_root, "artifact-cleanup-plan-*.json")
+    artifacts = {
+        "quick_run": _optional_project_relative(project_root, quick_run_path),
+        "artifact_inventory": _optional_project_relative(project_root, inventory_path),
+        "cleanup_plan": _optional_project_relative(project_root, cleanup_path),
+    }
+    missing = [name for name, reference in artifacts.items() if reference is None]
+    if missing:
+        return {
+            "command": "agent-harness review run --profile quick && agent-harness review artifacts",
+            "status": "missing_evidence",
+            "required": True,
+            "profile_catalog": catalog.schema_version,
+            "artifacts": artifacts,
+            "missing_artifacts": missing,
+            "action": "Run quick review and artifact inventory before v2.0.0 release readiness.",
+        }
+
+    diagnostics: list[str] = []
+    quick_run = _validated_review_artifact(quick_run_path, ReviewRun, diagnostics)
+    inventory = _validated_review_artifact(inventory_path, ArtifactInventory, diagnostics)
+    cleanup_plan = _validated_review_artifact(cleanup_path, ArtifactCleanupPlan, diagnostics)
+    if isinstance(quick_run, ReviewRun) and (
+        quick_run.profile_id != "quick" or quick_run.status != "passed"
+    ):
+        diagnostics.append("quick review run must use profile quick and status passed")
+    if isinstance(cleanup_plan, ArtifactCleanupPlan) and not cleanup_plan.dry_run:
+        diagnostics.append("review cleanup plan must be dry-run only")
+    if inventory is None:
+        diagnostics.append("artifact inventory could not be validated")
+
+    if diagnostics:
+        return {
+            "command": "agent-harness review run --profile quick && agent-harness review artifacts",
+            "status": "failed",
+            "required": True,
+            "profile_catalog": catalog.schema_version,
+            "artifacts": artifacts,
+            "diagnostics": diagnostics,
+            "action": "Regenerate valid review evidence before release readiness.",
+        }
+    return {
+        "command": "agent-harness review",
+        "status": "passed",
+        "required": True,
+        "profile_catalog": catalog.schema_version,
+        "artifacts": artifacts,
+        "action": "Keep review evidence current for v2.0.0 release readiness.",
+    }
+
+
+def _requires_review_evidence(version: str) -> bool:
+    try:
+        major = int(version.split(".", maxsplit=1)[0])
+    except ValueError:
+        return False
+    return major >= 2
+
+
+def _latest_file(root: Path, pattern: str) -> Path | None:
+    if not root.exists():
+        return None
+    matches = sorted(root.glob(pattern), key=lambda path: path.stat().st_mtime, reverse=True)
+    return matches[0] if matches else None
+
+
+def _optional_project_relative(project_root: Path, path: Path | None) -> str | None:
+    return _project_relative(project_root, path) if path is not None else None
+
+
+def _validated_review_artifact(
+    path: Path | None,
+    model: type[BaseModel],
+    diagnostics: list[str],
+) -> BaseModel | None:
+    if path is None:
+        return None
+    try:
+        return model.model_validate_json(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        diagnostics.append(f"{path.name}: {_safe_error(exc)}")
+        return None
 
 
 def _evidence_pack_findings_summary(findings: list[EvidenceFinding]) -> dict[str, Any]:
@@ -3201,6 +3312,7 @@ def _diagnostics(
     mcp: dict[str, Any],
     orchestration: dict[str, Any],
     evidence_pack: dict[str, Any],
+    review: dict[str, Any],
     release_artifacts: dict[str, Any],
     changelog_present: bool,
     tag_exists: bool,
@@ -3218,6 +3330,7 @@ def _diagnostics(
     _collect_status_diagnostics(diagnostics, "mcp", mcp)
     _collect_status_diagnostics(diagnostics, "orchestration", orchestration)
     _collect_evidence_pack_diagnostics(diagnostics, evidence_pack)
+    _collect_review_diagnostics(diagnostics, review)
     _collect_status_diagnostics(diagnostics, "release_artifacts", release_artifacts)
     if not changelog_present:
         diagnostics.append(
@@ -3274,6 +3387,25 @@ def _collect_evidence_pack_diagnostics(
             "action": str(
                 evidence_pack.get("action")
                 or "Generate and validate an evidence pack before release readiness."
+            ),
+        }
+    )
+
+
+def _collect_review_diagnostics(
+    diagnostics: list[dict[str, str]],
+    review: dict[str, Any],
+) -> None:
+    status = review.get("status")
+    if status in {None, "passed"}:
+        return
+    diagnostics.append(
+        {
+            "gate": "review",
+            "status": str(status),
+            "action": str(
+                review.get("action")
+                or "Generate and validate review evidence before release readiness."
             ),
         }
     )

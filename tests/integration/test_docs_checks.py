@@ -579,6 +579,63 @@ def test_docs_check_rejects_v19_evidence_pack_compliance_claims_outside_roadmap(
     assert label in evidence_claims[0]["text"]
 
 
+def test_docs_check_rejects_v200_reviewer_ergonomics_overclaims_outside_roadmap(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    docs = tmp_path / "docs"
+    docs.mkdir(exist_ok=True)
+    (docs / "reviewer-ergonomics.md").write_text(
+        "\n".join(
+            [
+                "# Reviewer Ergonomics",
+                "",
+                "## Current Capabilities",
+                "",
+                "v2.0.0 provides hosted operation.",
+                "v2.0.0 includes destructive cleanup.",
+                "v2.0.0 supports MCP tool execution.",
+                "v2.0.0 provides live provider expansion.",
+                "v2.0.0 includes production retrieval.",
+                "v2.0.0 offers compliance certification.",
+                "v2.0.0 replaces release readiness.",
+                "",
+                "## Roadmap",
+                "",
+                "Hosted operation remains future-only.",
+                "",
+                "## Out of Scope",
+                "",
+                "v2.0.0 does not provide destructive cleanup.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["docs", "check"]) == 1
+    report = json.loads(capsys.readouterr().out)
+    reviewer_claims = [
+        finding
+        for finding in report["findings"]
+        if finding["rule_id"] == "unsupported_review_ergonomics_scope_claim"
+    ]
+
+    assert {finding["line"] for finding in reviewer_claims} == set(range(5, 12))
+    assert {
+        "hosted operation",
+        "destructive cleanup",
+        "MCP tool execution",
+        "live provider expansion",
+        "production retrieval",
+        "compliance certification",
+        "release-readiness replacement",
+    } == {finding["message"].rsplit(": ", maxsplit=1)[1] for finding in reviewer_claims}
+
+
 def test_ci_runs_docs_check() -> None:
     workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
     assert "python -m agent_harness docs check" in workflow

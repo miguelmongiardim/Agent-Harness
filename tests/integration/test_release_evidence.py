@@ -385,6 +385,45 @@ def test_release_readiness_requires_existing_evidence_pack_without_generating_on
     assert not (evidence_root / "evidence_pack.v1.json").exists()
 
 
+def test_release_readiness_validates_v200_review_evidence_without_generating_it(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    seed_project(tmp_path)
+    _write_release_ready_project(tmp_path, "2.0.0", include_review=False)
+    monkeypatch.setattr(release, "_tag_exists", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_pushed", lambda project_root, tag_name: True)
+    monkeypatch.setattr(release, "_tag_target_commit", lambda project_root, tag_name: "abc123")
+    monkeypatch.setattr(release, "_remote_ci_evidence", _passing_remote_ci)
+
+    review_root = tmp_path / ".agent-harness" / "review"
+    assert not review_root.exists()
+
+    assert main(["release", "readiness"]) == 0
+    missing_report = json.loads(capsys.readouterr().out)
+
+    assert missing_report["status"] == "pending"
+    assert missing_report["review"]["status"] == "missing_evidence"
+    assert "review" in {entry["gate"] for entry in missing_report["diagnostics"]}
+    assert not review_root.exists()
+
+    _write_release_ready_review_evidence(tmp_path)
+
+    assert main(["release", "readiness"]) == 0
+    ready_report = json.loads(capsys.readouterr().out)
+
+    assert ready_report["status"] == "ready", ready_report["diagnostics"]
+    assert ready_report["review"]["status"] == "passed"
+    assert ready_report["review"]["artifacts"] == {
+        "quick_run": ".agent-harness/review/review-run-20260511T100200Z-quick.json",
+        "artifact_inventory": ".agent-harness/review/artifact-inventory-20260511T100300Z.json",
+        "cleanup_plan": ".agent-harness/review/artifact-cleanup-plan-20260511T100300Z.json",
+    }
+    assert "review" not in {entry["gate"] for entry in ready_report["diagnostics"]}
+
+
 def test_release_readiness_validates_pack_links_and_blocks_critical_findings(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1137,6 +1176,7 @@ def _write_release_ready_project(
     include_mcp: bool = True,
     include_orchestration: bool = True,
     include_evidence_pack: bool = True,
+    include_review: bool = True,
     evidence_findings: list[dict[str, Any]] | None = None,
 ) -> None:
     if not (root / "agent-harness.yaml").exists():
@@ -1333,6 +1373,91 @@ def _write_release_ready_project(
         _write_orchestration_workflow_demo(root)
     if include_evidence_pack:
         _write_release_ready_evidence_pack(root, findings=evidence_findings or [])
+    if include_review:
+        _write_release_ready_review_evidence(root)
+
+
+def _write_release_ready_review_evidence(root: Path) -> None:
+    review_root = root / ".agent-harness" / "review"
+    review_root.mkdir(parents=True, exist_ok=True)
+    review_run_path = review_root / "review-run-20260511T100200Z-quick.json"
+    review_run = {
+        "schema_version": "review_run.v1",
+        "generated_at": "2026-05-11T10:02:00+00:00",
+        "profile_id": "quick",
+        "status": "passed",
+        "artifact": ".agent-harness/review/review-run-20260511T100200Z-quick.json",
+        "commands": [
+            _review_run_command("doctor", "agent-harness doctor", ["agent-harness", "doctor"]),
+            _review_run_command(
+                "docs_check",
+                "agent-harness docs check",
+                ["agent-harness", "docs", "check"],
+                evidence_refs=[".agent-harness/docs/docs-check.json"],
+            ),
+            _review_run_command(
+                "pytest_quick",
+                "python -m pytest -q",
+                ["python", "-m", "pytest", "-q"],
+            ),
+        ],
+        "next_actions": [],
+    }
+    review_run_path.write_text(json.dumps(review_run, indent=2), encoding="utf-8")
+    inventory = {
+        "schema_version": "artifact_inventory.v1",
+        "generated_at": "2026-05-11T10:03:00+00:00",
+        "root": ".",
+        "items": [
+            {
+                "path": ".agent-harness/runs",
+                "artifact_kind": "run_evidence",
+                "size_bytes": 0,
+                "modified_at": "2026-05-11T10:03:00+00:00",
+                "protected": True,
+                "protection_reason": "run evidence is protected",
+            }
+        ],
+    }
+    cleanup_plan = {
+        "schema_version": "artifact_cleanup_plan.v1",
+        "generated_at": "2026-05-11T10:03:00+00:00",
+        "dry_run": True,
+        "older_than_days": 7,
+        "candidates": [],
+        "protected_count": 1,
+    }
+    (review_root / "artifact-inventory-20260511T100300Z.json").write_text(
+        json.dumps(inventory, indent=2),
+        encoding="utf-8",
+    )
+    (review_root / "artifact-cleanup-plan-20260511T100300Z.json").write_text(
+        json.dumps(cleanup_plan, indent=2),
+        encoding="utf-8",
+    )
+
+
+def _review_run_command(
+    command_id: str,
+    command: str,
+    argv: list[str],
+    *,
+    evidence_refs: list[str] | None = None,
+) -> dict[str, Any]:
+    return {
+        "command_id": command_id,
+        "command": command,
+        "argv": argv,
+        "required": True,
+        "status": "passed",
+        "return_code": 0,
+        "duration_seconds": 0.1,
+        "stdout_summary": "ok",
+        "stderr_summary": "",
+        "evidence_refs": evidence_refs or [],
+        "skipped_reason": None,
+        "next_actions": [],
+    }
 
 
 def _write_release_ready_evidence_pack(root: Path, *, findings: list[dict[str, Any]]) -> None:

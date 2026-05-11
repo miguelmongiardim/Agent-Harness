@@ -42,7 +42,7 @@ Useful docs:
   and SARIF.
 - Local review surfaces exist for operator inspection, read-only MCP resources
   and prompts, governance evidence, benchmark comparisons, orchestration
-  evidence, and compliance evidence-pack review.
+  evidence, compliance evidence-pack review, and named local review profiles.
 
 ## Quick Start
 
@@ -187,6 +187,29 @@ The v1.9.0 PRD and implementation plan remain the durable design records:
 The evidence pack supports review and audit preparation. It does not certify
 compliance with any legal, regulatory, security, or organizational framework.
 
+### Reviewer Ergonomics
+
+The v2.0.0 Reviewer Ergonomics release adds an additive local review command
+family over existing checks and evidence:
+
+- `agent-harness review profiles`
+- `agent-harness review status`
+- `agent-harness review run`
+- `agent-harness review artifacts`
+
+Built-in `quick`, `standard`, and `release` profiles make the expected command
+sets inspectable and runnable without changing policy, approval, provider, eval,
+template, evidence-pack, or release-readiness ownership. Review runs continue
+through required-command failures, write `review_run.v1` evidence under
+`.agent-harness/review/`, and redact unsafe output summaries. Artifact review
+writes `artifact_inventory.v1` and a dry-run-only `artifact_cleanup_plan.v1`;
+it never deletes files.
+
+The v2.0.0 PRD and implementation plan remain the durable design records:
+
+- [v2.0.0 Reviewer Ergonomics PRD](docs/prd-agent-harness-v2.0.0-reviewer-ergonomics.md)
+- [v2.0.0 reviewer ergonomics plan](plans/agent-harness-v2.0.0-reviewer-ergonomics.md)
+
 ## Common Commands
 
 ```text
@@ -251,6 +274,11 @@ agent-harness evidence pack --format json
 agent-harness evidence check
 agent-harness evidence index
 
+agent-harness review profiles
+agent-harness review status --profile quick
+agent-harness review run --profile quick
+agent-harness review artifacts
+
 agent-harness eval
 agent-harness release package-check
 agent-harness release readiness
@@ -276,6 +304,9 @@ agent-harness release readiness
   installation remain future-only.
 - Role-count expansion requires comparative outcome evidence before any
   recommendation or policy/default promotion.
+- v2.0.0 review artifacts do not provide hosted operation, MCP tool execution,
+  live provider expansion, production retrieval, compliance certification,
+  destructive cleanup, or release-readiness replacement.
 
 ## Documentation
 
@@ -298,6 +329,8 @@ agent-harness release readiness
 - [v1.8.0 local governance console plan](plans/agent-harness-v1.8.0-local-governance-console.md)
 - [v1.9.0 Compliance Evidence Pack PRD](docs/prd-agent-harness-v1.9.0-compliance-evidence-pack.md)
 - [v1.9.0 compliance evidence pack plan](plans/agent-harness-v1.9.0-compliance-evidence-pack.md)
+- [v2.0.0 Reviewer Ergonomics PRD](docs/prd-agent-harness-v2.0.0-reviewer-ergonomics.md)
+- [v2.0.0 reviewer ergonomics plan](plans/agent-harness-v2.0.0-reviewer-ergonomics.md)
 - [Roadmap](docs/roadmap.md)
 - [Changelog](CHANGELOG.md)
 

@@ -253,6 +253,33 @@ preparation. It does not rebuild governance aggregation, run workflows, call
 providers, execute scanners, or create release evidence. It does not certify compliance.
 The pack is not legal, regulatory, security, or organizational certification.
 
+## v2.0.0 Implemented
+
+v2.0.0 Reviewer Ergonomics planning lives in
+[docs/prd-agent-harness-v2.0.0-reviewer-ergonomics.md](prd-agent-harness-v2.0.0-reviewer-ergonomics.md)
+and
+[plans/agent-harness-v2.0.0-reviewer-ergonomics.md](../plans/agent-harness-v2.0.0-reviewer-ergonomics.md).
+
+The implemented track adds the local `agent-harness review` command family.
+`review profiles` exposes the built-in `quick`, `standard`, and `release`
+profile catalog as text or `review_profile_catalog.v1` JSON. `review status`
+summarizes existing command evidence without executing checks and emits
+`review_status.v1`. `review run` executes the selected profile in order,
+continues through required-command failures, writes `review_run.v1` under
+`.agent-harness/review/`, returns nonzero for failed required commands, passes
+`--ci-run-id` through to release readiness for release profiles, and records
+redaction-safe output summaries. `review artifacts` writes
+`artifact_inventory.v1` and a dry-run-only `artifact_cleanup_plan.v1` for
+recognized generated artifact roots.
+
+Release readiness now validates existing v2.0.0 review evidence without running
+review commands. Missing or invalid review evidence is reported as an
+actionable readiness diagnostic for v2.0.0 and later release versions.
+
+v2.0.0 does not provide hosted operation, destructive cleanup, MCP tool
+execution, live provider expansion, production retrieval, compliance
+certification, or release-readiness replacement.
+
 ## Release Maintenance Priorities
 
 - Preserve the v1.0.0 compatibility and deprecation contract.
