@@ -13,7 +13,7 @@ claiming certification or hosted platform behavior.
 
 ## Current Status
 
-The current package version is `1.9.0`. The base install is CLI-first and
+The current package version is `1.9.1`. The base install is CLI-first and
 local-first. Optional extras enable local retrieval dependencies, the loopback
 operator app, the read-only MCP boundary, and the narrow LangGraph boundary
 proof.

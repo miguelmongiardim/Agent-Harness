@@ -6,6 +6,18 @@ All notable changes to this project will be documented in this file.
 
 - No changes yet.
 
+## [1.9.1] - 2026-05-11
+
+v1.9.1 maintenance release.
+
+- Hardened CI release-evidence gating so release evidence waits for pre-commit,
+  compatibility, docs-check, and static checks.
+- Added package-level README files and refreshed public documentation for
+  post-v1.9 maintenance.
+- Removed private research references from public docs and normalized release
+  tracks to semver milestone names.
+- Applied Ruff formatting across the release-hardening changes.
+
 ## [1.9.0] - 2026-05-01
 
 v1.9.0 Compliance Evidence Pack release.

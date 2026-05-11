@@ -926,10 +926,11 @@ def test_release_readiness_requires_v100_release_closure_docs(
 
 def test_current_release_metadata_and_v100_closure_docs_are_complete() -> None:
     pyproject = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
-    assert pyproject["project"]["version"] == "1.9.0"
-    assert __version__ == "1.9.0"
+    assert pyproject["project"]["version"] == "1.9.1"
+    assert __version__ == "1.9.1"
 
     changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+    assert "## [1.9.1]" in changelog
     assert "## [1.9.0]" in changelog
     assert "## [1.7.1]" in changelog
     assert "## [1.7.0]" in changelog
